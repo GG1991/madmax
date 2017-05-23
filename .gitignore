@@ -10,8 +10,6 @@
 obj/*.o
 examples/*
 *.vtk
-giant
-peuge
 macro
 micro
 main

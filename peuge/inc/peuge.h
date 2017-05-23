@@ -1,5 +1,5 @@
 /*
-   giant external lybraries
+   peuge external lybraries
 */
 
 #include "petscksp.h"
@@ -8,34 +8,36 @@
 #define  DIM   3
 
 /*
-   giant global variables 
+   peunt global variables 
 */
 
 PetscErrorCode   ierr;
 PetscBool        couple_fl; //  couple flag = 0|1 (o:not coupled, 1:coupled)
 
 int              nproc;     //  # of processors
-int              rank;     
+int              grank;     //  rank number global
+int              lrank;     //  rank number local 
 
 int              nev;
 
 //
 // Structures to performe de mesh partition with ParMetis
+// We are going to adopt the same one to store the mesh
 //
 int            * vtxdist;   // number of elements inside each procesor
 int            * eptr;      // list of indeces of nodes inside eind
 int            * eind;      // list of nodes for elem "i" is between eind[eptr[i]] eind[eptr[i+1]] (not including)
 
 /*
-   giant function definitions
+   peuge function definitions
 */
 
-// gia_main.c 
+// peu_main.c 
 int main(int argc, char **args);
 
-// gia_mesh.c
-int gia_rmsh(char *mesh_n, char *mesh_f);
-int gia_readev_gmsh(char * mesh_n);
+// peu_mesh.c
+int peu_rmsh(char *mesh_n, char *mesh_f);
+int peu_readev_gmsh(char * mesh_n);
 
-// gia_util.c
+// peu_util.c
 int cmp_int(void *a, void *b);
