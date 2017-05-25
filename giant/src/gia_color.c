@@ -47,8 +47,6 @@ int gia_color(MPI_Comm world, MPI_Comm * micro, MPI_Comm * micmac_comm,
 	int   nproc_mac, 
 	int   nkind_mic, 
 	int * color,
-	int * lrank,
-	int * grank,
 	int * mpinfo_mic)
 {
 
