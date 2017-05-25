@@ -63,6 +63,7 @@ int peu_parse_mpi(char * mpi_file, int * nproc_mac, int * nsubs_mac, int * nkind
 
 	    }else{
 
+                /* read microscopic kinds */
 		i = 0;
 		while(a != NULL){
 		    mpinfo_mic[i] = atoi(a);

@@ -2,7 +2,7 @@
    peuge external lybraries
 */
 
-#include "petscksp.h"
+//#include "petscksp.h"
 #include "list.h"
 
 #define  DIM   3
@@ -11,12 +11,13 @@
    peunt global variables 
 */
 
-PetscErrorCode   ierr;
-PetscBool        couple_fl; //  couple flag = 0|1 (o:not coupled, 1:coupled)
+//PetscErrorCode   ierr;
+//PetscBool        couple_fl; //  couple flag = 0|1 (o:not coupled, 1:coupled)
 
 int              nproc;     //  # of processors
 int              grank;     //  rank number global
 int              lrank;     //  rank number local 
+int              color;
 
 int              nev;
 
