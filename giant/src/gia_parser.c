@@ -1,7 +1,7 @@
 
 /*
 
-   This routine parse a file that specifies the conectivities between processes
+   This routine parse a file that specifies the connectivities between processes
 
    Recommend to call this file "mpi.dat"
 
@@ -12,10 +12,10 @@
    (we save this on mpinfo_mic array and check dimensions)
 
    # <#KINDS> 
-   1
+   2
 
    # kind_1 <#MICRO_1> <#SUBMIC_1> kind_2 <#MICRO_2> <#SUBMIC_2> ...
-   1 1 1  2 1 1
+   1 1  1 1
    (we save this on mpinfo_mic array and check dimensions)
 
 */
@@ -27,7 +27,7 @@
 
 #define SIZEBUF 128
 
-int peu_parse_mpi(char * mpi_file, int * nproc_mac, int * nsubs_mac, int * nkind_mic, int ** mpinfo_mic)
+int gia_parse_mpi(char * mpi_file, int * nproc_mac, int * nsubs_mac, int * nkind_mic, int ** mpinfo_mic)
 {
     FILE * file = fopen(mpi_file,"r");
     char   buf[SIZEBUF];

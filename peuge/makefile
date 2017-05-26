@@ -15,7 +15,7 @@ DEPS = ${DEP_DIR}/peuge.h
 
 
 OBJ  = ${OBJ_DIR}/peu_main.o  \
-       ${OBJ_DIR}/peu_mesh.o  \
+       ${OBJ_DIR}/peu_color.o  \
        ${OBJ_DIR}/list.o  
 
 LDFLAG = -L../../../libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis \
@@ -37,7 +37,6 @@ obj/peu_main.o: src/peu_main.c inc/peunt.h
 
 
 
-
 ##############################
 # PEU_MESH.O
 obj/peu_mesh.o: src/peu_mesh.c inc/list.h \
@@ -49,6 +48,21 @@ obj/peu_mesh.o: src/peu_mesh.c inc/list.h \
 # PEU_UTIL.O
 obj/peu_util.o: src/peu_util.c inc/peuge.h 
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I./inc 
+
+
+
+##############################
+# PEU_COLOR.O
+obj/peu_color.o: src/peu_color.c ../inc/monts.h 
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I../inc 
+
+
+
+##############################
+# PEU_PARSER.O
+obj/peu_parser.o: src/peu_parser.c 
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I../inc 
+
 
 
 ##############################

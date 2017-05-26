@@ -15,7 +15,7 @@ DEPS = ${DEP_DIR}/giant.h
 
 
 OBJ  = ${OBJ_DIR}/gia_main.o  \
-       ${OBJ_DIR}/gia_mesh.o  \
+       ${OBJ_DIR}/gia_color.o  \
        ${OBJ_DIR}/list.o  
 
 LDFLAG = -L../../../libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis \
@@ -51,10 +51,20 @@ obj/gia_util.o: src/gia_util.c inc/giant.h
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I./inc 
 
 
+
+
 ##############################
 # GIA_COLOR.O
 obj/gia_color.o: src/gia_color.c ../inc/monts.h 
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I../inc
+
+
+
+
+##############################
+# GIA_PARSER.O
+obj/gia_parser.o: src/gia_parser.c 
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I./inc
 
 
 
