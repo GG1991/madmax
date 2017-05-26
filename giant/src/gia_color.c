@@ -50,8 +50,8 @@ int gia_color(MPI_Comm world, MPI_Comm * micro, MPI_Comm * micmac_comm,
 	int * mpinfo_mic)
 {
 
-    int  i, nproc; 
-    int  a, b, c, d, e, f, g; // variables for calculating the color in an "easy" way
+    int  i, rank, nproc; 
+    int  a, b, c, d, e, f; // variables for calculating the color in an "easy" way
     int  sum_micro_proc;      // partial sum of microprocess per macroscopic process (vary with "i")
     int  sum_micro_proc_tot;  // total sum of microprocess per macroscopic process
     int  grank_remote;
@@ -59,7 +59,7 @@ int gia_color(MPI_Comm world, MPI_Comm * micro, MPI_Comm * micmac_comm,
     // we are going to work with a "local" communicator saved in "world"
     // we create a newone called localworld
     MPI_Comm_size(world, &nproc);
-    MPI_Comm_rank(world, rank);
+    MPI_Comm_rank(world, &rank);
 
     // we calculate the color correspoding to this process
     sum_micro_proc_tot = 0;
@@ -95,7 +95,7 @@ int gia_color(MPI_Comm world, MPI_Comm * micro, MPI_Comm * micmac_comm,
     // create the intercommunicators
     // that remote communicator for perform the interconection
     grank_remote = (e - nproc_mac) % nproc_mac;
-    MPI_Intercomm_create(*micro, 0, world, grank_remote, 0, &micmac_comm);
+    MPI_Intercomm_create(*micro, 0, world, grank_remote, 0, micmac_comm);
 
     printf("giant: rank = %d - nproc = %d - color = %d - rem_rank(to macro) %d\n",rank,nproc,e,grank_remote);
 

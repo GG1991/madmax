@@ -52,6 +52,13 @@ obj/gia_util.o: src/gia_util.c inc/giant.h
 
 
 ##############################
+# GIA_COLOR.O
+obj/gia_color.o: src/gia_color.c ../inc/monts.h 
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I../inc
+
+
+
+##############################
 # LIST.O
 obj/list.o: src/list.c inc/list.h 
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I./inc
