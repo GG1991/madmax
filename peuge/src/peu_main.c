@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     ierr = MPI_Comm_size(world, &nproc);
     ierr = MPI_Comm_rank(world, &rank);
     
-    peu_parse_mpi("mpi.dat", &nproc_mac, &nsubs_mac, &nkind_mic, &mpinfo_mic);
+    parse_mpi("mpi.dat", &nproc_mac, &nsubs_mac, &nkind_mic, &mpinfo_mic);
 
     /* We change our PETSc communicator, macroprocess will solve a distributed problem
        will all microkinds per macroprocess will solve another one 
