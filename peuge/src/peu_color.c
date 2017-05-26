@@ -60,7 +60,7 @@ int peu_colors(MPI_Comm world,
     // we are going to work with a "local" communicator saved in "world"
     // we create a newone called localworld
     MPI_Comm_size(world, &nproc);
-    MPI_Comm_rank(world, rank);
+    MPI_Comm_rank(world, &rank);
 
     // we need an array of intercommunicator for each microscopic kind
     macmic_comm = (MPI_Comm*)malloc(nkind_mic*sizeof(MPI_Comm));
