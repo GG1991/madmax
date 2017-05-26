@@ -41,49 +41,48 @@ int peu_parse_mpi(const char mpi_file[], int * nproc_mac, int * nsubs_mac, int *
     while(fgets(buf,SIZEBUF,file) != NULL)
     {
 	a = strtok(buf," \n");
-	if(a[0] != '#' && a != NULL){
+	if(a != NULL){
+	    if(a[0] != '#'){
 
-	    if(flg == 0){
+		if(flg == 0){
 
-                /* read number of process that should be executing macro structure */
-                *nproc_mac = atoi(a); 
-		
-		a = strtok(NULL," \n");
-		if(a == NULL){
-		    return 1;
-		}
-                *nsubs_mac = atoi(a);
+		    /* read number of process that should be executing macro structure */
+		    *nproc_mac = atoi(a); 
 
-		flg = 1;
-		break;
-
-	    }
-	    else if(flg == 1){
-
-                /* read number of microscopic kinds that are going to be read and allocate mpinfo_mic */
-                *nkind_mic  = atoi(a); 
-		*mpinfo_mic = calloc( *nkind_mic * 2,sizeof(int));
-		flg = 2;
-		break;
-
-	    }
-	    else if(flg == 2){
-
-                /* read microscopic kinds */
-		i = 0;
-		while(a != NULL){
-		    *mpinfo_mic[i] = atoi(a);
 		    a = strtok(NULL," \n");
-		    i++; 
-		}
-		if(i % 3 != 0){
-		    return 1;
-		}
-		if(i / 3 != *nkind_mic){
-		    return 1;
-		}
-		break;
+		    if(a == NULL){
+			return 1;
+		    }
+		    *nsubs_mac = atoi(a);
 
+		    flg = 1;
+
+		}
+		else if(flg == 1){
+
+		    /* read number of microscopic kinds that are going to be read and allocate mpinfo_mic */
+		    *nkind_mic  = atoi(a); 
+		    *mpinfo_mic = malloc( *nkind_mic * 2 * sizeof(int));
+		    flg = 2;
+
+		}
+		else if(flg == 2){
+
+		    /* read microscopic kinds */
+		    i = 0;
+		    while((a != NULL) && (i/2 < *nkind_mic)){
+//			*mpinfo_mic[i] = atoi(a);
+			(*mpinfo_mic)[i] = atoi(a);
+			a = strtok(NULL," \n");
+			i++; 
+		    }
+		    if(i % 2 != 0){
+			return 1;
+		    }
+		    if(i / 2 != *nkind_mic){
+			return 1;
+		    }
+		}
 	    }
 	}
     }
