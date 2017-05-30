@@ -11,8 +11,6 @@ obj/*.o
 giant/giant
 peuge/peuge
 *.vtk
-macro
-micro
 main
 *rank*
 *.dat
