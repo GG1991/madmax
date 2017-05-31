@@ -33,6 +33,7 @@
 
 int parse_mpi(const char mpi_file[], int nproc[2], int * nkind, int ** nproc_k)
 {
+
     /*
        nproc[0]   : # of processes macro code
        nproc[1]   : # of processes micro code

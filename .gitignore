@@ -11,8 +11,8 @@
 *.aux
 
 obj/*.o
-giant/giant
-peuge/peuge
+micro/micro
+macro/macro
 *.vtk
 main
 *rank*
@@ -25,10 +25,6 @@ struct*
 *tmpi*
 *.swp*
 ~
-doc/bathe-man/bathe-man.aux
-doc/bathe-man/bathe-man.log
-doc/bathe-man/bathe-man.out
-doc/bathe-man/bathe-man.toc
 
 # Packages #
 ############

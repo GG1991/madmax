@@ -1,16 +1,17 @@
 /*****************************************************************************************************
-   peuge external lybraries
+   MACRO external lybraries
 *****************************************************************************************************/
 
 //#include "petscksp.h"
 #include "list.h"
 #include "mpi.h"
+#include "sputnik.h"
 #include <stdbool.h>
 
 #define  DIM   3
 
 /*****************************************************************************************************
-   peuge global variables 
+   MACRO global variables 
 *****************************************************************************************************/
 
 //PetscErrorCode   ierr;
@@ -34,18 +35,17 @@ int            * eind;      // list of nodes for elem "i" is between
                             // eind[eptr[i]] eind[eptr[i+1]] (not including)
 
 /*****************************************************************************************************
-   peuge function definitions
+   MACRO function definitions
 *****************************************************************************************************/
 
-// peu_main.c 
+// mac_main.c 
 int main(int argc, char **args);
 
-// peu_mesh.c
-int peu_rmsh(char *mesh_n, char *mesh_f);
-int peu_readev_gmsh(char * mesh_n);
+// mac_mesh.c
+int mac_rmsh(char *mesh_n, char *mesh_f);
+int mac_readev_gmsh(char * mesh_n);
 
-// peu_util.c
+// mac_util.c
 int cmp_int(void *a, void *b);
 
-// peu_parser.c
-int peu_parse_mpi(const char mpi_file[], int * nproc_mac, int * nsubs_mac, int * nkind_mic, int ** mpinfo_mic);
+// mac_parser.c
