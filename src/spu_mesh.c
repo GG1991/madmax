@@ -1,18 +1,16 @@
-
 /*
-   Giant mesh partition routines
- */
 
+   SPUTNIK mesh treatment functions
 
-#include "parmetis.h"
-#include "giant.h"
+*/
 
+#include "sputnik.h"
 
-int gia_part(void)
+int part_mesh(void)
 {
 
     /*
-       Performes the partition of the mesh saved on the mesh structures.
+       Performes the mesh partition mesh saved on the mesh structures.
      */
 
     //  ParMETIS_V32_Mesh2Dual (
@@ -23,24 +21,22 @@ int gia_part(void)
     return 0;
 }
 
-int gia_rmsh(char *mesh_n, char *mesh_f)
+int read_mesh(char *mesh_n, char *mesh_f)
 {
     /*
        Reads the mesh according to the format specified
        and performs the partition if it is required
      */
 
-    
-
     if(strcmp(mesh_f,"gmsh") == 0){
-	if(gia_readev_gmsh(mesh_n))
+	if(readev_gmsh(mesh_n))
 	    return 1;
     }
 
     return 0;
 }
 
-int gia_readev_gmsh(char *mesh_n)
+int readev_gmsh(char *mesh_n)
 {
 
     /* 
@@ -56,6 +52,8 @@ int gia_readev_gmsh(char *mesh_n)
     int      total;
     int      resto;
     int      i,d;
+    int      ierr;
+    int      nproc;
     
     char     buf[128];   
     char   * data;

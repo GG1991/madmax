@@ -1,10 +1,10 @@
 /*
    Routine to performe coloring on peuge processes
 
-   MPI_COMM_WORLD
+   SPUTNIK ( MPI_COMM_WORLD )
           |
 	 / \
-   MACRO     MICRO  (colors with code on monts.h)
+   MACRO     MICRO  (colors with code on sputnik.h)
    |         |    
    |_color 0 |_color 3
    |_color 1 |_color 4
@@ -13,7 +13,7 @@
 	     |_color 7
              |_color 8
 
-   Strategy the first "nmacro" process will correspond to this peuge, example : 
+   Strategy the first "num_macro" process will correspond to MACRO, example : 
 
                              d=0           d=1           d=2
    color 0 MACRO_1 --> (( MICRO_K1_1 -> MICRO_K1_2 -> MICRO_K1_3 ))  color 3  b=0
@@ -39,7 +39,7 @@
 */
 
 #include "mpi.h"
-#include "monts.h"    // montseny common feature such as  variables to performe coloring
+#include "sputnik.h"    // SPUTNIK common feature such as  variables to performe coloring
 #include "stdlib.h"
 #include "stdio.h"
 

@@ -1,13 +1,14 @@
-
 /*
-   Giant main function
+
+   MICRO main function
+
  */
 
 
 static char help[] = "Solves an RVE problem.\n\n";
 
 
-#include "giant.h"
+#include "micro.h"
 
 
 int main(int argc, char **argv)

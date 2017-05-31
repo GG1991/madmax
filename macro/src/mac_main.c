@@ -1,6 +1,6 @@
 
 /*
-   Peuge main function
+   MACRO main function
 
    Program for solving the displacement field inside a solid structure
 
@@ -9,32 +9,32 @@
 
 
 static char help[] = "Solves the displacement field inside a solid structure. \
-	    It has the capability of being couple with Giant, a code for solving and RVE problem.n\n";
+	    It has the capability of being couple with MICRO, a code for solving and RVE problem.n\n";
 
 
-#include "peuge.h"
+#include "macro.h"
 
 
 int main(int argc, char **argv)
 {
 
-    char       mesh_n[64];    // Mesh file name
-    char       mesh_f[4];     // Mesh format name
-    int        color;         // color of this process
-    int        nproc_mac;     // number of macroscopic process (used to determine color)
-    int        nsubs_mac;     // number of macroscopic subdomains to performe the partition
-    int        nkind_mic;     // number of microscopic kinds 
-    int      * mpinfo_mic;    // array specifying how many process for each micro-kind are going to be used
+    char       mesh_n[64];        // Mesh file name
+    char       mesh_f[4];         // Mesh format name
+    int        color;             // color of this process
+    int        nproc_tot;         // number of total process 
+    int        nproc[2];          // number of macroscopic (nproc[0]) and microscopic process (nproc[1]) 
+    int        nkind_mic;         // number of microscopic kinds 
+    int      * nproc_kind_mic;    // array specifying how many process for each micro-kind are going to be used
     int        ierr;
 
     bool       set;
     MPI_Comm   world = MPI_COMM_WORLD;
 
     ierr = MPI_Init(&argc, &argv);
-    ierr = MPI_Comm_size(world, &nproc);
+    ierr = MPI_Comm_size(world, &nproc_tot);
     ierr = MPI_Comm_rank(world, &rank);
     
-    parse_mpi("mpi.dat", &nproc_mac, &nsubs_mac, &nkind_mic, &mpinfo_mic);
+    parse_mpi("mpi.dat", nproc, &nkind_mic, &nproc_kind_mic);
 
     /* We change our PETSc communicator, macroprocess will solve a distributed problem
        will all microkinds per macroprocess will solve another one 
