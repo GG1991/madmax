@@ -44,7 +44,7 @@ int parse_mpi(const char mpi_file[], int nproc[2], int * nkind, int ** nproc_k)
     FILE * file = fopen(mpi_file,"r");
     char   buf[SIZEBUF];
     char * a;
-    int    flg = 0, i;
+    int    flg = 0, i, sum;
 
     if(!file){
 	return 1;
@@ -81,14 +81,23 @@ int parse_mpi(const char mpi_file[], int nproc[2], int * nkind, int ** nproc_k)
 		else if(flg == 3){
 
 		    /* read microscopic kinds */
-		    i = 0;
+		    i   = 0;
+		    sum = 0;
 		    while((a != NULL) && (i < *nkind)){
 			(*nproc_k)[i] = atoi(a);
+			sum += (*nproc_k)[i];
 			a = strtok(NULL," \n");
 			i++; 
 		    }
+
+                    // is all 0K ?
 		    if(i != *nkind){
 			return 1;
+		    }
+
+		    // checks if # of microscopic process fits for the process per kind defined 
+		    if(nproc[1] != sum * nproc[0]){
+		      return 1;
 		    }
 		    flg = 4;
 		}
