@@ -6,6 +6,9 @@
 *.exe
 *.o
 *.so
+*.out
+*.toc
+*.aux
 
 obj/*.o
 giant/giant

@@ -1,4 +1,3 @@
-
 /*
 
    This routine parse a file that specifies the conectivities between processes
@@ -60,27 +59,13 @@ int parse_mpi(const char mpi_file[], int nproc[2], int * nkind, int ** nproc_k)
 
 		    /* read number of process that should be executing the macro structure */
 		    nproc[0] = atoi(a); 
-
-		    a = strtok(NULL," \n");
-		    if(a == NULL){
-			return 1;
-		    }
-		    *nsubs_mac = atoi(a);
-
 		    flg = 1;
 
 		}
 		else if(flg == 1){
 
 		    /* read number of process that should be executing the micro structure */
-		    nproc[0] = atoi(a); 
-
-		    a = strtok(NULL," \n");
-		    if(a == NULL){
-			return 1;
-		    }
-		    *nsubs_mac = atoi(a);
-
+		    nproc[1] = atoi(a); 
 		    flg = 2;
 
 		}

@@ -10,9 +10,9 @@ DEP_DIR= ./inc
 
 CFLAGS=-g -O0 
 	
-DEPS = ${DEP_DIR}/monts.h                   
+DEPS = ${DEP_DIR}/sputnik.h                   
 
-OBJ  = ${OBJ_DIR}/mon_parse.o    \
+OBJ  = ${OBJ_DIR}/spu_parser.o    \
        ${OBJ_DIR}/list.o
 
 LDFLAG = -L../../../libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis \
@@ -28,8 +28,8 @@ all: ${OBJ}
 
 
 ##############################
-# MON_PARSE.O
-obj/mon_parse.o: src/mon_parse.c inc/monts.h
+# SPU_PARSE.O
+obj/spu_parser.o: src/spu_parser.c inc/sputnik.h
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< -I./inc
 
 
@@ -47,7 +47,7 @@ var:
 	echo "PETSC_COMPILE = " ${PETSC_COMPILE}
 
 clean_:	    
-	rm -f obj/* peunt
+	rm -f obj/* 
 
 include ${PETSC_DIR}/lib/petsc/conf/variables	
 include ${PETSC_DIR}/lib/petsc/conf/rules
