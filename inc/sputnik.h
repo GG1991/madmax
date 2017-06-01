@@ -19,4 +19,4 @@ int parse_mpi(const char mpi_file[], int nproc[2], int * nkind, int ** nproc_k);
 
 // spu_mesh.c
 int read_mesh(char *mesh_n, char *mesh_f);
-int readev_gmsh(char *mesh_n);
+int read_mesh_GMSH_CSR(char *mesh_n, int *eptr, int *eind);

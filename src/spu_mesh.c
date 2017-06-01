@@ -36,22 +36,35 @@ int read_mesh(char *mesh_n, char *mesh_f)
     return 0;
 }
 
-int readev_gmsh(char *mesh_n)
+/****************************************************************************************************/
+
+int read_mesh_CSR_GMSH(char *mesh_n)
 {
 
     /* 
-       Reads the elements with the nodes conectivities and saves on list_elemv
-       1) first counts the total number of volumetric element on the mesh n_elem_tot
-       2) calculates n_elem = n_elem_tot / nproc
-       3) calculates the vector vtxdist in order to know how many elem will be for each process 
-       4) reads its own group of elements
+       Reads the elements with the nodes conectivities and saves on "eptr[]" and "eind[]" in CSR format
+
+       1) first counts the total number of volumetric element on the mesh nelm_tot
+
+       2) calculates nelm = nelm_tot/nproc
+          calculates the vector elmdist in order to know how many elems will be for each process 
+
+       3) read the mesh again and seeing element types, so "npe", is it possible to fill "eptr[nelm+1]"
+          finally alloc memory for "eind[eptr[nelm]]"
+
+       4) reads the mesh again and fill "eind[]"
     */
 
     FILE   * fm;
-    int      n_elem_tot;
+
+    int      nelm, nelm_tot;
+    int      nnod_tot;
+    int      npe;
     int      total;
     int      resto;
-    int      i,d;
+    int      i, d, ei; 
+    int      ln;               // line counter
+    int      ntve;             // number of lines up to the first volume element
     int      ierr;
     int      nproc;
     
@@ -64,8 +77,13 @@ int readev_gmsh(char *mesh_n)
 	return 1;
     }
 
-    n_elem_tot = 0;
 
+    /**************************************************/
+    //  count the total number of volumetric elements 
+    //  nelm_tot
+    //
+    ln = 0;
+    nelm_tot = 0;
     while(fgets(buf,128,fm)!=NULL){
 	data=strtok(buf," \n");
 	//
@@ -73,8 +91,8 @@ int readev_gmsh(char *mesh_n)
 	//
 	if(strcmp(data,"$Elements")==0){
 	    //
-	    // leemos el numero total pero no lo usamos (incluye elementos de superficie
-	    // y de volumen
+	    // leemos el numero total pero no lo usamos 
+	    // (incluye elementos de superficie y de volumen)
 	    //
 	    fgets(buf,128,fm);
 	    data  = strtok(buf," \n");
@@ -82,40 +100,120 @@ int readev_gmsh(char *mesh_n)
 
 	    //
 	    // leemos hasta $EndElements
-	    // y contamos el numero total de los de volumen
+	    // y contamos el numero total de los elementos volumen
 	    //
 	    for(i=0; i<total; i++){
 	        fgets(buf,128,fm); 
 		data=strtok(buf," \n");
 		data=strtok(NULL," \n");
-		if(atoi(data) == 4 || atoi(data) == 5 || atoi(data) == 6) n_elem_tot ++;
+		if(atoi(data) == 4 || atoi(data) == 5 || atoi(data) == 6){
+		  nelm_tot ++;
+		}
+		else{
+		  // is a surface element so be continue counting
+		  ln ++;
+		}
 	    }
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"n_elem_tot  : %d\n",n_elem_tot);CHKERRQ(ierr);
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"nelm_tot  : %d\n",nelm_tot);CHKERRQ(ierr);
 	    break;
 	}
+	ln ++;
     }
     rewind(fm);
-
+    ntev = ln;
     //
-    //  armamos el vector vtxdist -> P0 tiene sus elementos entre vtxdist[0] a vtxdist[1]
-    //  los elmentos que sobran a la divicion n_elem_tot / nproc los repartimos uno por 
+    /**************************************************/
+
+    /**************************************************/
+    //  armamos el vector elmdist. 
+    //  example: P0 tiene sus elementos entre vtxdist[0] 
+    //  a vtxdist[1] (not included)
+    //  los elementos que sobran a la division 
+    //  nelm_tot/nproc los repartimos uno por 
     //  uno entre los primeros procesos
     //
     ierr = PetscPrintf(PETSC_COMM_WORLD,"vtxdist     : ");CHKERRQ(ierr);
-    vtxdist = (int*)calloc( nproc + 1 ,sizeof(int));
-    resto = n_elem_tot % nproc;
+    elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
+    resto = nelm_tot % nproc;
     d = 1;
     for(i=0; i < nproc + 1; i++){
-	vtxdist[i] = i * n_elem_tot / nproc + d - 1;
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"%d ",vtxdist[i]);CHKERRQ(ierr);
+	elmdist[i] = i * nelm_tot / nproc + d - 1;
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"%d ",elmdist[i]);CHKERRQ(ierr);
 	if(i == resto - 1) d = 0;
     }
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");CHKERRQ(ierr);
-    
+
+    // ya podemos allocar el vector "eptr" su dimension es :
+    // número de elementos locales + 1 = nelm + 1
+    nelm = elmdist[rank+1] - elmdist[rank];
+    eptr = (int*)calloc( nelm + 1 ,sizeof(int));
+    //
+    /**************************************************/
+
+    /**************************************************/
+    //   
+    // we read the file again to count number of nodes 
+    // per element and fill "eptr"
+    // with this vector we can alloc memory for "eind"
+    //    
+    ln = 0;
+    while(fgets(buf,128,fm)!=NULL){
+        
+	//
+	// leemos hasta "ntve" 
+	//
+	if(ln < ntve){
+
+	    ei = 0;
+	    for(i=0; i<nelmtot; i++){
+	        fgets(buf,128,fm); 
+		data=strtok(buf," \n");
+		data=strtok(NULL," \n");
+		isvol = 1;
+		switch(atoi(data)){
+		  case 4:
+		    npe = 4;
+		    break;
+		  case 5:
+		    npe = 6;
+		    break;
+		  case 6:
+		    npe = 8;
+		    break;
+		  default:
+		    isvol = 0;
+		    break;
+		}
+		if( isvol == 1 ){
+		  if(i >= elmdist[rank] && i < elmdist[rank+1]){
+		    if( i != elmdist[rank] ){
+		      eptr[i] = eptr[i-1] + npe; 
+		    }else{
+		      //  i = 0
+		      eptr[i] = 0;
+		    }
+		    ei ++;
+		  }
+		}
+	    }
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"nelm_tot  : %d\n",nelm_tot);CHKERRQ(ierr);
+	    break;
+	}
+	ln ++;
+    }
+    rewind(fm);
+    eind = (int*)calloc( eptr[nelm] ,sizeof(int));
+
 
     //
-    // repetimos el proceso pero esta vez leemos los nodos 
-    // y completamos los vectores 
+    /**************************************************/
+
+    
+
+    /**************************************************/
+    //
+    // repetimos el proceso pero esta vez leemos los 
+    // nodos y completamos los vectores 
     //
     while(fgets(buf,128,fm)!=NULL){
 	data=strtok(buf," \n");
@@ -133,19 +231,23 @@ int readev_gmsh(char *mesh_n)
 
 	    //
 	    // leemos hasta $EndElements
-	    // y contamos el numero total de los de volumen
+	    // y contamos el número total de los de volumen
 	    //
 	    for(i=0; i<total; i++){
 	        fgets(buf,128,fm); 
 		data=strtok(buf," \n");
 		data=strtok(NULL," \n");
-		if(atoi(data) == 4 || atoi(data) == 5 || atoi(data) == 6) n_elem_tot ++;
+		if(atoi(data) == 4 || atoi(data) == 5 || atoi(data) == 6) nelm_tot ++;
 	    }
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"n_elem_tot  : %d\n",n_elem_tot);CHKERRQ(ierr);
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"nelm_tot  : %d\n",nelm_tot);CHKERRQ(ierr);
 	    break;
 	}
     }
     rewind(fm);
+    //
+    /**************************************************/
 
     return 0;   
 }
+
+/****************************************************************************************************/
