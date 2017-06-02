@@ -86,10 +86,11 @@ int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int **
     int                  npe;
     int                  total;
     int                  resto;
-    int                  i, d; 
+    int                  i, d, n; 
+    int                  len;               // strlen(buf) for adding to offset
     int                  ln;                // line counter
     int                  ierr;
-    int                  len;               // strlen(buf) for adding to offset
+    int                  ntag;              // ntag to read gmsh element conectivities
     
     char                 buf[BUF_N_LENGTH];   
     char               * data;
@@ -140,7 +141,7 @@ int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int **
 		  offset += len; 
 		}
 	    }
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"nelm_tot  : %d\n",nelm_tot);CHKERRQ(ierr);
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"nelm_tot    : %d\n",nelm_tot);CHKERRQ(ierr);
 	    break;
 	}
 	ln ++;
@@ -157,13 +158,17 @@ int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int **
     //  uno entre los primeros procesos
     //
     ierr = PetscPrintf(PETSC_COMM_WORLD,"elmdist     : ");CHKERRQ(ierr);
-    *elmdist = (int*)calloc( nproc + 2 ,sizeof(int));
+    *elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
     resto = nelm_tot % nproc;
-    d = 1;
-    for(i=0; i < nproc + 1; i++){
-	(*elmdist)[i] = i * nelm_tot / nproc + d - 1;
+    (*elmdist)[0] = 0;
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"%d ",(*elmdist)[0]);CHKERRQ(ierr);
+    for(i=1; i < nproc + 1; i++){
+	(*elmdist)[i] = i * nelm_tot / nproc;
+        if(resto>0){
+	  (*elmdist)[i] += 1;
+	  resto --;
+	}
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"%d ",(*elmdist)[i]);CHKERRQ(ierr);
-	if(i == resto - 1) d = 0;
     }
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");CHKERRQ(ierr);
 
@@ -181,7 +186,7 @@ int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int **
     // per element and fill "eptr"
     // with this vector we can alloc memory for "eind"
     //    
-    fseek( fm, offset, SEEK_SET); // we go up to the first volumetric element
+    fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
     for(i=0; i<(*elmdist)[rank]; i++){    // we go to the first element we have to store
       fgets(buf,BUF_N_LENGTH,fm); 
       offset += strlen(buf); 
@@ -214,8 +219,43 @@ int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int **
     /**************************************************/
     //
     // repetimos el proceso pero esta vez leemos los 
-    // nodos y completamos el vector "eind"
+    // nodos y completamos el vector "eind[eptr[nelm]]"
+    // empezamos a leer desde "offset"
     //
+    fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
+    n = 0;
+    for(i=1; i < nelm + 1; i++){
+      fgets(buf,BUF_N_LENGTH,fm); 
+      data=strtok(buf," \n");
+      data=strtok(NULL," \n");
+      switch(atoi(data)){
+	case 4:
+	  npe = 4;
+	  break;
+	case 5:
+	  npe = 8;
+	  break;
+	case 6:
+	  npe = 6;
+	  break;
+	default:
+	  break;
+      }
+      data=strtok(NULL," \n");
+      ntag = atoi(data);
+      d = 0;
+      while(d<ntag){
+	data = strtok(NULL," \n");
+	d++;
+      }
+      d = 0;
+      while(d<npe){
+	data = strtok(NULL," \n");
+	(*eind)[n+d] = atoi(data); 
+	d++;
+      }
+      n += npe;
+    }
     //
     /**************************************************/
 
