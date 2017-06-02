@@ -12,15 +12,16 @@ SPU_DEP_DIR= ../inc
 
 CFLAGS=-g -O0 
 	
-DEPS = ${DEP_DIR}/macro.h         \
+DEPS = ${DEP_DIR}/macro.h          \
        ${SPU_DEP_DIR}/sputnik.h
 
-DEPS_DIR = ${DEP_DIR}             \
+DEPS_DIR = ${DEP_DIR}              \
            ${SPU_DEP_DIR}
 
-OBJ  = ${OBJ_DIR}/mac_main.o      \
-       ${OBJ_DIR}/mac_color.o     \
+OBJ  = ${OBJ_DIR}/mac_main.o       \
+       ${OBJ_DIR}/mac_color.o      \
        ${SPU_OBJ_DIR}/spu_parser.o \
+       ${SPU_OBJ_DIR}/spu_mesh.o   \
        ${SPU_OBJ_DIR}/list.o  
 
 LDFLAG = -L../../../libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis \
