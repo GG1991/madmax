@@ -24,15 +24,13 @@ OBJ  = ${OBJ_DIR}/mac_main.o       \
        ${SPU_OBJ_DIR}/spu_mesh.o   \
        ${SPU_OBJ_DIR}/list.o  
 
-LDFLAG = -L../../../libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis \
-         -L../../../libs/parmetis-4.0.3/build/Linux-x86_64/libmetis 
-
 .PHONY: clean_
 
 ##############################
 # LINK
 all: ${OBJ} 
 	gcc -o macro $^ ${PETSC_KSP_LIB} -lgsl -lgslcblas -lm
+	@echo "macro.o great :) !" 
 
 
 
@@ -40,20 +38,14 @@ all: ${OBJ}
 # MAC_MAIN.O
 obj/mac_main.o: src/mac_main.c ${DEPS}
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< -I${DEP_DIR} -I${SPU_DEP_DIR}
+	@echo "mac_main.o" 
 
-
-
-##############################
-# MAC_MESH.O
-obj/mac_mesh.o: src/mac_mesh.c ${SPU_DEP_DIR}/list.h \
-                ~/libs/parmetis-4.0.3/include/parmetis.h \
-                ~/libs/parmetis-4.0.3/metis/include/metis.h
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I./inc -I../../../libs/parmetis-4.0.3/include -I../../../libs/parmetis-4.0.3/metis/include 
 
 ##############################
 # MAC_UTIL.O
 obj/mac_util.o: src/mac_util.c inc/macro.h 
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I./inc 
+	@echo "mac_util.o" 
 
 
 
@@ -61,6 +53,7 @@ obj/mac_util.o: src/mac_util.c inc/macro.h
 # MAC_COLOR.O
 obj/mac_color.o: src/mac_color.c ../inc/sputnik.h 
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I../inc 
+	@echo "mac_color.o" 
 
 
 clean_:	    

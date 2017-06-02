@@ -1,4 +1,7 @@
-
+###################################################
+# Makefile utilities
+# make --quite : prints only "echos" instruction
+#
 export PETSC_DIR=/home/guido/libs/petsc-3.7.5
 export PETSC_ARCH=arch-linux2-c-debug
 
@@ -36,27 +39,27 @@ INC = -I${DEP_DIR}
 ##############################
 # LINK
 all: ${OBJ} 
+	${MAKE} -C macro
 
 
 ##############################
 # SPU_PARSE.O
 obj/spu_parser.o: src/spu_parser.c inc/sputnik.h
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< -I./inc
+	@echo "spu_parser.o" 
 
 
 ##############################
 # SPU_MESH.O
 obj/spu_mesh.o: src/spu_mesh.c ${DEPS} ${PARMETIS_HEA}
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $<  ${INC}  ${PARMETIS_INC}
+	@echo "spu_mesh.o" 
 
 
 ##############################
 # LIST.O
 obj/list.o: src/list.c inc/list.h 
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I./inc
-
-
-
 
 vars:
 	@echo "DEPS = " ${DEPS}

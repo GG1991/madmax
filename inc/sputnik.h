@@ -10,8 +10,10 @@
 #include "stdlib.h"
 #include "string.h"
 
-#define MACRO 1
-#define MICRO 2
+#define MACRO         1
+#define MICRO         2
+#define MESH_N_LENGTH 64
+#define BUF_N_LENGTH  128
 
 // spu_parser.c
 int parse_mpi(const char mpi_file[], int nproc[2], int * nkind, int ** nproc_k);
