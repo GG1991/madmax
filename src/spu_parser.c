@@ -4,110 +4,96 @@
 
    Recommend to call this file "mpi.dat"
 
-   The format is:
+   The formats are classified with the key word APPROACH <APPROACH>:
 
-   # MACRO INFORMATION
-   # <# PROCESSES> 
-      2  
-   
-   # MICRO INFORMATION
-   # <# PROCESSES> 
-      6  
-   
-   # <#KINDS> 
-      3
-   
-   # <# PROCESSES KIND 0> <# PROCESSES KIND 1> <# PROCESSES KIND 2>
-      1                    1                    1
 
-   (we save this on nproc_k array and check dimensions)
+   ************************************************** 
+   APPROACH MACRO
 
+   Note: This approach is for test the "macro" code
+         It does not have any other argument
+
+   ************************************************** 
+   APPROACH MICRO
+
+   Note: This approach is for test the "micro" code
+         It does not have any other argument
+
+   ************************************************** 
+   APPROACH MACMIC_1
+   NPROC_MAC <NPROC_MAC> 
+   NPROC_MIC <NPROC_MIC> 
+
+   Note: This approach is to perform a coupling between 
+         the "macro" code and the "micro" code with two 
+	 communicators as:
+
+   
+   SPUTNIK ( MPI_COMM_WORLD )
+                |
+	  _____/ \____
+   MACRO               MICRO  
+   |                   |    
+   |_rank 0            |_rank 0
+   |_rank 1            |_rank 1
+   |_rank 2            |_rank 2
+   |_ ...              |_ ...
+   |_rank NPROC_MAC    |_rank NPROC_MIC
+
+
+   ************************************************** 
+   
 */
 
-#include "mpi.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
+#include "sputnik.h"
 
-#define SIZEBUF 128
-
-int parse_mpi(const char mpi_file[], int nproc[2], int * nkind, int ** nproc_k)
+int parse_mpi( const char mpi_file[], mpi_comm_t * mpi_comm )
 {
 
     /*
-       nproc[0]   : # of processes macro code
-       nproc[1]   : # of processes micro code
-       nkind      : # of microscopic kinds
-       nproc_k[i] : # of process kind "i"
+
+       Parse the communication file in order to 
+       stablish communications between processes
+
      */
 
     FILE * file = fopen(mpi_file,"r");
-    char   buf[SIZEBUF];
-    char * a;
-    int    flg = 0, i, sum;
+    char   buf[BUF_N_LENGTH];
+    char * data;
+    int    ln;
 
     if(!file){
 	return 1;
     }
     
-    while(fgets(buf,SIZEBUF,file) != NULL)
+    ln = 0;
+    while(fgets(buf,BUF_N_LENGTH,file) != NULL)
     {
-	a = strtok(buf," \n");
-	if(a != NULL){
-	    if(a[0] != '#'){
+	ln ++;
+	data = strtok(buf," \n");
+	if(data != NULL){
+	    if(data[0] != '#'){
 
-		if(flg == 0){
-
-		    /* read number of process that should be executing the macro structure */
-		    nproc[0] = atoi(a); 
-		    flg = 1;
-
+		if(strcmp(data,"MACRO")){
+		    approach_1_t approach_1;
+		    mpi_comm->approach_type = APPROACH_MACRO;
+		    // parseamos y llenamos approach_1 (en este caso no tiene nada)
+		    mpi_comm->approach = (void*)malloc(sizeof(approach_1_t));
+		    memcpy(mpi_comm->approach,approach_1);
 		}
-		else if(flg == 1){
-
-		    /* read number of process that should be executing the micro structure */
-		    nproc[1] = atoi(a); 
-		    flg = 2;
-
+		else if(strcmp(data,"MICRO")){
+		    approach_2_t approach_2;
+		    mpi_comm->approach_type = APPROACH_MICRO;
+		    // parseamos y llenamos approach_2 (en este caso no tiene nada)
+		    mpi_comm->approach = (void*)malloc(sizeof(approach_2_t));
+		    memcpy(mpi_comm->approach,approach_2);
 		}
-		else if(flg == 2){
-
-		    /* read number of microscopic kinds that are going to be read and allocate nproc_k */
-		    *nkind   = atoi(a); 
-		    *nproc_k = malloc( *nkind * sizeof(int));
-		    flg = 3;
-
+		else{
+		    PetscPrintf(PETSC_COMM_WORLD,"parse_mpi.c: non valid option at line %d\n",ln);
 		}
-		else if(flg == 3){
 
-		    /* read microscopic kinds */
-		    i   = 0;
-		    sum = 0;
-		    while((a != NULL) && (i < *nkind)){
-			(*nproc_k)[i] = atoi(a);
-			sum += (*nproc_k)[i];
-			a = strtok(NULL," \n");
-			i++; 
-		    }
-
-                    // is all 0K ?
-		    if(i != *nkind){
-			return 1;
-		    }
-
-		    // checks if # of microscopic process fits for the process per kind defined 
-		    if(nproc[1] != sum * nproc[0]){
-		      return 1;
-		    }
-		    flg = 4;
-		}
 	    }
 	}
-    }
-
-    // check if all the filds have been read
-    if(flg != 4){
-      return 1;
     }
 
     return 0;

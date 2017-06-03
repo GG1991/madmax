@@ -10,14 +10,53 @@
 #include "stdlib.h"
 #include "string.h"
 
-#define MACRO         1
-#define MICRO         2
-#define MESH_N_LENGTH 64
-#define BUF_N_LENGTH  128
+#define MACRO           1
+#define MICRO           2
+#define MESH_N_LENGTH   64
+#define BUF_N_LENGTH    128
+
+#define APPROACH_MACRO     1
+#define APPROACH_MICRO     2
+#define APPROACH_MACMIC_1  3
+
+
+
+/*****************************************************************************************************
+   SPUTNIK structures
+*****************************************************************************************************/
+
+typedef struct mpi_comm_t_{
+
+   int    approach_type;
+   void * approach;
+
+}mpi_comm_t;
+
+typedef struct approach_1_t_{
+
+
+}approach_1_t;
+
+typedef struct approach_2_t_{
+
+
+}approach_2_t;
+
+typedef struct approach_3_t_{
+
+    int nproc_mac;
+    int nproc_mic;
+
+}approach_3_t;
+
+
+/*****************************************************************************************************
+   SPUTNIK function definitions
+*****************************************************************************************************/
 
 // spu_parser.c
-int parse_mpi(const char mpi_file[], int nproc[2], int * nkind, int ** nproc_k);
+int parse_mpi( const char mpi_file[], mpi_comm_t * mpi_comm );
 
 // spu_mesh.c
 int read_mesh(char *mesh_n, char *mesh_f, int rank, int nproc, int ** elmdist, int ** eptr, int ** eind);
-int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int ** eptr, int ** eind);
+int read_mesh_CSR_GMSH(MPI_Comm comm, char *mesh_n, int ** elmdist, int ** eptr, int ** eind);

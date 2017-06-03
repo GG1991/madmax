@@ -39,18 +39,19 @@ int read_mesh(char *mesh_n, char *mesh_f, int rank, int nproc, int ** elmdist, i
 
 /****************************************************************************************************/
 
-int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int ** eptr, int ** eind)
+int read_mesh_CSR_GMSH(MPI_Comm comm, char *mesh_n, int ** elmdist, int ** eptr, int ** eind)
 {
 
     /* 
+
        Author: Guido Giuntoli
        Info:   Reads the elements with the nodes conectivities and saves on 
-               "eptr[]" and "eind[]" in CSR format
+               "elmdist[]", "eptr[]" and "eind[]" in CSR format (same names
+	       that parmetis)
 
        Input: 
-       char  * mesh_n   : file name
-       int     rank     : rank of the communicator
-       int     nproc    : number of processes in this communicator 
+       char   * mesh_n   : file name with path
+       MPI_Comm comm     : the communicator of these processes
        
        Output:
        int  ** elmdist  : number of elements for each process            (MAH)
@@ -60,7 +61,7 @@ int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int **
 
        1) first counts the total number of volumetric element on the mesh nelm_tot
 
-       2) calculates nelm = nelm_tot/nproc
+       2) calculates nelm = nelm_tot/nproc (elements assigned to this process)
           calculates the vector elmdist in order to know how many elems will be for each process 
 
        3) read the mesh again, each process reads its own group of elements and see
@@ -71,8 +72,7 @@ int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int **
 
        Notes:
 
-       a) rank and nproc should be given here correctly according to the case
-          here no communicator is been asked
+       a) rank and nproc are going to be respect to the communicator "comm"
 
        b) all processes do fopen and fread up to their corresponding position
           in the file
@@ -91,9 +91,14 @@ int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int **
     int                  ln;                // line counter
     int                  ierr;
     int                  ntag;              // ntag to read gmsh element conectivities
+    int                  rank;
+    int                  nproc,
     
     char                 buf[BUF_N_LENGTH];   
     char               * data;
+
+    MPI_Comm_size(comm, &nproc);
+    MPI_Comm_rank(comm, &rank);
 
     fm = fopen(mesh_n,"r");
     if(!fm){
@@ -224,7 +229,7 @@ int read_mesh_CSR_GMSH(char *mesh_n, int rank, int nproc, int ** elmdist, int **
     //
     fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
     n = 0;
-    for(i=1; i < nelm + 1; i++){
+    for(i=0; i < nelm ; i++){
       fgets(buf,BUF_N_LENGTH,fm); 
       data=strtok(buf," \n");
       data=strtok(NULL," \n");
