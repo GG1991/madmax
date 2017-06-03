@@ -31,12 +31,13 @@ int main(int argc, char **argv)
 
     MPI_Comm   macro_comm;
     MPI_Comm   world = MPI_COMM_WORLD;
+    spu_comm_t spu_comm;
 
     ierr = MPI_Init(&argc, &argv);
     ierr = MPI_Comm_size(world, &nproc_tot);
     ierr = MPI_Comm_rank(world, &rank);
     
-    parse_mpi("mpi.dat", nproc, &nkind_mic, &nproc_kind_mic);
+    parse_mpi("mpi.dat", &spu_comm);
 
     /* We change our PETSc communicator, macroprocess will solve a distributed problem
        will all microkinds per macroprocess will solve another one 
@@ -82,7 +83,7 @@ int main(int argc, char **argv)
     //
     // read mesh
     //    
-    read_mesh(mesh_n, mesh_f, rank, nproc[0], &elmdist, &eptr, &eind);
+    read_mesh(macro_comm, mesh_n, mesh_f, &elmdist, &eptr, &eind);
 
     ierr = PetscFinalize();
     ierr = MPI_Finalize();

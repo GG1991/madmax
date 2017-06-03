@@ -25,12 +25,12 @@
    SPUTNIK structures
 *****************************************************************************************************/
 
-typedef struct mpi_comm_t_{
+typedef struct spu_comm_t_{
 
    int    approach_type;
    void * approach;
 
-}mpi_comm_t;
+}spu_comm_t;
 
 typedef struct approach_1_t_{
 
@@ -55,8 +55,8 @@ typedef struct approach_3_t_{
 *****************************************************************************************************/
 
 // spu_parser.c
-int parse_mpi( const char mpi_file[], mpi_comm_t * mpi_comm );
+int parse_mpi( const char mpi_file[], spu_comm_t * spu_comm );
 
 // spu_mesh.c
-int read_mesh(char *mesh_n, char *mesh_f, int rank, int nproc, int ** elmdist, int ** eptr, int ** eind);
+int read_mesh(MPI_Comm comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind);
 int read_mesh_CSR_GMSH(MPI_Comm comm, char *mesh_n, int ** elmdist, int ** eptr, int ** eind);

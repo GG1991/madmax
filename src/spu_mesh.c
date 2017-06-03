@@ -22,7 +22,7 @@ int part_mesh(void)
     return 0;
 }
 
-int read_mesh(char *mesh_n, char *mesh_f, int rank, int nproc, int ** elmdist, int ** eptr, int ** eind)
+int read_mesh(MPI_Comm comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind)
 {
     /*
        Reads the mesh according to the format specified
@@ -30,7 +30,7 @@ int read_mesh(char *mesh_n, char *mesh_f, int rank, int nproc, int ** elmdist, i
      */
 
     if(strcmp(mesh_f,"gmsh") == 0){
-	if(read_mesh_CSR_GMSH(mesh_n, rank, nproc, elmdist, eptr, eind))
+	if(read_mesh_CSR_GMSH(comm, mesh_n, elmdist, eptr, eind))
 	    return 1;
     }
 
@@ -92,7 +92,7 @@ int read_mesh_CSR_GMSH(MPI_Comm comm, char *mesh_n, int ** elmdist, int ** eptr,
     int                  ierr;
     int                  ntag;              // ntag to read gmsh element conectivities
     int                  rank;
-    int                  nproc,
+    int                  nproc;
     
     char                 buf[BUF_N_LENGTH];   
     char               * data;

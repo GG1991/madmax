@@ -47,7 +47,7 @@
 
 #include "sputnik.h"
 
-int parse_mpi( const char mpi_file[], mpi_comm_t * mpi_comm )
+int parse_mpi( const char mpi_file[], spu_comm_t * spu_comm )
 {
 
     /*
@@ -76,17 +76,17 @@ int parse_mpi( const char mpi_file[], mpi_comm_t * mpi_comm )
 
 		if(strcmp(data,"MACRO")){
 		    approach_1_t approach_1;
-		    mpi_comm->approach_type = APPROACH_MACRO;
+		    spu_comm->approach_type = APPROACH_MACRO;
 		    // parseamos y llenamos approach_1 (en este caso no tiene nada)
-		    mpi_comm->approach = (void*)malloc(sizeof(approach_1_t));
-		    memcpy(mpi_comm->approach,approach_1);
+		    spu_comm->approach = (void*)malloc(sizeof(approach_1_t));
+		    memcpy((void*)spu_comm->approach,(void*)&approach_1,sizeof(approach_1));
 		}
 		else if(strcmp(data,"MICRO")){
 		    approach_2_t approach_2;
-		    mpi_comm->approach_type = APPROACH_MICRO;
+		    spu_comm->approach_type = APPROACH_MICRO;
 		    // parseamos y llenamos approach_2 (en este caso no tiene nada)
-		    mpi_comm->approach = (void*)malloc(sizeof(approach_2_t));
-		    memcpy(mpi_comm->approach,approach_2);
+		    spu_comm->approach = (void*)malloc(sizeof(approach_2_t));
+		    memcpy((void*)&spu_comm->approach,(void*)&approach_2,sizeof(approach_2));
 		}
 		else{
 		    PetscPrintf(PETSC_COMM_WORLD,"parse_mpi.c: non valid option at line %d\n",ln);
