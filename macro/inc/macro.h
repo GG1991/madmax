@@ -40,4 +40,5 @@ int main(int argc, char **args);
 // mac_util.c
 int cmp_int(void *a, void *b);
 
-// mac_parser.c
+// mac_color.c
+int mac_color(MPI_Comm world, spu_comm_t  spu_comm, MPI_Comm  * macro, MPI_Comm ** macmic_comm);

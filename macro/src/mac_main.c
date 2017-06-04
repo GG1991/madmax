@@ -20,18 +20,18 @@ int main(int argc, char **argv)
 
     char       mesh_n[MESH_N_LENGTH]; // Mesh file name
     char       mesh_f[4];             // Mesh format name
-    int        color;                 // color of this process
     int        nproc_tot;             // number of total process 
-    int        nproc[2];              // number of macroscopic (nproc[0]) and microscopic process (nproc[1]) 
-    int        nkind_mic;             // number of microscopic kinds 
-    int      * nproc_kind_mic;        // array specifying how many process for each micro-kind are going to be used
+    int        nproc_mac;              
     int        ierr;
     bool       couple_fl;
     bool       set;
 
-    MPI_Comm   macro_comm;
-    MPI_Comm   world = MPI_COMM_WORLD;
-    spu_comm_t spu_comm;
+    MPI_Comm     macro_comm;
+    MPI_Comm   * macmic_comm;
+    MPI_Comm     world;
+    spu_comm_t   spu_comm;
+
+    world = MPI_COMM_WORLD;
 
     ierr = MPI_Init(&argc, &argv);
     ierr = MPI_Comm_size(world, &nproc_tot);
@@ -39,18 +39,17 @@ int main(int argc, char **argv)
     
     parse_mpi("mpi.dat", &spu_comm);
 
-    /* We change our PETSc communicator, macroprocess will solve a distributed problem
-       will all microkinds per macroprocess will solve another one 
+    /* stablish a new local communicator and a set of intercommunicators 
+       with micro programs 
      */
-//     coloring
-    color = MACRO;
-    macro_comm = MPI_COMM_WORLD;
+    mac_color(world, spu_comm, &macro_comm, &macmic_comm);
+    ierr = MPI_Comm_size(world, &nproc_mac);
    
     // Set PETSc communicator to macro_comm
     PETSC_COMM_WORLD = macro_comm;
     ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"processors  : %d\n",nproc[0]);CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"processors  : %d\n",nproc_mac);CHKERRQ(ierr);
     //
     // read options from command line 
     //    
@@ -76,7 +75,7 @@ int main(int argc, char **argv)
     //
     ierr = PetscOptionsGetString(NULL,NULL,"-mesh",mesh_n,MESH_N_LENGTH,(PetscBool*)&set);CHKERRQ(ierr);
     if(set == PETSC_FALSE){
-	strcpy(mesh_n,"rve/cube_unif/cube.msh");
+	strcpy(mesh_n,"../meshes/cube_unif/cube.msh");
     }
     ierr = PetscPrintf(PETSC_COMM_WORLD,"mesh file   : %s\n",mesh_n);CHKERRQ(ierr);
 
