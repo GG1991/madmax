@@ -7,11 +7,17 @@
 #include "sputnik.h"
 #include "parmetis.h"
 
-int part_mesh(void)
+int part_mesh_PARMETIS(int ** elmdist, int ** eptr, int ** eind)
 {
 
     /*
        Performes the mesh partition mesh saved on the mesh structures.
+
+       a) First it builds the dual graph (nodes are elements)  of the 
+          original (nodes are nodes)
+
+       b) Performes the partition 
+
      */
 
     //  ParMETIS_V32_Mesh2Dual (
