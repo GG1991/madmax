@@ -7,7 +7,7 @@
 #include "sputnik.h"
 #include "parmetis.h"
 
-int part_mesh_PARMETIS(int ** elmdist, int ** eptr, int ** eind)
+int part_mesh_PARMETIS(MPI_Comm * comm, int * elmdist, int * eptr, int * eind, double * centroid, int algorithm)
 {
 
     /*
@@ -16,19 +16,91 @@ int part_mesh_PARMETIS(int ** elmdist, int ** eptr, int ** eind)
        a) First it builds the dual graph (nodes are elements)  of the 
           original (nodes are nodes)
 
-       b) Performes the partition 
+       b) Do the partition 
 
      */
+    int                  rank, nproc, i;
+    int                  nelm;             // number of elements of this process
+    idx_t              * elmwgt;           // (inp) Element weights
+    idx_t                wgtflag;          // (inp) Element weight flag (0 desactivated)
+    idx_t                numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
+    idx_t                ncon;             // (inp) number of constrains of the graph ?
+    idx_t                ncommonnodes;     // (inp) degree of connectivities among vertices in dual graph
+    idx_t                nparts;           // (inp) number of partitions
+    real_t             * tpwgts;           // (inp) array of size "ncon" x "npart" fraction of vertex for each subdomain
+    real_t             * ubvec;            // (inp) array of size "ncon"
+    idx_t                options[3];       // (inp) option parameters
+    idx_t                edgecut;          // (out) number of edges cut of the partition
+    idx_t              * part;             // (out) Array for storing the solution
 
+    MPI_Comm_size(*comm, &nproc);
+    MPI_Comm_rank(*comm, &rank);
+
+    nelm = elmdist[rank+1] - elmdist[rank];
+
+    //**************************************************
+    //
+    // Set up some options
+    //    
+    elmwgt  = NULL; // no weights per elements
+    wgtflag = 0;    // no weights per elements
+    numflag = 0;    // C numeration
+    
+    nparts = nproc; // number of partitions 
+
+    ncon = 1;
+    tpwgts = (real_t*)malloc(ncon * nparts * sizeof(real_t));
+    for(i=0; i < ncon * nparts ;i++){
+      // uniform distribution of vertex in all processes
+      tpwgts[i] = 1.0 / nparts;
+    }
+    
+    ncommonnodes = 2;
+    
+    options[0] = 0; // options (1,2) : 0 default, 1 considered
+    options[1] = 0; // level of information returned
+    options[2] = 0; // random seed
+
+    part = (idx_t*)malloc(nelm * sizeof(idx_t));
+
+    ubvec = (real_t*)malloc(ncon * sizeof(real_t));
+    for(i=0;i<ncon;i++){
+      ubvec[i] = 1.05;
+    }
+    //
+    //**************************************************
+
+    if(algorithm == PARMETIS_GEOMKWAY){
     //  ParMETIS_V32_Mesh2Dual (
     //      idx t *elmdist, idx t *eptr, idx t *eind, idx t *numflag, idx t *ncommonnodes,
     //      idx t **xadj, idx t **adjncy, MPI Comm *comm
     //      )
 
+    }
+    else if(algorithm == PARMETIS_GEOM){
+
+    }
+    else if(algorithm == PARMETIS_KWAY){
+
+    }
+    else if(algorithm == PARMETIS_MESHKWAY){
+
+      // Performe the partition with no weights
+      ParMETIS_V3_PartMeshKway (
+	  elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
+	  &ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
+	  options, &edgecut, part, comm );
+
+    }
+    else{
+
+      return 1;
+    }
+
     return 0;
 }
 
-int read_mesh(MPI_Comm comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind)
+int read_mesh(MPI_Comm * comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind)
 {
     /*
        Reads the mesh according to the format specified
@@ -45,7 +117,7 @@ int read_mesh(MPI_Comm comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** 
 
 /****************************************************************************************************/
 
-int read_mesh_CSR_GMSH(MPI_Comm comm, char *mesh_n, int ** elmdist, int ** eptr, int ** eind)
+int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** eptr, int ** eind)
 {
 
     /* 
@@ -103,8 +175,8 @@ int read_mesh_CSR_GMSH(MPI_Comm comm, char *mesh_n, int ** elmdist, int ** eptr,
     char                 buf[BUF_N_LENGTH];   
     char               * data;
 
-    MPI_Comm_size(comm, &nproc);
-    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(*comm, &nproc);
+    MPI_Comm_rank(*comm, &rank);
 
     fm = fopen(mesh_n,"r");
     if(!fm){

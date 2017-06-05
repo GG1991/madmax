@@ -19,6 +19,10 @@
 #define APPROACH_MICRO     2
 #define APPROACH_MACMIC_1  3
 
+#define PARMETIS_GEOMKWAY  1
+#define PARMETIS_GEOM      2
+#define PARMETIS_KWAY      3
+#define PARMETIS_MESHKWAY  4
 
 /*****************************************************************************************************
    SPUTNIK structures
@@ -57,5 +61,6 @@ typedef struct approach_3_t_{
 int parse_mpi( const char mpi_file[], spu_comm_t * spu_comm );
 
 // spu_mesh.c
-int read_mesh(MPI_Comm comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind);
-int read_mesh_CSR_GMSH(MPI_Comm comm, char *mesh_n, int ** elmdist, int ** eptr, int ** eind);
+int read_mesh(MPI_Comm * comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind);
+int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** eptr, int ** eind);
+int part_mesh_PARMETIS(MPI_Comm * comm, int * elmdist, int * eptr, int * eind, double * centroid, int algorithm);

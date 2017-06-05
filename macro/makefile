@@ -27,11 +27,21 @@ OBJ  = ${OBJ_DIR}/mac_main.o       \
 .PHONY: clean_
 
 ##############################
+# PARMETIS VARIABLES
+
+LDFLAG = ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis/libparmetis.a \
+         ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libmetis/libmetis.a 
+
+PARMETIS_DIR = ${HOME}/libs/parmetis-4.0.3
+
+PARMETIS_INC = -I${PARMETIS_DIR}/include       \
+               -I${PARMETIS_DIR}/metis/include
+
+##############################
 # LINK
 all: ${OBJ} 
-	gcc -o macro $^ ${PETSC_KSP_LIB} -lgsl -lgslcblas -lm
+	gcc -o macro $^ ${PETSC_KSP_LIB} -lgsl -lgslcblas -lm ${LDFLAG}
 	@echo "macro.o great :) !" 
-
 
 
 ##############################

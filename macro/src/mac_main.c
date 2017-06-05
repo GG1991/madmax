@@ -36,6 +36,7 @@ int main(int argc, char **argv)
     ierr = MPI_Init(&argc, &argv);
     ierr = MPI_Comm_size(world, &nproc_tot);
     ierr = MPI_Comm_rank(world, &rank);
+//    ierr = PetscPrintf(PETSC_COMM_WORLD,"sizeof(world)  : %d\n",sizeof(MPI_Comm));CHKERRQ(ierr);
     
     parse_mpi("mpi.dat", &spu_comm);
 

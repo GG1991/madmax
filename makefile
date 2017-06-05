@@ -22,8 +22,6 @@ OBJ  = ${OBJ_DIR}/spu_parser.o    \
 
 ##############################
 # PARMETIS VARIABLES
-LDFLAG = -L${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis \
-         -L${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libmetis 
 
 PARMETIS_DIR = ${HOME}/libs/parmetis-4.0.3
 
@@ -39,7 +37,7 @@ INC = -I${DEP_DIR}
 ##############################
 # LINK
 all: ${OBJ} 
-	${MAKE} -C macro
+	${MAKE} -C macro 
 
 
 ##############################
@@ -52,7 +50,7 @@ obj/spu_parser.o: src/spu_parser.c inc/sputnik.h
 ##############################
 # SPU_MESH.O
 obj/spu_mesh.o: src/spu_mesh.c ${DEPS} ${PARMETIS_HEA}
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $<  ${INC}  ${PARMETIS_INC}
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $<  ${INC}  ${PARMETIS_INC} 
 	@echo "spu_mesh.o" 
 
 
@@ -66,6 +64,7 @@ vars:
 	@echo "INC = " ${INC}
 	@echo "PWD = " ${PWD}
 	@echo "HOME = " ${HOME}
+	@echo "LDFLAG = " ${LDFLAG}
 	@echo "PETSC_COMPILE = " ${PETSC_COMPILE}
 
 clean_:	    
