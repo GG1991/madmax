@@ -1,8 +1,51 @@
-\chapter*{Fermi Input Manual}
+\chapter*{\sputnik execution}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \definecolor{mygreen}{rgb}{0.3, 0.9, 0.1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Code execution}
+
+The \sputnik programs \macro and \micro can be executed in different modes: standalone
+execution or coupled. Generally the standalone execution is used for performing tests of 
+each of the codes independently for debugging purposes, while the coupled execution is
+used for solving a problem by the multi-scale approach.
+
+\subsection{\macro standalone}
+
+Performing a mesh partition:
+\begin{lstlisting}[frame=single,language=bash]
+<@\textcolor{blue}{mpirun}@> -np <np> <@\textcolor{OliveGreen}{macro}@> -mesh <mesh.msh>
+\end{lstlisting}
+
+Testing a \macro calculation with input file (see section for further details), this one should not have materials defined with \micflag.
+The calculation involves the solution of PDE.
+\begin{lstlisting}[frame=single,language=bash]
+<@\textcolor{blue}{mpirun}@> -np <np> <@\textcolor{OliveGreen}{macro}@> -input <input.mac>
+\end{lstlisting}
+
+\subsection{\micro standalone}
+
+Performing a mesh partition:
+\begin{lstlisting}[frame=single,language=bash]
+<@\textcolor{blue}{mpirun}@> -np <np> <@\textcolor{OliveGreen}{micro}@> -mesh <mesh.msh>
+\end{lstlisting}
+
+Testing a \micro calculation with input file (see section for further details).
+The calculation involves the solution of PDE.
+\begin{lstlisting}[frame=single,language=bash]
+<@\textcolor{blue}{mpirun}@> -np <np> <@\textcolor{OliveGreen}{micro}@> -input <input.mic>
+\end{lstlisting}
+
+\subsection{\macro and \micro coupled}
+
+Performing a multi-scale calculation
+\begin{lstlisting}[frame=single,language=bash]
+<@\textcolor{blue}{mpirun}@> -np <np_mac> <@\textcolor{OliveGreen}{macro}@> -input <input.mac> :
+      -np <np_mic> <@\textcolor{OliveGreen}{micro}@> -input <input.mic>
+\end{lstlisting}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

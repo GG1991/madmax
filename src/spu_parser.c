@@ -1,23 +1,11 @@
 /*
 
-   This routine parse a file that specifies the conectivities between processes
+   This routine parse a file that specifies the conectivities between processes.
+   The "mpi_file" is read only if the option -c <mpi_file> is given.
 
-   Recommend to call this file "mpi.dat"
+   Recommendation: call this file "spu_comm.dat"
 
    The formats are classified with the key word APPROACH <APPROACH>:
-
-
-   ************************************************** 
-   APPROACH MACRO
-
-   Note: This approach is for test the "macro" code
-         It does not have any other argument
-
-   ************************************************** 
-   APPROACH MICRO
-
-   Note: This approach is for test the "micro" code
-         It does not have any other argument
 
    ************************************************** 
    APPROACH MACMIC_1
@@ -47,7 +35,7 @@
 
 #include "sputnik.h"
 
-int parse_mpi( const char mpi_file[], spu_comm_t * spu_comm )
+int parse_spu_comm( const char spu_comm_file[], spu_comm_t * spu_comm )
 {
 
     /*
@@ -57,7 +45,7 @@ int parse_mpi( const char mpi_file[], spu_comm_t * spu_comm )
 
      */
 
-    FILE * file = fopen(mpi_file,"r");
+    FILE * file = fopen(spu_comm_file,"r");
     char   buf[BUF_N_LENGTH];
     char * data;
     int    ln;

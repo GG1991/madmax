@@ -10,9 +10,16 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{listings}
+\lstset{basicstyle=\ttfamily,
+  showstringspaces=false,
+  commentstyle=\color{red},
+  keywordstyle=\color{blue}
+}
+\lstset{escapeinside={<@}{@>}}
 \usepackage{alltt}
 \usepackage{fancyvrb}
 \usepackage[dvipsnames]{xcolor}
+\setlength{\parindent}{0pt} % avoids indentation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Source: http://en.wikibooks.org/wiki/LaTeX/Hyperlinks %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -27,6 +34,7 @@
 % Tikz
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \usepackage{tikz}
+\usetikzlibrary{matrix,backgrounds,calc,shapes,arrows,fit,positioning} % Tikz libraries required for the flow chart in the template
 \usepackage{forest}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 'dedication' environment: To add a dedication paragraph at the start of book %
@@ -60,6 +68,10 @@
   {\par\normalfont\hfill--\ \chapquote@author\hspace*{\@tempdima}\par\bigskip}
 \makeatother
 
+\newcommand{\sputnik}{\texttt{SPUTNIK }}
+\newcommand{\macro}{\texttt{MACRO }}
+\newcommand{\micro}{\texttt{MICRO }}
+\newcommand{\micflag}{\texttt{mic\_flag }}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % First page of book which contains 'stuff' like: %
 %  - Book title, subtitle                         %

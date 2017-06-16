@@ -102,9 +102,12 @@ int part_mesh_PARMETIS(MPI_Comm * comm, int * elmdist, int * eptr, int * eind, d
 
 int read_mesh(MPI_Comm * comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind)
 {
+
     /*
+
        Reads the mesh according to the format specified
        and performs the partition if it is required
+
      */
 
     if(strcmp(mesh_f,"gmsh") == 0){

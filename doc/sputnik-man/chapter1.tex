@@ -2,6 +2,136 @@
 
 \section{Introduction}
 
+\begin{tikzpicture}[scale=0.9,node distance = 2cm, auto]
+
+   \tikzstyle{block}  = [rectangle, draw, fill=blue!20 , text width=5em, text centered, rounded corners, minimum height=3em]
+   \tikzstyle{blockf} = [rectangle, draw, fill=red!20  , text width=10em, text centered, rounded corners, minimum height=3em]
+   \tikzstyle{blockc} = [rectangle, draw, fill=green!20, text width=10em, text centered, rounded corners, minimum height=3em]
+   \tikzstyle{line}   = [draw, -latex']
+   \tikzstyle{blocke} = [rectangle, draw, text width=9em, text centered, rounded corners, minimum height=2.5em]
+
+   % draw a grid for positioning nodes
+   \coordinate (bottom_left) at (0,0);
+   \coordinate (top_right) at (22,10);
+   \draw [dotted, draw=black, fill=white] (bottom_left) grid  (top_right);
+
+   \node [block] (sput) at (5,9)  {\sputnik};
+   \node [block] (macr) at (2,7)  {\macro};
+   \node [block] (micr) at (8,7) {\micro};
+   \node [blockf] (pars) at (13,7) {spu_parse_comm};
+   \node [blockc] (parc) at (19,7) {
+     \begin{verbatim}
+     $spu_comm
+        ...
+     $end_spu_comm
+     \end{verbatim}
+     };
+
+   \node [blockf] (colo) at (13,5) {spu_coloring};
+   
+   \path [line] (sput) -- (macr);
+   \path [line] (sput) -- (micr);
+   \path [line] (sput) -- (13,9) -- (pars);
+   \path [line] (pars) -- (colo);
+   \path [line] (pars) -- (parc);
+   %\draw [->,line width=2] (thermo)  to[bend left,outer ysep=1em] node {$\sigma$} (coupvol) ;
+
+\end{tikzpicture}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{\sputnik Datastructures}
+
+In the code exist an array \texttt{id_vec} that in each position \texttt{i} has the \texttt{id} of the code that is
+executing (\texttt{id = MACRO|MICRO}). For obtaining this array an \texttt{MPI_Allgather} operation is performed.
+
+\begin{tikzpicture}[font=\ttfamily,
+array/.style={matrix of nodes,nodes={draw, minimum size=7mm, fill=green!30},column sep=-\pgflinewidth, row sep=0.5mm, nodes in empty cells,
+row 1/.style={nodes={draw=none, fill=none, minimum size=5mm}},
+row 1 column 1/.style={nodes={draw}}}]
+
+    \matrix[array] (array) {
+        0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9\\
+        1 & 2 & 2 & 1 & 1 & 2 & 2 & 2 & 2 & 2\\};
+    %\node[draw, fill=gray, minimum size=4mm] at (array-2-9) (box) {};
+
+    \begin{scope}[on background layer]
+    \fill[green!10] (array-1-1.north west) rectangle (array-1-10.south east);
+    \end{scope}
+
+    \draw[<->]([yshift=-3mm]array-2-1.south west) -- node[below] {id_vec length = \#proc} ([yshift=-3mm]array-2-10.south east);
+
+    \draw (array-1-1.north)--++(90:3mm) node [above] (first) {global rank};
+    \draw (array-2-10.east)--++(0:3mm) node [right]{IDs = 1(MACRO)|2(MICRO)};
+    %\node [align=center, anchor=south] at (array-2-9.north west|-first.south) (8) {IDs\\ MACRO=1 MICRO=1};
+    %\draw (8)--(box);
+    %
+\end{tikzpicture}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{\sputnik Communication Approaches}
+
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3em,semithick]
+
+   \tikzstyle{state} =[fill=red,draw=none,text=white,minimum size=0.1cm]
+   \tikzstyle{type2}=[fill=green,draw=none,text=white,minimum size=0.1cm]
+   \tikzstyle{type3}=[fill=blue,draw=none,text=white,minimum size=0.1cm]
+
+   % draw a grid for positioning nodes
+   \coordinate (bottom_left) at (0,0);
+   \coordinate (top_right) at (22,10);
+   \draw [dotted, draw=black, fill=white] (bottom_left) grid  (top_right);
+
+    \node[draw,minimum width=35em,minimum height=25em,font=\small,label={[xshift=0.0cm, yshift=-8.0cm]
+  	MPI\_COMM\_WORLD} ]  at (8,5) (world){} ;
+  
+    \node[draw,minimum width=3em,minimum height=16em,font=\small, label=above:{Macro-structure}] 
+    at ([xshift=-7em]world.center) (macro){};
+  
+    \node[draw,minimum width=9em,minimum height=3em,font=\small, label=right:{Micro-structure 1}] 
+    at ([xshift=+4em,yshift=+5em]world.center) (micro1){} ;
+  
+    \node[draw,minimum width=9em,minimum height=3em,font=\small, label=right:{micro-structure 2}] 
+    at ([xshift=+4em,yshift=-2em]world.center) (micro2){} ;
+  
+  
+    \node[state] (A) at ([yshift=-2em]macro.north) {};
+    \node[state] (B) [below of=A] {};
+    \node[state] (C) [below of=B] {};
+    \node[state] (D) [below of=C] {};
+    \node[state] (E) [below of=D] {};
+  
+    \node[type2] (f) at ([xshift=+1.5em]micro1.west) {};
+    \node[type2] (g) [right of=f] {};
+    \node[type2] (h) [right of=g] {};
+  
+    \node[type3] (i) at ([xshift=+3em]micro2.west) {};
+    \node[type3] (j) [right of=i] {};
+  
+    \path (A) edge node {} (B)
+          (B) edge node {} (C)
+          (C) edge node {} (D)
+          (D) edge node {} (E);
+  
+    \path (f) edge node {} (g)
+          (g) edge node {} (h);
+  
+    \path (A) edge node {} (micro1)
+          (B) edge node {} (micro1)
+          (C) edge node {} (micro1)
+          (D) edge node {} (micro1)
+          (E) edge node {} (micro1);
+
+    \path (A) edge node {} (micro2)
+          (B) edge node {} (micro2)
+          (C) edge node {} (micro2)
+          (D) edge node {} (micro2)
+          (E) edge node {} (micro2);
+  
+\end{tikzpicture}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{forest}
    for tree={
