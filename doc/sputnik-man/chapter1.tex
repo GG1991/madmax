@@ -72,6 +72,11 @@ row 1 column 1/.style={nodes={draw}}}]
 
 \section{\sputnik Communication Approaches}
 
+\subsection{Approach 1}
+
+All the macro-processes communicates with the same micro-processes. In this approach is possible to parallelize the
+assembling process doing calculations on both micro-structures at the same time.
+
 \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3em,semithick]
 
    \tikzstyle{state} =[fill=red,draw=none,text=white,minimum size=0.1cm]
@@ -109,13 +114,15 @@ row 1 column 1/.style={nodes={draw}}}]
     \node[type3] (i) at ([xshift=+3em]micro2.west) {};
     \node[type3] (j) [right of=i] {};
   
-    \path (A) edge node {} (B)
-          (B) edge node {} (C)
-          (C) edge node {} (D)
-          (D) edge node {} (E);
+    \draw [<->] (A) -- (B);
+    \draw [<->] (B) -- (C);
+    \draw [<->] (C) -- (D);
+    \draw [<->] (D) -- (E);
   
-    \path (f) edge node {} (g)
-          (g) edge node {} (h);
+    \draw [<->] (f) -- (g);
+    \draw [<->] (g) -- (h);
+
+    \draw [<->] (i) -- (j);
   
     \path (A) edge node {} (micro1)
           (B) edge node {} (micro1)
