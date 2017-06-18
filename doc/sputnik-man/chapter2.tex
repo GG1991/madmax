@@ -15,11 +15,6 @@ used for solving a problem by the multi-scale approach.
 
 \subsection{\macro standalone}
 
-Performing a mesh partition:
-\begin{lstlisting}[frame=single,language=bash]
-<@\textcolor{blue}{mpirun}@> -np <np> <@\textcolor{OliveGreen}{macro}@> -mesh <mesh.msh>
-\end{lstlisting}
-
 Testing a \macro calculation with input file (see section for further details), this one should not have materials defined with \micflag.
 The calculation involves the solution of PDE.
 \begin{lstlisting}[frame=single,language=bash]
@@ -27,11 +22,6 @@ The calculation involves the solution of PDE.
 \end{lstlisting}
 
 \subsection{\micro standalone}
-
-Performing a mesh partition:
-\begin{lstlisting}[frame=single,language=bash]
-<@\textcolor{blue}{mpirun}@> -np <np> <@\textcolor{OliveGreen}{micro}@> -mesh <mesh.msh>
-\end{lstlisting}
 
 Testing a \micro calculation with input file (see section for further details).
 The calculation involves the solution of PDE.
@@ -49,23 +39,65 @@ Performing a multi-scale calculation
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Input file}
+\section{\macro input file}
 
 \subsection{Mesh information}
 
-\begin{Verbatim}[frame=single,commandchars=\\\{\}]
+The only input format for the mesh is \texttt{GMSH}.
 
-\textcolor{Green}{# MACRO INFORMATION}
-\textcolor{Green}{# <# PROCESSES> }
-    2  
-\textcolor{Green}{# MICRO INFORMATION}
-\textcolor{Green}{# <# PROCESSES> }
-    6  
-\textcolor{Green}{# <#KINDS> }
-    3
-\textcolor{Green}{# <# PROCESSES KIND 0> <# PROCESSES KIND 1> <# PROCESSES KIND 2>}
-    1                    1                    1
-\end{Verbatim}
+\begin{lstlisting}[frame=single,language=bash]
+<@\textcolor{blue}{\$mesh}@> 
+     <@\textcolor{OliveGreen}{mesh_file}@> <mesh_name> 
+<@\textcolor{blue}{\$end_mesh}@> 
+\end{lstlisting}
+
+\subsection{Boundary Conditions}
+
+\begin{lstlisting}[frame=single,language=bash]
+<@\textcolor{blue}{\$boundary}@> 
+     <@\textcolor{OliveGreen}{<physical_1>}@> <XXX> order f1 f2 f3
+     <@\textcolor{OliveGreen}{<physical_1>}@> <XXX> order f1 f2 f3
+     <@\textcolor{OliveGreen}{<physical_1>}@> <XXX> order f1 f2 f3
+     <@\textcolor{OliveGreen}{<physical_1>}@> <XXX> order f1 f2 f3
+<@\textcolor{blue}{\$end_boundary}@> 
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Schemes}
+
+\begin{lstlisting}[frame=single,language=bash]
+<@\textcolor{blue}{\$scheme}@> 
+     <@\textcolor{OliveGreen}{scheme}@> <scheme_type>
+     <@\textcolor{OliveGreen}{options}@> 
+<@\textcolor{blue}{\$end_scheme}@> 
+\end{lstlisting}
+
+\texttt{scheme\_type} can be:
+
+\begin{itemize}
+\item \texttt{MACRO_MICRO_COU}
+
+Number of micro-structures types. For example an structures having two kind of composite materials
+joined together.
+
+\begin{lstlisting}[frame=single]
+     <@\textcolor{OliveGreen}{micro_structures}@> #n
+\end{lstlisting}
+
+Number of processes for each micro-structure. If \micro is execute with \texttt{np} processes and $\texttt{np}_{\mu} =
+\sum_{i} \texttt{proc_{i}}$. Then:
+
+$$\mod{(\texttt{np} ,\texttt{np}_{\mu})} = 0$$
+
+\begin{lstlisting}[frame=single]
+     <@\textcolor{OliveGreen}{nproc_micro_struc}@> #proc_1 #proc_2 ... #proc_n
+\end{lstlisting}
+
+\item \texttt{MACRO_PART_MESH}   
+\item \texttt{MICRO_PART_MESH}    
+\item \texttt{MACRO_PDE_ALONE}    
+\item \texttt{MICRO_PDE_ALONE}    
+\end{itemize}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -74,4 +106,3 @@ Performing a multi-scale calculation
 %\begin{alltt}
 %<nXSf> = <  \(\nu\sigma_{1}^{f}\) \(\nu\sigma_{2}^{f} \dots \nu\sigma_{g}^{f}\) > 
 %\end{alltt}
-
