@@ -28,6 +28,8 @@
      };
 
    \node [blockf] (colo) at (13,5) {spu_coloring};
+   \node [blockf] (colo) at (13,5) {spu_coloring};
+   \node [blockf] (colo) at (13,5) {spu_coloring};
    
    \path [line] (sput) -- (macr);
    \path [line] (sput) -- (micr);
@@ -43,7 +45,9 @@
 \section{\sputnik Datastructures}
 
 In the code exist an array \texttt{id_vec} that in each position \texttt{i} has the \texttt{id} of the code that is
-executing (\texttt{id = MACRO|MICRO}). For obtaining this array an \texttt{MPI_Allgather} operation is performed.
+executing (\texttt{id = MACRO|MICRO}). For obtaining this array an \texttt{MPI_Allgather} operation is performed. Using
+this array at the it is possible to check is the options on the input file have sense.
+
 
 \begin{tikzpicture}[font=\ttfamily,
 array/.style={matrix of nodes,nodes={draw, minimum size=7mm, fill=green!30},column sep=-\pgflinewidth, row sep=0.5mm, nodes in empty cells,
@@ -72,7 +76,7 @@ row 1 column 1/.style={nodes={draw}}}]
 
 \section{\sputnik Communication Approaches}
 
-\subsection{Approach 1}
+\subsection{\texttt{Scheme 2}}
 
 All the macro-processes communicates with the same micro-processes. In this approach is possible to parallelize the
 assembling process doing calculations on both micro-structures at the same time.
@@ -135,6 +139,105 @@ assembling process doing calculations on both micro-structures at the same time.
           (C) edge node {} (micro2)
           (D) edge node {} (micro2)
           (E) edge node {} (micro2);
+  
+\end{tikzpicture}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{\texttt{Scheme 2}}
+
+All the macro-processes communicates with all the micro-processes. In this approach is possible to parallelize the
+assembling process doing calculations on all micro-structures at the same time. The \emph{scheme}
+
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3em,semithick]
+
+   \tikzstyle{state} =[fill=red,draw=none,text=white,minimum size=0.1cm]
+   \tikzstyle{type2}=[fill=green,draw=none,text=white,minimum size=0.1cm]
+   \tikzstyle{type3}=[fill=blue,draw=none,text=white,minimum size=0.1cm]
+
+   % draw a grid for positioning nodes
+   \coordinate (bottom_left) at (0,0);
+   \coordinate (top_right) at (22,10);
+   \draw [dotted, draw=black, fill=white] (bottom_left) grid  (top_right);
+
+    \node[draw,minimum width=35em,minimum height=25em,font=\small,label={[xshift=0.0cm, yshift=-8.0cm]
+  	MPI\_COMM\_WORLD} ]  at (8,5) (world){} ;
+  
+    \node[draw,minimum width=3em,minimum height=16em,font=\small, label=above:{Macro-structure}] 
+    at ([xshift=-7em]world.center) (macro){};
+  
+    \node[draw,minimum width=9em,minimum height=3em,font=\small, label=right:{Micro-structure 1}] 
+    at ([xshift=+4em,yshift=+12em]world.center) (micro1){} ;
+  
+    \node[draw,minimum width=9em,minimum height=3em,font=\small, label=right:{micro-structure 2}] 
+    at ([xshift=+4em,yshift=+4em]world.center) (micro2){} ;
+
+    \node[draw,minimum width=9em,minimum height=3em,font=\small, label=right:{Micro-structure 1}] 
+    at ([xshift=+4em,yshift=-4em]world.center) (micro3){} ;
+  
+    \node[draw,minimum width=9em,minimum height=3em,font=\small, label=right:{micro-structure 2}] 
+    at ([xshift=+4em,yshift=-12em]world.center) (micro4){} ;
+  
+  
+    \node[state] (A) at ([yshift=-2em]macro.north) {};
+    \node[state] (B) [below of=A] {};
+    \node[state] (C) [below of=B] {};
+    \node[state] (D) [below of=C] {};
+    \node[state] (E) [below of=D] {};
+  
+    \node[type2] (f) at ([xshift=+1.5em]micro1.west) {};
+    \node[type2] (g) [right of=f] {};
+    \node[type2] (h) [right of=g] {};
+  
+    \node[type3] (i) at ([xshift=+3em]micro2.west) {};
+    \node[type3] (j) [right of=i] {};
+  
+    \draw [<->] (A) -- (B);
+    \draw [<->] (B) -- (C);
+    \draw [<->] (C) -- (D);
+    \draw [<->] (D) -- (E);
+  
+    \draw [<->] (f) -- (g);
+    \draw [<->] (g) -- (h);
+
+    \draw [<->] (i) -- (j);
+  
+    \path (A) edge node {} (micro1)
+          (B) edge node {} (micro1)
+          (C) edge node {} (micro1)
+          (D) edge node {} (micro1)
+          (E) edge node {} (micro1);
+
+    \path (A) edge node {} (micro2)
+          (B) edge node {} (micro2)
+          (C) edge node {} (micro2)
+          (D) edge node {} (micro2)
+          (E) edge node {} (micro2);
+
+  
+    \node[type2] (f2) at ([xshift=+1.5em]micro3.west) {};
+    \node[type2] (g2) [right of=f2] {};
+    \node[type2] (h2) [right of=g2] {};
+  
+    \node[type3] (i2) at ([xshift=+3em]micro4.west) {};
+    \node[type3] (j2) [right of=i2] {};
+  
+    \draw [<->] (f2) -- (g2);
+    \draw [<->] (g2) -- (h2);
+
+    \draw [<->] (i2) -- (j2);
+
+    \path (A) edge node {} (micro3)
+          (B) edge node {} (micro3)
+          (C) edge node {} (micro3)
+          (D) edge node {} (micro3)
+          (E) edge node {} (micro3);
+
+    \path (A) edge node {} (micro4)
+          (B) edge node {} (micro4)
+          (C) edge node {} (micro4)
+          (D) edge node {} (micro4)
+          (E) edge node {} (micro4);
   
 \end{tikzpicture}
 
