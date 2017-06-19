@@ -66,7 +66,7 @@
 #include "sputnik.h"    
 #include "macro.h"    
 
-int mac_init_comm(void)
+int mac_comm_init(void)
 {
 
   /* 
@@ -76,33 +76,60 @@ int mac_init_comm(void)
 
      Are defined:
 
+     id_vec        : vector of size nproc_tot that 
+                     id_vec[rank_wor] = MACRO|MICRO
+
      macro_world   : communicator this communicator holds 
-     all those process that are going to solve the 
-     macro structure in a distributed way
+                     all those process that are going to solve the 
+                     macro structure in a distributed way
      
      comm_macmic   : array of inter-comunicators for message interchange 
-     between the "macro_comm" and "micro_comm" communicators 
-     (all the micro worlds)
+                     between the "macro_comm" and "micro_comm" communicators 
+                     (all the micro worlds)
 
    */
 
-  int  i;
+  int  i, ierr, c, m;
+  int  color;
 
-  // we are going to work with a "local" communicator saved in "world"
-  // we create a newone called localworld
-  MPI_Comm_size(world, &nproc);
-  MPI_Comm_rank(world, &rank);
+  color = MACRO;
 
   if(scheme == MACRO_MICRO){
 
-    MPI_Comm_split(world_comm, MACRO, 0, macro_comm);
+    MPI_Comm_split(world_comm, color, 0, &macro_comm);
 
     ierr = MPI_Comm_size(macro_comm, &nproc_mac);
     ierr = MPI_Comm_size(macro_comm, &rank_mac);
 
     // create the intercommunicators
+
+    // fills the id_vec array (collective with micro code)
+    id_vec = malloc(nproc_wor * sizeof(int));
+    ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,world_comm);
+    if(ierr){
+      return 1;
+    }
+
+    // remote_rank array is filled 
+    remote_ranks = malloc(nmic_worlds * sizeof(MPI_Comm));
+    c = 0;
+    m = 0;
+    for(i=0;i<nproc_wor;i++){
+        if(id_vec[i] == MICRO && c == 0){
+	  remote_ranks[m] = i;
+	  m ++;
+	  c = nproc_per_mic[m % nstruc_mic];
+	}
+	else if(id_vec[i] == MICRO){
+	  c--;
+	}
+    }
+
     macmic_comm = (MPI_Comm*)malloc(nmic_worlds * sizeof(MPI_Comm));
-//    MPI_Intercomm_create(*macro, 0, world, grank_remote, 0, &macmic_comm[i]);
+    for(m=0;m<nmic_worlds;m++){
+      // args  =         local comm, local rank, global comm, remote rank, TAG, inter comm
+      MPI_Intercomm_create(macro_comm, 0, world_comm, remote_ranks[m], 0, &macmic_comm[m]);
+    }
 
   }
   else if(scheme == MACRO_MICRO){

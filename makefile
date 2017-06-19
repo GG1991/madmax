@@ -13,7 +13,7 @@ DEP_DIR= ./inc
 
 CFLAGS=-g -O0 
 	
-DEPS = ${DEP_DIR}/sputnik.h       \
+DEPS = ${DEP_DIR}/macro.h       \
        ${DEP_DIR}/list.h
 
 OBJ  = ${OBJ_DIR}/spu_parser.o    

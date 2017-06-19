@@ -30,14 +30,15 @@
    SPUTNIK global variables
 *****************************************************************************************************/
 
-MPI_Comm * world_comm;
-MPI_Comm * local_comm;
+MPI_Comm     world_comm;
 
 int *id_vec;                  // ID vector size = #proc (info of which ID has each rank
 int nproc_mac;                // number of macro processes 
 int nproc_mic;                // number of micro processes
 int nstruc_mic;               // number of micro structures
-int *nproc_per_mic;           // number of processes per micro structure
+int *nproc_per_mic;           // number of processes per micro structure ( size = nstruc_mic )
+int nproc_mic_group;          // number of micro process in a group = sum_i nproc_per_mic[i]
+int nmic_worlds;              // number of micro worlds nproc_mic / nproc_mic_group
 int scheme;                   // communication approach
 
 

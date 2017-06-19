@@ -51,10 +51,10 @@ obj/mac_main.o: src/mac_main.c ${DEPS}
 
 
 ##############################
-# MAC_COLOR.O
-obj/mac_color.o: src/mac_color.c ../inc/sputnik.h 
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I../inc 
-	@echo "mac_color.o" 
+# MAC_COMM.O
+obj/mac_comm.o: src/mac_comm.c ../inc/sputnik.h inc/macro.h
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I../inc  -I./inc
+	@echo "mac_comm.o" 
 
 
 clean_:	    

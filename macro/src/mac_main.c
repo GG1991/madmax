@@ -24,11 +24,11 @@ int main(int argc, char **argv)
     bool       set;
 
 
-    world = MPI_COMM_WORLD;
+    world_comm = MPI_COMM_WORLD;
 
     ierr = MPI_Init(&argc, &argv);
-    ierr = MPI_Comm_size(world, &nproc_wor);
-    ierr = MPI_Comm_rank(world, &rank_wor);
+    ierr = MPI_Comm_size(world_comm, &nproc_wor);
+    ierr = MPI_Comm_rank(world_comm, &rank_wor);
     
     if(argc>1){
       strcpy(input_n,argv[1]);
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     //
     // read mesh
     //    
-    read_mesh(macro_comm, mesh_n, mesh_f, &elmdist, &eptr, &eind);
+//    read_mesh(macro_comm, mesh_n, mesh_f, &elmdist, &eptr, &eind);
 
     ierr = PetscFinalize();
     ierr = MPI_Finalize();
