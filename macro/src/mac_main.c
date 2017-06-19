@@ -30,6 +30,13 @@ int main(int argc, char **argv)
     ierr = MPI_Comm_size(world, &nproc_wor);
     ierr = MPI_Comm_rank(world, &rank_wor);
     
+    if(argc>1){
+      strcpy(input_n,argv[1]);
+    }
+    else{
+       printf("mac_main.c:no input file has been given\n");
+    }
+
     spu_parse_scheme(input_n);
 
     /* 
@@ -37,7 +44,6 @@ int main(int argc, char **argv)
        intercommunicators with micro programs 
      */
     mac_comm_init();
-    ierr = MPI_Comm_size(world, &nproc_mac);
    
     //************************************************************ 
     // Set PETSc communicator to macro_comm

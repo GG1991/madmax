@@ -1,49 +1,26 @@
 /*
-   Routine to performe coloring on macro processes
+   Routines related to the communicators creation
 
-   This is going to being done taking the mpi communication 
+   This is going to be done taking the mpi communication 
    strategy taken from the input.
 
    ************************************************** 
 
-   APPROACH MACRO
+   MACRO_ALONE
 
    Note: This approach is for test the "macro" code
          It does not have any other argument
 
    ************************************************** 
 
-   APPROACH MICRO
+   MICRO_ALONE
 
    Note: This approach is for test the "micro" code
          It does not have any other argument
 
    ************************************************** 
 
-   APPROACH MACMIC_1
-   NPROC_MAC <NPROC_MAC> 
-   NPROC_MIC <NPROC_MIC> 
-
-   Note: This approach is to perform a coupling between 
-         the "macro" code and the "micro" code with two 
-	 communicators as:
-
-   
-   SPUTNIK ( MPI_COMM_WORLD )
-                |
-	  _____/ \____
-   MACRO               MICRO  -> colors to assign
-   |                   |    
-   |_rank 0            |_rank 0
-   |_rank 1            |_rank 1
-   |_rank 2            |_rank 2
-   |_ ...              |_ ...
-   |_rank NPROC_MAC    |_rank NPROC_MIC
-
-
-   ************************************************** 
-
-   APPROACH MACMIC_2
+   MACRO_MICRO
 
    Note:
 
@@ -81,99 +58,62 @@
                     -> (( MICRO_K2_1 -> MICRO_K2_2 ))                color 8  b=2             
 		             d=3           d=4
 
+
+   Author: Guido Giuntoli
    
 */
 
-#include "sputnik.h"    // SPUTNIK common feature such as  variables to performe coloring
+#include "sputnik.h"    
+#include "macro.h"    
 
-int mac_color(MPI_Comm world, spu_comm_t  spu_comm, MPI_Comm  * macro, MPI_Comm ** macmic_comm)
+int mac_init_comm(void)
 {
-  
+
   /* 
 
-     Author: Guido Giuntoli
+     Performs the creation of the new communicator "macro_comm" with its 
+     inter-communicators with micro_comms if the scheme is MACRO_MICRO
 
-     Performs the creation of the new communicator "macro" with its 
-     inter-communicators (if exist according to "spu_comm") with 
-     "micro"'s communicators
+     Are defined:
 
-
-     Input: 
-
-     world        : World communicator (macro & micro live here)
-
-     spu_comm     : Communication approaches that stablish the rules 
-                    for creating the communications between those 
-		    communicators.
-
-
-     Output:      
-
-     macro        : "macro" communicator this communicator holds 
-                    all those process that are going to solve the 
-	            macro structure in a distributed way
-
-     macmic_comm  : array of inter-comunicators for message interchange between 
-                    the "macro" & and "micro" communicators
-
+     macro_world   : communicator this communicator holds 
+     all those process that are going to solve the 
+     macro structure in a distributed way
+     
+     comm_macmic   : array of inter-comunicators for message interchange 
+     between the "macro_comm" and "micro_comm" communicators 
+     (all the micro worlds)
 
    */
 
-    int  i, nproc, rank;
-    int  sum_micro_proc;     // partial sum of microprocess per macroscopic process (vary with "i")
-    int  sum_micro_proc_tot; // total sum of microprocess per macroscopic process
-    int  grank_remote;
-    int  color;
+  int  i;
 
-    // we are going to work with a "local" communicator saved in "world"
-    // we create a newone called localworld
-    MPI_Comm_size(world, &nproc);
-    MPI_Comm_rank(world, &rank);
+  // we are going to work with a "local" communicator saved in "world"
+  // we create a newone called localworld
+  MPI_Comm_size(world, &nproc);
+  MPI_Comm_rank(world, &rank);
 
-    if(spu_comm.approach_type == APPROACH_MACRO){
-      //  In this approach it should exist only one communicator for all
-      //  the macro processes, no micro process should exist here
-      //  so all ranks have the same color = MACRO
-      color = MACRO;
-      MPI_Comm_split(world, color, 0, macro);
+  if(scheme == MACRO_MICRO){
 
-    }
-    else{
+    MPI_Comm_split(world_comm, MACRO, 0, macro_comm);
 
+    ierr = MPI_Comm_size(macro_comm, &nproc_mac);
+    ierr = MPI_Comm_size(macro_comm, &rank_mac);
+
+    // create the intercommunicators
+    macmic_comm = (MPI_Comm*)malloc(nmic_worlds * sizeof(MPI_Comm));
+//    MPI_Intercomm_create(*macro, 0, world, grank_remote, 0, &macmic_comm[i]);
+
+  }
+  else if(scheme == MACRO_MICRO){
+     // TODO
+  }
+  else if(scheme == MICRO_ALONE){
+     // TODO
+  }
+  else{
       return 1;
-    }
+  }
 
-
-//    // we need an array of intercommunicator for each microscopic kind
-//    macmic_comm = (MPI_Comm*)malloc(nkind_mic*sizeof(MPI_Comm));
-//
-//    // we performe the splitting (it should be made on all the processes)
-//    // all the process that enters here have a different color {0 1 2 nproc_mac-1} 
-//    *color = rank;
-//    MPI_Comm_split(world, *color, 0, macro);
-//
-//    // compute total quantity of microscopic processes per macroscopic processes
-//    sum_micro_proc_tot = 0;
-//    for(i=0;i<nkind_mic;i++){
-//	sum_micro_proc_tot += mpinfo_mic[i*2];
-//    }
-//
-//    // verify that total number of process is valid for the communicators structure file
-//    if(nproc != sum_micro_proc_tot * nproc_mac + nproc_mac){
-//	return 1;
-//    }
-//
-//    // we have to create the intercommunicators
-//    sum_micro_proc = 0;
-//    for( i=0 ; i < nkind_mic ; i++ ){
-//        // the global rank formula aim to the first microscopic process that should be in 
-//	// that remote communicator to perform the intercommunication
-//	grank_remote = nproc_mac + rank * sum_micro_proc_tot + sum_micro_proc;
-//	sum_micro_proc += mpinfo_mic[i*2]; 
-//	MPI_Intercomm_create(*macro, 0, world, grank_remote, 0, &macmic_comm[i]);
-//    }
-//
-//    printf("giant: rank = %d - nproc = %d - color = %d - rem_rank(to macro) %d\n",rank,nproc,*color,grank_remote);
-
-    return 0;
+  return 0;
 }

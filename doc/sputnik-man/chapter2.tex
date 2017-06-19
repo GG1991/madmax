@@ -89,9 +89,19 @@ Number of processes for each micro-structure. If \micro is execute with \texttt{
 
 $$\mod{(\texttt{np} ,\texttt{np}_{\mu})} = 0$$
 
+we define the total number of micro-worlds as:
+
+$$\texttt{nw}_{\mu} = \frac{\texttt{np}}{\texttt{np}_{\mu}}$$
+
 \begin{lstlisting}[frame=single]
      <@\textcolor{OliveGreen}{nproc_per_mic}@> #proc_1 #proc_2 ... #proc_n
 \end{lstlisting}
+
+$$ \texttt{nproc_mic} = \texttt{np} $$
+
+$$ \texttt{nproc_mic_group} = \texttt{np}_{\mu} $$
+
+$$ \texttt{nmic_worlds} = \texttt{nw}_{\mu} $$
 
 \item \texttt{MACRO_ALONE}   
 \item \texttt{MICRO_ALONE}    
