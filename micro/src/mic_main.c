@@ -14,73 +14,40 @@ static char help[] = "Solves an RVE problem.\n\n";
 int main(int argc, char **argv)
 {
 
-    char       mesh_n[64];    // Mesh file name
-    char       mesh_f[4];     // Mesh format name
-    //    int        color;         // color of this process
-    int        nproc_mac;     // number of macroscopic process (used to determine color)
-    int        nsubs_mac;     // number of macroscopic subdomains
-    int        nkind_mic;     // number of microscopic kinds 
-    int      * mpinfo_mic;    // array specifying how many process for each micro-kind are going to be used
     int        ierr;
 
-    bool       set;
-    MPI_Comm   world = MPI_COMM_WORLD;
+    world_comm = MPI_COMM_WORLD;
 
     ierr = MPI_Init(&argc, &argv);
-    ierr = MPI_Comm_size(world, &nproc);
-    ierr = MPI_Comm_rank(world, &rank);
+    ierr = MPI_Comm_size(world_comm, &nproc_wor);
+    ierr = MPI_Comm_rank(world_comm, &rank_wor);
     
-    parse_mpi("mpi.dat", &nproc_mac, &nsubs_mac, &nkind_mic, &mpinfo_mic);
+    if(argc>1){
+      strcpy(input_n,argv[1]);
+    }
+    else{
+       printf("mac_main.c:no input file has been given\n");
+    }
 
-    /* We change our PETSc communicator, macroprocess will solve a distributed problem
-       will all microkinds per macroprocess will solve another one 
+    spu_parse_scheme(input_n);
+
+    /* 
+       Stablish a new local communicator and a set of 
+       intercommunicators with micro programs 
      */
-    
-//    PETSC_COMM_WORLD = macro;
-//
-//    ierr = PetscInitialize(&argc,&args,(char*)0,help);
-//
-//    ierr = PetscPrintf(world,"processors  : %d\n",nproc);CHKERRQ(ierr);
-//
-    // read options from command line 
-    //    
-    // couple flag ( 1:coupled 0:not coupled) -> -c 1
-    //
-//    ierr = PetscOptionsGetBool(NULL,NULL,"-c",&couple_fl,&set);CHKERRQ(ierr);
-//    if(set == PETSC_FALSE){
-//	couple_fl = PETSC_FALSE;
-//    }
-//    ierr = PetscPrintf(world,"coupling    : %d\n",couple_fl);CHKERRQ(ierr);
-//
-    //
-    // mesh file format  -> -mfor gmsh
-    //
-//    ierr = PetscOptionsGetString(NULL,NULL,"-mfor",mesh_f,16,&set);CHKERRQ(ierr);
-//    if(set == PETSC_FALSE){
-//	strcpy(mesh_f,"gmsh");
-//    }
-//    ierr = PetscPrintf(world,"mesh format : %s\n",mesh_f);CHKERRQ(ierr);
-//
-    //
-    // mesh file name    -> -mesh rve/cube_unif/cube.msh
-    //
-//    ierr = PetscOptionsGetString(NULL,NULL,"-mesh",mesh_n,16,&set);CHKERRQ(ierr);
-//    if(set == PETSC_FALSE){
-//	strcpy(mesh_n,"rve/cube_unif/cube.msh");
-//    }
-//    ierr = PetscPrintf(world,"mesh file   : %s\n",mesh_n);CHKERRQ(ierr);
-//
-    //
-    // coloring process
-    //    
-//    ierr = gia_color(world, &micro, micmac_comm, nproc_mac, nkind_mic, &color, mpinfo_mic);
-//
+    mic_comm_init();
+   
+    //************************************************************ 
+    // Set PETSc communicator to macro_comm
+    PETSC_COMM_WORLD = macro_comm;
+    ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+
     //
     // read mesh
     //    
-    //    ierr = gia_rmsh(mesh_n, mesh_f);
+//    read_mesh(macro_comm, mesh_n, mesh_f, &elmdist, &eptr, &eind);
 
-//    ierr = PetscFinalize();
+    ierr = PetscFinalize();
     ierr = MPI_Finalize();
 
     return 0;

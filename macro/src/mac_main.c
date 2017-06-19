@@ -21,8 +21,6 @@ int main(int argc, char **argv)
 {
 
     int        ierr;
-    bool       set;
-
 
     world_comm = MPI_COMM_WORLD;
 
