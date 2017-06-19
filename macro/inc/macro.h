@@ -30,16 +30,6 @@ char             mesh_n[NBUF];      // Mesh file name
 char             mesh_f[4];         // Mesh format name
 
 /*****************************************************************************************************
- Structures to performe de mesh partition with ParMetis
- We are going to adopt the same one to store the mesh
-*****************************************************************************************************/
-
-int            * elmdist;   // number of elements inside each procesor
-int            * eptr;      // list of indeces of nodes inside eind
-int            * eind;      // list of nodes for elem "i" is between 
-                            // eind[eptr[i]] eind[eptr[i+1]] (not including)
-
-/*****************************************************************************************************
    MACRO function definitions
 *****************************************************************************************************/
 

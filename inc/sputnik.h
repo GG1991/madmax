@@ -41,6 +41,15 @@ int nproc_mic_group;          // number of micro process in a group = sum_i npro
 int nmic_worlds;              // number of micro worlds nproc_mic / nproc_mic_group
 int scheme;                   // communication approach
 
+/*****************************************************************************************************
+ Structures to save de mesh on CSR format 
+*****************************************************************************************************/
+
+int            * elmdist;   // number of elements inside each procesor
+int            * eptr;      // list of indeces of nodes inside eind
+int            * eind;      // list of nodes for elem "i" is between 
+                            // eind[eptr[i]] eind[eptr[i+1]] (not including)
+
 
 /*****************************************************************************************************
    SPUTNIK function definitions
