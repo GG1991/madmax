@@ -111,9 +111,10 @@ int mac_comm_init(void)
     }
 
     // remote_rank array is filled 
-    remote_ranks = malloc(nmic_worlds * sizeof(MPI_Comm));
+    remote_ranks = malloc(nmic_worlds * sizeof(int));
     c = 0;
     m = 0;
+    nproc_mac = 0;
     for(i=0;i<nproc_wor;i++){
         if(id_vec[i] == MICRO && c == 0){
 	  remote_ranks[m] = i;
@@ -123,6 +124,12 @@ int mac_comm_init(void)
 	else if(id_vec[i] == MICRO){
 	  c--;
 	}
+	else{
+	  nproc_mac++;
+	}
+    }
+    if(!rank_mac){
+      printf("number of macro process = %s",nproc_mac);
     }
 
     macmic_comm = (MPI_Comm*)malloc(nmic_worlds * sizeof(MPI_Comm));

@@ -64,71 +64,73 @@
 */
 
 #include "sputnik.h"    
-#include "macro.h"    
+#include "micro.h"    
 
-int mac_comm_init(void)
+int mic_comm_init(void)
 {
 
   /* 
 
-     Performs the creation of the new communicator "macro_comm" with its 
-     inter-communicators with micro_comms if the scheme is MACRO_MICRO
+     Performs the creation of the new communicator "micro_comm" with its 
+     inter-communicators with macro_comms if the scheme is MACRO_MICRO
 
      Are defined:
 
      id_vec        : vector of size nproc_tot that 
                      id_vec[rank_wor] = MACRO|MICRO
 
-     macro_world   : communicator this communicator holds 
-                     all those process that are going to solve the 
-                     macro structure in a distributed way
+     micro_world   : this communicator holds all those processes
+                     that belong to the same micro-world are going
+		     to solve the micro structure in a distributed way
      
-     comm_macmic   : array of inter-comunicators for message interchange 
-                     between the "macro_comm" and "micro_comm" communicators 
-                     (all the micro worlds)
+     micmac_comm   : array of inter-comunicators for message interchange 
+                     between the "micro_comm" and "macro_comm" communicators 
+                     (all the macro communicators)
 
    */
 
-  int  i, ierr, c, m;
+  int  i, ierr, m;
   int  color;
 
-  color = MACRO;
+  color = MICRO;
 
   if(scheme == MACRO_MICRO){
 
-    MPI_Comm_split(world_comm, color, 0, &macro_comm);
+    MPI_Comm_split(world_comm, color, 0, &micro_comm);
 
-    ierr = MPI_Comm_size(macro_comm, &nproc_mac);
-    ierr = MPI_Comm_size(macro_comm, &rank_mac);
+    ierr = MPI_Comm_size(micro_comm, &nproc_mic);
+    ierr = MPI_Comm_size(micro_comm, &rank_mic);
 
     // create the intercommunicators
 
-    // fills the id_vec array (collective with micro code)
+    // fills the id_vec array (collective with macro code)
     id_vec = malloc(nproc_wor * sizeof(int));
     ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,world_comm);
     if(ierr){
       return 1;
     }
 
-    // remote_rank array is filled 
-    remote_ranks = malloc(nmic_worlds * sizeof(MPI_Comm));
-    c = 0;
-    m = 0;
+    nproc_mac = 0;
     for(i=0;i<nproc_wor;i++){
-        if(id_vec[i] == MICRO && c == 0){
-	  remote_ranks[m] = i;
-	  m ++;
-	  c = nproc_per_mic[m % nstruc_mic];
-	}
-	else if(id_vec[i] == MICRO){
-	  c--;
-	}
+      if(id_vec[i] == MACRO){
+	nproc_mac++;
+      }
     }
 
-    macmic_comm = (MPI_Comm*)malloc(nmic_worlds * sizeof(MPI_Comm));
-    for(m=0;m<nmic_worlds;m++){
+    remote_ranks = malloc(nproc_mac * sizeof(int));
+
+    m = 0;
+    for(i=0;i<nproc_wor;i++){
+      if(id_vec[i] == MACRO){
+	remote_ranks[m] = i;
+	m++;
+      }
+    }
+
+    micmac_comm = (MPI_Comm*)malloc(nproc_mac * sizeof(MPI_Comm));
+    for(m=0;m<nproc_mac;m++){
       // args  =         local comm, local rank, global comm, remote rank, TAG, inter comm
-      MPI_Intercomm_create(macro_comm, 0, world_comm, remote_ranks[m], 0, &macmic_comm[m]);
+      MPI_Intercomm_create(micro_comm, 0, world_comm, remote_ranks[m], 0, &micmac_comm[m]);
     }
 
   }
