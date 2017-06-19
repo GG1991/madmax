@@ -175,7 +175,7 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
     int                  rank;
     int                  nproc;
     
-    char                 buf[BUF_N_LENGTH];   
+    char                 buf[NBUF];   
     char               * data;
 
     MPI_Comm_size(*comm, &nproc);
@@ -193,7 +193,7 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
     //
     offset   = 0;
     nelm_tot = 0;
-    while(fgets(buf,BUF_N_LENGTH,fm)!=NULL){
+    while(fgets(buf,NBUF,fm)!=NULL){
         offset += strlen(buf); 
 	data=strtok(buf," \n");
 	//
@@ -204,7 +204,7 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
 	    // leemos el numero total pero no lo usamos 
 	    // (incluye elementos de superficie y de volumen)
 	    //
-	    fgets(buf,BUF_N_LENGTH,fm);
+	    fgets(buf,NBUF,fm);
 	    offset += strlen(buf); 
 	    data  = strtok(buf," \n");
 	    total = atoi(data);
@@ -214,7 +214,7 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
 	    // y contamos el numero total de los elementos volumen
 	    //
 	    for(i=0; i<total; i++){
-	        fgets(buf,BUF_N_LENGTH,fm); 
+	        fgets(buf,NBUF,fm); 
 		len = strlen(buf);
 		data=strtok(buf," \n");
 		data=strtok(NULL," \n");
@@ -274,12 +274,12 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
     //    
     fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
     for(i=0; i<(*elmdist)[rank]; i++){    // we go to the first element we have to store
-      fgets(buf,BUF_N_LENGTH,fm); 
+      fgets(buf,NBUF,fm); 
       offset += strlen(buf); 
     }
     (*eptr)[0] = 0;
     for(i=1; i<nelm+1; i++){
-      fgets(buf,BUF_N_LENGTH,fm); 
+      fgets(buf,NBUF,fm); 
       data=strtok(buf," \n");
       data=strtok(NULL," \n");
       switch(atoi(data)){
@@ -311,7 +311,7 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
     fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
     n = 0;
     for(i=0; i < nelm ; i++){
-      fgets(buf,BUF_N_LENGTH,fm); 
+      fgets(buf,NBUF,fm); 
       data=strtok(buf," \n");
       data=strtok(NULL," \n");
       switch(atoi(data)){

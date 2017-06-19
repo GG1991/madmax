@@ -75,7 +75,7 @@ The only input format for the mesh is \texttt{GMSH}.
 \texttt{scheme\_type} can be:
 
 \begin{itemize}
-\item \texttt{MACRO_MICRO_COU}
+\item \texttt{MACRO_MICRO}
 
 Number of micro-structures types. For example an structures having two kind of composite materials
 joined together.
@@ -90,13 +90,11 @@ Number of processes for each micro-structure. If \micro is execute with \texttt{
 $$\mod{(\texttt{np} ,\texttt{np}_{\mu})} = 0$$
 
 \begin{lstlisting}[frame=single]
-     <@\textcolor{OliveGreen}{nproc_micro_struc}@> #proc_1 #proc_2 ... #proc_n
+     <@\textcolor{OliveGreen}{nproc_per_mic}@> #proc_1 #proc_2 ... #proc_n
 \end{lstlisting}
 
-\item \texttt{MACRO_PART_MESH}   
-\item \texttt{MICRO_PART_MESH}    
-\item \texttt{MACRO_PDE_ALONE}    
-\item \texttt{MICRO_PDE_ALONE}    
+\item \texttt{MACRO_ALONE}   
+\item \texttt{MICRO_ALONE}    
 \end{itemize}
 
 

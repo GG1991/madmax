@@ -13,12 +13,19 @@
 //PetscErrorCode   ierr;
 //PetscBool        couple_fl; //  couple flag = 0|1 (o:not coupled, 1:coupled)
 
-int              nproc;     //  # of processors
-int              rank;      //  rank number global
-int              lrank;     //  rank number local 
+MPI_Comm         macro_comm;
+
+int              nproc_wor;         //  # of processes (world_comm)
+int              nproc_mac;         //  # of processes (macro_comm)
+int              rank_wor;          //  rank on world comm
+int              rank_mac;          //  rank on macro comm
 int              color;
 
 int              nev;
+
+char             input_n[NBUF];     // Input file name
+char             mesh_n[NBUF];      // Mesh file name
+char             mesh_f[4];         // Mesh format name
 
 /*****************************************************************************************************
  Structures to performe de mesh partition with ParMetis
@@ -37,8 +44,5 @@ int            * eind;      // list of nodes for elem "i" is between
 // mac_main.c 
 int main(int argc, char **args);
 
-// mac_util.c
-int cmp_int(void *a, void *b);
-
-// mac_color.c
-int mac_color(MPI_Comm world, spu_comm_t  spu_comm, MPI_Comm  * macro, MPI_Comm ** macmic_comm);
+// mac_comm.c
+int mac_comm_init(void);

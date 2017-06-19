@@ -18,12 +18,12 @@
    \node [block] (sput) at (5,9)  {\sputnik};
    \node [block] (macr) at (2,7)  {\macro};
    \node [block] (micr) at (8,7) {\micro};
-   \node [blockf] (pars) at (13,7) {spu_parse_comm};
+   \node [blockf] (pars) at (13,7) {spu_parse_scheme};
    \node [blockc] (parc) at (19,7) {
      \begin{verbatim}
-     $spu_comm
+     $scheme
         ...
-     $end_spu_comm
+     $end_scheme
      \end{verbatim}
      };
 
@@ -239,6 +239,31 @@ assembling process doing calculations on all micro-structures at the same time. 
           (D) edge node {} (micro4)
           (E) edge node {} (micro4);
   
+\end{tikzpicture}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tikzpicture}[font=\ttfamily,
+array/.style={matrix of nodes,nodes={draw, minimum size=7mm, fill=green!30},column sep=-\pgflinewidth, row sep=0.5mm, nodes in empty cells,
+row 1/.style={nodes={draw=none, fill=none, minimum size=5mm}},
+row 1 column 1/.style={nodes={draw}}}]
+
+    \matrix[array] (array) {
+        0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14\\
+        1 & 2 & 2 & 1 & 1 & 2 & 2 & 2 & 2 & 2 & 2  & 2  & 2  & 2  & 1\\};
+    %\node[draw, fill=gray, minimum size=4mm] at (array-2-9) (box) {};
+
+    \begin{scope}[on background layer]
+    \fill[green!10] (array-1-1.north west) rectangle (array-1-15.south east);
+    \end{scope}
+
+    %\draw[<->]([yshift=-3mm]array-2-1.south west) -- node[below] {id_vec length = \#proc} ([yshift=-3mm]array-2-10.south east);
+
+    \draw (array-1-1.north)--++(90:3mm) node [above] (first) {global rank};
+    %\draw (array-2-10.east)--++(0:3mm) node [right]{IDs = 1(MACRO)|2(MICRO)};
+    %\node [align=center, anchor=south] at (array-2-9.north west|-first.south) (8) {IDs\\ MACRO=1 MICRO=1};
+    %\draw (8)--(box);
+    %
 \end{tikzpicture}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

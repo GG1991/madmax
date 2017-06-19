@@ -16,9 +16,9 @@ CFLAGS=-g -O0
 DEPS = ${DEP_DIR}/sputnik.h       \
        ${DEP_DIR}/list.h
 
-OBJ  = ${OBJ_DIR}/spu_parser.o    \
-       ${OBJ_DIR}/spu_mesh.o      \
-       ${OBJ_DIR}/list.o
+OBJ  = ${OBJ_DIR}/spu_parser.o    
+       #${OBJ_DIR}/spu_mesh.o      
+       #${OBJ_DIR}/list.o
 
 ##############################
 # PARMETIS VARIABLES
@@ -72,6 +72,3 @@ clean_:
 
 include ${PETSC_DIR}/lib/petsc/conf/variables	
 include ${PETSC_DIR}/lib/petsc/conf/rules
-
-
-	

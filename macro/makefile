@@ -19,10 +19,9 @@ DEPS_DIR = ${DEP_DIR}              \
            ${SPU_DEP_DIR}
 
 OBJ  = ${OBJ_DIR}/mac_main.o       \
-       ${OBJ_DIR}/mac_color.o      \
-       ${SPU_OBJ_DIR}/spu_parser.o \
-       ${SPU_OBJ_DIR}/spu_mesh.o   \
-       ${SPU_OBJ_DIR}/list.o  
+       ${OBJ_DIR}/mac_comm.o       \
+       ${SPU_OBJ_DIR}/spu_parser.o 
+#       ${SPU_OBJ_DIR}/spu_mesh.o   
 
 .PHONY: clean_
 
@@ -49,14 +48,6 @@ all: ${OBJ}
 obj/mac_main.o: src/mac_main.c ${DEPS}
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< -I${DEP_DIR} -I${SPU_DEP_DIR}
 	@echo "mac_main.o" 
-
-
-##############################
-# MAC_UTIL.O
-obj/mac_util.o: src/mac_util.c inc/macro.h 
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I./inc 
-	@echo "mac_util.o" 
-
 
 
 ##############################
