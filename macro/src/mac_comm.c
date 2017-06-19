@@ -120,9 +120,11 @@ int mac_comm_init(void)
 	  remote_ranks[m] = i;
 	  m ++;
 	  c = nproc_per_mic[m % nstruc_mic];
+	  nproc_mic ++;
 	}
 	else if(id_vec[i] == MICRO){
 	  c--;
+	  nproc_mic ++;
 	}
 	else{
 	  nproc_mac++;
@@ -130,6 +132,7 @@ int mac_comm_init(void)
     }
     if(!rank_mac){
       printf("number of macro process = %s",nproc_mac);
+      printf("number of micro process = %s",nproc_mic);
     }
 
     macmic_comm = (MPI_Comm*)malloc(nmic_worlds * sizeof(MPI_Comm));

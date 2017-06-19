@@ -89,19 +89,12 @@ int mic_comm_init(void)
 
    */
 
-  int  i, ierr, m;
+  int  i, ierr, c, m;
   int  color;
 
   color = MICRO;
 
   if(scheme == MACRO_MICRO){
-
-    MPI_Comm_split(world_comm, color, 0, &micro_comm);
-
-    ierr = MPI_Comm_size(micro_comm, &nproc_mic);
-    ierr = MPI_Comm_size(micro_comm, &rank_mic);
-
-    // create the intercommunicators
 
     // fills the id_vec array (collective with macro code)
     id_vec = malloc(nproc_wor * sizeof(int));
@@ -110,12 +103,38 @@ int mic_comm_init(void)
       return 1;
     }
 
+    // determines nproc_mac and nproc_mic
     nproc_mac = 0;
+    nproc_mic = 0;
+    m = 0; 
+    c = 0;
     for(i=0;i<nproc_wor;i++){
       if(id_vec[i] == MACRO){
 	nproc_mac++;
       }
+      else if(id_vec[i] == MICRO){
+	nproc_mic++;
+	if( m == nproc_per_mic[c % nstruc_mic] ){
+	  c ++;
+	  m = 0;
+	}
+	else{
+	  m++;
+	}
+      }
+      else{
+	return 1;
+      }
     }
+
+    color += c;
+
+    
+    MPI_Comm_split(world_comm, color, 0, &micro_comm);
+
+    ierr = MPI_Comm_size(micro_comm, &nproc_mic);
+    ierr = MPI_Comm_size(micro_comm, &rank_mic);
+
 
     remote_ranks = malloc(nproc_mac * sizeof(int));
 
