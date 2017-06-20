@@ -31,5 +31,5 @@ if [ "$#" -gt 0 ];then
    echo "mpirun -np 1 "$exec_mac" : -np 2 "$exec_mic""
    eval mpirun -np 1 "$exec_mac" : -np 2 "$exec_mic"
 else
-   mpirun -np 1 xterm -e "$gdbcomm_mac" : -np 2 xterm -e "$gdbcomm_mic"
+   mpirun -np 2 xterm -e "$gdbcomm_mac" : -np 2 xterm -e "$gdbcomm_mic"
 fi
