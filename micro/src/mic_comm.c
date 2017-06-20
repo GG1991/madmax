@@ -120,6 +120,11 @@ int mic_comm_init(void)
 	return 1;
       }
     }
+    if(nproc_mic % nproc_mic_group != 0){
+      printf("mod(nproc_mic,nproc_mic_group) = %d\n",nproc_mic % nproc_mic_group);
+      return 1;
+    }
+    nmic_worlds = nproc_mic / nproc_mic_group;
     
     // color for MICRO
     m = c = 0;
@@ -133,16 +138,13 @@ int mic_comm_init(void)
 	  m ++;
 	}
       }
-      else{
-	return 1;
-      }
     }
     color += c;
 
+    // micro_comm creation
     MPI_Comm_split(world_comm, color, 0, &micro_comm);
-
     ierr = MPI_Comm_size(micro_comm, &nproc_mic);
-    ierr = MPI_Comm_size(micro_comm, &rank_mic);
+    ierr = MPI_Comm_rank(micro_comm, &rank_mic);
 
     // remote ranks
     remote_ranks = malloc(nproc_mac * sizeof(int));

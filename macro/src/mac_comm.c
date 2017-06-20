@@ -96,19 +96,17 @@ int mac_comm_init(void)
 
   if(scheme == MACRO_MICRO){
 
-    MPI_Comm_split(world_comm, color, 0, &macro_comm);
-
-    ierr = MPI_Comm_size(macro_comm, &nproc_mac);
-    ierr = MPI_Comm_size(macro_comm, &rank_mac);
-
-    // create the intercommunicators
-
     // fills the id_vec array (collective with micro code)
     id_vec = malloc(nproc_wor * sizeof(int));
     ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,world_comm);
     if(ierr){
       return 1;
     }
+
+    // macro_comm creation
+    MPI_Comm_split(world_comm, color, 0, &macro_comm);
+    ierr = MPI_Comm_size(macro_comm, &nproc_mac);
+    ierr = MPI_Comm_rank(macro_comm, &rank_mac);
 
     // remote_rank array is filled 
     remote_ranks = malloc(nmic_worlds * sizeof(int));
@@ -133,6 +131,11 @@ int mac_comm_init(void)
       printf("number of macro process = %d",nproc_mac);
       printf("number of micro process = %d",nproc_mic);
     }
+    if(nproc_mic % nproc_mic_group != 0){
+      printf("mod(nproc_mic,nproc_mic_group) = %d\n",nproc_mic % nproc_mic_group);
+      return 1;
+    }
+    nmic_worlds = nproc_mic / nproc_mic_group;
 
     // array of intercommunicator with micro-world
     macmic_comm = (MPI_Comm*)malloc(nmic_worlds * sizeof(MPI_Comm));

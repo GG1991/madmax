@@ -49,7 +49,7 @@ int spu_parse_scheme( char * input )
       ln ++;
       data = strtok(buf," \n");
 
-      if(strcmp(data,"$scheme")){
+      if(!strcmp(data,"$scheme")){
 
 	if(fgets(buf,NBUF,file) == NULL){
 	  printf("scheme section incomplete at line %d\n",ln);
@@ -99,18 +99,34 @@ int spu_parse_scheme( char * input )
 	    return 1;
 	  }
 	  ln ++;
+	  data = strtok(buf," \n");
+	  if(strcmp(data,"nproc_per_mic")){
+	    printf("nproc_per_mic keyword expected at line %d\n",ln);
+	    return 1;
+	  }
 
 	  nproc_per_mic = malloc(nstruc_mic * sizeof(int));
-	  data = strtok(buf," \n");
-	  i = 0;
+	  data = strtok(NULL," \n");
+	  nproc_mic_group = i = 0;
 	  while(data){
 	    nproc_per_mic[i] = atoi(data);
+	    nproc_mic_group += nproc_per_mic[i];
 	    data = strtok(NULL," \n");
 	    i++;
 	  }
 	  if(i!=nstruc_mic){
 	    printf("nproc_per_mic given are more then the specified previouly: %d at line %d\n", nstruc_mic, ln);
 	    return 1;
+	  }
+	
+	  if(fgets(buf,NBUF,file) == NULL){ // nproc_micro_structures
+	    printf("scheme section incomplete at line %d\n",ln);
+	    printf("$end_scheme keyword expected at line %d\n",ln);
+	    return 1;
+	  }
+	  data = strtok(buf," \n");
+	  if(!strcmp(data,"$end_scheme")){
+	    return 0;
 	  }
 
 	}
@@ -121,9 +137,6 @@ int spu_parse_scheme( char * input )
 	  //TODO
 	}
 
-	if(!strcmp(data,"$end_scheme")){
-	  return 0;
-	}
 	return 1; //no encontro $end_scheme
 
       } // inside $scheme

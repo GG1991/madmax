@@ -38,6 +38,7 @@ INC = -I${DEP_DIR}
 # LINK
 all: ${OBJ} 
 	${MAKE} -C macro 
+	${MAKE} -C micro 
 
 
 ##############################
