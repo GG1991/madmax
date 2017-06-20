@@ -112,18 +112,17 @@ int mac_comm_init(void)
 
     // remote_rank array is filled 
     remote_ranks = malloc(nmic_worlds * sizeof(int));
-    c = 0;
-    m = 0;
-    nproc_mac = 0;
+    nproc_mic = nproc_mac = m = c = 0;
     for(i=0;i<nproc_wor;i++){
-        if(id_vec[i] == MICRO && c == 0){
-	  remote_ranks[m] = i;
-	  m ++;
-	  c = nproc_per_mic[m % nstruc_mic];
-	  nproc_mic ++;
-	}
-	else if(id_vec[i] == MICRO){
-	  c--;
+        if(id_vec[i] == MICRO){
+	  if(c == 0){
+	    remote_ranks[m] = i;
+	    c = nproc_per_mic[m % nstruc_mic];
+	    m ++;
+	  }
+	  else{
+	    c--;
+	  }
 	  nproc_mic ++;
 	}
 	else{
@@ -131,10 +130,11 @@ int mac_comm_init(void)
 	}
     }
     if(!rank_mac){
-      printf("number of macro process = %s",nproc_mac);
-      printf("number of micro process = %s",nproc_mic);
+      printf("number of macro process = %d",nproc_mac);
+      printf("number of micro process = %d",nproc_mic);
     }
 
+    // array of intercommunicator with micro-world
     macmic_comm = (MPI_Comm*)malloc(nmic_worlds * sizeof(MPI_Comm));
     for(m=0;m<nmic_worlds;m++){
       // args  =         local comm, local rank, global comm, remote rank, TAG, inter comm

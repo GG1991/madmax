@@ -79,6 +79,10 @@ int mic_comm_init(void)
      id_vec        : vector of size nproc_tot that 
                      id_vec[rank_wor] = MACRO|MICRO
 
+     <--------nproc_wor-------------->
+
+     [ 1 1 2 1 2 2 2 1 2 1 2 2 ... 2 ]
+
      micro_world   : this communicator holds all those processes
                      that belong to the same micro-world are going
 		     to solve the micro structure in a distributed way
@@ -104,40 +108,44 @@ int mic_comm_init(void)
     }
 
     // determines nproc_mac and nproc_mic
-    nproc_mac = 0;
-    nproc_mic = 0;
-    m = 0; 
-    c = 0;
+    nproc_mic = nproc_mac = 0;
     for(i=0;i<nproc_wor;i++){
       if(id_vec[i] == MACRO){
 	nproc_mac++;
       }
       else if(id_vec[i] == MICRO){
 	nproc_mic++;
+      }
+      else{
+	return 1;
+      }
+    }
+    
+    // color for MICRO
+    m = c = 0;
+    for(i=0;i<rank_wor;i++){
+      if(id_vec[i] == MICRO){
 	if( m == nproc_per_mic[c % nstruc_mic] ){
 	  c ++;
 	  m = 0;
 	}
 	else{
-	  m++;
+	  m ++;
 	}
       }
       else{
 	return 1;
       }
     }
-
     color += c;
 
-    
     MPI_Comm_split(world_comm, color, 0, &micro_comm);
 
     ierr = MPI_Comm_size(micro_comm, &nproc_mic);
     ierr = MPI_Comm_size(micro_comm, &rank_mic);
 
-
+    // remote ranks
     remote_ranks = malloc(nproc_mac * sizeof(int));
-
     m = 0;
     for(i=0;i<nproc_wor;i++){
       if(id_vec[i] == MACRO){
@@ -151,7 +159,7 @@ int mic_comm_init(void)
       // args  =         local comm, local rank, global comm, remote rank, TAG, inter comm
       MPI_Intercomm_create(micro_comm, 0, world_comm, remote_ranks[m], 0, &micmac_comm[m]);
     }
-
+    
   }
   else if(scheme == MACRO_MICRO){
      // TODO

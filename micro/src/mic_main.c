@@ -39,7 +39,7 @@ int main(int argc, char **argv)
    
     //************************************************************ 
     // Set PETSc communicator to macro_comm
-    PETSC_COMM_WORLD = macro_comm;
+    PETSC_COMM_WORLD = micro_comm;
     ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
     //

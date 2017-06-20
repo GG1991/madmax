@@ -3,7 +3,7 @@
 *****************************************************************************************************/
 
 #include "petscksp.h"
-#include "list.h"
+#include "sputnik.h"
 #include <stdbool.h>
 
 #define  DIM   3
@@ -15,13 +15,13 @@
 PetscErrorCode   ierr;
 PetscBool        couple_fl; //  couple flag = 0|1 (o:not coupled, 1:coupled)
 
-MPI_Comm         macro_comm;
+MPI_Comm         micro_comm;
 MPI_Comm        *micmac_comm;
 
 int              nproc_wor;         //  # of processes (world_comm)
 int              nproc_mac;         //  # of processes (macro_comm)
 int              rank_wor;          //  rank on world comm
-int              rank_mac;          //  rank on macro comm
+int              rank_mic;          //  rank on macro comm
 int             *remote_ranks;      //  remote ranks if micro processes
                                     //  to build the macmic_comm
 
