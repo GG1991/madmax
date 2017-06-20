@@ -108,11 +108,11 @@ int mic_comm_init(void)
       return 1;
     }
 
-    // determines nproc_mac and nproc_mic
-    nproc_mic_tot = nproc_mac = 0;
+    // determines nproc_mac_tot and nproc_mic_tot
+    nproc_mic_tot = nproc_mac_tot = 0;
     for(i=0;i<nproc_wor;i++){
       if(id_vec[i] == MACRO){
-	nproc_mac++;
+	nproc_mac_tot++;
       }
       else if(id_vec[i] == MICRO){
 	nproc_mic_tot++;
@@ -148,6 +148,8 @@ int mic_comm_init(void)
     ierr = MPI_Comm_rank(micro_comm, &rank_mic);
 
     // remote ranks
+    // these remote ranks correspond to
+    // the remote micro leaders
     remote_ranks = malloc(nproc_mac * sizeof(int));
     m = 0;
     for(i=0;i<nproc_wor;i++){
@@ -157,17 +159,6 @@ int mic_comm_init(void)
       }
     }
 
-    micmac_inter_comm = (MPI_Comm*)malloc(nproc_mac * sizeof(MPI_Comm));
-    micmac_intra_comm = (MPI_Comm*)malloc(nproc_mac * sizeof(MPI_Comm));
-    for(m=0;m<nproc_mac;m++){
-      // args  =         local comm, local rank, global comm, remote rank, TAG, inter comm
-      MPI_Intercomm_create(micro_comm, 0, world_comm, remote_ranks[m], 0, &micmac_inter_comm[m]);
-      MPI_Intercomm_merge(micmac_inter_comm[m], 0, &micmac_intra_comm[m]);
-      ierr = MPI_Comm_size(micmac_intra_comm[m], &size_inter);
-      ierr = MPI_Comm_rank(micmac_intra_comm[m], &rank_inter);
-      printf("micro intracomm m = %d size = %d rank = %d remote_rank = %d\n", m, size_inter, rank_inter, remote_ranks[m]);
-    }
-    
   }
   else if(scheme == MACRO_MICRO){
      // TODO

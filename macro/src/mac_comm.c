@@ -110,8 +110,10 @@ int mac_comm_init(void)
     ierr = MPI_Comm_rank(macro_comm, &rank_mac);
 
     // remote_rank array is filled 
+    // these ranks correspond to the 
+    // micro processes' leaders
     remote_ranks = malloc(nmic_worlds * sizeof(int));
-    nproc_mic_tot = nproc_mac = m = c = 0;
+    nproc_mic_tot = nproc_mac_tot = m = c = 0;
     for(i=0;i<nproc_wor;i++){
         if(id_vec[i] == MICRO){
 	  if(c == 0){
@@ -125,11 +127,11 @@ int mac_comm_init(void)
 	  nproc_mic_tot ++;
 	}
 	else{
-	  nproc_mac++;
+	  nproc_mac_tot++;
 	}
     }
     if(!rank_mac){
-      printf("number of macro process = %d\n",nproc_mac);
+      printf("number of macro process = %d\n",nproc_mac_tot);
       printf("number of micro process = %d\n",nproc_mic_tot);
     }
     if(nproc_mic_tot % nproc_mic_group != 0){
@@ -137,18 +139,6 @@ int mac_comm_init(void)
       return 1;
     }
     nmic_worlds = nproc_mic_tot / nproc_mic_group;
-
-    // array of intercommunicator with micro-world
-    macmic_inter_comm = (MPI_Comm*)malloc(nmic_worlds * sizeof(MPI_Comm));
-    macmic_intra_comm = (MPI_Comm*)malloc(nmic_worlds * sizeof(MPI_Comm));
-    for(m=0;m<nmic_worlds;m++){
-      // args  =         local comm, local rank, global comm, remote rank, TAG, inter comm
-      MPI_Intercomm_create(macro_comm, 0, world_comm, remote_ranks[m], 0, &macmic_inter_comm[m]);
-      MPI_Intercomm_merge(macmic_inter_comm[m], 1, &macmic_intra_comm[m]);
-      ierr = MPI_Comm_size(macmic_intra_comm[m], &size_inter);
-      ierr = MPI_Comm_rank(macmic_intra_comm[m], &rank_inter);
-      printf("macro intracomm m = %d size = %d rank = %d remote_rank = %d\n", m, size_inter, rank_inter, remote_ranks[m]);
-    }
 
   }
   else if(scheme == MACRO_MICRO){

@@ -16,8 +16,6 @@ PetscErrorCode   ierr;
 PetscBool        couple_fl; //  couple flag = 0|1 (o:not coupled, 1:coupled)
 
 MPI_Comm         micro_comm;
-MPI_Comm        *micmac_inter_comm;
-MPI_Comm        *micmac_intra_comm;
 
 int              nproc_wor;         //  # of processes (world_comm)
 int              nproc_mac;         //  # of macro processes (world_comm)  
