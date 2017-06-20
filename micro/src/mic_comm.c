@@ -87,7 +87,7 @@ int mic_comm_init(void)
                      that belong to the same micro-world are going
 		     to solve the micro structure in a distributed way
      
-     micmac_comm   : array of inter-comunicators for message interchange 
+     micmac_inter_comm   : array of inter-comunicators for message interchange 
                      between the "micro_comm" and "macro_comm" communicators 
                      (all the macro communicators)
 
@@ -95,6 +95,7 @@ int mic_comm_init(void)
 
   int  i, ierr, c, m;
   int  color;
+  int  size_inter, rank_inter;
 
   color = MICRO;
 
@@ -108,23 +109,23 @@ int mic_comm_init(void)
     }
 
     // determines nproc_mac and nproc_mic
-    nproc_mic = nproc_mac = 0;
+    nproc_mic_tot = nproc_mac = 0;
     for(i=0;i<nproc_wor;i++){
       if(id_vec[i] == MACRO){
 	nproc_mac++;
       }
       else if(id_vec[i] == MICRO){
-	nproc_mic++;
+	nproc_mic_tot++;
       }
       else{
 	return 1;
       }
     }
-    if(nproc_mic % nproc_mic_group != 0){
-      printf("mod(nproc_mic,nproc_mic_group) = %d\n",nproc_mic % nproc_mic_group);
+    if(nproc_mic_tot % nproc_mic_group != 0){
+      printf("mod(nproc_mic,nproc_mic_group) = %d\n",nproc_mic_tot % nproc_mic_group);
       return 1;
     }
-    nmic_worlds = nproc_mic / nproc_mic_group;
+    nmic_worlds = nproc_mic_tot / nproc_mic_group;
     
     // color for MICRO
     m = c = 0;
@@ -156,10 +157,15 @@ int mic_comm_init(void)
       }
     }
 
-    micmac_comm = (MPI_Comm*)malloc(nproc_mac * sizeof(MPI_Comm));
+    micmac_inter_comm = (MPI_Comm*)malloc(nproc_mac * sizeof(MPI_Comm));
+    micmac_intra_comm = (MPI_Comm*)malloc(nproc_mac * sizeof(MPI_Comm));
     for(m=0;m<nproc_mac;m++){
       // args  =         local comm, local rank, global comm, remote rank, TAG, inter comm
-      MPI_Intercomm_create(micro_comm, 0, world_comm, remote_ranks[m], 0, &micmac_comm[m]);
+      MPI_Intercomm_create(micro_comm, 0, world_comm, remote_ranks[m], 0, &micmac_inter_comm[m]);
+      MPI_Intercomm_merge(micmac_inter_comm[m], 0, &micmac_intra_comm[m]);
+      ierr = MPI_Comm_size(micmac_intra_comm[m], &size_inter);
+      ierr = MPI_Comm_rank(micmac_intra_comm[m], &rank_inter);
+      printf("micro intracomm m = %d size = %d rank = %d remote_rank = %d\n", m, size_inter, rank_inter, remote_ranks[m]);
     }
     
   }
