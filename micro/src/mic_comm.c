@@ -160,7 +160,7 @@ int mic_comm_init(void)
     }
 
   }
-  else if(scheme == MACRO_MICRO){
+  else if(scheme == MACRO_ALONE){
      // TODO
   }
   else if(scheme == MICRO_ALONE){

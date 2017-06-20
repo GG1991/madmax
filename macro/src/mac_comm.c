@@ -83,10 +83,6 @@ int mac_comm_init(void)
                      all those process that are going to solve the 
                      macro structure in a distributed way
      
-     comm_macmic   : array of inter-comunicators for message interchange 
-                     between the "macro_comm" and "micro_comm" communicators 
-                     (all the micro worlds)
-
    */
 
   int  i, ierr, c, m;
@@ -141,7 +137,7 @@ int mac_comm_init(void)
     nmic_worlds = nproc_mic_tot / nproc_mic_group;
 
   }
-  else if(scheme == MACRO_MICRO){
+  else if(scheme == MACRO_ALONE){
      // TODO
   }
   else if(scheme == MICRO_ALONE){
