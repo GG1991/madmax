@@ -87,7 +87,6 @@ int mac_comm_init(void)
 
   int  i, ierr, c, m;
   int  color;
-  int  size_inter, rank_inter;
 
   color = MACRO;
 
@@ -105,21 +104,11 @@ int mac_comm_init(void)
     ierr = MPI_Comm_size(macro_comm, &nproc_mac);
     ierr = MPI_Comm_rank(macro_comm, &rank_mac);
 
-    // remote_rank array is filled 
-    // these ranks correspond to the 
-    // micro processes' leaders
-    remote_ranks = malloc(nmic_worlds * sizeof(int));
-    nproc_mic_tot = nproc_mac_tot = m = c = 0;
+    // we count the number of processes 
+    // that are with micro and macro from id_vec
+    nproc_mic_tot = nproc_mac_tot = 0;
     for(i=0;i<nproc_wor;i++){
         if(id_vec[i] == MICRO){
-	  if(c == 0){
-	    remote_ranks[m] = i;
-	    c = nproc_per_mic[m % nstruc_mic];
-	    m ++;
-	  }
-	  else{
-	    c--;
-	  }
 	  nproc_mic_tot ++;
 	}
 	else{
@@ -135,6 +124,24 @@ int mac_comm_init(void)
       return 1;
     }
     nmic_worlds = nproc_mic_tot / nproc_mic_group;
+
+    // remote_rank array is filled 
+    // these ranks correspond to the 
+    // micro processes' leaders
+    remote_ranks = malloc(nmic_worlds * sizeof(int));
+    m = c = 0;
+    for(i=0;i<nproc_wor;i++){
+        if(id_vec[i] == MICRO){
+	  if(c == 0){
+	    remote_ranks[m] = i;
+	    c = nproc_per_mic[m % nstruc_mic];
+	    m ++;
+	  }
+	  else{
+	    c--;
+	  }
+	}
+    }
 
   }
   else if(scheme == MACRO_ALONE){

@@ -95,7 +95,6 @@ int mic_comm_init(void)
 
   int  i, ierr, c, m;
   int  color;
-  int  size_inter, rank_inter;
 
   color = MICRO;
 
