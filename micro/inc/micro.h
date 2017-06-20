@@ -20,7 +20,8 @@ MPI_Comm        *micmac_inter_comm;
 MPI_Comm        *micmac_intra_comm;
 
 int              nproc_wor;         //  # of processes (world_comm)
-int              nproc_mac;         //  # of processes (macro_comm)
+int              nproc_mac;         //  # of macro processes (world_comm)  
+int              nproc_mic;         //  # of micro processes (micro_comm)
 int              rank_wor;          //  rank on world comm
 int              rank_mic;          //  rank on macro comm
 int             *remote_ranks;      //  remote ranks if micro processes
