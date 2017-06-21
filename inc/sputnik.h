@@ -61,7 +61,8 @@ int          *eind;                    // list of nodes for elem "i" is between
 *****************************************************************************************************/
 
 // spu_parser.c (common rutines for parser inputs files from MACRO and MICRO)
-int spu_parse_scheme( char *input_fila);
+int spu_parse_scheme( char *input_fila );
+int spu_parse_mesh( char * input );
 
 // spu_mesh.c
 int read_mesh(MPI_Comm * comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind);
