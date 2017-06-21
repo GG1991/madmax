@@ -20,35 +20,40 @@
 #define MACRO_ALONE         2   // Standalone execution of MACRO
 #define MICRO_ALONE         3   // Standalone execution of MICRO
 
-#define PARMETIS_GEOMKWAY  1
-#define PARMETIS_GEOM      2
-#define PARMETIS_KWAY      3
-#define PARMETIS_MESHKWAY  4
+#define PARMETIS_GEOMKWAY   1
+#define PARMETIS_GEOM       2
+#define PARMETIS_KWAY       3
+#define PARMETIS_MESHKWAY   4
 
 
 /*****************************************************************************************************
    SPUTNIK global variables
 *****************************************************************************************************/
 
+char         input_n[NBUF];            // Input file name
+
 MPI_Comm     world_comm;
 
-int *id_vec;                  // ID vector size = #proc (info of which ID has each rank
-int nproc_mac_tot;            // number of macro processes total (inside world_comm)
-int nproc_mic_tot;            // number of micro processes total (inside world_comm)
-int nstruc_mic;               // number of micro structures
-int *nproc_per_mic;           // number of processes per micro structure ( size = nstruc_mic )
-int nproc_mic_group;          // number of micro process in a group = sum_i nproc_per_mic[i]
-int nmic_worlds;              // number of micro worlds nproc_mic / nproc_mic_group
-int scheme;                   // communication approach
+int          *id_vec;                  // ID vector size = #proc (info of which ID has each rank
+int          nproc_mac_tot;            // number of macro processes total (inside world_comm)
+int          nproc_mic_tot;            // number of micro processes total (inside world_comm)
+int          nstruc_mic;               // number of micro structures
+int          *nproc_per_mic;           // number of processes per micro structure ( size = nstruc_mic )
+int          nproc_mic_group;          // number of micro process in a group = sum_i nproc_per_mic[i]
+int          nmic_worlds;              // number of micro worlds nproc_mic / nproc_mic_group
+int          scheme;                   // communication approach
 
 /*****************************************************************************************************
  Structures to save de mesh on CSR format 
 *****************************************************************************************************/
 
-int            * elmdist;   // number of elements inside each procesor
-int            * eptr;      // list of indeces of nodes inside eind
-int            * eind;      // list of nodes for elem "i" is between 
-                            // eind[eptr[i]] eind[eptr[i+1]] (not including)
+char         mesh_n[NBUF];             // Mesh file name
+char         mesh_f[4];                // Mesh format name
+
+int          *elmdist;                 // number of elements inside each procesor
+int          *eptr;                    // list of indeces of nodes inside eind
+int          *eind;                    // list of nodes for elem "i" is between 
+                                          // eind[eptr[i]] eind[eptr[i+1]] (not including)
 
 
 /*****************************************************************************************************

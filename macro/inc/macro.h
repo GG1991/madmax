@@ -24,9 +24,6 @@ int             *remote_ranks;      //  remote ranks if micro processes
 
 int              nev;
 
-char             input_n[NBUF];     // Input file name
-char             mesh_n[NBUF];      // Mesh file name
-char             mesh_f[4];         // Mesh format name
 
 /*****************************************************************************************************
    MACRO function definitions
