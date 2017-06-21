@@ -29,34 +29,25 @@
 	 / \
    MACRO     MICRO  (colors with code on sputnik.h)
    |         |    
-   |_color 0 |_color 3
-   |_color 1 |_color 4
-   |_color 2 |_color 5
-             |_color 6 
-	     |_color 7
-             |_color 8
+   |_color 1 |_color 2
+   |_color 1 |_color 2
+   |_color 1 |_color 2
+   |_...     |_...
+   |_color 1 |_color 2
 
-   Strategy the first "num_macro" process will correspond to MACRO, example : 
-
-                             d=0           d=1           d=2
-   color 0 MACRO_1 --> (( MICRO_K1_1 -> MICRO_K1_2 -> MICRO_K1_3 ))  color 3  b=0
-	           |   
-                    -> (( MICRO_K2_1 -> MICRO_K2_2 ))                color 4  b=0              
-		             d=3           d=4
+   color 1 (( MACRO_R0 ))   (( MICRO_K1_R0 -> MICRO_K1_R1 -> MICRO_K1_R2 ))  color 2  
+	                   
+                            (( MICRO_K2_R0 -> MICRO_K2_R1 ))                 color 3 
 
 
-                             d=0           d=1           d=2
-   color 1 MACRO_2 --> (( MICRO_K1_1 -> MICRO_K1_2 -> MICRO_K1_3 ))  color 5  b=1
-	           |   
-                    -> (( MICRO_K2_1 -> MICRO_K2_2 ))                color 6  b=1            
-		             d=3           d=4
+   color 1 (( MACRO_R1 ))   (( MICRO_K1_R0 -> MICRO_K1_R1 -> MICRO_K1_R2 ))  color 4  
+	                    
+                            (( MICRO_K2_R0 -> MICRO_K2_R1 ))                 color 5 
 
 
-                             d=0           d=1           d=2
-   color 2 MACRO_3 --> (( MICRO_K1_1 -> MICRO_K1_2 -> MICRO_K1_3 ))  color 7  b=2
-	           |   
-                    -> (( MICRO_K2_1 -> MICRO_K2_2 ))                color 8  b=2             
-		             d=3           d=4
+   color 1 (( MACRO_R2 ))   (( MICRO_K1_R0 -> MICRO_K1_R1 -> MICRO_K1_R2 ))  color 6
+	                    
+                            (( MICRO_K2_R0 -> MICRO_K2_R1 ))                 color 7
 
 
    Author: Guido Giuntoli
@@ -116,11 +107,11 @@ int mac_comm_init(void)
 	}
     }
     if(!rank_mac){
-      printf("number of macro process = %d\n",nproc_mac_tot);
-      printf("number of micro process = %d\n",nproc_mic_tot);
+      printf("MACRO: # of macro process (id_vec) = %d\n",nproc_mac_tot);
+      printf("MACRO: # of micro process (id_vec) = %d\n",nproc_mic_tot);
     }
     if(nproc_mic_tot % nproc_mic_group != 0){
-      printf("mod(nproc_mic,nproc_mic_group) = %d\n",nproc_mic_tot % nproc_mic_group);
+      printf("MACRO: mod(nproc_mic,nproc_mic_group) = %d\n",nproc_mic_tot % nproc_mic_group);
       return 1;
     }
     nmic_worlds = nproc_mic_tot / nproc_mic_group;
@@ -144,12 +135,7 @@ int mac_comm_init(void)
     }
 
   }
-  else if(scheme == MACRO_ALONE){
-     // TODO
-  }
-  else if(scheme == MICRO_ALONE){
-     // TODO
-  }
+
   else{
       return 1;
   }

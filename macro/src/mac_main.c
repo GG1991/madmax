@@ -42,6 +42,8 @@ int main(int argc, char **argv)
        intercommunicators with micro programs 
      */
     mac_comm_init();
+
+    spu_parse_mesh(input_n);
    
     //************************************************************ 
     // Set PETSc communicator to macro_comm

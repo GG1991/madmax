@@ -2,6 +2,11 @@
 
    MICRO main function
 
+   Program for solving the microscopic problem 
+   for multi-scale approach.
+
+   Author: Guido Giuntoli
+
  */
 
 
@@ -36,6 +41,8 @@ int main(int argc, char **argv)
        intercommunicators with micro programs 
      */
     mic_comm_init();
+    	
+    spu_parse_mesh(input_n);
    
     //************************************************************ 
     // Set PETSc communicator to macro_comm
