@@ -148,15 +148,17 @@ int spu_parse_mesh( char * input )
 
     /*
 
-       Parse the mesh from input file
+       Parse the mesh name from input file
+
+       returns: 0 success
+               -1 failed
+	        1 not found 
 
        Searchs for keywords:
 
        $mesh
-         ...
+         mesh <mesh_file>
        $end_mesh
-
-       defines the global variables:
 
      */
 
@@ -201,9 +203,9 @@ int spu_parse_mesh( char * input )
 	if(!strcmp(data,"$end_mesh")){
 	  return 0;
 	}
-	return 1; //no se encontro $end_mesh
+	return -1; //no se encontro $end_mesh
 
       } // inside $mesh
     }
-    return 0;
+    return 1;
 }
