@@ -7,7 +7,7 @@
 #include "sputnik.h"
 #include "parmetis.h"
 
-int part_mesh_PARMETIS(MPI_Comm * comm, int * elmdist, int * eptr, int * eind, double * centroid, int algorithm)
+int part_mesh_PARMETIS(MPI_Comm *comm, int *elmdist, int *eptr, int *eind, int *part, double *centroid, int algorithm)
 {
 
     /*
@@ -18,9 +18,13 @@ int part_mesh_PARMETIS(MPI_Comm * comm, int * elmdist, int * eptr, int * eind, d
 
        b) Do the partition 
 
+       c) distribute the graph to processes
+
      */
     int                  rank, nproc, i;
+    int                 *npe;
     int                  nelm;             // number of elements of this process
+    int                  new_eind;             // number of elements of this process
     idx_t              * elmwgt;           // (inp) Element weights
     idx_t                wgtflag;          // (inp) Element weight flag (0 desactivated)
     idx_t                numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
@@ -31,7 +35,7 @@ int part_mesh_PARMETIS(MPI_Comm * comm, int * elmdist, int * eptr, int * eind, d
     real_t             * ubvec;            // (inp) array of size "ncon"
     idx_t                options[3];       // (inp) option parameters
     idx_t                edgecut;          // (out) number of edges cut of the partition
-    idx_t              * part;             // (out) Array for storing the solution
+//    idx_t              * part;             // (out) Array for storing the solution
 
     MPI_Comm_size(*comm, &nproc);
     MPI_Comm_rank(*comm, &rank);
@@ -55,13 +59,11 @@ int part_mesh_PARMETIS(MPI_Comm * comm, int * elmdist, int * eptr, int * eind, d
       tpwgts[i] = 1.0 / nparts;
     }
     
-    ncommonnodes = 2;
+    ncommonnodes = 8;
     
     options[0] = 0; // options (1,2) : 0 default, 1 considered
     options[1] = 0; // level of information returned
     options[2] = 0; // random seed
-
-    part = (idx_t*)malloc(nelm * sizeof(idx_t));
 
     ubvec = (real_t*)malloc(ncon * sizeof(real_t));
     for(i=0;i<ncon;i++){
@@ -91,14 +93,142 @@ int part_mesh_PARMETIS(MPI_Comm * comm, int * elmdist, int * eptr, int * eind, d
 	  &ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
 	  options, &edgecut, part, comm );
 
+      // graph distribution
+
+      npe = malloc(nelm*sizeof(int));
+      new_eind = malloc(eptr[nelm]*sizeof(int)); 
+      
+      // swap eptr and eind
+
+
     }
     else{
 
       return 1;
     }
 
+
+
+
     return 0;
 }
+
+int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
+{
+
+  /* 
+     swaps a vector
+
+     example:
+
+     swap       = [ 0 1 0 0 1 2 2 ]
+     vector     = [ 0 1 2 3 4 5 6 ]
+     n = 7
+
+     new_vector = [ 0 2 3 1 4 5 6 ] 
+     cut        = [ 3 2 2 ]
+
+     Notes:
+
+     -> if new_vector = NULL the result is saved on vector
+     -> swap should have values in [0,n)
+  */
+
+  int *aux_vector;
+  int i,p,aux,j;
+
+  if(n==0){
+    return 0;
+  }
+  else if(vector == NULL || cuts == NULL){
+    return 1;
+  }
+ 
+  if(new_vector == NULL){
+    aux_vector = vector;
+  }
+  else{
+    aux_vector = new_vector;
+  }
+
+  j = 0;
+  for(p=0;p<n;p++){
+    cuts[p] = 0;
+    for(i=0;i<n;i++){
+      if(swap[i] == p){
+        aux=vector[i];
+	aux_vector[i] = vector[j]: 
+	aux_vector[j] = aux;
+	j ++;
+	cuts[p] ++;
+      }
+    }
+  }
+
+  return 0;
+}
+
+int swap_vectors_SCR( int *swap, int n, int *eptr, int *eind, int *npe, int *new_eind, int *cuts )
+{
+
+  /* 
+     swaps a vectors in SCR format 
+
+     first convert from SCR to an absolute reference
+     format
+
+     eptr = [ 0 3 5 8 9 ]
+     npe  = [ 3 2 3 1 ]              (npe[i] = eptr[i+1] - eptr[i])
+     eind = [ 3 2 0 1 2 1 0 1 3 ]   
+
+     example:
+
+     part = [ 0 2 1 0 ]
+     npe  = [ 3 2 3 1 ]             
+     eind = [ 3 2 0 | 1 2 | 1 0 1 |3 ]   
+     | 
+     (swap operation with swap_vectors_CSR)
+     | 
+     npe  = [ 3 1 3 2 ]
+     eind = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]   
+
+     Notes:
+
+     -> result is saved on "new_eind" and "npe"
+     -> swap should have values in [0,n)
+  */
+
+  int *aux_vector, *npe;
+  int i,p,aux,j,pi;
+
+  if(n==0){
+    return 0;
+  }
+  if(!npe || !cuts || !eptr || !eind || !new_eind){
+    return 1;
+  }
+  
+  for(i=0;i<n;i++){
+    npe[i] = eptr[i+1] - eptr[i];
+  }
+
+  j = pi = 0;
+  for(p=0;p<n;p++){
+    cuts[p] = 0;
+    for(i=0;i<n;i++){
+      if(swap[i] == p){
+        aux    = npe[i];
+	npe[i] = npe[j]: 
+	npe[j] = aux;
+	j ++;
+	cuts[p] ++;
+      }
+    }
+  }
+
+  return 0;
+}
+
 
 int read_mesh(MPI_Comm * comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind)
 {
@@ -108,14 +238,17 @@ int read_mesh(MPI_Comm * comm, char *mesh_n, char *mesh_f, int ** elmdist, int *
        Reads the mesh according to the format specified
        and performs the partition if it is required
 
+       returns: 0 success
+                1 not found
+	       -1 failed
+
      */
 
     if(strcmp(mesh_f,"gmsh") == 0){
-	if(read_mesh_CSR_GMSH(comm, mesh_n, elmdist, eptr, eind))
-	    return 1;
+	return read_mesh_CSR_GMSH(comm, mesh_n, elmdist, eptr, eind);
+    }else{
+      return 1;
     }
-
-    return 0;
 }
 
 /****************************************************************************************************/
@@ -125,7 +258,6 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
 
     /* 
 
-       Author: Guido Giuntoli
        Info:   Reads the elements with the nodes conectivities and saves on 
                "elmdist[]", "eptr[]" and "eind[]" in CSR format (same names
 	       that parmetis)
@@ -158,6 +290,8 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
        b) all processes do fopen and fread up to their corresponding position
           in the file
 
+       Author: Guido Giuntoli
+
     */
 
     FILE               * fm;
@@ -183,7 +317,7 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
 
     fm = fopen(mesh_n,"r");
     if(!fm){
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
+	ierr = PetscPrintf(*comm,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
 	return 1;
     }
 
@@ -227,7 +361,7 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
 		  offset += len; 
 		}
 	    }
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"nelm_tot    : %d\n",nelm_tot);CHKERRQ(ierr);
+	    ierr = PetscPrintf(*comm,"nelm_tot    : %d\n",nelm_tot);CHKERRQ(ierr);
 	    break;
 	}
 	ln ++;
@@ -243,20 +377,20 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
     //  nelm_tot/nproc los repartimos uno por 
     //  uno entre los primeros procesos
     //
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"elmdist     : ");CHKERRQ(ierr);
+    ierr = PetscPrintf(*comm,"elmdist     : ");CHKERRQ(ierr);
     *elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
     resto = nelm_tot % nproc;
     (*elmdist)[0] = 0;
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"%d ",(*elmdist)[0]);CHKERRQ(ierr);
+    ierr = PetscPrintf(*comm,"%d ",(*elmdist)[0]);CHKERRQ(ierr);
     for(i=1; i < nproc + 1; i++){
 	(*elmdist)[i] = i * nelm_tot / nproc;
         if(resto>0){
 	  (*elmdist)[i] += 1;
 	  resto --;
 	}
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"%d ",(*elmdist)[i]);CHKERRQ(ierr);
+	ierr = PetscPrintf(*comm,"%d ",(*elmdist)[i]);CHKERRQ(ierr);
     }
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");CHKERRQ(ierr);
+    ierr = PetscPrintf(*comm,"\n");CHKERRQ(ierr);
 
     // ya podemos allocar el vector "eptr" su dimension es :
     // número de elementos locales + 1 = nelm + 1
