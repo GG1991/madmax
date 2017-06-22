@@ -13,6 +13,7 @@
 static char help[] = "Solves an RVE problem.\n\n";
 
 
+
 #include "micro.h"
 
 
@@ -52,7 +53,11 @@ int main(int argc, char **argv)
     //
     // read mesh
     //    
-//    read_mesh(macro_comm, mesh_n, mesh_f, &elmdist, &eptr, &eind);
+    strcpy(mesh_f,"gmsh");
+    read_mesh(&micro_comm, mesh_n, mesh_f, &elmdist, &eptr, &eind);
+    nelm = elmdist[rank_mic+1] - elmdist[rank_mic];
+    part = (int*)malloc(nelm * sizeof(int));
+    part_mesh_PARMETIS(&micro_comm, elmdist, eptr, eind, part, NULL, PARMETIS_MESHKWAY );
 
     ierr = PetscFinalize();
     ierr = MPI_Finalize();

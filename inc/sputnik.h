@@ -50,10 +50,12 @@ int          scheme;                   // communication approach
 char         mesh_n[NBUF];             // Mesh file name
 char         mesh_f[4];                // Mesh format name
 
+int          *part;
 int          *elmdist;                 // number of elements inside each procesor
+int           nelm;                    // # of local elements
 int          *eptr;                    // list of indeces of nodes inside eind
 int          *eind;                    // list of nodes for elem "i" is between 
-                                          // eind[eptr[i]] eind[eptr[i+1]] (not including)
+                                       // eind[eptr[i]] eind[eptr[i+1]] (not including)
 
 
 /*****************************************************************************************************
@@ -61,10 +63,10 @@ int          *eind;                    // list of nodes for elem "i" is between
 *****************************************************************************************************/
 
 // spu_parser.c (common rutines for parser inputs files from MACRO and MICRO)
-int spu_parse_scheme( char *input_fila );
+int spu_parse_scheme( char *input );
 int spu_parse_mesh( char * input );
 
 // spu_mesh.c
 int read_mesh(MPI_Comm * comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind);
 int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** eptr, int ** eind);
-int part_mesh_PARMETIS(MPI_Comm * comm, int * elmdist, int * eptr, int * eind, double * centroid, int algorithm);
+int part_mesh_PARMETIS(MPI_Comm * comm, int * elmdist, int * eptr, int * eind, int *part, double * centroid, int algorithm);
