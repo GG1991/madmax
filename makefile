@@ -13,12 +13,10 @@ DEP_DIR= ./inc
 
 CFLAGS=-g -O0 
 	
-DEPS = ${DEP_DIR}/macro.h       \
-       ${DEP_DIR}/list.h
+DEPS = ${DEP_DIR}/sputnik.h
 
-OBJ  = ${OBJ_DIR}/spu_parser.o    
-       #${OBJ_DIR}/spu_mesh.o      
-       #${OBJ_DIR}/list.o
+SPU_OBJ  = ${OBJ_DIR}/spu_parser.o \
+           ${OBJ_DIR}/spu_mesh.o      
 
 ##############################
 # PARMETIS VARIABLES
@@ -36,7 +34,7 @@ INC = -I${DEP_DIR}
 
 ##############################
 # LINK
-all: ${OBJ} 
+all: ${SPU_OBJ} 
 	${MAKE} -C macro 
 	${MAKE} -C micro 
 

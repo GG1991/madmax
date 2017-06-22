@@ -19,9 +19,10 @@ DEPS_DIR = ${DEP_DIR}              \
            ${SPU_DEP_DIR}
 
 OBJ  = ${OBJ_DIR}/mac_main.o       \
-       ${OBJ_DIR}/mac_comm.o       \
-       ${SPU_OBJ_DIR}/spu_parser.o 
-#       ${SPU_OBJ_DIR}/spu_mesh.o   
+       ${OBJ_DIR}/mac_comm.o       
+
+SPU_OBJ  = ${SPU_OBJ_DIR}/spu_parser.o   \
+           ${SPU_OBJ_DIR}/spu_mesh.o      
 
 .PHONY: clean_
 
@@ -38,7 +39,7 @@ PARMETIS_INC = -I${PARMETIS_DIR}/include       \
 
 ##############################
 # LINK
-all: ${OBJ} 
+all: ${OBJ} ${SPU_OBJ}
 	gcc -o macro $^ ${PETSC_KSP_LIB} -lgsl -lgslcblas -lm ${LDFLAG}
 	@echo "macro.o great :) !" 
 

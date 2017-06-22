@@ -20,8 +20,9 @@ DEPS_DIR = ${DEP_DIR}              \
 
 OBJ  = ${OBJ_DIR}/mic_main.o       \
        ${OBJ_DIR}/mic_comm.o       \
-       ${SPU_OBJ_DIR}/spu_parser.o 
-#       ${SPU_OBJ_DIR}/spu_mesh.o   
+
+SPU_OBJ = ${SPU_OBJ_DIR}/spu_parser.o   \
+           ${SPU_OBJ_DIR}/spu_mesh.o      
 
 .PHONY: clean_
 
@@ -38,7 +39,7 @@ PARMETIS_INC = -I${PARMETIS_DIR}/include       \
 
 ##############################
 # LINK
-all: ${OBJ} 
+all: ${OBJ} ${SPU_OBJ}
 	gcc -o micro $^ ${PETSC_KSP_LIB} -lgsl -lgslcblas -lm ${LDFLAG}
 	@echo "micro.o great :) !" 
 
