@@ -24,7 +24,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, int *elmdist, int *eptr, int *eind, int *
     int                  rank, nproc, i;
     int                 *npe;
     int                  nelm;             // number of elements of this process
-    int                  new_eind;             // number of elements of this process
     idx_t              * elmwgt;           // (inp) Element weights
     idx_t                wgtflag;          // (inp) Element weight flag (0 desactivated)
     idx_t                numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
@@ -94,11 +93,28 @@ int part_mesh_PARMETIS(MPI_Comm *comm, int *elmdist, int *eptr, int *eind, int *
 	  options, &edgecut, part, comm );
 
       // graph distribution
+ 
+      /*
+       * First we create an array "npe" that follows
+       * the same function as eptr but is a global 
+       * reference 
+       *
+       * eptr = [ 0 3 5 8 9 ]
+       * npe  = [ 3 2 3 1 ]    (npe[i] = eptr[i+1] - eptr[i])
+       *
+       */
 
+      int *eind_new, *npe_new, *cuts;         
       npe = malloc(nelm*sizeof(int));
-      new_eind = malloc(eptr[nelm]*sizeof(int)); 
+      for(i=0;i<nelm;i++){
+	npe[i] = eptr[i+1] - eptr[i];
+      }
+      eind_new = malloc(eptr[nelm]*sizeof(int)); 
+      npe_new  = malloc(nelm*sizeof(int)); 
+      cuts     = malloc(nproc*sizeof(int)); 
       
       // swap eptr and eind
+      swap_vectors_SCR( part, nelm,  npe, eind, npe_new, eind_new, cuts );
 
 
     }
@@ -106,9 +122,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, int *elmdist, int *eptr, int *eind, int *
 
       return 1;
     }
-
-
-
 
     return 0;
 }
@@ -157,7 +170,7 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
     for(i=0;i<n;i++){
       if(swap[i] == p){
         aux=vector[i];
-	aux_vector[i] = vector[j]: 
+	aux_vector[i] = vector[j];
 	aux_vector[j] = aux;
 	j ++;
 	cuts[p] ++;
@@ -168,22 +181,15 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
   return 0;
 }
 
-int swap_vectors_SCR( int *swap, int n, int *eptr, int *eind, int *npe, int *new_eind, int *cuts )
+int swap_vectors_SCR( int *swap, int n,  int *npe, int *eind, int *npe_new, int *eind_new, int *cuts )
 {
 
   /* 
      swaps a vectors in SCR format 
 
-     first convert from SCR to an absolute reference
-     format
-
-     eptr = [ 0 3 5 8 9 ]
-     npe  = [ 3 2 3 1 ]              (npe[i] = eptr[i+1] - eptr[i])
-     eind = [ 3 2 0 1 2 1 0 1 3 ]   
-
      example:
 
-     part = [ 0 2 1 0 ]
+     swap = [ 0 2 1 0 ] (swap will be generally the "part" array)
      npe  = [ 3 2 3 1 ]             
      eind = [ 3 2 0 | 1 2 | 1 0 1 |3 ]   
      | 
@@ -194,36 +200,59 @@ int swap_vectors_SCR( int *swap, int n, int *eptr, int *eind, int *npe, int *new
 
      Notes:
 
-     -> result is saved on "new_eind" and "npe"
+     -> "n" is the length of "npe"
+     -> results are saved on "eind_new" and "npe_new" (memory is duplicated)
      -> swap should have values in [0,n)
   */
 
-  int *aux_vector, *npe;
-  int i,p,aux,j,pi;
+  int e, p, i, j, lp, pi;
 
   if(n==0){
     return 0;
   }
-  if(!npe || !cuts || !eptr || !eind || !new_eind){
+  if(!npe || !cuts || !eind || !eind_new || !npe_new){
     return 1;
   }
   
-  for(i=0;i<n;i++){
-    npe[i] = eptr[i+1] - eptr[i];
-  }
-
-  j = pi = 0;
+  j = pi = lp = 0;
   for(p=0;p<n;p++){
+
     cuts[p] = 0;
-    for(i=0;i<n;i++){
-      if(swap[i] == p){
-        aux    = npe[i];
-	npe[i] = npe[j]: 
-	npe[j] = aux;
+    for(e=0;e<n;e++){
+
+      if(swap[e] == p){
+
+        CSR_give_pointer( e, n, npe, eind, &pi);
+	// swap npe
+        npe_new[j] = npe[e];
 	j ++;
+	// swap eind
+	for(i=0;i<n;i++){
+	  eind_new[lp] = eind[i];
+	  lp ++;
+	}
 	cuts[p] ++;
       }
     }
+  }
+
+  return 0;
+}
+
+int CSR_give_pointer( int e, int n, int *npe, int *eind, int *p)
+{
+  /*
+   * returns the position "p" inside "eind" of element "e"
+   *
+   */
+
+  int m;
+  if(e>=n){
+    return 1;
+  }
+  *p = 0;
+  for(m=0;m<e;m++){
+    *p += npe[m];
   }
 
   return 0;
