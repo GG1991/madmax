@@ -113,8 +113,8 @@ int part_mesh_PARMETIS(MPI_Comm *comm, int *elmdist, int *eptr, int *eind, int *
       npe_new  = malloc(nelm*sizeof(int)); 
       cuts     = malloc(nproc*sizeof(int)); 
       
-      // swap eptr and eind
-      swap_vectors_SCR( part, nelm,  npe, eind, npe_new, eind_new, cuts );
+      // swap npe and eind
+      swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_new, eind_new, cuts );
 
 
     }
@@ -181,7 +181,7 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
   return 0;
 }
 
-int swap_vectors_SCR( int *swap, int n,  int *npe, int *eind, int *npe_new, int *eind_new, int *cuts )
+int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *eind, int *npe_new, int *eind_new, int *cuts )
 {
 
   /* 
@@ -215,20 +215,23 @@ int swap_vectors_SCR( int *swap, int n,  int *npe, int *eind, int *npe_new, int 
   }
   
   j = pi = lp = 0;
-  for(p=0;p<n;p++){
+  for(p=0;p<nproc;p++){
 
     cuts[p] = 0;
     for(e=0;e<n;e++){
 
       if(swap[e] == p){
 
-        CSR_give_pointer( e, n, npe, eind, &pi);
 	// swap npe
         npe_new[j] = npe[e];
 	j ++;
+
 	// swap eind
-	for(i=0;i<n;i++){
-	  eind_new[lp] = eind[i];
+	// CSR_give_pointer( e, npe, eind, &pi);
+        pi = eptr[e];
+
+	for(i=0;i<npe[e];i++){
+	  eind_new[lp] = eind[ pi + i ];
 	  lp ++;
 	}
 	cuts[p] ++;
@@ -239,7 +242,7 @@ int swap_vectors_SCR( int *swap, int n,  int *npe, int *eind, int *npe_new, int 
   return 0;
 }
 
-int CSR_give_pointer( int e, int n, int *npe, int *eind, int *p)
+int CSR_give_pointer( int e, int *npe, int *eind, int *p)
 {
   /*
    * returns the position "p" inside "eind" of element "e"
@@ -247,9 +250,6 @@ int CSR_give_pointer( int e, int n, int *npe, int *eind, int *p)
    */
 
   int m;
-  if(e>=n){
-    return 1;
-  }
   *p = 0;
   for(m=0;m<e;m++){
     *p += npe[m];
