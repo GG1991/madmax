@@ -34,6 +34,9 @@ char         input_n[NBUF];            // Input file name
 
 MPI_Comm     world_comm;
 
+int          rank_wor;                 //  rank on world comm
+int          nproc_wor;                //  # of processes (world_comm)
+
 int          *id_vec;                  // ID vector size = #proc (info of which ID has each rank
 int          nproc_mac_tot;            // number of macro processes total (inside world_comm)
 int          nproc_mic_tot;            // number of micro processes total (inside world_comm)
@@ -43,9 +46,11 @@ int          nproc_mic_group;          // number of micro process in a group = s
 int          nmic_worlds;              // number of micro worlds nproc_mic / nproc_mic_group
 int          scheme;                   // communication approach
 
-/*****************************************************************************************************
- Structures to save de mesh on CSR format 
-*****************************************************************************************************/
+// Time measurement
+
+double       t0,t1;
+
+// Structures to save de mesh on CSR format 
 
 char         mesh_n[NBUF];             // Mesh file name
 char         mesh_f[4];                // Mesh format name

@@ -20,7 +20,8 @@ static char help[] = "Solves the displacement field inside a solid structure. \
 int main(int argc, char **argv)
 {
 
-    int        ierr;
+    int        i, ierr;
+    double     *time_main;
 
     world_comm = MPI_COMM_WORLD;
 
@@ -36,15 +37,45 @@ int main(int argc, char **argv)
     }
 
     spu_parse_scheme(input_n);
-
+    
     /* 
        Stablish a new local communicator and a set of 
        intercommunicators with micro programs 
      */
     mac_comm_init();
+    
+    // file for measuring time in "main" rutine
+    FILE  *time_fl = fopen("time_main_mac.dat","w");
 
+    if(rank_mac == 0){
+      fprintf(time_fl, "%-20s", "ranks");
+      for(i=0;i<nproc_mac;i++){
+	fprintf(time_fl," %-5d",i);
+      }
+      fprintf(time_fl,"\n");
+    }
+
+    // here we collect time from all processes
+    if(rank_mac == 0){
+      time_main = calloc(nproc_mac, sizeof(double));
+    }
+
+    t0 = MPI_Wtime();
     spu_parse_mesh(input_n);
-   
+    t1 = MPI_Wtime() - t0;
+    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_main, 1, MPI_DOUBLE, 0, macro_comm);
+    if(ierr){
+      return 1;
+    }
+    if(rank_mac == 0){
+      fprintf(time_fl, "%-20s", "spu_parse_mesh");
+      for(i=0;i<nproc_mac;i++){
+	fprintf(time_fl," %e",time_main[i]);
+      }
+      fprintf(time_fl,"\n");
+    }
+    
+
     //************************************************************ 
     // Set PETSc communicator to macro_comm
     PETSC_COMM_WORLD = macro_comm;
@@ -53,11 +84,41 @@ int main(int argc, char **argv)
     //
     // read mesh
     //    
+    t0 = MPI_Wtime();
     strcpy(mesh_f,"gmsh");
     read_mesh(&macro_comm, mesh_n, mesh_f, &elmdist, &eptr, &eind);
+    t1 = MPI_Wtime() - t0;
+    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_main, 1, MPI_DOUBLE, 0, macro_comm);
+    if(ierr){
+      return 1;
+    }
+    if(rank_mac == 0){
+      fprintf(time_fl, "%-20s", "read_mesh");
+      for(i=0;i<nproc_mac;i++){
+	fprintf(time_fl," %e",time_main[i]);
+      }
+      fprintf(time_fl,"\n");
+    }
+
     nelm = elmdist[rank_mac+1] - elmdist[rank_mac];
     part = (int*)malloc(nelm * sizeof(int));
+
+    t0 = MPI_Wtime();
     part_mesh_PARMETIS(&macro_comm, elmdist, eptr, eind, part, NULL, PARMETIS_MESHKWAY );
+    t1 = MPI_Wtime() - t0;
+    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_main, 1, MPI_DOUBLE, 0, macro_comm);
+    if(ierr){
+      return 1;
+    }
+    if(rank_mac == 0){
+      fprintf(time_fl, "%-20s", "part_mesh_PARMETIS");
+      for(i=0;i<nproc_mac;i++){
+	fprintf(time_fl," %e",time_main[i]);
+      }
+      fprintf(time_fl,"\n");
+    }
+
+    fclose(time_fl);
 
     ierr = PetscFinalize();
     ierr = MPI_Finalize();
