@@ -156,6 +156,11 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
       free(eind);
       free(npe);
 
+      int nelm_new = 0;
+      for(i=0;i<nproc;i++){
+	nelm_new += eind_size_new[i];
+      }
+
       printf("%-6s r%2d %-14s :", myname, rank, "cuts_new");
       for(i=0;i<nproc;i++){
 	printf("%8d ",cuts_new[i]);
@@ -167,6 +172,8 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
 	printf("%8d ",eind_size_new[i]);
       }
       printf("\n");
+
+      printf("%-6s r%2d %-14s : %8d", myname, rank, "nelm_new", nelm_new);
 
       free(eind_new);
       free(npe_new);
