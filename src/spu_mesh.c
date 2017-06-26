@@ -21,7 +21,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
        c) distribute the graph to processes
 
      */
-    int                  rank, nproc, i;
+    int                  rank, nproc, i, ierr;
     int                 *npe;
     int                  nelm;             // number of elements of this process
     idx_t              * elmwgt;           // (inp) Element weights
@@ -104,7 +104,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
        *
        */
 
-      int *eind_new, *npe_new, *cuts;         
+      int *eind_new, *npe_new, *cuts, *cuts_new;         
       npe = malloc(nelm*sizeof(int));
       for(i=0;i<nelm;i++){
 	npe[i] = eptr[i+1] - eptr[i];
@@ -112,14 +112,25 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
       eind_new = malloc(eptr[nelm]*sizeof(int)); 
       npe_new  = malloc(nelm*sizeof(int)); 
       cuts     = malloc(nproc*sizeof(int)); 
+      cuts_new = malloc(nproc*sizeof(int)); 
       
       // swap npe and eind
       swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_new, eind_new, cuts );
 
-      printf("%-10s ",myname);
-      printf("cuts : ");
+      printf("%-6s r%2d %-8s :", myname, rank, "cuts");
       for(i=0;i<nproc;i++){
 	printf("%6d ",cuts[i]);
+      }
+      printf("\n");
+
+      ierr = MPI_Alltoall(cuts, 1, MPI_INT, cuts_new, 1, MPI_INT, *comm);
+      if(ierr){
+	return 1;
+      }
+
+      printf("%-6s r%2d %-8s :", myname, rank, "cuts_new");
+      for(i=0;i<nproc;i++){
+	printf("%6d ",cuts_new[i]);
       }
       printf("\n");
 

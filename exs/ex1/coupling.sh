@@ -7,8 +7,8 @@ break_mic=( 'spu_mesh.c:117' )
 #break_mac=( 'mac_comm.c:101' ) 
 #break_mic=( 'mic_comm.c:105' ) 
 
-NM=2
-Nm=2
+NM=3
+Nm=3
 
 
 # BREAKPOINTS
@@ -32,8 +32,8 @@ exec_mic="../../micro/micro ex1.mac"
 #mpirun -np 1 xterm -e "$gdbcomm_mac" : -np 2 xterm -e "$gdbcomm_mic"
 if [ "$#" -eq 1 ];then
   if [ "$1" -eq 1 ];then  
-   echo "mpirun -np 2 "$exec_mac" : -np 2 "$exec_mic""
-   eval  mpirun -np 2 "$exec_mac" : -np 2 "$exec_mic"
+   echo "mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
+   eval  mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
   elif [ "$1" -eq 2 ];then
    exec_val1_mac="valgrind --log-file=\"valgrind1.out\"  ../../macro/macro ex1.mac"
    exec_val1_mic="valgrind --log-file=\"valgrind1.out\"  ../../micro/micro ex1.mac"
