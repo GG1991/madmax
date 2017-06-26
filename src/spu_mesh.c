@@ -7,7 +7,7 @@
 #include "sputnik.h"
 #include "parmetis.h"
 
-int part_mesh_PARMETIS(MPI_Comm *comm, int *elmdist, int *eptr, int *eind, int *part, double *centroid, int algorithm)
+int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, int *eind, int *part, double *centroid, int algorithm)
 {
 
     /*
@@ -116,12 +116,23 @@ int part_mesh_PARMETIS(MPI_Comm *comm, int *elmdist, int *eptr, int *eind, int *
       // swap npe and eind
       swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_new, eind_new, cuts );
 
+      printf("%-10s ",myname);
+      printf("cuts : ");
+      for(i=0;i<nproc;i++){
+	printf("%6d ",cuts[i]);
+      }
+      printf("\n");
+
+      free(eind_new);
+      free(npe_new);
+      free(cuts);
 
     }
     else{
 
       return 1;
     }
+    free(tpwgts);
 
     return 0;
 }
@@ -259,7 +270,7 @@ int CSR_give_pointer( int e, int *npe, int *eind, int *p)
 }
 
 
-int read_mesh(MPI_Comm * comm, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind)
+int read_mesh(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind)
 {
 
     /*
@@ -274,7 +285,7 @@ int read_mesh(MPI_Comm * comm, char *mesh_n, char *mesh_f, int ** elmdist, int *
      */
 
     if(strcmp(mesh_f,"gmsh") == 0){
-	return read_mesh_CSR_GMSH(comm, mesh_n, elmdist, eptr, eind);
+	return read_mesh_CSR_GMSH(comm, myname, mesh_n, elmdist, eptr, eind);
     }else{
       return 1;
     }
@@ -282,7 +293,7 @@ int read_mesh(MPI_Comm * comm, char *mesh_n, char *mesh_f, int ** elmdist, int *
 
 /****************************************************************************************************/
 
-int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** eptr, int ** eind)
+int read_mesh_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n, int ** elmdist, int ** eptr, int ** eind)
 {
 
     /* 
@@ -390,7 +401,7 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
 		  offset += len; 
 		}
 	    }
-	    ierr = PetscPrintf(*comm,"nelm_tot    : %d\n",nelm_tot);CHKERRQ(ierr);
+	    ierr = PetscPrintf(*comm,"%-6s %-8s   :  %d\n", myname, "nelm_tot", nelm_tot);
 	    break;
 	}
 	ln ++;
@@ -406,7 +417,7 @@ int read_mesh_CSR_GMSH(MPI_Comm * comm, char *mesh_n, int ** elmdist, int ** ept
     //  nelm_tot/nproc los repartimos uno por 
     //  uno entre los primeros procesos
     //
-    ierr = PetscPrintf(*comm,"elmdist     : ");CHKERRQ(ierr);
+    ierr = PetscPrintf(*comm,"%-6s %-8s   : ", myname, "elmdist");
     *elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
     resto = nelm_tot % nproc;
     (*elmdist)[0] = 0;

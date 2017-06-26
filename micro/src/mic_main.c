@@ -21,6 +21,7 @@ int main(int argc, char **argv)
 {
 
     int        ierr;
+    char       *myname = strdup("micro");
 
     world_comm = MPI_COMM_WORLD;
 
@@ -54,10 +55,10 @@ int main(int argc, char **argv)
     // read mesh
     //    
     strcpy(mesh_f,"gmsh");
-    read_mesh(&micro_comm, mesh_n, mesh_f, &elmdist, &eptr, &eind);
+    read_mesh(&micro_comm, myname, mesh_n, mesh_f, &elmdist, &eptr, &eind);
     nelm = elmdist[rank_mic+1] - elmdist[rank_mic];
     part = (int*)malloc(nelm * sizeof(int));
-    part_mesh_PARMETIS(&micro_comm, elmdist, eptr, eind, part, NULL, PARMETIS_MESHKWAY );
+    part_mesh_PARMETIS(&micro_comm, myname, elmdist, eptr, eind, part, NULL, PARMETIS_MESHKWAY );
 
     ierr = PetscFinalize();
     ierr = MPI_Finalize();

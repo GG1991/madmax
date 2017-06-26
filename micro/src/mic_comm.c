@@ -149,7 +149,7 @@ int mic_comm_init(void)
     // remote ranks
     // these remote ranks correspond to
     // the remote micro leaders
-    remote_ranks = malloc(nproc_mac * sizeof(int));
+    remote_ranks = malloc(nproc_mac_tot * sizeof(int));
     m = 0;
     for(i=0;i<nproc_wor;i++){
       if(id_vec[i] == MACRO){
@@ -157,6 +157,7 @@ int mic_comm_init(void)
 	m++;
       }
     }
+    printf("nproc_mac = %d m = %d\n",nproc_mac_tot,m);
 
   }
   else if(scheme == MACRO_ALONE){
