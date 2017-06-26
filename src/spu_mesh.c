@@ -21,7 +21,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
        c) distribute the graph to processes
 
      */
-    int                  rank, nproc, i, ierr;
+    int                  rank, nproc, i, j, ierr;
     int                 *npe;
     int                  nelm;             // number of elements of this process
     idx_t              * elmwgt;           // (inp) Element weights
@@ -104,22 +104,42 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
        *
        */
 
-      int *eind_new, *npe_new, *cuts, *cuts_new;         
+      int *eind_new, *npe_new, *cuts, *cuts_new, *eind_size, *eind_size_new;         
       npe = malloc(nelm*sizeof(int));
       for(i=0;i<nelm;i++){
 	npe[i] = eptr[i+1] - eptr[i];
       }
-      eind_new = malloc(eptr[nelm]*sizeof(int)); 
-      npe_new  = malloc(nelm*sizeof(int)); 
-      cuts     = malloc(nproc*sizeof(int)); 
-      cuts_new = malloc(nproc*sizeof(int)); 
+      eind_new      = malloc(eptr[nelm]*sizeof(int)); 
+      npe_new       = malloc(nelm*sizeof(int)); 
+      cuts          = malloc(nproc*sizeof(int)); 
+      cuts_new      = malloc(nproc*sizeof(int)); 
+      eind_size     = malloc(nproc*sizeof(int)); 
+      eind_size_new = malloc(nproc*sizeof(int)); 
       
       // swap npe and eind
       swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_new, eind_new, cuts );
 
-      printf("%-6s r%2d %-8s :", myname, rank, "cuts");
+      printf("%-6s r%2d %-14s :", myname, rank, "cuts");
       for(i=0;i<nproc;i++){
-	printf("%6d ",cuts[i]);
+	printf("%8d ",cuts[i]);
+      }
+      printf("\n");
+
+      for(i=0;i<nproc;i++){
+	eind_size[i] = 0;
+	for(j=0;j<cuts[i];j++){
+	  if(i==0){
+	    eind_size[i] += npe_new[j];
+	  }
+	  else{
+	    eind_size[i] += npe_new[cuts[i-1] + j];
+	  }
+	}
+      }
+
+      printf("%-6s r%2d %-14s :", myname, rank, "eind_size");
+      for(i=0;i<nproc;i++){
+	printf("%8d ",eind_size[i]);
       }
       printf("\n");
 
@@ -127,10 +147,24 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
       if(ierr){
 	return 1;
       }
+      ierr = MPI_Alltoall(eind_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *comm);
+      if(ierr){
+	return 1;
+      }
 
-      printf("%-6s r%2d %-8s :", myname, rank, "cuts_new");
+      free(eptr);
+      free(eind);
+      free(npe);
+
+      printf("%-6s r%2d %-14s :", myname, rank, "cuts_new");
       for(i=0;i<nproc;i++){
-	printf("%6d ",cuts_new[i]);
+	printf("%8d ",cuts_new[i]);
+      }
+      printf("\n");
+
+      printf("%-6s r%2d %-14s :", myname, rank, "eind_size_new");
+      for(i=0;i<nproc;i++){
+	printf("%8d ",eind_size_new[i]);
       }
       printf("\n");
 

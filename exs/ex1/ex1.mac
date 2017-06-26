@@ -1,7 +1,7 @@
 $scheme
   scheme MACRO_MICRO
   num_micro_struct 1
-  nproc_per_mic    3
+  nproc_per_mic    2
 $end_scheme
 $mesh
  mesh ../../meshes/cube_unif/cube.msh
