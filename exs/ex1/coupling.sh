@@ -45,8 +45,8 @@ if [ "$#" -eq 1 ];then
    echo "mpirun -np 2 "$exec_val3_mac" : -np 2 "$exec_val3_mic""
    eval  mpirun -np 2 "$exec_val3_mac" : -np 2 "$exec_val3_mic" > valgrind3-1.out 2>&1
   elif [ "$1" -eq 4 ];then
-   exec_val4_mac="valgrind ../../macro/macro ex1.spu"
-   exec_val4_mic="valgrind ../../micro/micro ex1.spu"
+   exec_val4_mac="valgrind --leak-check=full ../../macro/macro ex1.spu"
+   exec_val4_mic="valgrind --leak-check=full ../../micro/micro ex1.spu"
    echo "mpirun -np 2 "$exec_val4_mac" : -np 2 "$exec_val4_mic""
    eval  mpirun -np 2 "$exec_val4_mac" : -np 2 "$exec_val4_mic"
   fi
