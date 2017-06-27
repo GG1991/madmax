@@ -16,7 +16,8 @@ CFLAGS=-g -O0
 DEPS = ${DEP_DIR}/sputnik.h
 
 SPU_OBJ  = ${OBJ_DIR}/spu_parser.o \
-           ${OBJ_DIR}/spu_mesh.o      
+           ${OBJ_DIR}/spu_mesh.o   \
+           ${OBJ_DIR}/spu_vtk.o      
 
 ##############################
 # PARMETIS VARIABLES
@@ -51,6 +52,12 @@ obj/spu_parser.o: src/spu_parser.c inc/sputnik.h
 obj/spu_mesh.o: src/spu_mesh.c ${DEPS} ${PARMETIS_HEA}
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $<  ${INC}  ${PARMETIS_INC} 
 	@echo "spu_mesh.o" 
+
+##############################
+# SPU_VTK.O
+obj/spu_vtk.o: src/spu_vtk.c ${DEPS} ${PARMETIS_HEA}
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $<  ${INC}  ${PARMETIS_INC} 
+	@echo "spu_vtk.o" 
 
 
 ##############################

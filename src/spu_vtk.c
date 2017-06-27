@@ -23,9 +23,9 @@ int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm )
   if(rank==0){ 
 
     FILE    *vtkfl, *meshfl;
-    int     nnod, n,e,d,count,index;
+    int     nnod;
     double  vald;
-    char    buf[NBUF],filevtk[32],ending[5];
+    char    buf[NBUF], filevtk[32], ending[5], *data;
 
     strcpy(filevtk,myname);
     filevtk[strlen(myname)]='\0';
@@ -48,7 +48,6 @@ int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm )
     fprintf(vtkfl, "SPUTNIK\n");
     fprintf(vtkfl, "ASCII\n");
     fprintf(vtkfl, "DATASET UNSTRUCTURED_GRID\n");
-    fprintf(vtkfl, "POINTS %d double\n", (mesh.nnodes+mesh.nghost));
 
     while(fgets(buf,NBUF,meshfl)!=NULL){
       data=strtok(buf," \n");
@@ -59,14 +58,14 @@ int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm )
 	//
 	// leemos el numero total de nodos 
 	//
-	fgets(buf,NBUF,fm);
+	fgets(buf,NBUF,meshfl);
 	data  = strtok(buf," \n");
 	nnod = atoi(data);
 	//
 	// leemos hasta $EndNodes
 	//
 	for(i=0; i<nnod; i++){
-	  fgets(buf,NBUF,fm); 
+	  fgets(buf,NBUF,meshfl); 
 	  data=strtok(buf," \n");
 	  for(j=0;j<3;j++){
 	    data=strtok(NULL," \n");
@@ -78,8 +77,12 @@ int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm )
       }
     }
     fclose(meshfl);
+    fprintf(vtkfl, "POINTS %d double\n", nnod);
 
     fclose(vtkfl);
+  }
+  else{
+
   }
 
   return 0;
