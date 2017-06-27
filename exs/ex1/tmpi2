@@ -115,12 +115,12 @@ else
     # re-execute ourself to spawn of the processes.
     echo mpirun -np ${processes} ${self} runmpi "${@}"
 
-    #break_mac=( 'mac_main.c:38' ) 
+    break_mac=( 'mac_main.c:113' ) 
     #break_mic=( 'mic_main.c:32' ) 
     #break_mac=( 'mac_comm.c:100' ) 
     #break_mic=( 'mic_comm.c:104' ) 
-    break_mac=( 'mac_comm.c:101' ) 
-    break_mic=( 'mic_comm.c:105' ) 
+    #break_mac=( 'spu_vtk.c:22' ) 
+    #break_mic=( 'mic_comm.c:105' ) 
     
     
     # BREAKPOINTS
@@ -136,8 +136,8 @@ else
     done
     exopt_mic+="-ex 'r'"
 
-    gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ../../macro/exs/ex1/ex1.mac"
-    gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ../../macro/exs/ex1/ex1.mac"
+    gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu"
+    gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ex1.spu"
 
     mpirun -np ${processes_1} ${self} runmpi "$gdbcomm_mac" : -np ${processes_2} ${self} runmpi "$gdbcomm_mic"
 fi
