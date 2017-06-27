@@ -111,7 +111,6 @@ int main(int argc, char **argv)
     t0 = MPI_Wtime();      /* ON time lapse */
 
     part_mesh_PARMETIS(&macro_comm, time_fl, myname, elmdist, eptr, eind, part, NULL, PARMETIS_MESHKWAY );
-
     
     t1 = MPI_Wtime() - t0;
     ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
