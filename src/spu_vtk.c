@@ -81,6 +81,8 @@ int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm )
     fprintf(vtkfl, "POINTS %d double\n", nnod);
 
     length_vec = malloc(nproc*sizeof(int));
+
+    length = nelm + 1;
     ierr = MPI_Gather(&length, 1, MPI_INT, length_vec, 1, MPI_INT, 0, *comm);
     if(ierr){
       return 1;
@@ -98,6 +100,7 @@ int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm )
       free(eptr_a);
     }
 
+    length = eptr[nelm];
     ierr = MPI_Gather(&length, 1, MPI_INT, length_vec, 1, MPI_INT, 0, *comm);
     if(ierr){
       return 1;
@@ -112,7 +115,7 @@ int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm )
       }
 
 
-      free(eptr_a);
+      free(eind_a);
     }
 
     fclose(vtkfl);

@@ -22,7 +22,8 @@ OBJ  = ${OBJ_DIR}/mac_main.o       \
        ${OBJ_DIR}/mac_comm.o       
 
 SPU_OBJ  = ${SPU_OBJ_DIR}/spu_parser.o   \
-           ${SPU_OBJ_DIR}/spu_mesh.o      
+           ${SPU_OBJ_DIR}/spu_mesh.o     \
+           ${SPU_OBJ_DIR}/spu_vtk.o      
 
 .PHONY: clean_
 

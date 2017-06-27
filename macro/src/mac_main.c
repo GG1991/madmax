@@ -60,8 +60,10 @@ int main(int argc, char **argv)
       time_vec = calloc(nproc_mac, sizeof(double));
     }
 
-    t0 = MPI_Wtime();
+    t0 = MPI_Wtime();      /* ON time lapse */
+
     spu_parse_mesh(input_n);
+
     t1 = MPI_Wtime() - t0;
     ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
     if(ierr){
@@ -73,7 +75,7 @@ int main(int argc, char **argv)
 	fprintf(time_fl," %e",time_vec[i]);
       }
       fprintf(time_fl,"\n");
-    }
+    }                       /* OFF time lapse */
     
 
     //************************************************************ 
@@ -84,9 +86,11 @@ int main(int argc, char **argv)
     //
     // read mesh
     //    
-    t0 = MPI_Wtime();
+    t0 = MPI_Wtime();      /* ON time lapse */
+
     strcpy(mesh_f,"gmsh");
     read_mesh(&macro_comm, myname, mesh_n, mesh_f, &elmdist, &eptr, &eind);
+
     t1 = MPI_Wtime() - t0;
     ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
     if(ierr){
@@ -98,13 +102,17 @@ int main(int argc, char **argv)
 	fprintf(time_fl," %e",time_vec[i]);
       }
       fprintf(time_fl,"\n");
-    }
+    }                       /* OFF time lapse */
 
     nelm = elmdist[rank_mac+1] - elmdist[rank_mac];
     part = (int*)malloc(nelm * sizeof(int));
 
-    t0 = MPI_Wtime();
+    
+    t0 = MPI_Wtime();      /* ON time lapse */
+
     part_mesh_PARMETIS(&macro_comm, time_fl, myname, elmdist, eptr, eind, part, NULL, PARMETIS_MESHKWAY );
+
+    
     t1 = MPI_Wtime() - t0;
     ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
     if(ierr){
@@ -116,7 +124,9 @@ int main(int argc, char **argv)
 	fprintf(time_fl," %e",time_vec[i]);
       }
       fprintf(time_fl,"\n");
-    }
+    }                       /* OFF time lapse */
+    
+    spu_vtk_partition( myname, mesh_n, &macro_comm );
 
     fclose(time_fl);
 

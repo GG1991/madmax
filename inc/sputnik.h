@@ -81,3 +81,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, int *elmdist
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *eind, int *npe_new, int *eind_new, int
 *cuts_npe, int *cuts_eind);
 int CSR_give_pointer( int e, int *npe, int *eind, int *p);
+
+// spu_vtk.c
+int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm );
