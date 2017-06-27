@@ -21,7 +21,6 @@ int main(int argc, char **argv)
 {
 
     int        i, ierr;
-    double     *time_main;
     char       *myname = strdup("macro");
 
     world_comm = MPI_COMM_WORLD;
@@ -46,7 +45,7 @@ int main(int argc, char **argv)
     mac_comm_init();
     
     // file for measuring time in "main" rutine
-    FILE  *time_fl = fopen("time_main_mac.dat","w");
+    time_fl = fopen("time_mac.dat","w");
 
     if(rank_mac == 0){
       fprintf(time_fl, "%-20s", "ranks");
@@ -58,20 +57,20 @@ int main(int argc, char **argv)
 
     // here we collect time from all processes
     if(rank_mac == 0){
-      time_main = calloc(nproc_mac, sizeof(double));
+      time_vec = calloc(nproc_mac, sizeof(double));
     }
 
     t0 = MPI_Wtime();
     spu_parse_mesh(input_n);
     t1 = MPI_Wtime() - t0;
-    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_main, 1, MPI_DOUBLE, 0, macro_comm);
+    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
     if(ierr){
       return 1;
     }
     if(rank_mac == 0){
       fprintf(time_fl, "%-20s", "spu_parse_mesh");
       for(i=0;i<nproc_mac;i++){
-	fprintf(time_fl," %e",time_main[i]);
+	fprintf(time_fl," %e",time_vec[i]);
       }
       fprintf(time_fl,"\n");
     }
@@ -89,14 +88,14 @@ int main(int argc, char **argv)
     strcpy(mesh_f,"gmsh");
     read_mesh(&macro_comm, myname, mesh_n, mesh_f, &elmdist, &eptr, &eind);
     t1 = MPI_Wtime() - t0;
-    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_main, 1, MPI_DOUBLE, 0, macro_comm);
+    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
     if(ierr){
       return 1;
     }
     if(rank_mac == 0){
       fprintf(time_fl, "%-20s", "read_mesh");
       for(i=0;i<nproc_mac;i++){
-	fprintf(time_fl," %e",time_main[i]);
+	fprintf(time_fl," %e",time_vec[i]);
       }
       fprintf(time_fl,"\n");
     }
@@ -105,16 +104,16 @@ int main(int argc, char **argv)
     part = (int*)malloc(nelm * sizeof(int));
 
     t0 = MPI_Wtime();
-    part_mesh_PARMETIS(&macro_comm, myname, elmdist, eptr, eind, part, NULL, PARMETIS_MESHKWAY );
+    part_mesh_PARMETIS(&macro_comm, time_fl, myname, elmdist, eptr, eind, part, NULL, PARMETIS_MESHKWAY );
     t1 = MPI_Wtime() - t0;
-    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_main, 1, MPI_DOUBLE, 0, macro_comm);
+    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
     if(ierr){
       return 1;
     }
     if(rank_mac == 0){
       fprintf(time_fl, "%-20s", "part_mesh_PARMETIS");
       for(i=0;i<nproc_mac;i++){
-	fprintf(time_fl," %e",time_main[i]);
+	fprintf(time_fl," %e",time_vec[i]);
       }
       fprintf(time_fl,"\n");
     }

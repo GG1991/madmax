@@ -7,7 +7,7 @@
 #include "sputnik.h"
 #include "parmetis.h"
 
-int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, int *eind, int *part, double *centroid, int algorithm)
+int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, int *elmdist, int *eptr, int *eind, int *part, double *centroid, int algorithm)
 {
 
     /*
@@ -21,6 +21,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
        c) distribute the graph to processes
 
      */
+
     int        rank, nproc, i,j, ierr;
     int        nelm;             // number of elements of this process
     idx_t    * elmwgt;           // (inp) Element weights
@@ -34,6 +35,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
     idx_t      options[3];       // (inp) option parameters
     idx_t      edgecut;          // (out) number of edges cut of the partition
 //    idx_t          * part;             // (out) Array for storing the solution
+    double     t0_loc,t1_loc;
 
     MPI_Comm_size(*comm, &nproc);
     MPI_Comm_rank(*comm, &rank);
@@ -82,10 +84,25 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
     else if(algorithm == PARMETIS_MESHKWAY){
 
       // Performe the partition with no weights
+      t0_loc = MPI_Wtime();
+
       ParMETIS_V3_PartMeshKway (
 	  elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
 	  &ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
 	  options, &edgecut, part, comm );
+
+      t1_loc = MPI_Wtime() - t0_loc;
+      ierr = MPI_Gather(&t1_loc, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, *comm);
+      if(ierr){
+	return 1;
+      }
+      if(rank == 0){
+	fprintf(time_fl,"%-20s", "mesh partition");
+	for(i=0;i<nproc;i++){
+	  fprintf(time_fl," %e",time_vec[i]);
+	}
+	fprintf(time_fl,"\n");
+      }
 
       /* 
        * Graph distribution
@@ -107,6 +124,8 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
        *                                     "eind" using "eind_size" 
        *
        */
+
+      t0_loc = MPI_Wtime();
 
       int *eind_swi, *eind_swi_size, *eind_size_new;
       int *npe_swi, *npe_swi_size, *npe_size_new;         
@@ -233,6 +252,19 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
 
       free(eind_swi);
       free(npe_swi);
+
+      t1_loc = MPI_Wtime() - t0_loc;
+      ierr = MPI_Gather(&t1_loc, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, *comm);
+      if(ierr){
+	return 1;
+      }
+      if(rank == 0){
+	fprintf(time_fl,"%-20s", "mesh distribution");
+	for(i=0;i<nproc;i++){
+	  fprintf(time_fl," %e",time_vec[i]);
+	}
+	fprintf(time_fl,"\n");
+      }
 
     }
     else{
