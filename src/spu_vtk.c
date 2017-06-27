@@ -16,6 +16,7 @@ int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm )
    */
 
   int     rank, nproc, i, j, ierr;
+  int     length;
 
   MPI_Comm_size(*comm, &nproc);
   MPI_Comm_rank(*comm, &rank);
@@ -23,8 +24,8 @@ int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm )
   if(rank==0){ 
 
     FILE    *vtkfl, *meshfl;
-    int     nnod;
-    double  vald;
+    int     nnod, *length_vec;
+    int     *eptr_a, *eind_a;
     char    buf[NBUF], filevtk[32], ending[5], *data;
 
     strcpy(filevtk,myname);
@@ -79,9 +80,56 @@ int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm )
     fclose(meshfl);
     fprintf(vtkfl, "POINTS %d double\n", nnod);
 
+    length_vec = malloc(nproc*sizeof(int));
+    ierr = MPI_Gather(&length, 1, MPI_INT, length_vec, 1, MPI_INT, 0, *comm);
+    if(ierr){
+      return 1;
+    }
+
+    // from each process we receive a their mesh and we write on the file
+    for(i=1;i<nproc;i++){ 
+      eptr_a = malloc((length_vec[i])*sizeof(int));
+      ierr = MPI_Recv(eptr_a, length_vec[i], MPI_INT, i, 0, *comm, &status);
+      if(ierr){
+	return 1;
+      }
+
+
+      free(eptr_a);
+    }
+
+    ierr = MPI_Gather(&length, 1, MPI_INT, length_vec, 1, MPI_INT, 0, *comm);
+    if(ierr){
+      return 1;
+    }
+
+    // from each process we receive a their mesh and we write on the file
+    for(i=1;i<nproc;i++){ 
+      eind_a = malloc((length_vec[i])*sizeof(int));
+      ierr = MPI_Recv(eind_a, length_vec[i], MPI_INT, i, 0, *comm, &status);
+      if(ierr){
+	return 1;
+      }
+
+
+      free(eptr_a);
+    }
+
     fclose(vtkfl);
   }
   else{
+
+    // I'm not rank 0 so I should send my mesh to
+    // him and wait
+
+     
+    length = nelm + 1;
+    ierr = MPI_Gather(&length, 1, MPI_INT, NULL, 1, MPI_INT, 0, *comm);
+    MPI_Ssend(eptr,length,MPI_INT,0,0,*comm);
+
+    length = eptr[nelm];
+    ierr = MPI_Gather(&length, 1, MPI_INT, NULL, 1, MPI_INT, 0, *comm);
+    MPI_Ssend(eind,length,MPI_INT,0,0,*comm);
 
   }
 

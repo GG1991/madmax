@@ -33,6 +33,7 @@
 char         input_n[NBUF];            // Input file name
 
 MPI_Comm     world_comm;
+MPI_Status   status;
 
 int          rank_wor;                 //  rank on world comm
 int          nproc_wor;                //  # of processes (world_comm)
