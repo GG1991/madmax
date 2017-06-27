@@ -21,20 +21,19 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
        c) distribute the graph to processes
 
      */
-    int                  rank, nproc, i, j, ierr;
-    int                 *npe;
-    int                  nelm;             // number of elements of this process
-    idx_t              * elmwgt;           // (inp) Element weights
-    idx_t                wgtflag;          // (inp) Element weight flag (0 desactivated)
-    idx_t                numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
-    idx_t                ncon;             // (inp) number of constrains of the graph ?
-    idx_t                ncommonnodes;     // (inp) degree of connectivities among vertices in dual graph
-    idx_t                nparts;           // (inp) number of partitions
-    real_t             * tpwgts;           // (inp) array of size "ncon" x "npart" fraction of vertex for each subdomain
-    real_t             * ubvec;            // (inp) array of size "ncon"
-    idx_t                options[3];       // (inp) option parameters
-    idx_t                edgecut;          // (out) number of edges cut of the partition
-//    idx_t              * part;             // (out) Array for storing the solution
+    int        rank, nproc, i,j, ierr;
+    int        nelm;             // number of elements of this process
+    idx_t    * elmwgt;           // (inp) Element weights
+    idx_t      wgtflag;          // (inp) Element weight flag (0 desactivated)
+    idx_t      numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
+    idx_t      ncon;             // (inp) number of constrains of the graph ?
+    idx_t      ncommonnodes;     // (inp) degree of connectivities among vertices in dual graph
+    idx_t      nparts;           // (inp) number of partitions
+    real_t   * tpwgts;           // (inp) array of size "ncon" x "npart" fraction of vertex for each subdomain
+    real_t   * ubvec;            // (inp) array of size "ncon"
+    idx_t      options[3];       // (inp) option parameters
+    idx_t      edgecut;          // (out) number of edges cut of the partition
+//    idx_t          * part;             // (out) Array for storing the solution
 
     MPI_Comm_size(*comm, &nproc);
     MPI_Comm_rank(*comm, &rank);
@@ -68,14 +67,10 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
     for(i=0;i<ncon;i++){
       ubvec[i] = 1.05;
     }
-    //
+
     //**************************************************
 
     if(algorithm == PARMETIS_GEOMKWAY){
-    //  ParMETIS_V32_Mesh2Dual (
-    //      idx t *elmdist, idx t *eptr, idx t *eind, idx t *numflag, idx t *ncommonnodes,
-    //      idx t **xadj, idx t **adjncy, MPI Comm *comm
-    //      )
 
     }
     else if(algorithm == PARMETIS_GEOM){
@@ -92,9 +87,9 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
 	  &ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
 	  options, &edgecut, part, comm );
 
-      // graph distribution
- 
-      /*
+      /* 
+       * Graph distribution
+       *
        * First we create an array "npe" that follows
        * the same function as eptr but is a global 
        * reference 
@@ -102,68 +97,65 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
        * eptr = [ 0 3 5 8 9 ]
        * npe  = [ 3 2 3 1 ]    (npe[i] = eptr[i+1] - eptr[i])
        *
+       * Then vectors are switched acording to "part"
+       * we create npe_swi, eind_swi, npe_swi_size
+       *
+       * We do MPI_Alltoall of : "npe_swi_size"  ->  "npe_size_new"
+       *                         "eind_swi_size" ->  "eind_size_new"
+       *
+       * we free and reallocate memory for : "npe" using "npe_size" 
+       *                                     "eind" using "eind_size" 
+       *
        */
 
-      int *eind_new, *npe_new, *cuts, *cuts_new, *eind_size, *eind_size_new;         
+      int *eind_swi, *eind_swi_size, *eind_size_new;
+      int *npe_swi, *npe_swi_size, *npe_size_new;         
+      int *npe;
+
       npe = malloc(nelm*sizeof(int));
       for(i=0;i<nelm;i++){
 	npe[i] = eptr[i+1] - eptr[i];
       }
-      eind_new      = malloc(eptr[nelm]*sizeof(int)); 
-      npe_new       = malloc(nelm*sizeof(int)); 
-      cuts          = malloc(nproc*sizeof(int)); 
-      cuts_new      = malloc(nproc*sizeof(int)); 
-      eind_size     = malloc(nproc*sizeof(int)); 
+
+      eind_swi      = malloc(eptr[nelm]*sizeof(int)); 
+      npe_swi       = malloc(nelm*sizeof(int)); 
+      eind_swi_size = malloc(nproc*sizeof(int)); 
+      npe_swi_size  = malloc(nproc*sizeof(int)); 
       eind_size_new = malloc(nproc*sizeof(int)); 
+      npe_size_new  = malloc(nproc*sizeof(int)); 
       
       // swap npe and eind
-      swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_new, eind_new, cuts );
+      swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_swi, eind_swi, npe_swi_size, eind_swi_size );
 
-      printf("%-6s r%2d %-14s :", myname, rank, "cuts");
+      printf("%-6s r%2d %-14s :", myname, rank, "npe_swi_size");
       for(i=0;i<nproc;i++){
-	printf("%8d ",cuts[i]);
+	printf("%8d ",npe_swi_size[i]);
       }
       printf("\n");
 
+      printf("%-6s r%2d %-14s :", myname, rank, "eind_swi_size");
       for(i=0;i<nproc;i++){
-	eind_size[i] = 0;
-	for(j=0;j<cuts[i];j++){
-	  if(i==0){
-	    eind_size[i] += npe_new[j];
-	  }
-	  else{
-	    eind_size[i] += npe_new[cuts[i-1] + j];
-	  }
-	}
-      }
-
-      printf("%-6s r%2d %-14s :", myname, rank, "eind_size");
-      for(i=0;i<nproc;i++){
-	printf("%8d ",eind_size[i]);
+	printf("%8d ",eind_swi_size[i]);
       }
       printf("\n");
 
-      ierr = MPI_Alltoall(cuts, 1, MPI_INT, cuts_new, 1, MPI_INT, *comm);
-      if(ierr){
-	return 1;
-      }
-      ierr = MPI_Alltoall(eind_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *comm);
+      // free & reallocate memory for "npe" & "eind"
+      int npe_size_new_tot;
+      int eind_size_new_tot;
+
+      ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, *comm);
       if(ierr){
 	return 1;
       }
 
-      free(eptr);
-      free(eind);
-      free(npe);
-
-      int nelm_new = 0;
-      for(i=0;i<nproc;i++){
-	nelm_new += eind_size_new[i];
+      ierr = MPI_Alltoall(eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *comm);
+      if(ierr){
+	return 1;
       }
 
-      printf("%-6s r%2d %-14s :", myname, rank, "cuts_new");
+      printf("%-6s r%2d %-14s :", myname, rank, "npe_size_new");
       for(i=0;i<nproc;i++){
-	printf("%8d ",cuts_new[i]);
+	printf("%8d ",npe_size_new[i]);
       }
       printf("\n");
 
@@ -173,11 +165,74 @@ int part_mesh_PARMETIS(MPI_Comm *comm, char *myname, int *elmdist, int *eptr, in
       }
       printf("\n");
 
-      printf("%-6s r%2d %-14s : %8d", myname, rank, "nelm_new", nelm_new);
+      npe_size_new_tot = 0;
+      for(i=0;i<nproc;i++){
+	npe_size_new_tot += npe_size_new[i];
+      }
 
-      free(eind_new);
-      free(npe_new);
-      free(cuts);
+      eind_size_new_tot = 0;
+      for(i=0;i<nproc;i++){
+	eind_size_new_tot += eind_size_new[i];
+      }
+      
+      printf("%-6s r%2d %-14s : %8d\n", myname, rank, "npe_size_new_tot", npe_size_new_tot);
+      printf("%-6s r%2d %-14s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
+
+      free(npe);
+      free(eind);
+      npe = malloc(npe_size_new_tot*sizeof(int));
+      eind = malloc(eind_size_new_tot * sizeof(int));
+
+      /* performe the MPI_Alltoall operation for calculating "npe" & "eind"
+       *
+       * for "npe"
+       * sdispls = npe_swi_size
+       * rdispls = npe_size_new
+       *
+       * for "eind"
+       * sdispls = eind_swi_size
+       * rdispls = eind_size_new
+       */
+
+      int *sdispls, *rdispls;
+
+      sdispls = malloc(nproc*sizeof(int)); 
+      rdispls = malloc(nproc*sizeof(int)); 
+
+      for(i=0;i<nproc;i++){
+	sdispls[i] = 0;
+	for(j=0;j<i;j++){
+	  sdispls[i] += npe_swi_size[j];
+	}
+      }
+      for(i=0;i<nproc;i++){
+	rdispls[i] = 0;
+	for(j=0;j<i;j++){
+	  rdispls[i] += npe_size_new[j];
+	}
+      }
+
+      ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
+	  npe, npe_size_new, rdispls, MPI_INT, *comm);
+
+      for(i=0;i<nproc;i++){
+	sdispls[i] = 0;
+	for(j=0;j<i;j++){
+	  sdispls[i] += eind_swi_size[j];
+	}
+      }
+      for(i=0;i<nproc;i++){
+	rdispls[i] = 0;
+	for(j=0;j<i;j++){
+	  rdispls[i] += eind_size_new[j];
+	}
+      }
+
+      ierr = MPI_Alltoallv(eind_swi, eind_swi_size, sdispls, MPI_INT, 
+	  eind, eind_size_new, rdispls, MPI_INT, *comm);
+
+      free(eind_swi);
+      free(npe_swi);
 
     }
     else{
@@ -244,7 +299,9 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
   return 0;
 }
 
-int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *eind, int *npe_new, int *eind_new, int *cuts )
+int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
+    int *eptr, int *eind, int *npe_swi, int *eind_swi, 
+    int *cuts_npe, int *cuts_eind )
 {
 
   /* 
@@ -264,7 +321,7 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *ei
      Notes:
 
      -> "n" is the length of "npe"
-     -> results are saved on "eind_new" and "npe_new" (memory is duplicated)
+     -> results are saved on "eind_swi" and "npe_swi" (memory is duplicated)
      -> swap should have values in [0,n)
   */
 
@@ -273,20 +330,20 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *ei
   if(n==0){
     return 0;
   }
-  if(!npe || !cuts || !eind || !eind_new || !npe_new){
+  if(!npe || !eind || !eind_swi || !npe_swi || !cuts_npe || !cuts_eind){
     return 1;
   }
   
   j = pi = lp = 0;
   for(p=0;p<nproc;p++){
 
-    cuts[p] = 0;
+    cuts_npe[p] = 0;
     for(e=0;e<n;e++){
 
       if(swap[e] == p){
 
 	// swap npe
-        npe_new[j] = npe[e];
+        npe_swi[j] = npe[e];
 	j ++;
 
 	// swap eind
@@ -294,10 +351,22 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *ei
         pi = eptr[e];
 
 	for(i=0;i<npe[e];i++){
-	  eind_new[lp] = eind[ pi + i ];
+	  eind_swi[lp] = eind[ pi + i ];
 	  lp ++;
 	}
-	cuts[p] ++;
+	cuts_npe[p] ++;
+      }
+    }
+  }
+
+  for(i=0;i<nproc;i++){
+    cuts_eind[i] = 0;
+    for(j=0;j<cuts_npe[i];j++){
+      if(i==0){
+	cuts_eind[i] += npe_swi[j];
+      }
+      else{
+	cuts_eind[i] += npe_swi[cuts_npe[i-1] + j];
       }
     }
   }
