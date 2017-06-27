@@ -198,8 +198,10 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, int *elmdist
       printf("%-6s r%2d %-14s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
 
       free(npe);
+      free(eptr);
       free(eind);
-      npe = malloc(npe_size_new_tot*sizeof(int));
+      npe  = malloc(npe_size_new_tot*sizeof(int));
+      eptr = malloc((npe_size_new_tot+1)*sizeof(int));
       eind = malloc(eind_size_new_tot * sizeof(int));
 
       /* performe the MPI_Alltoall operation for calculating "npe" & "eind"
@@ -233,6 +235,12 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, int *elmdist
 
       ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
 	  npe, npe_size_new, rdispls, MPI_INT, *comm);
+
+      // rebuild "eptr"
+      eptr[0] = 0;
+      for(i=0;i<nelm;i++){
+	 eptr[i+1] = eptr[i] + npe[i];
+      }
 
       for(i=0;i<nproc;i++){
 	sdispls[i] = 0;
