@@ -34,8 +34,8 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, int *elmdist
     real_t   * ubvec;            // (inp) array of size "ncon"
     idx_t      options[3];       // (inp) option parameters
     idx_t      edgecut;          // (out) number of edges cut of the partition
-//    idx_t          * part;             // (out) Array for storing the solution
-    double     t0_loc,t1_loc;
+
+    double     t0_loc,t1_loc;    // local variables for timing
 
     MPI_Comm_size(*comm, &nproc);
     MPI_Comm_rank(*comm, &rank);
