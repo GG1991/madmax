@@ -238,9 +238,10 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, int *elmdist
 
       // rebuild "eptr"
       eptr[0] = 0;
-      for(i=0;i<nelm;i++){
+      for(i=0;i<npe_size_new_tot;i++){
 	 eptr[i+1] = eptr[i] + npe[i];
       }
+      nelm = npe_size_new_tot;
 
       for(i=0;i<nproc;i++){
 	sdispls[i] = 0;
