@@ -115,7 +115,7 @@ else
     # re-execute ourself to spawn of the processes.
     echo mpirun -np ${processes} ${self} runmpi "${@}"
 
-    break_mac=( 'mac_main.c:113' ) 
+    #break_mac=( 'mac_main.c:113' ) 
     #break_mic=( 'mic_main.c:32' ) 
     #break_mac=( 'mac_comm.c:100' ) 
     #break_mic=( 'mic_comm.c:104' ) 
