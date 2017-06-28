@@ -42,7 +42,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{\sputnik Datastructures}
+\section{\sputnik Data-structures}
 
 In the code exist an array \texttt{id_vec} that in each position \texttt{i} has the \texttt{id} of the code that is
 executing (\texttt{id = MACRO|MICRO}). For obtaining this array an \texttt{MPI_Allgather} operation is performed. Using
@@ -265,6 +265,21 @@ row 1 column 1/.style={nodes={draw}}}]
     %\draw (8)--(box);
     %
 \end{tikzpicture}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Mesh treatment}
+
+For both \macro and \micro a mesh reading and partition is performed in order to do parallel operations. The main
+characteristics are:
+
+\begin{itemize}
+\item Each process reads a part of the \gmsh file, i.e. a contiguous list of elements acording to his rank. The number
+of elements read from each process is more or less the same and can differ at most in one element.
+\item A \parmetis function performs the mesh partition giving for each process a \texttt{part} vector whose component
+\texttt{e} indicates to which process that element \texttt{e} belongs. 
+\end{itemize}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
