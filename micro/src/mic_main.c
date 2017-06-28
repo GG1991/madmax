@@ -85,8 +85,10 @@ int main(int argc, char **argv)
     // read mesh
     //    
     t0 = MPI_Wtime();
+
     strcpy(mesh_f,"gmsh");
-    read_mesh_elmv(&micro_comm, myname, mesh_n, mesh_f, &elmdist, &eptr, &eind);
+    read_mesh_elmv(&micro_comm, myname, mesh_n, mesh_f);
+
     t1 = MPI_Wtime() - t0;
     ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, micro_comm);
     if(ierr){

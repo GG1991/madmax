@@ -85,8 +85,10 @@ int main(int argc, char **argv)
     // read mesh
     //    
     t0 = MPI_Wtime();
+
     strcpy(mesh_f,"gmsh");
-    read_mesh(&macro_comm, myname, mesh_n, mesh_f, &elmdist, &eptr, &eind);
+    read_mesh_elmv(&macro_comm, myname, mesh_n, mesh_f);
+
     t1 = MPI_Wtime() - t0;
     ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
     if(ierr){
@@ -104,7 +106,9 @@ int main(int argc, char **argv)
     part = (int*)malloc(nelm * sizeof(int));
 
     t0 = MPI_Wtime();
+
     part_mesh_PARMETIS(&macro_comm, time_fl, myname, NULL, PARMETIS_MESHKWAY );
+
     t1 = MPI_Wtime() - t0;
     ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
     if(ierr){

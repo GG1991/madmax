@@ -437,7 +437,7 @@ int CSR_give_pointer( int e, int *npe, int *eind, int *p)
 }
 
 
-int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind)
+int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 {
 
     /*
@@ -452,7 +452,7 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f, in
      */
 
     if(strcmp(mesh_f,"gmsh") == 0){
-	return read_mesh_elmv_CSR_GMSH(comm, myname, mesh_n, elmdist, eptr, eind);
+	return read_mesh_elmv_CSR_GMSH(comm, myname, mesh_n);
     }else{
       return 1;
     }
@@ -460,46 +460,48 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f, in
 
 /****************************************************************************************************/
 
-int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n, int ** elmdist, int ** eptr, int ** eind)
+int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 {
 
-    /* 
-
-       Info:   Reads the elements with the nodes conectivities and saves on 
-               "elmdist[]", "eptr[]" and "eind[]" in CSR format (same names
-	       that parmetis)
-
-       Input: 
-       char   * mesh_n   : file name with path
-       MPI_Comm comm     : the communicator of these processes
-       
-       Output:
-       int  ** elmdist  : number of elements for each process            (MAH)
-       int  ** eptr     : array of indeces for "eind" (CSR format)       (MAH)
-       int  ** eind     : element conectivities with nodes (CSR format)	 (MAH)
-
-
-       1) first counts the total number of volumetric element on the mesh nelm_tot
-
-       2) calculates nelm = nelm_tot/nproc (elements assigned to this process)
-          calculates the vector elmdist in order to know how many elems will be for each process 
-
-       3) read the mesh again, each process reads its own group of elements and see
-          element types determines "npe" and fills "eptr[nelm+1]"
-          finally alloc memory for "eind[eptr[nelm]]"
-
-       4) reads the mesh again and fill "eind[]"
-
-       Notes:
-
-       a) rank and nproc are going to be respect to the communicator "comm"
-
-       b) all processes do fopen and fread up to their corresponding position
-          in the file
-
-       Author: Guido Giuntoli
-
-    */
+  /* 
+   *
+   * Info:   Reads the elements with the nodes conectivities and saves on 
+   *         "elmdist[]", "eptr[]" and "eind[]" in CSR format (same names
+   *         that parmetis)
+   *
+   * Input: 
+   * char   * mesh_n   : file name with path
+   * MPI_Comm comm     : the communicator of these processes
+   * 
+   * Output:
+   * int  * elmdist  : number of elements for each process             (MAH)
+   * int  * eptr     : array of indeces for "eind" (CSR format)        (MAH)
+   * int  * eind     : element conectivities with nodes (CSR format)	 (MAH)
+   *
+   *
+   * 1) first counts the total number of volumetric element on the mesh nelm_tot
+   *
+   * 2) calculates nelm = nelm_tot/nproc (elements assigned to this process)
+   *    calculates the vector elmdist in order to know how many elems will be for each process 
+   *
+   * 3) read the mesh again, each process reads its own group of elements and see
+   *    element types determines "npe" and fills "eptr[nelm+1]"
+   *    finally alloc memory for "eind[eptr[nelm]]"
+   *
+   * 4) reads the mesh again and fill "eind[]"
+   *
+   * Notes:
+   *
+   * a) rank and nproc are going to be respect to the communicator "comm"
+   *
+   * b) all processes do fopen and fread up to their corresponding position
+   *    in the file
+   *
+   * c) int *elmdist, int *eptr, int *eind, int *part are globals
+   *
+   * Author: Guido Giuntoli
+   *
+   */
 
     FILE               * fm;
     unsigned long int    offset;
@@ -585,24 +587,24 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n, int ** 
     //  uno entre los primeros procesos
     //
     ierr = PetscPrintf(*comm,"%-6s %-8s   : ", myname, "elmdist");
-    *elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
+    elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
     resto = nelm_tot % nproc;
-    (*elmdist)[0] = 0;
-    ierr = PetscPrintf(*comm,"%d ",(*elmdist)[0]);CHKERRQ(ierr);
+    elmdist[0] = 0;
+    ierr = PetscPrintf(*comm,"%d ",elmdist[0]);CHKERRQ(ierr);
     for(i=1; i < nproc + 1; i++){
-	(*elmdist)[i] = i * nelm_tot / nproc;
+	elmdist[i] = i * nelm_tot / nproc;
         if(resto>0){
-	  (*elmdist)[i] += 1;
+	  elmdist[i] += 1;
 	  resto --;
 	}
-	ierr = PetscPrintf(*comm,"%d ",(*elmdist)[i]);CHKERRQ(ierr);
+	ierr = PetscPrintf(*comm,"%d ",elmdist[i]);CHKERRQ(ierr);
     }
     ierr = PetscPrintf(*comm,"\n");CHKERRQ(ierr);
 
     // ya podemos allocar el vector "eptr" su dimension es :
     // número de elementos locales + 1 = nelm + 1
-    nelm = (*elmdist)[rank+1] - (*elmdist)[rank];
-    *eptr = (int*)calloc( nelm + 1 ,sizeof(int));
+    nelm = elmdist[rank+1] - elmdist[rank];
+    eptr = (int*)calloc( nelm + 1 ,sizeof(int));
     //
     /**************************************************/
 
@@ -614,11 +616,11 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n, int ** 
     // with this vector we can alloc memory for "eind"
     //    
     fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
-    for(i=0; i<(*elmdist)[rank]; i++){    // we go to the first element we have to store
+    for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
       fgets(buf,NBUF,fm); 
       offset += strlen(buf); 
     }
-    (*eptr)[0] = 0;
+    eptr[0] = 0;
     for(i=1; i<nelm+1; i++){
       fgets(buf,NBUF,fm); 
       data=strtok(buf," \n");
@@ -636,9 +638,9 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n, int ** 
 	default:
 	  break;
       }
-      (*eptr)[i] = (*eptr)[i-1] + npe; 
+      eptr[i] = eptr[i-1] + npe; 
     }
-    *eind = (int*)calloc( (*eptr)[nelm] ,sizeof(int));
+    eind = (int*)calloc( eptr[nelm] ,sizeof(int));
     //
     /**************************************************/
 
@@ -678,7 +680,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n, int ** 
       d = 0;
       while(d<npe){
 	data = strtok(NULL," \n");
-	(*eind)[n+d] = atoi(data); 
+	eind[n+d] = atoi(data); 
 	d++;
       }
       n += npe;

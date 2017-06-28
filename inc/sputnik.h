@@ -74,8 +74,8 @@ int spu_parse_scheme( char *input );
 int spu_parse_mesh( char * input );
 
 // spu_mesh.c
-int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind);
-int read_mesh_elmv_CSR_GMSH(MPI_Comm *comm, char *myname, char *mesh_n, int **elmdist, int **eptr, int **eind);
+int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);
+int read_mesh_elmv_CSR_GMSH(MPI_Comm *comm, char *myname, char *mesh_n);
 int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm);
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *eind, int *npe_new, int *eind_new, int
 *cuts_npe, int *cuts_eind);
