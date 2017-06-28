@@ -273,12 +273,27 @@ row 1 column 1/.style={nodes={draw}}}]
 For both \macro and \micro a mesh reading and partition is performed in order to do parallel operations. The main
 characteristics are:
 
-\begin{itemize}
+\begin{enumerate}
 \item Each process reads a part of the \gmsh file, i.e. a contiguous list of elements acording to his rank. The number
 of elements read from each process is more or less the same and can differ at most in one element.
 \item A \parmetis function performs the mesh partition giving for each process a \texttt{part} vector whose component
 \texttt{e} indicates to which process that element \texttt{e} belongs. 
+\item Each part of the mesh is distributed to each process and all process do the same, this is done with a
+\texttt{MPI_Alltoall} operation.
+\item Each process has the list of elements that belongs to him and know they have to decide which nodes belong to each
+one and the new numeration. For doing this we implement different criteria : 
+\begin{itemize}
+\item \texttt{P0} owns all the nodes detected in its partition so it does not have any ghost nodes. \texttt{P1} ask
+\texttt{P0} for his list of nodes and deletes the ones that are repeated in his list and assign them to the list of
+ghost nodes. \texttt{P2} ask the same to \texttt{P1} and \texttt{P0} and performs the same operation and so on.
 \end{itemize}
+\item Each process counts the number of local nodes and share it with an \texttt{MPI_Allgather} operation with the
+others. With the number of nodes per process it is possible to assign a local numeration to each local list of nodes on
+each process.
+\item Each process sends it list of ghost nodes to a common vector with a \texttt{MPI_Allgather} operation and each
+process search if one of this nodes belongs to him, if belong it puts on another vector the new numeration of it. It is
+not possible that two process have the same node in this instance.
+\end{enumerate}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
