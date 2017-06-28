@@ -7,19 +7,23 @@
 #include "sputnik.h"
 #include "parmetis.h"
 
-int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, int *elmdist, int *eptr, int *eind, int *part, double *centroid, int algorithm)
+int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm)
 {
 
     /*
-       Performes the mesh partition mesh saved on the mesh structures.
-
-       a) First it builds the dual graph (nodes are elements)  of the 
-          original (nodes are nodes)
-
-       b) Do the partition 
-
-       c) distribute the graph to processes
-
+     * Performes the mesh partition mesh saved on the mesh structures.
+     *
+     * a) First it builds the dual graph (nodes are elements)  of the 
+     *    original (nodes are nodes)
+     * 
+     * b) Do the partition 
+     *
+     * c) distribute the graph to processes
+     *
+     * Note:
+     *
+     * -> int *elmdist, int *eptr, int *eind, int *part are globals
+     * 
      */
 
     int        rank, nproc, i,j, ierr;
@@ -83,9 +87,9 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, int *elmdist
     }
     else if(algorithm == PARMETIS_MESHKWAY){
 
-      // Performe the partition with no weights
       t0_loc = MPI_Wtime();
 
+      // Performe the partition with no weights
       ParMETIS_V3_PartMeshKway (
 	  elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
 	  &ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
@@ -143,7 +147,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, int *elmdist
       eind_size_new = malloc(nproc*sizeof(int)); 
       npe_size_new  = malloc(nproc*sizeof(int)); 
       
-      // swap npe and eind
+      // swap "npe" and "eind"
       swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_swi, eind_swi, npe_swi_size, eind_swi_size );
 
       printf("%-6s r%2d %-14s :", myname, rank, "npe_swi_size");
@@ -200,6 +204,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, int *elmdist
       free(npe);
       free(eptr);
       free(eind);
+
       npe  = malloc(npe_size_new_tot*sizeof(int));
       eptr = malloc((npe_size_new_tot+1)*sizeof(int));
       eind = malloc(eind_size_new_tot * sizeof(int));
@@ -432,7 +437,7 @@ int CSR_give_pointer( int e, int *npe, int *eind, int *p)
 }
 
 
-int read_mesh(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind)
+int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f, int ** elmdist, int ** eptr, int ** eind)
 {
 
     /*
@@ -447,7 +452,7 @@ int read_mesh(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f, int ** 
      */
 
     if(strcmp(mesh_f,"gmsh") == 0){
-	return read_mesh_CSR_GMSH(comm, myname, mesh_n, elmdist, eptr, eind);
+	return read_mesh_elmv_CSR_GMSH(comm, myname, mesh_n, elmdist, eptr, eind);
     }else{
       return 1;
     }
@@ -455,7 +460,7 @@ int read_mesh(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f, int ** 
 
 /****************************************************************************************************/
 
-int read_mesh_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n, int ** elmdist, int ** eptr, int ** eind)
+int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n, int ** elmdist, int ** eptr, int ** eind)
 {
 
     /* 
