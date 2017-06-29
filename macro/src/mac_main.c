@@ -110,8 +110,8 @@ int main(int argc, char **argv)
     t0 = MPI_Wtime();      /* ON time lapse */
 
     part_mesh_PARMETIS(&macro_comm, time_fl, myname, NULL, PARMETIS_MESHKWAY );
-    calc_nodes_qsort(&macro_comm, myname);
-//    calc_nodes(&macro_comm, myname);
+    clean_vector_qsort(&macro_comm, myname, eptr[nelm], eind, &nod_glo, &nnod_loc);
+    calculate_ghosts(&macro_comm, myname);
 
     t1 = MPI_Wtime() - t0;
     ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);

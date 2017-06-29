@@ -65,9 +65,12 @@ int          *eptr;                    // list of indeces of nodes inside eind
 int          *eind;                    // list of nodes for elem "i" is between 
                                        // eind[eptr[i]] eind[eptr[i+1]] (not including)
 
-int           nnod_loc;                // # of local nodes
+int           nnod_loc;                // # of local nodes (including ghost)
 int           nnod_tot;                // # of total nodes
-int          *nod_glo;
+int           *nod_glo;                // local nodes numeration (Gmsh)
+int           nghosts;                  // # of ghost nodes
+int           *ghosts;                  // ghost nodes
+int           nnod;                    // # of local nodes (not including ghosts)
 
 
 /*****************************************************************************************************
@@ -85,7 +88,8 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *eind, int *npe_new, int *eind_new, int
 *cuts_npe, int *cuts_eind);
 int CSR_give_pointer( int e, int *npe, int *eind, int *p);
-int calc_nodes_qsort(MPI_Comm * comm, char *myname);
+int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *not_rep);
+int calculate_ghosts(MPI_Comm * comm, char *myname);
 int cmpfunc (const void * a, const void * b);
 
 // spu_vtk.c

@@ -693,72 +693,126 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 
 /****************************************************************************************************/
 
-int calc_nodes_qsort(MPI_Comm * comm, char *myname)
+int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *not_rep)
 {
 
   /*
-   * Calculates the number of local nodes without repetition "nnod_loc" and fills
-   * "nod_glo" with their global numeration (Gmsh) 
+   * Deletes the values that are repeated in input and 
+   * write the new vector on output
+   *  
+   * "n" is the size of "input"
+   * "not_rep" is the size of "output"
+   *
+   * n >= not_rep
    *
    * Note: use quick sort algorithm (n log n)
    *
    */
 
-   int   i, n, c, swi, val_o;
-   int   *nod_a;
+   int   i, c, swi, val_o;
+   int   *aux;
    int   rank;
    
    MPI_Comm_rank(*comm, &rank);
 
-   n = eptr[nelm];
-   nnod_loc = 0;
+   (*not_rep) = 0;
 
-   // we copy eind inside nod_a
-   nod_a = malloc(n*sizeof(int));
-   memcpy(nod_a, eind, n*sizeof(int));
+   // we copy eind inside aux
+   aux = malloc(n*sizeof(int));
+   memcpy(aux, eind, n*sizeof(int));
 
-   qsort(nod_a, n, sizeof(int), cmpfunc);
+   qsort(aux, n, sizeof(int), cmpfunc);
 
-   val_o = nod_a[0];
-   nnod_loc ++;
+   val_o = aux[0];
+   (*not_rep) ++;
    for(i=1;i<n;i++){
      swi = 1;
-     if(nod_a[i] == val_o){
+     if(aux[i] == val_o){
        swi = 0;
      }
      else{
-       val_o = nod_a[i];
+       val_o = aux[i];
        swi = 1;
      }
      if(swi==1){
-       nnod_loc ++;
+       (*not_rep) ++;
      }
    }
-   nod_glo = malloc(nnod_loc*sizeof(int));
+   (*output) = malloc( (*not_rep) * sizeof(int));
    printf("%-6s r%2d %-14s : %8d\n", myname, rank, "nnod rep", n);
-   printf("%-6s r%2d %-14s : %8d\n", myname, rank, "nnod_loc", nnod_loc);
+   printf("%-6s r%2d %-14s : %8d\n", myname, rank, "not_rep" , *not_rep);
 
    c = 0;
-   val_o      = nod_a[0];
-   nod_glo[c] = nod_a[0];
+   val_o = aux[0];
+   (*output)[c] = aux[0];
    c ++;
    for(i=1;i<n;i++){
      swi = 1;
-     if(nod_a[i] == val_o){
+     if(aux[i] == val_o){
        swi = 0;
      }
      else{
-       val_o = nod_a[i];
+       val_o = aux[i];
        swi = 1;
      }
      if(swi==1){
-       nod_glo[c] = nod_a[i];
+       (*output)[c] = aux[i];
        c ++;
      }
    }
 
+   free(aux);
+
    return 0;
 }
+
+/****************************************************************************************************/
+
+int calculate_ghosts(MPI_Comm * comm, char *myname)
+{
+
+  /*
+   * This algorithm determines which nodes of "nod_glo" are "ghost"
+   *
+   * R0 gathers nod_glo from all process and looks for repetitions
+   *
+   */
+
+  int   i, rank, nproc;
+  int   *sizes, mysize;
+  int   *allnodes, totsize;
+  int   *displs;
+  int   ierr;
+
+  MPI_Comm_rank(*comm, &rank);
+  MPI_Comm_size(*comm, &nproc);
+
+  mysize  = nnod_loc;
+  nghosts = 0;
+  sizes   = NULL;
+  displs  = NULL;
+
+  if(rank==0){
+    sizes = malloc(nproc*sizeof(int));
+    displs = malloc(nproc*sizeof(int));
+  }
+  ierr = MPI_Gather(&mysize, 1, MPI_INT, sizes, 1, MPI_INT, 0, *comm);
+
+  if(rank==0){
+    totsize = 0;
+    for(i=0;i<nproc;i++){
+      displs[i] = totsize;
+      totsize += sizes[i];
+    }
+  }
+
+  allnodes = malloc(totsize*sizeof(int));
+  ierr = MPI_Gatherv(nod_glo, mysize, MPI_INT, allnodes, sizes, displs, MPI_INT, 0, *comm);
+
+  return 1;
+}
+
+/****************************************************************************************************/
 
 int cmpfunc (const void * a, const void * b)
 {
