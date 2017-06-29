@@ -65,6 +65,10 @@ int          *eptr;                    // list of indeces of nodes inside eind
 int          *eind;                    // list of nodes for elem "i" is between 
                                        // eind[eptr[i]] eind[eptr[i+1]] (not including)
 
+int           nnod_loc;                // # of local nodes
+int           nnod_tot;                // # of total nodes
+int          *nod_glo;
+
 
 /*****************************************************************************************************
    SPUTNIK function definitions
@@ -81,6 +85,8 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *eind, int *npe_new, int *eind_new, int
 *cuts_npe, int *cuts_eind);
 int CSR_give_pointer( int e, int *npe, int *eind, int *p);
+int calc_nodes_qsort(MPI_Comm * comm, char *myname);
+int cmpfunc (const void * a, const void * b);
 
 // spu_vtk.c
 int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm );

@@ -692,3 +692,75 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 }
 
 /****************************************************************************************************/
+
+int calc_nodes_qsort(MPI_Comm * comm, char *myname)
+{
+
+  /*
+   * Calculates the number of local nodes without repetition "nnod_loc" and fills
+   * "nod_glo" with their global numeration (Gmsh) 
+   *
+   * Note: use quick sort algorithm (n log n)
+   *
+   */
+
+   int   i, n, c, swi, val_o;
+   int   *nod_a;
+   int   rank;
+   
+   MPI_Comm_rank(*comm, &rank);
+
+   n = eptr[nelm];
+   nnod_loc = 0;
+
+   // we copy eind inside nod_a
+   nod_a = malloc(n*sizeof(int));
+   memcpy(nod_a, eind, n*sizeof(int));
+
+   qsort(nod_a, n, sizeof(int), cmpfunc);
+
+   val_o = nod_a[0];
+   nnod_loc ++;
+   for(i=1;i<n;i++){
+     swi = 1;
+     if(nod_a[i] == val_o){
+       swi = 0;
+     }
+     else{
+       val_o = nod_a[i];
+       swi = 1;
+     }
+     if(swi==1){
+       nnod_loc ++;
+     }
+   }
+   nod_glo = malloc(nnod_loc*sizeof(int));
+   printf("%-6s r%2d %-14s : %8d\n", myname, rank, "nnod rep", n);
+   printf("%-6s r%2d %-14s : %8d\n", myname, rank, "nnod_loc", nnod_loc);
+
+   c = 0;
+   val_o      = nod_a[0];
+   nod_glo[c] = nod_a[0];
+   c ++;
+   for(i=1;i<n;i++){
+     swi = 1;
+     if(nod_a[i] == val_o){
+       swi = 0;
+     }
+     else{
+       val_o = nod_a[i];
+       swi = 1;
+     }
+     if(swi==1){
+       nod_glo[c] = nod_a[i];
+       c ++;
+     }
+   }
+
+   return 0;
+}
+
+int cmpfunc (const void * a, const void * b)
+{
+     return ( *(int*)a - *(int*)b );
+}
