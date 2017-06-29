@@ -839,6 +839,33 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
 
 /****************************************************************************************************/
 
+int give_repvector_inter_qsort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int *reps, int *nreps)
+{
+
+  /*
+   * fills the "reps" array with nodes that repeated in both "array1" & "array2"
+   *
+   * Note: both arrays should be sorted in the same other
+   */
+
+  int i, j;
+
+  // first we determine nmyreps
+  j = 0;
+  for(i=0;i<n2;i++){
+
+    while(array1[j]<array2[i] && j<n1-1){
+      j ++;
+    }
+    
+
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
 int calculate_ghosts(MPI_Comm * comm, char *myname)
 {
 
@@ -855,6 +882,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   int   *displs;
   int   *repeated, nrep;
   int   ierr;
+  int   *myreps, nmyreps;
 
   MPI_Comm_rank(*comm, &rank);
   MPI_Comm_size(*comm, &nproc);
@@ -882,8 +910,18 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   ierr = MPI_Gatherv(nod_glo, mysize, MPI_INT, allnodes, sizes, displs, MPI_INT, 0, *comm);
 
   if(rank==0){
+    // rank 0 is responsible of searching for repetitions
     give_repvector_qsort(comm, myname, totsize, allnodes, &repeated, &nrep);
+    ierr = MPI_Ssend(&nrep, 1, MPI_INT, 0, 0, *comm);
+  }else{
+    ierr = MPI_Recv(&nrep, 1, MPI_INT, 0, 0, *comm, &status);
+    repeated = malloc(nrep*sizeof(int));
   }
+  ierr = MPI_Bcast(repeated, nrep, MPI_INT, 0, *comm);
+
+  // we search for the intersection of "repeated" with "nod_glo" and fill "myreps" & "nmyreps"
+  give_repvector_inter_qsort(comm, myname, nod_glo, nnod_loc, repeated, nrep, &myreps, &nmyreps);
+  
 
   return 1;
 }
