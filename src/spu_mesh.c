@@ -800,11 +800,13 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
    val_o = aux[0];
    swi = 1;
    for(i=1;i<n;i++){
-     if(aux[i] == val_o && swi == 1){
-       swi = 0;
+     if(aux[i] == val_o){
+       if(swi == 1){
+	 (*nrep) ++;
+	 swi = 0;
+       }
      }
-     else if(aux[i] != val_o && swi == 0){
-       (*nrep) ++;
+     else if(aux[i] != val_o){
        swi = 1;
      }
      val_o = aux[i];
@@ -817,12 +819,14 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
    val_o = aux[0];
    swi = 1;
    for(i=1;i<n;i++){
-     if(aux[i] == val_o && swi == 1){
-       swi = 0;
+     if(aux[i] == val_o){
+       if(swi == 1){
+	 (*output)[c] = val_o;
+	 c ++;
+	 swi = 0;
+       }
      }
-     else if(aux[i] != val_o && swi == 0){
-       (*output)[c] = val_o;
-       c ++;
+     else if(aux[i] != val_o){
        swi = 1;
      }
      val_o = aux[i];
@@ -872,9 +876,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       displs[i] = totsize;
       totsize += sizes[i];
     }
+    allnodes = malloc(totsize*sizeof(int));
   }
 
-  allnodes = malloc(totsize*sizeof(int));
   ierr = MPI_Gatherv(nod_glo, mysize, MPI_INT, allnodes, sizes, displs, MPI_INT, 0, *comm);
 
   if(rank==0){
