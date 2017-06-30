@@ -35,6 +35,8 @@ char         input_n[NBUF];            // Input file name
 MPI_Comm     world_comm;
 MPI_Status   status;
 
+bool         print_flag;
+
 int          rank_wor;                 //  rank on world comm
 int          nproc_wor;                //  # of processes (world_comm)
 
@@ -90,8 +92,7 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *ei
 int CSR_give_pointer( int e, int *npe, int *eind, int *p);
 int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *not_rep);
 int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep);
-int give_repvector_inter_qsort(MPI_Comm *comm, char *myname, int *nod_glo, int nnod_glo, int *repeated, int nrep, int
-*myreps, int *nmyreps);
+int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps);
 int calculate_ghosts(MPI_Comm * comm, char *myname);
 int cmpfunc (const void * a, const void * b);
 

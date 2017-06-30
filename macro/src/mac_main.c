@@ -36,6 +36,13 @@ int main(int argc, char **argv)
        printf("mac_main.c:no input file has been given\n");
     }
 
+    print_flag = false;
+    for(i=2;i<argc;i++){
+      if(strcmp(argv[i],"-p")==0){
+	  print_flag = true;
+      }
+    }
+
     spu_parse_scheme(input_n);
     
     /* 

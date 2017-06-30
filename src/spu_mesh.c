@@ -839,7 +839,7 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
 
 /****************************************************************************************************/
 
-int give_repvector_inter_qsort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int *reps, int *nreps)
+int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps)
 {
 
   /*
@@ -860,14 +860,52 @@ int give_repvector_inter_qsort(MPI_Comm *comm, char *myname, int *array1, int n1
   int i, j;
 
   // first we determine number of repetitions (count only once ) "nrepsi"
-  j = 0;
-  for(i=0;i<n2;i++){
-
-    while(array1[j]<array2[i] && j<n1-1){
+  i = j = 0;
+  while( i < n2 ){
+    while( j < n1 ){
+      if( array1[j] >= array2[i] ){
+	break;
+      }
       j ++;
     }
-    
+    if( j==n1 ){
+      // array[i] not found so the other are not going to
+      // be found
+      break;
+    }
+    if( array1[j] == array2[i] ){
+      j++;
+      i++;
+    }
+    else if( array1[j] > array2[i] ){
+      break;
+    }
+  }
+  *nreps = i;
+  *reps = malloc((*nreps) * sizeof(int));
 
+  // now fill <*reps>
+  i = j = 0;
+  while( i < n2 ){
+    while( j < n1 ){
+      if( array1[j] >= array2[i] ){
+	break;
+      }
+      j ++;
+    }
+    if( j==n1 ){
+      // array[i] not found so the other are not going to
+      // be found
+      break;
+    }
+    if( array1[j] == array2[i] ){
+      (*reps)[i] = array2[i];
+      j++;
+      i++;
+    }
+    else if( array1[j] > array2[i] ){
+      break;
+    }
   }
 
   return 0;
@@ -922,15 +960,31 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   if(rank==0){
     // rank 0 is responsible of searching for repetitions
     give_repvector_qsort(comm, myname, totsize, allnodes, &repeated, &nrep);
-  }else{
-    repeated = malloc(nrep*sizeof(int));
   }
   ierr = MPI_Bcast(&nrep, 1, MPI_INT, 0, *comm);
-//  ierr = MPI_Bcast(repeated, nrep, MPI_INT, 0, *comm);
-
-  // we search for the intersection of "repeated" with "nod_glo" and fill "myreps" & "nmyreps"
-//  give_repvector_inter_qsort(comm, myname, nod_glo, nnod_glo, repeated, nrep, &myreps, &nmyreps);
   
+  if(rank!=0){
+    // the rest of processes allocate this memory
+    repeated = malloc(nrep*sizeof(int));
+  }
+
+  ierr = MPI_Bcast(repeated, nrep, MPI_INT, 0, *comm);
+
+  // we search for the intersection of <repeated> with <nod_glo> and fill <myreps> & <nmyreps>
+  give_inter_sort(comm, myname, nod_glo, nnod_glo, repeated, nrep, &myreps, &nmyreps);
+  if(print_flag){
+    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "my reps", nmyreps);
+    printf("%-6s r%2d %-20s : ", myname, rank, "nod_glo");
+    for(i=0;i<nnod_glo;i++){
+      printf("%3d ",nod_glo[i]);
+    }
+    printf("\n");
+    printf("%-6s r%2d %-20s : ", myname, rank, "reps");
+    for(i=0;i<nmyreps;i++){
+      printf("%3d ",myreps[i]);
+    }
+    printf("\n");
+  }
 
   return 1;
 }
