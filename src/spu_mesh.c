@@ -857,54 +857,39 @@ int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *arra
    *
    */
 
-  int i, j;
+  int i, j, c;
 
-  // first we determine number of repetitions (count only once ) "nrepsi"
-  i = j = 0;
-  while( i < n2 ){
-    while( j < n1 ){
-      if( array1[j] >= array2[i] ){
-	break;
-      }
+  // first we determine number of repetitions (count only once ) <nreps>
+  i = j = *nreps = 0;
+  while( i < n2 && j < n1  ){
+    if( array1[j] < array2[i] ){
       j ++;
     }
-    if( j==n1 ){
-      // array[i] not found so the other are not going to
-      // be found
-      break;
-    }
-    if( array1[j] == array2[i] ){
-      j++;
-      i++;
-    }
     else if( array1[j] > array2[i] ){
-      break;
+      i ++;
+    }
+    else if( array1[j] == array2[i] ){
+      j ++;
+      i ++;
+      (*nreps) ++;
     }
   }
-  *nreps = i;
   *reps = malloc((*nreps) * sizeof(int));
 
   // now fill <*reps>
-  i = j = 0;
-  while( i < n2 ){
-    while( j < n1 ){
-      if( array1[j] >= array2[i] ){
-	break;
-      }
+  i = j = c = 0;
+  while( i < n2 && j < n1  ){
+    if( array1[j] < array2[i] ){
       j ++;
     }
-    if( j==n1 ){
-      // array[i] not found so the other are not going to
-      // be found
-      break;
-    }
-    if( array1[j] == array2[i] ){
-      (*reps)[i] = array2[i];
-      j++;
-      i++;
-    }
     else if( array1[j] > array2[i] ){
-      break;
+      i ++;
+    }
+    else if( array1[j] == array2[i] ){
+      (*reps)[c] = array2[i];
+      j ++;
+      i ++;
+      c ++;
     }
   }
 
@@ -917,74 +902,100 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 {
 
   /*
-   * This algorithm determines which nodes of "nod_glo" are "ghost"
+   * This function determines which nodes of <*nod_glo> are <*ghosts>
    *
-   * R0 gathers nod_glo from all process and looks for repetitions
+   * strategy: 
+   *
+   * 1) Allgather operation sending <nnod_glo>
+   *
+   * 2) all processes sends to all (using Isend) the array <nod_glo> 
    *
    */
 
   int   i, rank, nproc;
-  int   *sizes, mysize;
-  int   *allnodes, totsize;
+  int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <nnod_glo> from all the processes
+//  int   *allnodes, totsize;
   int   *displs;
-  int   *repeated, nrep;
+  int   **repeated, *nrep;
   int   ierr;
   int   *myreps, nmyreps;
+
+  MPI_Request  *request;
 
   MPI_Comm_rank(*comm, &rank);
   MPI_Comm_size(*comm, &nproc);
 
-  mysize  = nnod_glo;
-  nghosts = 0;
-  sizes   = NULL;
-  displs  = NULL;
+  mysize     = nnod_glo;
+  nghosts    = 0;
+  peer_sizes = NULL;
+  displs     = NULL;
 
-  if(rank==0){
-    sizes = malloc(nproc*sizeof(int));
-    displs = malloc(nproc*sizeof(int));
-  }
-  ierr = MPI_Gather(&mysize, 1, MPI_INT, sizes, 1, MPI_INT, 0, *comm);
+  peer_sizes = malloc(nproc*sizeof(int));
+  displs     = malloc(nproc*sizeof(int));
+  request    = malloc(nproc*sizeof(MPI_Request));
+  repeated   = calloc(nproc,sizeof(int*));
+  nrep       = calloc(nproc,sizeof(int));
 
-  if(rank==0){
-    totsize = 0;
-    for(i=0;i<nproc;i++){
-      displs[i] = totsize;
-      totsize += sizes[i];
+  ierr = MPI_Allgather(&mysize, 1, MPI_INT, peer_sizes, 1, MPI_INT, *comm);
+
+//  if(rank==0){
+//    totsize = 0;
+//    for(i=0;i<nproc;i++){
+//      displs[i] = totsize;
+//      totsize += peer_sizes[i];
+//    }
+//    allnodes = malloc(totsize*sizeof(int));
+//  }
+
+// juntamos todos los arrays nod_glo 
+//  ierr = MPI_Gatherv(nod_glo, mysize, MPI_INT, allnodes, peer_sizes, displs, MPI_INT, 0, *comm);
+  for(i=0;i<nproc;i++){
+    if(i!=rank){
+      ierr = MPI_Isend(nod_glo, mysize, MPI_INT, i, 0, *comm, &request[i]);
     }
-    allnodes = malloc(totsize*sizeof(int));
   }
-
-  // juntamos todos los arrays nod_glo 
-  ierr = MPI_Gatherv(nod_glo, mysize, MPI_INT, allnodes, sizes, displs, MPI_INT, 0, *comm);
-
-  if(rank==0){
-    // rank 0 is responsible of searching for repetitions
-    give_repvector_qsort(comm, myname, totsize, allnodes, &repeated, &nrep);
-  }
-  ierr = MPI_Bcast(&nrep, 1, MPI_INT, 0, *comm);
-  
-  if(rank!=0){
-    // the rest of processes allocate this memory
-    repeated = malloc(nrep*sizeof(int));
-  }
-
-  ierr = MPI_Bcast(repeated, nrep, MPI_INT, 0, *comm);
-
-  // we search for the intersection of <repeated> with <nod_glo> and fill <myreps> & <nmyreps>
-  give_inter_sort(comm, myname, nod_glo, nnod_glo, repeated, nrep, &myreps, &nmyreps);
-  if(print_flag){
-    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "my reps", nmyreps);
-    printf("%-6s r%2d %-20s : ", myname, rank, "nod_glo");
-    for(i=0;i<nnod_glo;i++){
-      printf("%3d ",nod_glo[i]);
+  for(i=0;i<nproc;i++){
+    if(i!=rank){
+      peer_nod_glo = malloc(peer_sizes[i]*sizeof(int));
+      ierr = MPI_Recv(peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, *comm, &status);
+      give_inter_sort(comm, myname, nod_glo, mysize, peer_nod_glo, peer_sizes[i], &repeated[i], &nrep[i]);
+      free(peer_nod_glo);
     }
-    printf("\n");
-    printf("%-6s r%2d %-20s : ", myname, rank, "reps");
-    for(i=0;i<nmyreps;i++){
-      printf("%3d ",myreps[i]);
-    }
-    printf("\n");
   }
+
+
+
+//  if(rank==0){
+//    // rank 0 is responsible of searching for repetitions
+//    give_repvector_qsort(comm, myname, totsize, allnodes, &repeated, &nrep);
+//  }
+//  ierr = MPI_Bcast(&nrep, 1, MPI_INT, 0, *comm);
+//  
+//  if(rank!=0){
+//    // the rest of processes allocate this memory
+//    repeated = malloc(nrep*sizeof(int));
+//  }
+//
+//  ierr = MPI_Bcast(repeated, nrep, MPI_INT, 0, *comm);
+//
+//  // we search for the intersection of <repeated> with <nod_glo> and fill <myreps> & <nmyreps>
+//  give_inter_sort(comm, myname, nod_glo, nnod_glo, repeated, nrep, &myreps, &nmyreps);
+//
+//  // >>>>> PRINT
+//  if(print_flag){
+//    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "my reps", nmyreps);
+//    printf("%-6s r%2d %-20s : ", myname, rank, "nod_glo");
+//    for(i=0;i<nnod_glo;i++){
+//      printf("%3d ",nod_glo[i]);
+//    }
+//    printf("\n");
+//    printf("%-6s r%2d %-20s : ", myname, rank, "reps");
+//    for(i=0;i<nmyreps;i++){
+//      printf("%3d ",myreps[i]);
+//    }
+//    printf("\n");
+//  }
+//  // >>>>> PRINT
 
   return 1;
 }
