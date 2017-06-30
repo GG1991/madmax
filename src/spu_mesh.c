@@ -916,6 +916,10 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   int   *displs;
   int   ierr;
 
+  int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <nnod_glo> coming from all the processes
+  int   *myreps, nmyreps;
+  int   **repeated, *nrep;
+
   MPI_Request  *request;
 
   MPI_Comm_rank(*comm, &rank);
@@ -925,10 +929,6 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   nghosts    = 0;
   peer_sizes = NULL;
   displs     = NULL;
-
-  int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <nnod_glo> coming from all the processes
-  int   *myreps, nmyreps;
-  int   **repeated, *nrep;
 
   peer_sizes = malloc(nproc*sizeof(int));
   displs     = malloc(nproc*sizeof(int));
