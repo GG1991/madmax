@@ -150,13 +150,13 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
       // swap "npe" and "eind"
       swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_swi, eind_swi, npe_swi_size, eind_swi_size );
 
-      printf("%-6s r%2d %-14s :", myname, rank, "npe_swi_size");
+      printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
       for(i=0;i<nproc;i++){
 	printf("%8d ",npe_swi_size[i]);
       }
       printf("\n");
 
-      printf("%-6s r%2d %-14s :", myname, rank, "eind_swi_size");
+      printf("%-6s r%2d %-20s :", myname, rank, "eind_swi_size");
       for(i=0;i<nproc;i++){
 	printf("%8d ",eind_swi_size[i]);
       }
@@ -176,13 +176,13 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 	return 1;
       }
 
-      printf("%-6s r%2d %-14s :", myname, rank, "npe_size_new");
+      printf("%-6s r%2d %-20s :", myname, rank, "npe_size_new");
       for(i=0;i<nproc;i++){
 	printf("%8d ",npe_size_new[i]);
       }
       printf("\n");
 
-      printf("%-6s r%2d %-14s :", myname, rank, "eind_size_new");
+      printf("%-6s r%2d %-20s :", myname, rank, "eind_size_new");
       for(i=0;i<nproc;i++){
 	printf("%8d ",eind_size_new[i]);
       }
@@ -198,8 +198,8 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 	eind_size_new_tot += eind_size_new[i];
       }
       
-      printf("%-6s r%2d %-14s : %8d\n", myname, rank, "npe_size_new_tot", npe_size_new_tot);
-      printf("%-6s r%2d %-14s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
+      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "npe_size_new_tot", npe_size_new_tot);
+      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
 
       free(npe);
       free(eptr);
@@ -570,7 +570,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 		  offset += len; 
 		}
 	    }
-	    ierr = PetscPrintf(*comm,"%-6s %-8s   :  %d\n", myname, "nelm_tot", nelm_tot);
+	    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nelm_tot", nelm_tot);
 	    break;
 	}
 	ln ++;
@@ -586,20 +586,20 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
     //  nelm_tot/nproc los repartimos uno por 
     //  uno entre los primeros procesos
     //
-    ierr = PetscPrintf(*comm,"%-6s %-8s   : ", myname, "elmdist");
+    printf("%-6s r%2d %-20s : ", myname, rank, "<elmdist>");
     elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
     resto = nelm_tot % nproc;
     elmdist[0] = 0;
-    ierr = PetscPrintf(*comm,"%d ",elmdist[0]);CHKERRQ(ierr);
+    printf("%8d ",elmdist[0]);
     for(i=1; i < nproc + 1; i++){
 	elmdist[i] = i * nelm_tot / nproc;
         if(resto>0){
 	  elmdist[i] += 1;
 	  resto --;
 	}
-	ierr = PetscPrintf(*comm,"%d ",elmdist[i]);CHKERRQ(ierr);
+	ierr = printf("%8d ",elmdist[i]);
     }
-    ierr = PetscPrintf(*comm,"\n");CHKERRQ(ierr);
+    printf("\n");
 
     // ya podemos allocar el vector "eptr" su dimension es :
     // número de elementos locales + 1 = nelm + 1
@@ -693,7 +693,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 
 /****************************************************************************************************/
 
-int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *not_rep)
+int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *n_notrep)
 {
 
   /*
@@ -701,9 +701,9 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
    * write the new vector on output
    *  
    * "n" is the size of "input"
-   * "not_rep" is the size of "output"
+   * "n_notrep" is the size of "output"
    *
-   * n >= not_rep
+   * n >= n_notrep
    *
    * Note: use quick sort algorithm (n log n)
    *
@@ -715,7 +715,7 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
    
    MPI_Comm_rank(*comm, &rank);
 
-   (*not_rep) = 0;
+   (*n_notrep) = 0;
 
    // we copy eind inside aux
    aux = malloc(n*sizeof(int));
@@ -724,7 +724,7 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
    qsort(aux, n, sizeof(int), cmpfunc);
 
    val_o = aux[0];
-   (*not_rep) ++;
+   (*n_notrep) ++;
    for(i=1;i<n;i++){
      swi = 1;
      if(aux[i] == val_o){
@@ -735,12 +735,12 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
        swi = 1;
      }
      if(swi==1){
-       (*not_rep) ++;
+       (*n_notrep) ++;
      }
    }
-   (*output) = malloc( (*not_rep) * sizeof(int));
-   printf("%-6s r%2d %-14s : %8d\n", myname, rank, "nnod rep", n);
-   printf("%-6s r%2d %-14s : %8d\n", myname, rank, "not_rep" , *not_rep);
+   (*output) = malloc( (*n_notrep) * sizeof(int));
+   printf("%-6s r%2d %-20s : %8d\n", myname, rank, "total elements", n);
+   printf("%-6s r%2d %-20s : %8d\n", myname, rank, "unique elements" , *n_notrep);
 
    c = 0;
    val_o = aux[0];
@@ -812,8 +812,8 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
      val_o = aux[i];
    }
    (*output) = malloc( (*nrep) * sizeof(int));
-   printf("%-6s r%2d %-14s : %8d\n", myname, rank, "n", n);
-   printf("%-6s r%2d %-14s : %8d\n", myname, rank, "nrep" , *nrep);
+   printf("%-6s r%2d %-20s : %8d\n", myname, rank, "n", n);
+   printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nrep" , *nrep);
    
    c = 0;
    val_o = aux[0];
@@ -845,12 +845,21 @@ int give_repvector_inter_qsort(MPI_Comm *comm, char *myname, int *array1, int n1
   /*
    * fills the "reps" array with nodes that repeated in both "array1" & "array2"
    *
+   * Input : 
+   * array1 = [ 1 2 3 4 5 6 7 ]  n1 = 7
+   * array2 = [ 5 6 7 8 9 ]      n2 = 5
+   *
+   * Output : 
+   * reps   = [ 5 6 7 ]          nreps = 3
+   *
+   *
    * Note: both arrays should be sorted in the same other
+   *
    */
 
   int i, j;
 
-  // first we determine nmyreps
+  // first we determine number of repetitions (count only once ) "nrepsi"
   j = 0;
   for(i=0;i<n2;i++){
 
@@ -887,7 +896,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   MPI_Comm_rank(*comm, &rank);
   MPI_Comm_size(*comm, &nproc);
 
-  mysize  = nnod_loc;
+  mysize  = nnod_glo;
   nghosts = 0;
   sizes   = NULL;
   displs  = NULL;
@@ -907,20 +916,20 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     allnodes = malloc(totsize*sizeof(int));
   }
 
+  // juntamos todos los arrays nod_glo 
   ierr = MPI_Gatherv(nod_glo, mysize, MPI_INT, allnodes, sizes, displs, MPI_INT, 0, *comm);
 
   if(rank==0){
     // rank 0 is responsible of searching for repetitions
     give_repvector_qsort(comm, myname, totsize, allnodes, &repeated, &nrep);
-    ierr = MPI_Ssend(&nrep, 1, MPI_INT, 0, 0, *comm);
   }else{
-    ierr = MPI_Recv(&nrep, 1, MPI_INT, 0, 0, *comm, &status);
     repeated = malloc(nrep*sizeof(int));
   }
-  ierr = MPI_Bcast(repeated, nrep, MPI_INT, 0, *comm);
+  ierr = MPI_Bcast(&nrep, 1, MPI_INT, 0, *comm);
+//  ierr = MPI_Bcast(repeated, nrep, MPI_INT, 0, *comm);
 
   // we search for the intersection of "repeated" with "nod_glo" and fill "myreps" & "nmyreps"
-  give_repvector_inter_qsort(comm, myname, nod_glo, nnod_loc, repeated, nrep, &myreps, &nmyreps);
+//  give_repvector_inter_qsort(comm, myname, nod_glo, nnod_glo, repeated, nrep, &myreps, &nmyreps);
   
 
   return 1;

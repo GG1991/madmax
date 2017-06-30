@@ -109,8 +109,13 @@ int main(int argc, char **argv)
 
     t0 = MPI_Wtime();      /* ON time lapse */
 
+    // partition the mesh
     part_mesh_PARMETIS(&macro_comm, time_fl, myname, NULL, PARMETIS_MESHKWAY );
-    clean_vector_qsort(&macro_comm, myname, eptr[nelm], eind, &nod_glo, &nnod_loc);
+
+    // We delete repeated nodes and save the <nnod_glo> values on <nod_glo> in order
+    clean_vector_qsort(&macro_comm, myname, eptr[nelm], eind, &nod_glo, &nnod_glo);
+
+    // calculate <*ghosts> and <nghosts> 
     calculate_ghosts(&macro_comm, myname);
 
     t1 = MPI_Wtime() - t0;

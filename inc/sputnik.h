@@ -65,7 +65,7 @@ int          *eptr;                    // list of indeces of nodes inside eind
 int          *eind;                    // list of nodes for elem "i" is between 
                                        // eind[eptr[i]] eind[eptr[i+1]] (not including)
 
-int           nnod_loc;                // # of local nodes (including ghost)
+int           nnod_glo;                // # of local nodes (including ghost)
 int           nnod_tot;                // # of total nodes
 int           *nod_glo;                // local nodes numeration (Gmsh)
 int           nghosts;                  // # of ghost nodes
