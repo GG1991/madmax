@@ -913,12 +913,8 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
    */
 
   int   i, rank, nproc;
-  int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <nnod_glo> from all the processes
-//  int   *allnodes, totsize;
   int   *displs;
-  int   **repeated, *nrep;
   int   ierr;
-  int   *myreps, nmyreps;
 
   MPI_Request  *request;
 
@@ -930,6 +926,10 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   peer_sizes = NULL;
   displs     = NULL;
 
+  int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <nnod_glo> coming from all the processes
+  int   *myreps, nmyreps;
+  int   **repeated, *nrep;
+
   peer_sizes = malloc(nproc*sizeof(int));
   displs     = malloc(nproc*sizeof(int));
   request    = malloc(nproc*sizeof(MPI_Request));
@@ -938,17 +938,6 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   ierr = MPI_Allgather(&mysize, 1, MPI_INT, peer_sizes, 1, MPI_INT, *comm);
 
-//  if(rank==0){
-//    totsize = 0;
-//    for(i=0;i<nproc;i++){
-//      displs[i] = totsize;
-//      totsize += peer_sizes[i];
-//    }
-//    allnodes = malloc(totsize*sizeof(int));
-//  }
-
-// juntamos todos los arrays nod_glo 
-//  ierr = MPI_Gatherv(nod_glo, mysize, MPI_INT, allnodes, peer_sizes, displs, MPI_INT, 0, *comm);
   for(i=0;i<nproc;i++){
     if(i!=rank){
       ierr = MPI_Isend(nod_glo, mysize, MPI_INT, i, 0, *comm, &request[i]);
@@ -963,12 +952,18 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     }
   }
 
+  // condensamos en 1 vector todo lo que hay en repeated
 
 
-//  if(rank==0){
-//    // rank 0 is responsible of searching for repetitions
-//    give_repvector_qsort(comm, myname, totsize, allnodes, &repeated, &nrep);
-//  }
+
+  
+  if(rank==0){
+
+
+  }
+
+
+
 //  ierr = MPI_Bcast(&nrep, 1, MPI_INT, 0, *comm);
 //  
 //  if(rank!=0){
