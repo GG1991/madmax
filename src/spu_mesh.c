@@ -361,14 +361,15 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
      | 
      (swap operation with swap_vectors_CSR)
      | 
-     npe  = [ 3 1 3 2 ]
-     eind = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]   
+     npe_swi  = [ 3 1 3 2 ]
+     eind_swi = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]   
 
      Notes:
 
-     -> "n" is the length of "npe"
-     -> results are saved on "eind_swi" and "npe_swi" (memory is duplicated)
-     -> swap should have values in [0,n)
+     -> <n> is the length of <npe>
+     -> <eptr> is used to identify quickly the <eind> values to be swapped
+     -> results are saved on <eind_swi> and <npe_swi> (memory is duplicated)
+     -> swap should have values in [0,nproc)
   */
 
   int e, p, i, j, lp, pi;
@@ -912,7 +913,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
    *
    */
 
-  int   i, rank, nproc;
+  int   i, j, c, rank, nproc;
   int   *displs;
   int   ierr;
 
@@ -953,15 +954,41 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
 
   // condensamos en 1 vector todo lo que hay en repeated
+  int *rep_array, nreptot = 0, *rep_array_clean, nreptot_clean;
 
-
-
-  
-  if(rank==0){
-
-
+  for(i=0;i<nproc;i++){
+    nreptot += nrep[i];
+  }
+  rep_array = malloc(nreptot * sizeof(int));
+  c = 0;
+  for(i=0;i<nproc;i++){
+    for(j=0;j<nrep[i];j++){
+      rep_array[c] = repeated[i][j];
+      c ++;
+    }
   }
 
+  clean_vector_qsort(comm, myname, nreptot, rep_array, &rep_array_clean, &nreptot_clean);
+
+  int *reps_all = NULL, *nreps_all = NULL, nreps_all_tot;
+  int *displs2 = NULL;
+
+  if(rank==0){
+    nreps_all = malloc(nproc*sizeof(int));
+    displs2 = malloc(nproc*sizeof(int));
+  }
+
+  ierr = MPI_Gather(&nreptot_clean, 1, MPI_INT, nreps_all, 1, MPI_INT, 0, *comm);
+  
+  if(rank==0){
+    nreps_all_tot = 0;
+    for(i=0;i<nproc;i++){
+      displs2[i] = nreps_all_tot;
+      nreps_all_tot += nreps_all[i];
+    }
+    reps_all = malloc(nreps_all_tot*sizeof(int));
+  }
+  ierr = MPI_Gatherv(rep_array_clean, nreptot_clean, MPI_INT, reps_all, nreps_all, displs2, MPI_INT, 0, *comm);
 
 
 //  ierr = MPI_Bcast(&nrep, 1, MPI_INT, 0, *comm);
