@@ -295,6 +295,127 @@ process search if one of this nodes belongs to him, if belong it puts on another
 not possible that two process have the same node in this instance.
 \end{enumerate}
 
+\begin{tikzpicture}[font=\ttfamily,
+array_g/.style={matrix of nodes,nodes={draw, minimum size=7mm, fill=green!80},column sep=-\pgflinewidth, row sep=0.5mm, nodes in empty cells,
+row 0/.style={nodes={draw=none, fill=none, minimum size=5mm}},
+row 0 column 1/.style={nodes={draw}}},
+array_r/.style={matrix of nodes,nodes={draw, minimum size=7mm, fill=red!80},column sep=-\pgflinewidth, row sep=0.5mm, nodes in empty cells,
+row 0/.style={nodes={draw=none, fill=none, minimum size=5mm}},
+row 0 column 1/.style={nodes={draw}}},
+array_c/.style={matrix of nodes,nodes={draw, minimum size=7mm, fill=red!100},column sep=-\pgflinewidth, row sep=0.5mm, nodes in empty cells,
+row 1 column 1/.style={nodes={draw, fill=green!80}},
+row 1 column 2/.style={nodes={draw, fill=green!80}},
+row 1 column 3/.style={nodes={draw, fill=green!80}},
+row 1 column 4/.style={nodes={draw, fill=red!80}},
+row 1 column 5/.style={nodes={draw, fill=red!80}},
+row 1 column 6/.style={nodes={draw, fill=red!80}},
+row 1 column 7/.style={nodes={draw, fill=blue!80}},
+row 1 column 8/.style={nodes={draw, fill=blue!80}},
+row 1 column 9/.style={nodes={draw, fill=blue!80}}
+},
+array_d/.style={matrix of nodes,nodes={draw, minimum size=7mm, fill=red!100},column sep=-\pgflinewidth, row sep=0.5mm, nodes in empty cells,
+row 1 column 1/.style={nodes={draw, fill=green!80}},
+row 1 column 2/.style={nodes={draw, fill=blue!80}},
+row 1 column 3/.style={nodes={draw, fill=green!80}},
+row 1 column 4/.style={nodes={draw, fill=red!80}},
+row 1 column 5/.style={nodes={draw, fill=green!80}},
+row 1 column 6/.style={nodes={draw, fill=red!80}},
+row 1 column 7/.style={nodes={draw, fill=blue!80}},
+row 1 column 8/.style={nodes={draw, fill=red!80}},
+row 1 column 9/.style={nodes={draw, fill=blue!80}}
+},
+array_d/.style={matrix of nodes,nodes={draw, minimum size=7mm, fill=red!100},column sep=-\pgflinewidth, row sep=0.5mm, nodes in empty cells,
+row 1 column 1/.style={nodes={draw, fill=green!80}},
+row 1 column 2/.style={nodes={draw, fill=blue!80}},
+row 1 column 3/.style={nodes={draw, fill=green!80}},
+row 1 column 4/.style={nodes={draw, fill=red!80}},
+row 1 column 5/.style={nodes={draw, fill=green!80}},
+row 1 column 6/.style={nodes={draw, fill=red!80}},
+row 1 column 7/.style={nodes={draw, fill=blue!80}},
+row 1 column 8/.style={nodes={draw, fill=red!80}},
+row 1 column 9/.style={nodes={draw, fill=blue!80}}
+},
+array_e/.style={matrix of nodes,nodes={draw, minimum size=7mm, fill=red!100},column sep=-\pgflinewidth, row sep=0.5mm, nodes in empty cells,
+row 1 column 1/.style={nodes={draw, fill=green!80}},
+row 1 column 2/.style={nodes={draw, fill=black!100}},
+row 1 column 3/.style={nodes={draw, fill=green!80}},
+row 1 column 4/.style={nodes={draw, fill=black!100}},
+row 1 column 5/.style={nodes={draw, fill=black!100}},
+row 1 column 6/.style={nodes={draw, fill=red!80}},
+row 1 column 7/.style={nodes={draw, fill=blue!80}},
+row 1 column 8/.style={nodes={draw, fill=black!100}},
+row 1 column 9/.style={nodes={draw, fill=blue!80}}
+},
+array_b/.style={matrix of nodes,nodes={draw, minimum size=7mm, fill=blue!80},column sep=-\pgflinewidth, row sep=0.5mm, nodes in empty cells,
+row 0/.style={nodes={draw=none, fill=none, minimum size=5mm}},
+row 0 column 1/.style={nodes={draw}}}]
+
+   \tikzstyle{state} =[fill=red,draw=none,text=white,minimum size=0.1cm]
+   \tikzstyle{type2}=[fill=green,draw=none,text=white,minimum size=0.1cm]
+   \tikzstyle{type3}=[fill=blue,draw=none,text=white,minimum size=0.1cm]
+
+   % draw a grid for positioning nodes
+   \coordinate (bottom_left) at (0,0);
+   \coordinate (top_right) at (18,25);
+   \draw [dotted, draw=black, fill=white] (bottom_left) grid  (top_right);
+
+    \matrix[array_g] at (3,25) (A0) {
+        1 & 2 & 3 & 4 & 5 & 6\\};
+    \matrix[array_r] at (9,25) (A1) {
+        5 & 6 & 7 & 8 & 9 & 10\\};
+    \matrix[array_b] at (15,25) (A2) {
+        1 & 9 & 10 & 11 & 12 & 13 \\};
+    %\node[draw, fill=gray, minimum size=4mm] at (array-2-9) (box) {};
+
+    \matrix[array_g] at (3,22) (B0) {
+        1 & 5 & 6 \\};
+    \matrix[array_r] at (9,22) (B1) {
+        5 & 6 & 10 \\};
+    \matrix[array_b] at (15,22) (B2) {
+        1 & 9 & 10\\};
+
+    \path [->] (A0) edge node {} (B0)
+               (A1) edge node {} (B0)
+               (A2) edge node {} (B0);
+
+    \path [->] (A0) edge node {} (B1)
+               (A1) edge node {} (B1)
+               (A2) edge node {} (B1);
+
+    \path [->] (A0) edge node {} (B2)
+               (A1) edge node {} (B2)
+               (A2) edge node {} (B2);
+
+    \matrix[array_c] at (9,19) (C0) {
+        1 & 5 & 6 & 5 & 6 & 10 & 1 & 9 & 10  \\};
+
+    \path [->] (B0) edge node {} (C0)
+               (B1) edge node {} (C0)
+               (B2) edge node {} (C0);
+
+    \matrix[array_d] at (9,16) (D0) {
+        1 & 1 & 5 & 5 & 6 & 6 & 9 & 10 & 10  \\};
+
+    \path [->] (C0) edge node {} (D0);
+
+    \matrix[array_e] at (9,13) (E0) {
+        1 & 1 & 5 & 5 & 6 & 6 & 9 & 10 & 10  \\};
+
+    \path [->] (D0) edge node {} (E0);
+
+    \matrix[array_g] at (3,10) (F0) {
+        1 & 5 \\};
+    \matrix[array_r] at (9,10) (F1) {
+        6  \\};
+    \matrix[array_b] at (15,10) (F2) {
+        9 & 10 \\};
+
+    \path [->] (E0) edge node {} (F0)
+               (E0) edge node {} (F1)
+               (E0) edge node {} (F2);
+
+\end{tikzpicture}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
