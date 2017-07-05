@@ -979,25 +979,36 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   
   free(rep_array);
 
-  // calculamos la cantidad de puntos dentro de <nod_glo> que se repiten 
-  // en los otros procesos pero me pertenecen a mi
-  int ismine, nmine;
-  nmine = 0;
-  for( i=0; i < nreptot_clean; i++ ){
-    ismine = ownership_selec_rule( comm, repeated, rep_array_clean[i] );
-    if(ismine){
+  // calculamos la cantidad de puntos dentro de <nod_glo> que me pertenecen
+  int ismine, nmine, r;
+  nmine = r = 0;
+  for(i=0;i<nnod_glo;i++){
+    if(nod_glo[i] == rep_array_clean[r]){
+      ismine = ownership_selec_rule( comm, repeated, rep_array_clean[r] );
+      r++;
+      if(ismine){
+	nmine ++;
+      }
+    }
+    else{
       nmine ++;
     }
   }
 
-  // guardamos esos nodos en un vector <mynodes>
   int *mynodes;
   mynodes = malloc(nmine*sizeof(int));
-  c = 0;
-  for( i=0; i < nreptot_clean; i++ ){
-    ismine = ownership_selec_rule( comm, repeated, rep_array_clean[i] );
-    if(ismine){
-      mynodes[c] = rep_array_clean[i];
+  c = r = 0;
+  for(i=0;i<nnod_glo;i++){
+    if(nod_glo[i] == rep_array_clean[r]){
+      ismine = ownership_selec_rule( comm, repeated, rep_array_clean[r] );
+      r++;
+      if(ismine){
+	mynodes[c] = nod_glo[i];
+	c ++;
+      }
+    }
+    else{
+      mynodes[c] = nod_glo[i];
       c ++;
     }
   }
