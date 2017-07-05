@@ -921,6 +921,13 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   int   *myreps, nmyreps;
   int   **repeated, *nrep;
 
+//  typedef struct ownership_t_{
+//
+//    int    node; // node numeration
+//    list_t proc; // list of processes that share node <node>
+//
+//  }ownership_t;
+
   MPI_Request  *request;
 
   MPI_Comm_rank(*comm, &rank);
@@ -969,26 +976,51 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
 
   clean_vector_qsort(comm, myname, nreptot, rep_array, &rep_array_clean, &nreptot_clean);
-
-  int *reps_all = NULL, *nreps_all = NULL, nreps_all_tot;
-  int *displs2 = NULL;
-
-  if(rank==0){
-    nreps_all = malloc(nproc*sizeof(int));
-    displs2 = malloc(nproc*sizeof(int));
-  }
-
-  ierr = MPI_Gather(&nreptot_clean, 1, MPI_INT, nreps_all, 1, MPI_INT, 0, *comm);
   
-  if(rank==0){
-    nreps_all_tot = 0;
-    for(i=0;i<nproc;i++){
-      displs2[i] = nreps_all_tot;
-      nreps_all_tot += nreps_all[i];
+  free(rep_array);
+
+  // calculamos la cantidad de puntos dentro de <nod_glo> que se repiten 
+  // en los otros procesos pero me pertenecen a mi
+  int ismine, nmine;
+  nmine = 0;
+  for( i=0; i < nreptot_clean; i++ ){
+    ismine = ownership_selec_rule( comm, repeated, rep_array_clean[i] );
+    if(ismine){
+      nmine ++;
     }
-    reps_all = malloc(nreps_all_tot*sizeof(int));
   }
-  ierr = MPI_Gatherv(rep_array_clean, nreptot_clean, MPI_INT, reps_all, nreps_all, displs2, MPI_INT, 0, *comm);
+
+  // guardamos esos nodos en un vector <mynodes>
+  int *mynodes;
+  mynodes = malloc(nmine*sizeof(int));
+  c = 0;
+  for( i=0; i < nreptot_clean; i++ ){
+    ismine = ownership_selec_rule( comm, repeated, rep_array_clean[i] );
+    if(ismine){
+      mynodes[c] = rep_array_clean[i];
+      c ++;
+    }
+  }
+
+//  int *reps_all = NULL, *nreps_all = NULL, nreps_all_tot;
+//  int *displs2 = NULL;
+//
+//  if(rank==0){
+//    nreps_all = malloc(nproc*sizeof(int));
+//    displs2 = malloc(nproc*sizeof(int));
+//  }
+//
+//  ierr = MPI_Gather(&nreptot_clean, 1, MPI_INT, nreps_all, 1, MPI_INT, 0, *comm);
+//  
+//  if(rank==0){
+//    nreps_all_tot = 0;
+//    for(i=0;i<nproc;i++){
+//      displs2[i] = nreps_all_tot;
+//      nreps_all_tot += nreps_all[i];
+//    }
+//    reps_all = malloc(nreps_all_tot*sizeof(int));
+//  }
+//  ierr = MPI_Gatherv(rep_array_clean, nreptot_clean, MPI_INT, reps_all, nreps_all, displs2, MPI_INT, 0, *comm);
 
 
 //  ierr = MPI_Bcast(&nrep, 1, MPI_INT, 0, *comm);
@@ -1020,6 +1052,74 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 //  // >>>>> PRINT
 
   return 1;
+}
+
+/****************************************************************************************************/
+
+int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node )
+{
+
+  /*  Function for determine the ownership of a repeated 
+   *  node on different processors. 
+   *
+   *  Input 
+   *
+   *  repeated: list of nodes that each process have in common with me
+   *  nrep    : number of elements in each <repeated> element
+   *  node    : node numeration in order to know if this process owns it
+   * 
+   *  Returns:
+   *
+   *   1 if the node is mine
+   *   0 if not
+   *  -1 if error
+   *
+   *  Notes:
+   *  -> all process should return the same if <node> is the same
+   *  -> the selection criteria calculates rankp = node % nproc as root
+   *     if the rankp in repeated contains <node> in <rankp> position 
+   *     then this is the ownership of it. If <rankp> = <rank> at any 
+   *     part of the search then this node is of this process.
+   */
+
+  int nproc, rank;
+
+  MPI_Comm_rank(*comm, &rank);
+  MPI_Comm_size(*comm, &nproc);
+
+  int i, j, rankp;
+ 
+  // This is the root rank for start searching 
+  rankp = node % nproc; 
+
+  i = 1;
+  while(1){
+    if(rankp == rank){
+      return 1;
+    } 
+    j = 0;
+    while(j<nrep[rankp]){
+      if(repeated[rankp][j] == node){
+	break;
+      }
+      j++;
+    }
+    if(repeated[rankp][j] == node){
+      // lo encontramos
+      return (rankp == rank) ? 1 : 0;
+    }
+    else{
+      // buscamos siempre a la derecha
+      rankp += i;
+      if(rankp == nproc){
+	rankp = 0;
+	i = 0;
+      }
+    }
+    i ++;
+  }
+
+  return -1;	
 }
 
 /****************************************************************************************************/
