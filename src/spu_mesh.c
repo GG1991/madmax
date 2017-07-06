@@ -201,7 +201,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 	eind_size_new_tot += eind_size_new[i];
       }
       
-//      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
+      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
       if(print_flag){
 	printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
       }
