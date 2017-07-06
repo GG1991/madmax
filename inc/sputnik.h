@@ -97,8 +97,8 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
 int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep);
 int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps);
 int calculate_ghosts(MPI_Comm * comm, char *myname);
-int ownership_selec_rule_1( MPI_Comm *comm, int **repeated, int *nrep, int node );
-int ownership_selec_rule( MPI_Comm *comm, int node );
+int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node );
+int ownership_selec_rule_1( MPI_Comm *comm, int node );
 int cmpfunc (const void * a, const void * b);
 
 // spu_vtk.c

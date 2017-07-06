@@ -991,7 +991,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   nmynod_glo = r = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
-      ismine = ownership_selec_rule( comm, nod_glo[i]);
+      ismine = ownership_selec_rule( comm, repeated, nrep, nod_glo[i]);
       r++;
       if(ismine){
 	nmynod_glo ++;
@@ -1006,7 +1006,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   c = r = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
-      ismine = ownership_selec_rule( comm, nod_glo[i]);
+      ismine = ownership_selec_rule( comm, repeated, nrep, nod_glo[i]);
       r++;
       if(ismine){
 	mynod_glo[c] = nod_glo[i];
@@ -1019,7 +1019,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     }
   }
 
-//  printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nmynod_glo", nmynod_glo);
+  printf("%-6s r%2d %-20s : %8d %-20s : %8d\n", myname, rank, "nnod_glo", nnod_glo, "nmynod_glo", nmynod_glo);
   // >>>>> PRINT
   if(print_flag){
     printf("%-6s r%2d %-20s : ", myname, rank, "nod_glo");
@@ -1032,6 +1032,11 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       printf("%3d ",rep_array_clean[i]);
     }
     printf("\n");
+    printf("%-6s r%2d %-20s : ", myname, rank, "mynod_glo");
+    for(i=0;i<nmynod_glo;i++){
+      printf("%3d ",mynod_glo[i]);
+    }
+    printf("\n");
   }
   // >>>>> PRINT
 
@@ -1040,7 +1045,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
 /****************************************************************************************************/
 
-int ownership_selec_rule_1( MPI_Comm *comm, int **repeated, int *nrep, int node )
+int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node )
 {
 
   /*  Function for determine the ownership of a repeated 
@@ -1073,31 +1078,36 @@ int ownership_selec_rule_1( MPI_Comm *comm, int **repeated, int *nrep, int node 
 
   int i, j, rankp;
  
-  // This is the root rank for start searching 
+  // damos un guess inicial de <rankp> luego iremos buscamos 
+  // hacia los ranks crecientes
   rankp = node % nproc; 
 
   i = 1;
   while(1){
+    //tenemos un guess nuevo de rankp
     if(rankp == rank){
+      // si justo nos cayo entonces este <node> es nuestro
       return 1;
     } 
-    j = 0;
-    while(j<nrep[rankp]){
-      if(repeated[rankp][j] == node){
-	break;
-      }
-      j++;
-    }
-    if(repeated[rankp][j] == node){
-      // lo encontramos
-      return (rankp == rank) ? 1 : 0;
-    }
     else{
-      // buscamos siempre a la derecha
-      rankp += i;
-      if(rankp == nproc){
-	rankp = 0;
-	i = 0;
+      j = 0;
+      while(j<nrep[rankp]){
+	if(repeated[rankp][j] == node){
+	  break;
+	}
+	j++;
+      }
+      if(repeated[rankp][j] == node){
+	// lo encontramos pero está en otro rank
+	return 0;
+      }
+      else{
+	// buscamos siempre a la derecha
+	rankp += i;
+	if(rankp == nproc){
+	  rankp = 0;
+	  i = 0;
+	}
       }
     }
     i ++;
@@ -1108,7 +1118,7 @@ int ownership_selec_rule_1( MPI_Comm *comm, int **repeated, int *nrep, int node 
 
 /****************************************************************************************************/
 
-int ownership_selec_rule( MPI_Comm *comm, int node )
+int ownership_selec_rule_1( MPI_Comm *comm, int node )
 {
 
   /*  Function for determine the ownership of a repeated 
