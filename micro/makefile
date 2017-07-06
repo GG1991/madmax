@@ -21,8 +21,10 @@ DEPS_DIR = ${DEP_DIR}              \
 OBJ  = ${OBJ_DIR}/mic_main.o       \
        ${OBJ_DIR}/mic_comm.o       \
 
-SPU_OBJ = ${SPU_OBJ_DIR}/spu_parser.o   \
-           ${SPU_OBJ_DIR}/spu_mesh.o      
+SPU_OBJ  = ${SPU_OBJ_DIR}/spu_parser.o   \
+           ${SPU_OBJ_DIR}/spu_mesh.o     \
+           ${SPU_OBJ_DIR}/spu_time.o     \
+           ${SPU_OBJ_DIR}/spu_vtk.o      
 
 .PHONY: clean_
 

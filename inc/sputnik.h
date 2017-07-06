@@ -100,6 +100,11 @@ int calculate_ghosts(MPI_Comm * comm, char *myname);
 int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node );
 int ownership_selec_rule_1( MPI_Comm *comm, int node );
 int cmpfunc (const void * a, const void * b);
+int is_in_vector(int val, int *vector, int size);
+
 
 // spu_vtk.c
 int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm );
+
+// spu_time.c
+int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);
