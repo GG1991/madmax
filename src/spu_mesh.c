@@ -602,7 +602,6 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
     elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
     resto = nelm_tot % nproc;
     elmdist[0] = 0;
-    printf("%8d ",elmdist[0]);
     for(i=1; i < nproc + 1; i++){
 	elmdist[i] = i * nelm_tot / nproc;
         if(resto>0){
@@ -613,7 +612,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 
     if(print_flag){
       printf("%-6s r%2d %-20s : ", myname, rank, "<elmdist>");
-      for(i=1; i < nproc + 1; i++){
+      for(i=0; i < nproc + 1; i++){
 	printf("%8d ",elmdist[i]);
       }
       printf("\n");
