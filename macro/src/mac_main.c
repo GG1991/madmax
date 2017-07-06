@@ -114,30 +114,37 @@ int main(int argc, char **argv)
     nelm = elmdist[rank_mac+1] - elmdist[rank_mac];
     part = (int*)malloc(nelm * sizeof(int));
 
-    t0 = MPI_Wtime();      /* ON time lapse */
-
     // partition the mesh
+
+    /******************/
+    /* ON time lapse */
+    t0 = MPI_Wtime();
     part_mesh_PARMETIS(&macro_comm, time_fl, myname, NULL, PARMETIS_MESHKWAY );
+    t1 = MPI_Wtime() - t0;
+    save_time(&macro_comm, "part_mesh_PARMETIS", time_fl, t1);
+    /* OFF time lapse */
+    /******************/
 
     // We delete repeated nodes and save the <nnod_glo> values on <nod_glo> in order
+    /******************/
+    /* ON time lapse */
     clean_vector_qsort(&macro_comm, myname, eptr[nelm], eind, &nod_glo, &nnod_glo);
+    t1 = MPI_Wtime() - t0;
+    save_time(&macro_comm, "nod_glo calc", time_fl, t1);
+    /* OFF time lapse */
+    /******************/
 
     // calculate <*ghosts> and <nghosts> 
-    calculate_ghosts(&macro_comm, myname);
 
+    /******************/
+    /* ON time lapse */
+    t0 = MPI_Wtime();
+    calculate_ghosts(&macro_comm, myname);
     t1 = MPI_Wtime() - t0;
-    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
-    if(ierr){
-      return 1;
-    }
-    if(rank_mac == 0){
-      fprintf(time_fl, "%-20s", "part_mesh_PARMETIS");
-      for(i=0;i<nproc_mac;i++){
-	fprintf(time_fl," %e",time_vec[i]);
-      }
-      fprintf(time_fl,"\n");
-    }                       /* OFF time lapse */
-    
+    save_time(&macro_comm, "ghosts", time_fl, t1);
+    /* OFF time lapse */
+    /******************/
+
     spu_vtk_partition( myname, mesh_n, &macro_comm );
 
     fclose(time_fl);

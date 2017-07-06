@@ -7,7 +7,7 @@ break_mic=( 'spu_mesh.c:136' )
 #break_mac=( 'mac_comm.c:101' ) 
 #break_mic=( 'mic_comm.c:105' ) 
 
-NM=3
+NM=10
 Nm=1
 
 
@@ -24,19 +24,16 @@ do
 done
 exopt_mic+="-ex 'r'"
 
-gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu"
-gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ex1.spu"
-exec_mac="../../macro/macro ex1.spu"
-exec_mic="../../micro/micro ex1.spu"
 
-#mpirun -np 1 xterm -e "$gdbcomm_mac" : -np 2 xterm -e "$gdbcomm_mic"
 if [ "$#" -eq 1 ];then
   if [ "$1" -eq 1 ];then  
+   exec_mac="../../macro/macro ex1.spu"
+   exec_mic="../../micro/micro ex1.spu"
    echo "mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
    eval  mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
   elif [ "$1" -eq 2 ];then
-   exec_val2_mac="valgrind --log-file=\"valgrind1.out\"  ../../macro/macro ex1.spu"
-   exec_val2_mic="valgrind --log-file=\"valgrind1.out\"  ../../micro/micro ex1.spu"
+   exec_val2_mac="valgrind --log-file=\"valgrind_M.out\"  ../../macro/macro ex1.spu"
+   exec_val2_mic="valgrind --log-file=\"valgrind_m.out\"  ../../micro/micro ex1.spu"
    echo "mpirun -np $NM "$exec_val2_mac" : -np $Nm "$exec_val2_mic""
    eval  mpirun -np $NM "$exec_val2_mac" : -np $Nm "$exec_val2_mic" 
   elif [ "$1" -eq 3 ];then
@@ -51,5 +48,7 @@ if [ "$#" -eq 1 ];then
    eval  mpirun -np 2 "$exec_val4_mac" : -np 2 "$exec_val4_mic"
   fi
 else
+   gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu"
+   gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ex1.spu"
    mpirun -np $NM xterm -e "$gdbcomm_mac" : -np $Nm xterm -e "$gdbcomm_mic"
 fi
