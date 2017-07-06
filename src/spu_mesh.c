@@ -984,7 +984,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   nmine = r = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
-      ismine = ownership_selec_rule( comm, repeated, rep_array_clean[r] );
+      ismine = ownership_selec_rule( comm, nod_glo[i]);
       r++;
       if(ismine){
 	nmine ++;
@@ -1000,7 +1000,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   c = r = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
-      ismine = ownership_selec_rule( comm, repeated, rep_array_clean[r] );
+      ismine = ownership_selec_rule( comm, nod_glo[i]);
       r++;
       if(ismine){
 	mynodes[c] = nod_glo[i];
@@ -1067,7 +1067,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
 /****************************************************************************************************/
 
-int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node )
+int ownership_selec_rule_1( MPI_Comm *comm, int **repeated, int *nrep, int node )
 {
 
   /*  Function for determine the ownership of a repeated 
@@ -1131,6 +1131,40 @@ int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node )
   }
 
   return -1;	
+}
+
+/****************************************************************************************************/
+
+int ownership_selec_rule( MPI_Comm *comm, int node )
+{
+
+  /*  Function for determine the ownership of a repeated 
+   *  node on different processors. 
+   *
+   *  Input 
+   *
+   *  repeated: list of nodes that each process have in common with me
+   *  nrep    : number of elements in each <repeated> element
+   *  node    : node numeration in order to know if this process owns it
+   * 
+   *  Returns:
+   *
+   *   1 if the node is mine
+   *   0 if not
+   *  -1 if error
+   *
+   *  Notes:
+   *  -> all process should return the same if <node> is the same
+   *  -> the selection criteria calculates rankp = node % nproc 
+   *     as the owner
+   */
+
+  int nproc, rank;
+
+  MPI_Comm_rank(*comm, &rank);
+  MPI_Comm_size(*comm, &nproc);
+
+  return (node % nproc == rank) ? 1 : 0;
 }
 
 /****************************************************************************************************/
