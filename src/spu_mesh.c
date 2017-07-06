@@ -1196,40 +1196,6 @@ int is_in_vector(int val, int *vector, int size)
 
 /****************************************************************************************************/
 
-int ownership_selec_rule_1( MPI_Comm *comm, int node )
-{
-
-  /*  Function for determine the ownership of a repeated 
-   *  node on different processors. 
-   *
-   *  Input 
-   *
-   *  repeated: list of nodes that each process have in common with me
-   *  nrep    : number of elements in each <repeated> element
-   *  node    : node numeration in order to know if this process owns it
-   * 
-   *  Returns:
-   *
-   *   1 if the node is mine
-   *   0 if not
-   *  -1 if error
-   *
-   *  Notes:
-   *  -> all process should return the same if <node> is the same
-   *  -> the selection criteria calculates rankp = node % nproc 
-   *     as the owner
-   */
-
-  int nproc, rank;
-
-  MPI_Comm_rank(*comm, &rank);
-  MPI_Comm_size(*comm, &nproc);
-
-  return (node % nproc == rank) ? 1 : 0;
-}
-
-/****************************************************************************************************/
-
 int cmpfunc (const void * a, const void * b)
 {
      return ( *(int*)a - *(int*)b );
