@@ -62,7 +62,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
       tpwgts[i] = 1.0 / nparts;
     }
     
-    ncommonnodes = 8;
+    ncommonnodes = 3;
     
     options[0] = 0; // options (1,2) : 0 default, 1 considered
     options[1] = 0; // level of information returned
@@ -937,6 +937,8 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <nnod_glo> coming from all the processes
   int   **repeated, *nrep;
 
+  double t0_loc, t1_loc;
+
   MPI_Request  *request;
 
   MPI_Comm_rank(*comm, &rank);
@@ -953,6 +955,10 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   ierr = MPI_Allgather(&mysize, 1, MPI_INT, peer_sizes, 1, MPI_INT, *comm);
 
+  /******************/
+  /* ON time lapse  */
+  t0_loc = MPI_Wtime();      
+
   for(i=0;i<nproc;i++){
     if(i!=rank){
       ierr = MPI_Isend(nod_glo, mysize, MPI_INT, i, 0, *comm, &request[i]);
@@ -967,7 +973,24 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     }
   }
 
+  if(rank==0){
+    printf("%-6s r%2d %-20s :", myname, rank, "nrep");
+    for(i=0;i<nproc;i++){
+      printf("%8d ", nrep[i]);
+    }
+    printf("\n");
+  }
+  
+  t1_loc = MPI_Wtime() - t0_loc;
+  save_time(comm, "    repeated", time_fl, t1_loc );
+  /* OFF time lapse */
+  /******************/
+
   // condensamos en 1 vector todo lo que hay en repeated
+
+  /******************/
+  /* ON time lapse  */
+  t0_loc = MPI_Wtime();      
   int *rep_array, nreptot = 0, *rep_array_clean, nreptot_clean;
 
   for(i=0;i<nproc;i++){
@@ -983,11 +1006,25 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
 
   clean_vector_qsort(comm, myname, nreptot, rep_array, &rep_array_clean, &nreptot_clean);
+  printf("%-6s r%2d %-20s : %8f\n", myname, rank, "nreptot [%]", (nreptot_clean*100.0)/nnod_glo ); 
   
   free(rep_array);
+  t1_loc = MPI_Wtime() - t0_loc;
+  save_time(comm, "    rep_array", time_fl, t1_loc );
+  /* OFF time lapse */
+  /******************/
 
   // calculamos la cantidad de puntos dentro de <nod_glo> que me pertenecen
+
+  /******************/
+  /* ON time lapse  */
+  t0_loc = MPI_Wtime();      
+  if(rank==0){
+    printf("calculando nmynod_glo\n");
+  }
+
   int ismine, r;
+
   nmynod_glo = r = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
@@ -1001,7 +1038,18 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       nmynod_glo ++;
     }
   }
+  t1_loc = MPI_Wtime() - t0_loc;
+  save_time(comm, "    nmynode", time_fl, t1_loc );
+  /* OFF time lapse */
+  /******************/
 
+  /******************/
+  /* ON time lapse  */
+  t0_loc = MPI_Wtime();      
+  /******************/
+  if(rank==0){
+    printf("calculando mynod_glo\n");
+  }
   mynod_glo = malloc(nmynod_glo*sizeof(int));
   c = r = 0;
   for(i=0;i<nnod_glo;i++){
@@ -1018,6 +1066,11 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       c ++;
     }
   }
+  /******************/
+  t1_loc = MPI_Wtime() - t0_loc;
+  save_time(comm, "    mynode", time_fl, t1_loc );
+  /* OFF time lapse */
+  /******************/
 
   printf("%-6s r%2d %-20s : %8d %-20s : %8d\n", myname, rank, "nnod_glo", nnod_glo, "nmynod_glo", nmynod_glo);
   // >>>>> PRINT
@@ -1076,37 +1129,29 @@ int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node )
   MPI_Comm_rank(*comm, &rank);
   MPI_Comm_size(*comm, &nproc);
 
-  int i, j, rankp;
+  int i, rankp;
  
   // damos un guess inicial de <rankp> luego iremos buscamos 
   // hacia los ranks crecientes
   rankp = node % nproc; 
 
-  i = 1;
-  while(1){
+  i = 0;
+  while(i<nproc){
     //tenemos un guess nuevo de rankp
     if(rankp == rank){
       // si justo nos cayo entonces este <node> es nuestro
       return 1;
     } 
     else{
-      j = 0;
-      while(j<nrep[rankp]){
-	if(repeated[rankp][j] == node){
-	  break;
-	}
-	j++;
-      }
-      if(repeated[rankp][j] == node){
+      if(is_in_vector(node, &repeated[rankp][0], nrep[rankp])){
 	// lo encontramos pero está en otro rank
 	return 0;
       }
       else{
 	// buscamos siempre a la derecha
-	rankp += i;
+	rankp ++;
 	if(rankp == nproc){
 	  rankp = 0;
-	  i = 0;
 	}
       }
     }
@@ -1114,6 +1159,39 @@ int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node )
   }
 
   return -1;	
+}
+
+/****************************************************************************************************/
+
+int is_in_vector(int val, int *vector, int size)
+{
+
+  /*  val     : value to search  
+   *  vector 
+   *  size    : # of components of vector
+   * 
+   *  Returns:
+   *  1 if val is in vector
+   *  0 if val is not in vector
+   * -1 if error
+   *
+   */
+  int j = 0;
+  while(j<size){
+    if(vector[j] == val){
+      break;
+    }
+    j++;
+  }
+  if(j == size){
+    // llegamos al final => no está
+    return 0;
+  }
+  else{
+    return 1;
+  }
+
+  return -1;
 }
 
 /****************************************************************************************************/

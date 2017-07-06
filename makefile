@@ -17,6 +17,7 @@ DEPS = ${DEP_DIR}/sputnik.h
 
 SPU_OBJ  = ${OBJ_DIR}/spu_parser.o \
            ${OBJ_DIR}/spu_mesh.o   \
+           ${OBJ_DIR}/spu_time.o   \
            ${OBJ_DIR}/spu_vtk.o      
 
 ##############################
@@ -56,6 +57,12 @@ obj/spu_mesh.o: src/spu_mesh.c ${DEPS} ${PARMETIS_HEA}
 ##############################
 # SPU_VTK.O
 obj/spu_vtk.o: src/spu_vtk.c ${DEPS} ${PARMETIS_HEA}
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $<  ${INC}  ${PARMETIS_INC} 
+	@echo "spu_vtk.o" 
+
+##############################
+# SPU_TIME.O
+obj/spu_time.o: src/spu_time.c ${DEPS} ${PARMETIS_HEA}
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $<  ${INC}  ${PARMETIS_INC} 
 	@echo "spu_vtk.o" 
 
