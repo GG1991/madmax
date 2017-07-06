@@ -5,6 +5,14 @@
 
 # runs multiple MPI processes as a grid in a new tmux window and multiplexes keyboard input to all of them
 
+# BREAKPOINTS
+#break_mac=( 'mac_main.c:123' ) 
+#break_mic=( 'mic_main.c:32' ) 
+break_mac=( 'spu_mesh.c:294' ) 
+#break_mic=( 'mic_comm.c:104' ) 
+#break_mac=( 'spu_vtk.c:22' ) 
+#break_mic=( 'mic_comm.c:105' ) 
+
 additional_vars=( LD_LIBRARY_PATH LD_PRELOAD )
 export "${additional_vars[@]}"
 
@@ -115,26 +123,18 @@ else
     # re-execute ourself to spawn of the processes.
     echo mpirun -np ${processes} ${self} runmpi "${@}"
 
-    #break_mac=( 'mac_main.c:113' ) 
-    #break_mic=( 'mic_main.c:32' ) 
-    #break_mac=( 'mac_comm.c:100' ) 
-    #break_mic=( 'mic_comm.c:104' ) 
-    #break_mac=( 'spu_vtk.c:22' ) 
-    #break_mic=( 'mic_comm.c:105' ) 
-    
-    
     # BREAKPOINTS
     for i in ${break_mac[@]}
     do
       exopt_mac="$exopt_mac -ex 'break $i' "
     done
-    exopt_mac+="-ex 'r'"
+    exopt_mac+="-ex 'r' -q"
     
     for i in ${break_mic[@]}
     do
       exopt_mic="$exopt_mic -ex 'break $i' "
     done
-    exopt_mic+="-ex 'r'"
+    exopt_mic+="-ex 'r' -q"
 
     gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu"
     gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ex1.spu"

@@ -7,8 +7,8 @@ break_mic=( 'spu_mesh.c:136' )
 #break_mac=( 'mac_comm.c:101' ) 
 #break_mic=( 'mic_comm.c:105' ) 
 
-NM=2
-Nm=2
+NM=3
+Nm=1
 
 
 # BREAKPOINTS

@@ -27,7 +27,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
      */
 
     int        rank, nproc, i,j, ierr;
-    int        nelm;             // number of elements of this process
     idx_t    * elmwgt;           // (inp) Element weights
     idx_t      wgtflag;          // (inp) Element weight flag (0 desactivated)
     idx_t      numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
@@ -150,17 +149,19 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
       // swap "npe" and "eind"
       swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_swi, eind_swi, npe_swi_size, eind_swi_size );
 
-      printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
-      for(i=0;i<nproc;i++){
-	printf("%8d ",npe_swi_size[i]);
-      }
-      printf("\n");
+      if(print_flag){
+	printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
+	for(i=0;i<nproc;i++){
+	  printf("%8d ",npe_swi_size[i]);
+	}
+	printf("\n");
 
-      printf("%-6s r%2d %-20s :", myname, rank, "eind_swi_size");
-      for(i=0;i<nproc;i++){
-	printf("%8d ",eind_swi_size[i]);
+	printf("%-6s r%2d %-20s :", myname, rank, "eind_swi_size");
+	for(i=0;i<nproc;i++){
+	  printf("%8d ",eind_swi_size[i]);
+	}
+	printf("\n");
       }
-      printf("\n");
 
       // free & reallocate memory for "npe" & "eind"
       int npe_size_new_tot;
@@ -175,18 +176,20 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
       if(ierr){
 	return 1;
       }
+      
+      if(print_flag){
+	printf("%-6s r%2d %-20s :", myname, rank, "npe_size_new");
+	for(i=0;i<nproc;i++){
+	  printf("%8d ",npe_size_new[i]);
+	}
+	printf("\n");
 
-      printf("%-6s r%2d %-20s :", myname, rank, "npe_size_new");
-      for(i=0;i<nproc;i++){
-	printf("%8d ",npe_size_new[i]);
+	printf("%-6s r%2d %-20s :", myname, rank, "eind_size_new");
+	for(i=0;i<nproc;i++){
+	  printf("%8d ",eind_size_new[i]);
+	}
+	printf("\n");
       }
-      printf("\n");
-
-      printf("%-6s r%2d %-20s :", myname, rank, "eind_size_new");
-      for(i=0;i<nproc;i++){
-	printf("%8d ",eind_size_new[i]);
-      }
-      printf("\n");
 
       npe_size_new_tot = 0;
       for(i=0;i<nproc;i++){
@@ -198,8 +201,10 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 	eind_size_new_tot += eind_size_new[i];
       }
       
-      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "npe_size_new_tot", npe_size_new_tot);
-      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
+//      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
+      if(print_flag){
+	printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
+      }
 
       free(npe);
       free(eptr);
@@ -290,6 +295,8 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
     return 0;
 }
 
+/****************************************************************************************************/
+
 int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
 {
 
@@ -344,6 +351,8 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
 
   return 0;
 }
+
+/****************************************************************************************************/
 
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *npe_swi, int *eind_swi, 
@@ -421,6 +430,8 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
   return 0;
 }
 
+/****************************************************************************************************/
+
 int CSR_give_pointer( int e, int *npe, int *eind, int *p)
 {
   /*
@@ -437,6 +448,7 @@ int CSR_give_pointer( int e, int *npe, int *eind, int *p)
   return 0;
 }
 
+/****************************************************************************************************/
 
 int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 {
@@ -587,7 +599,6 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
     //  nelm_tot/nproc los repartimos uno por 
     //  uno entre los primeros procesos
     //
-    printf("%-6s r%2d %-20s : ", myname, rank, "<elmdist>");
     elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
     resto = nelm_tot % nproc;
     elmdist[0] = 0;
@@ -598,9 +609,15 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 	  elmdist[i] += 1;
 	  resto --;
 	}
-	ierr = printf("%8d ",elmdist[i]);
     }
-    printf("\n");
+
+    if(print_flag){
+      printf("%-6s r%2d %-20s : ", myname, rank, "<elmdist>");
+      for(i=1; i < nproc + 1; i++){
+	printf("%8d ",elmdist[i]);
+      }
+      printf("\n");
+    }
 
     // ya podemos allocar el vector "eptr" su dimension es :
     // número de elementos locales + 1 = nelm + 1
@@ -740,8 +757,10 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
      }
    }
    (*output) = malloc( (*n_notrep) * sizeof(int));
-   printf("%-6s r%2d %-20s : %8d\n", myname, rank, "total elements", n);
-   printf("%-6s r%2d %-20s : %8d\n", myname, rank, "unique elements" , *n_notrep);
+   if(print_flag){
+     printf("%-6s r%2d %-20s : %8d\n", myname, rank, "total elements", n);
+     printf("%-6s r%2d %-20s : %8d\n", myname, rank, "unique elements" , *n_notrep);
+   }
 
    c = 0;
    val_o = aux[0];
@@ -914,19 +933,10 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
    */
 
   int   i, j, c, rank, nproc;
-  int   *displs;
   int   ierr;
 
   int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <nnod_glo> coming from all the processes
-  int   *myreps, nmyreps;
   int   **repeated, *nrep;
-
-//  typedef struct ownership_t_{
-//
-//    int    node; // node numeration
-//    list_t proc; // list of processes that share node <node>
-//
-//  }ownership_t;
 
   MPI_Request  *request;
 
@@ -936,10 +946,8 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   mysize     = nnod_glo;
   nghosts    = 0;
   peer_sizes = NULL;
-  displs     = NULL;
 
   peer_sizes = malloc(nproc*sizeof(int));
-  displs     = malloc(nproc*sizeof(int));
   request    = malloc(nproc*sizeof(MPI_Request));
   repeated   = calloc(nproc,sizeof(int*));
   nrep       = calloc(nproc,sizeof(int));
@@ -980,87 +988,53 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   free(rep_array);
 
   // calculamos la cantidad de puntos dentro de <nod_glo> que me pertenecen
-  int ismine, nmine, r;
-  nmine = r = 0;
+  int ismine, r;
+  nmynod_glo = r = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
       ismine = ownership_selec_rule( comm, nod_glo[i]);
       r++;
       if(ismine){
-	nmine ++;
+	nmynod_glo ++;
       }
     }
     else{
-      nmine ++;
+      nmynod_glo ++;
     }
   }
 
-  int *mynodes;
-  mynodes = malloc(nmine*sizeof(int));
+  mynod_glo = malloc(nmynod_glo*sizeof(int));
   c = r = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
       ismine = ownership_selec_rule( comm, nod_glo[i]);
       r++;
       if(ismine){
-	mynodes[c] = nod_glo[i];
+	mynod_glo[c] = nod_glo[i];
 	c ++;
       }
     }
     else{
-      mynodes[c] = nod_glo[i];
+      mynod_glo[c] = nod_glo[i];
       c ++;
     }
   }
 
-//  int *reps_all = NULL, *nreps_all = NULL, nreps_all_tot;
-//  int *displs2 = NULL;
-//
-//  if(rank==0){
-//    nreps_all = malloc(nproc*sizeof(int));
-//    displs2 = malloc(nproc*sizeof(int));
-//  }
-//
-//  ierr = MPI_Gather(&nreptot_clean, 1, MPI_INT, nreps_all, 1, MPI_INT, 0, *comm);
-//  
-//  if(rank==0){
-//    nreps_all_tot = 0;
-//    for(i=0;i<nproc;i++){
-//      displs2[i] = nreps_all_tot;
-//      nreps_all_tot += nreps_all[i];
-//    }
-//    reps_all = malloc(nreps_all_tot*sizeof(int));
-//  }
-//  ierr = MPI_Gatherv(rep_array_clean, nreptot_clean, MPI_INT, reps_all, nreps_all, displs2, MPI_INT, 0, *comm);
-
-
-//  ierr = MPI_Bcast(&nrep, 1, MPI_INT, 0, *comm);
-//  
-//  if(rank!=0){
-//    // the rest of processes allocate this memory
-//    repeated = malloc(nrep*sizeof(int));
-//  }
-//
-//  ierr = MPI_Bcast(repeated, nrep, MPI_INT, 0, *comm);
-//
-//  // we search for the intersection of <repeated> with <nod_glo> and fill <myreps> & <nmyreps>
-//  give_inter_sort(comm, myname, nod_glo, nnod_glo, repeated, nrep, &myreps, &nmyreps);
-//
-//  // >>>>> PRINT
-//  if(print_flag){
-//    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "my reps", nmyreps);
-//    printf("%-6s r%2d %-20s : ", myname, rank, "nod_glo");
-//    for(i=0;i<nnod_glo;i++){
-//      printf("%3d ",nod_glo[i]);
-//    }
-//    printf("\n");
-//    printf("%-6s r%2d %-20s : ", myname, rank, "reps");
-//    for(i=0;i<nmyreps;i++){
-//      printf("%3d ",myreps[i]);
-//    }
-//    printf("\n");
-//  }
-//  // >>>>> PRINT
+//  printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nmynod_glo", nmynod_glo);
+  // >>>>> PRINT
+  if(print_flag){
+    printf("%-6s r%2d %-20s : ", myname, rank, "nod_glo");
+    for(i=0;i<nnod_glo;i++){
+      printf("%3d ",nod_glo[i]);
+    }
+    printf("\n");
+    printf("%-6s r%2d %-20s : ", myname, rank, "reps");
+    for(i=0;i<nreptot_clean;i++){
+      printf("%3d ",rep_array_clean[i]);
+    }
+    printf("\n");
+  }
+  // >>>>> PRINT
 
   return 1;
 }

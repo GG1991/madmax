@@ -70,9 +70,12 @@ int          *eind;                    // list of nodes for elem "i" is between
 int           nnod_glo;                // # of local nodes (including ghost)
 int           nnod_tot;                // # of total nodes
 int           *nod_glo;                // local nodes numeration (Gmsh)
-int           nghosts;                  // # of ghost nodes
-int           *ghosts;                  // ghost nodes
+int           nghosts;                 // # of ghost nodes
+int           *ghosts;                 // ghost nodes
 int           nnod;                    // # of local nodes (not including ghosts)
+
+int           *mynod_glo;              // original global numeration of my nodes
+int           nmynod_glo;              // # of nodes that are mine
 
 
 /*****************************************************************************************************
