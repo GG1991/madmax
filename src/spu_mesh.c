@@ -86,7 +86,9 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
     }
     else if(algorithm == PARMETIS_MESHKWAY){
 
-      t0_loc = MPI_Wtime();
+      /******************/
+      /* ON time lapse  */
+      t0_loc = MPI_Wtime();      
 
       // Performe the partition with no weights
       ParMETIS_V3_PartMeshKway (
@@ -95,17 +97,9 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 	  options, &edgecut, part, comm );
 
       t1_loc = MPI_Wtime() - t0_loc;
-      ierr = MPI_Gather(&t1_loc, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, *comm);
-      if(ierr){
-	return 1;
-      }
-      if(rank == 0){
-	fprintf(time_fl,"%-20s", "mesh partition");
-	for(i=0;i<nproc;i++){
-	  fprintf(time_fl," %e",time_vec[i]);
-	}
-	fprintf(time_fl,"\n");
-      }
+      save_time(comm, "    partition", time_fl, t1_loc );
+      /* OFF time lapse */
+      /******************/
 
       /* 
        * Graph distribution
@@ -128,7 +122,9 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
        *
        */
 
-      t0_loc = MPI_Wtime();
+      /******************/
+      /* ON time lapse  */
+      t0_loc = MPI_Wtime();      
 
       int *eind_swi, *eind_swi_size, *eind_size_new;
       int *npe_swi, *npe_swi_size, *npe_size_new;         
@@ -149,19 +145,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
       // swap "npe" and "eind"
       swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_swi, eind_swi, npe_swi_size, eind_swi_size );
 
-      if(print_flag){
-	printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
-	for(i=0;i<nproc;i++){
-	  printf("%8d ",npe_swi_size[i]);
-	}
-	printf("\n");
-
-	printf("%-6s r%2d %-20s :", myname, rank, "eind_swi_size");
-	for(i=0;i<nproc;i++){
-	  printf("%8d ",eind_swi_size[i]);
-	}
-	printf("\n");
-      }
 
       // free & reallocate memory for "npe" & "eind"
       int npe_size_new_tot;
@@ -177,19 +160,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 	return 1;
       }
       
-      if(print_flag){
-	printf("%-6s r%2d %-20s :", myname, rank, "npe_size_new");
-	for(i=0;i<nproc;i++){
-	  printf("%8d ",npe_size_new[i]);
-	}
-	printf("\n");
-
-	printf("%-6s r%2d %-20s :", myname, rank, "eind_size_new");
-	for(i=0;i<nproc;i++){
-	  printf("%8d ",eind_size_new[i]);
-	}
-	printf("\n");
-      }
 
       npe_size_new_tot = 0;
       for(i=0;i<nproc;i++){
@@ -201,10 +171,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 	eind_size_new_tot += eind_size_new[i];
       }
       
-      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
-      if(print_flag){
-	printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
-      }
 
       free(npe);
       free(eptr);
@@ -271,19 +237,47 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 
       free(eind_swi);
       free(npe_swi);
+      
+      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
+      if(print_flag){
+
+	printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
+	for(i=0;i<nproc;i++){
+	  printf("%8d ",npe_swi_size[i]);
+	}
+	printf("\n");
+
+	printf("%-6s r%2d %-20s :", myname, rank, "eind_swi_size");
+	for(i=0;i<nproc;i++){
+	  printf("%8d ",eind_swi_size[i]);
+	}
+	printf("\n");
+
+	printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
+
+	printf("%-6s r%2d %-20s : ", myname, rank, "eind");
+	for(i=0;i<eptr[nelm];i++){
+	  printf("%3d ",eind[i]);
+	}
+	printf("\n");
+
+	printf("%-6s r%2d %-20s :", myname, rank, "npe_size_new");
+	for(i=0;i<nproc;i++){
+	  printf("%8d ",npe_size_new[i]);
+	}
+	printf("\n");
+
+	printf("%-6s r%2d %-20s :", myname, rank, "eind_size_new");
+	for(i=0;i<nproc;i++){
+	  printf("%8d ",eind_size_new[i]);
+	}
+	printf("\n");
+      }
 
       t1_loc = MPI_Wtime() - t0_loc;
-      ierr = MPI_Gather(&t1_loc, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, *comm);
-      if(ierr){
-	return 1;
-      }
-      if(rank == 0){
-	fprintf(time_fl,"%-20s", "mesh distribution");
-	for(i=0;i<nproc;i++){
-	  fprintf(time_fl," %e",time_vec[i]);
-	}
-	fprintf(time_fl,"\n");
-      }
+      save_time(comm, "    distribution", time_fl, t1_loc );
+      /* OFF time lapse */
+      /******************/
 
     }
     else{
@@ -1098,6 +1092,11 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     printf("%-6s r%2d %-20s : ", myname, rank, "mynod_glo");
     for(i=0;i<nmynod_glo;i++){
       printf("%3d ",mynod_glo[i]);
+    }
+    printf("\n");
+    printf("%-6s r%2d %-20s : ", myname, rank, "ghosts");
+    for(i=0;i<nghosts;i++){
+      printf("%3d ",ghosts[i]);
     }
     printf("\n");
   }
