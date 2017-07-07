@@ -931,7 +931,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
    *
    */
 
-  int   i, j, c, rank, nproc;
+  int   i, j, c, g, rank, nproc;
   int   ierr;
 
   int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <nnod_glo> coming from all the processes
@@ -1025,7 +1025,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   int ismine, r;
 
-  nmynod_glo = r = 0;
+  nmynod_glo = nghosts = r = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
       ismine = ownership_selec_rule( comm, repeated, nrep, nod_glo[i]);
@@ -1033,11 +1033,16 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       if(ismine){
 	nmynod_glo ++;
       }
+      else{
+	nghosts ++;
+      }
     }
     else{
       nmynod_glo ++;
     }
   }
+  printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "nghosts/nnod_glo [%]", (nghosts*100.0)/nnod_glo,
+      "nmynod_glo/nnod_glo [%]", (nmynod_glo*100.0)/nnod_glo); 
   t1_loc = MPI_Wtime() - t0_loc;
   save_time(comm, "    nmynode", time_fl, t1_loc );
   /* OFF time lapse */
@@ -1051,7 +1056,8 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     printf("calculando mynod_glo\n");
   }
   mynod_glo = malloc(nmynod_glo*sizeof(int));
-  c = r = 0;
+  ghosts = malloc(nghosts*sizeof(int));
+  c = r = g = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
       ismine = ownership_selec_rule( comm, repeated, nrep, nod_glo[i]);
@@ -1059,6 +1065,10 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       if(ismine){
 	mynod_glo[c] = nod_glo[i];
 	c ++;
+      }
+      else{
+	ghosts[g] = nod_glo[i];
+	g ++;
       }
     }
     else{
@@ -1072,7 +1082,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   /* OFF time lapse */
   /******************/
 
-  printf("%-6s r%2d %-20s : %8d %-20s : %8d\n", myname, rank, "nnod_glo", nnod_glo, "nmynod_glo", nmynod_glo);
+  printf("%-6s r%2d %-20s : %8d   %-20s : %8d\n", myname, rank, "nnod_glo", nnod_glo, "nmynod_glo", nmynod_glo);
   // >>>>> PRINT
   if(print_flag){
     printf("%-6s r%2d %-20s : ", myname, rank, "nod_glo");
