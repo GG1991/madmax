@@ -72,10 +72,14 @@ int           nnod_tot;                // # of total nodes
 int           *nod_glo;                // local nodes numeration (Gmsh)
 int           nghosts;                 // # of ghost nodes
 int           *ghosts;                 // ghost nodes
+int           *ghostsranks;            // ghost ranks
 int           nnod;                    // # of local nodes (not including ghosts)
 
 int           *mynod_glo;              // original global numeration of my nodes
 int           nmynod_glo;              // # of nodes that are mine
+
+int           *loc2petsc;              // array of size <nmynod_glo>+<nghosts>
+                                       // returns the position in PETSc matrix & vectors
 
 
 /*****************************************************************************************************
@@ -97,9 +101,12 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
 int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep);
 int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps);
 int calculate_ghosts(MPI_Comm * comm, char *myname);
-int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node );
+int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, int *remoterank );
 int cmpfunc (const void * a, const void * b);
 int is_in_vector(int val, int *vector, int size);
+int reenumerate_PETSc(MPI_Comm *comm);
+int search_position_linear(int *array, int size, int val, int *pos);
+int search_position_logn(int *array, int size, int val, int *pos);
 
 
 // spu_vtk.c

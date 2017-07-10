@@ -1017,12 +1017,12 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     printf("calculando nmynod_glo\n");
   }
 
-  int ismine, r;
+  int ismine, r, remoterank;
 
   nmynod_glo = nghosts = r = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
-      ismine = ownership_selec_rule( comm, repeated, nrep, nod_glo[i]);
+      ismine = ownership_selec_rule( comm, repeated, nrep, nod_glo[i], &remoterank);
       r++;
       if(ismine){
 	nmynod_glo ++;
@@ -1051,10 +1051,12 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
   mynod_glo = malloc(nmynod_glo*sizeof(int));
   ghosts = malloc(nghosts*sizeof(int));
+  ghostsranks = malloc(nghosts*sizeof(int));
+
   c = r = g = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
-      ismine = ownership_selec_rule( comm, repeated, nrep, nod_glo[i]);
+      ismine = ownership_selec_rule( comm, repeated, nrep, nod_glo[i], &remoterank);
       r++;
       if(ismine){
 	mynod_glo[c] = nod_glo[i];
@@ -1070,6 +1072,13 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       c ++;
     }
   }
+
+  // free memory for <repeated>
+  for(i=0;i<nproc;i++){
+     free(repeated[i]);
+  }
+  free(repeated);
+
   /******************/
   t1_loc = MPI_Wtime() - t0_loc;
   save_time(comm, "    mynode", time_fl, t1_loc );
@@ -1107,7 +1116,132 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
 /****************************************************************************************************/
 
-int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node )
+int reenumerate_PETSc(MPI_Comm *comm)
+{
+  /* This routine :
+   *
+   * a) reestablish the numeration of <eind> array to it local numeration
+   *
+   * b) creates array <loc2petsc> of size <nmynod_glo> + <nghosts>
+   *    giving local numeration <n> returns the position in PETSc matrix 
+   *    & vector
+   * 
+   */
+
+  int   rank, nproc;
+  int   i, p; 
+  int   *nod_sizes, start_index;
+  int   ierr;
+
+  MPI_Comm_rank(*comm, &rank);
+  MPI_Comm_size(*comm, &nproc);
+
+  nod_sizes = malloc( nproc * sizeof(int));
+  ierr = MPI_Allgather(&nmynod_glo, 1, MPI_INT, nod_sizes, 1, MPI_INT, *comm);
+  if(ierr){
+    return 1;
+  }
+  
+  i =  start_index = 0;
+  while(i<rank){
+    start_index += nod_sizes[i];
+    i++;
+  }
+
+  //  reenumeramos <eind>
+  for(i=0;i<eptr[nelm];i++){
+    search_position_logn(mynod_glo, nmynod_glo, eind[i], &p);
+    if(p>=0){
+      eind[i] = p;
+    }
+    else{
+      search_position_logn(ghosts, nghosts, eind[i], &p);
+      if(p>=0){
+	eind[i] = p;
+      }
+      else{
+	printf("reenumerate_PETSc: value %d not found on <mynod_glo> neither <ghosts>\n",eind[i]);
+	return 1;
+      }
+    }
+  }
+
+  loc2petsc = malloc( (nmynod_glo + nghosts) * sizeof(int));
+
+  // empezamos los faciles (locales)
+  for(i=0;i<nmynod_glo;i++){
+    loc2petsc[i] = start_index + i;
+  }
+
+  // y ahora los ghosts ( usamos el vector <ghostsranks> )
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int search_position_linear(int *array, int size, int val, int *pos)
+{
+  /* Returns: 
+   * a) the position <pos> of <val> inside <array> (size <size>)
+   * b) <pos> = -1 if <val> does not exist 
+   *
+   */
+
+  int   i=0;
+
+  while(i<size){
+    if(array[i] == val){
+      break;
+    }
+    i++;
+  }
+
+  if(i==size){
+    *pos = -1;
+  }
+  else{
+    *pos = i;
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int search_position_logn(int *array, int size, int val, int *pos)
+{
+  /* Returns: 
+   * a) the position <pos> of <val> inside <array> (size <size>)
+   * b) <pos> = -1 if <val> does not exist 
+   *
+   * Note: the array should be sorted
+   *
+   */
+
+  int  left = 0, right = size-1, middle;
+
+  while(left <= right){
+
+    middle = (right + left)/2; 
+    if(array[middle] == val){
+      *pos = middle;
+      return 0;
+    }
+    if(array[middle] < val){
+      left = middle + 1;
+    }
+    else{
+      right = middle - 1;
+    }
+  }
+  *pos = -1;
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, int *remoterank )
 {
 
   /*  Function for determine the ownership of a repeated 
@@ -1149,11 +1283,13 @@ int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node )
     //tenemos un guess nuevo de rankp
     if(rankp == rank){
       // si justo nos cayo entonces este <node> es nuestro
+      remoterank = rankp;
       return 1;
     } 
     else{
       if(is_in_vector(node, &repeated[rankp][0], nrep[rankp])){
 	// lo encontramos pero está en otro rank
+      remoterank = rankp;
 	return 0;
       }
       else{

@@ -145,6 +145,17 @@ int main(int argc, char **argv)
     /* OFF time lapse */
     /******************/
 
+    // reenumerate nodes
+
+    /******************/
+    /* ON time lapse */
+    t0 = MPI_Wtime();
+    reenumerate_PETSc(&macro_comm);
+    t1 = MPI_Wtime() - t0;
+    save_time(&macro_comm, "reenumerate", time_fl, t1);
+    /* OFF time lapse */
+    /******************/
+
     spu_vtk_partition( myname, mesh_n, &macro_comm );
 
     fclose(time_fl);
