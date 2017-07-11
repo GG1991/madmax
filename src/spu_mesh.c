@@ -1128,7 +1128,7 @@ int reenumerate_PETSc(MPI_Comm *comm)
    */
 
   int   rank, nproc;
-  int   i, *p; 
+  int   i, j, *p; 
   int   *nod_sizes, start_index;
   int   ierr;
 
@@ -1149,16 +1149,18 @@ int reenumerate_PETSc(MPI_Comm *comm)
 
   //  reenumeramos <eind>
   for(i=0;i<eptr[nelm];i++){
+    // is a local node
     //    search_position_logn(mynod_glo, nmynod_glo, eind[i], &p);
     p = bsearch(&eind[i], mynod_glo, nmynod_glo, sizeof(int), cmpfunc);
     if(p != NULL){
-      eind[i] = *p;
+      eind[i] = p - mynod_glo;
     }
     else{
+      // is a ghost node
       //      search_position_logn(ghosts, nghosts, eind[i], &p);
       p = bsearch(&eind[i], ghosts, nghosts, sizeof(int), cmpfunc);
       if(p != NULL){
-	eind[i] = *p;
+	eind[i] = nmynod_glo + p - ghosts;
       }
       else{
 	printf("reenumerate_PETSc: value %d not found on <mynod_glo> neither <ghosts>\n",eind[i]);
@@ -1169,21 +1171,100 @@ int reenumerate_PETSc(MPI_Comm *comm)
 
   loc2petsc = malloc( (nmynod_glo + nghosts) * sizeof(int));
 
-  // empezamos los faciles (locales)
+  // empezamos con los locales
   for(i=0;i<nmynod_glo;i++){
     loc2petsc[i] = start_index + i;
   }
 
   // y ahora los ghosts
-  int *peerghosts, *npeerghosts, *ghostsranks;
+  int *allghosts, *nallghosts, nallghosts_tot, *nghosts_rank, nghosts_rank_tot, *ghosts_rank;
+  int *displs;
 
-//  ghostsranks = malloc(nghosts*sizeof(int));
-//  ghostsranks = malloc(nghosts*sizeof(int));
-//  ghostsranks = malloc(nghosts*sizeof(int));
-//
-//  free(peerghosts);
-//  free(npeerghosts);
-//  free(ghostsranks);
+  nallghosts = malloc(nproc*sizeof(int));
+  nghosts_rank = malloc(nproc*sizeof(int));
+  displs  = malloc(nproc*sizeof(int));
+  ierr = MPI_Allgather(&nghosts, 1, MPI_INT, nallghosts, 1, MPI_INT, *comm);
+
+  nallghosts_tot = 0;
+  displs[0] = 0;
+  for(i=0;i<nproc;i++){
+    nallghosts_tot += nallghosts[i];
+    if(i!=0){
+      displs[i] = displs[i-1]  + nallghosts[i];
+    }
+  }
+  
+  allghosts = malloc(nallghosts_tot*sizeof(int));
+  ierr = MPI_Allgatherv(&ghosts, nghosts, MPI_INT, allghosts, nallghosts, displs, MPI_INT, *comm);
+  
+  int c;
+
+  c = nghosts_rank_tot = 0;
+  for(i=0;i<nproc;i++){
+    nghosts_rank[i] = 0;
+    if(i!=rank){
+      for(j=0;j<nallghosts[i];j++){
+	p = bsearch(&allghosts[c], mynod_glo, nmynod_glo, sizeof(int), cmpfunc);
+	if(p!=NULL){
+	  nghosts_rank[i] ++;
+	}
+	c++;
+      }
+    }
+    else{
+      c += nallghosts[i];
+    }
+    nghosts_rank_tot += nghosts_rank[i];
+  }
+  ghosts_rank = malloc(nghosts_rank_tot * sizeof(int)); 
+
+  int k;
+
+  k = c = 0;
+  for(i=0;i<nproc;i++){
+    nghosts_rank[i] = 0;
+    if(i!=rank){
+      for(j=0;j<nallghosts[i];j++){
+	p = bsearch(&allghosts[c], mynod_glo, nmynod_glo, sizeof(int), cmpfunc);
+	if(p!=NULL){
+	  ghosts_rank[k] = allghosts[c];
+	  k ++;
+	}
+	c++;
+      }
+    }
+    else{
+      c += nallghosts[i];
+    }
+  }
+
+  int *peer_nghost_rank, peer_nghost_ranks_tot, *peer_ghosts;
+
+  peer_nghost_rank = malloc(nproc*sizeof(int));
+  ierr = MPI_Alltoall(nallghosts, 1, MPI_INT, peer_nghost_rank, 1, MPI_INT, *comm);
+
+  peer_nghost_ranks_tot = 0;
+  for(i=0;i<nproc;i++){
+    peer_nghost_ranks_tot += peer_nghost_rank[i];
+  }
+  peer_ghosts = malloc(peer_nghost_ranks_tot*sizeof(int));
+
+  int *sdispls, *rdispls;
+
+  sdispls = malloc(nproc*sizeof(int));
+  rdispls = malloc(nproc*sizeof(int));
+
+  sdispls[0] = 0;
+  for(i=1;i<nproc;i++){
+    sdispls[i] = sdispls[i-1] + nghosts_rank[i];
+  }
+
+  rdispls[0] = 0;
+  for(i=1;i<nproc;i++){
+    rdispls[i] = rdispls[i-1] + peer_nghost_rank[i];
+  }
+  ierr = MPI_Alltoallv(ghosts_rank, nghosts_rank, sdispls, MPI_INT, peer_ghosts, peer_nghost_rank, rdispls, MPI_INT, *comm);
+
 
   return 0;
 }
