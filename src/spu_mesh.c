@@ -1051,7 +1051,6 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
   mynod_glo = malloc(nmynod_glo*sizeof(int));
   ghosts = malloc(nghosts*sizeof(int));
-  ghostsranks = malloc(nghosts*sizeof(int));
 
   c = r = g = 0;
   for(i=0;i<nnod_glo;i++){
@@ -1129,7 +1128,7 @@ int reenumerate_PETSc(MPI_Comm *comm)
    */
 
   int   rank, nproc;
-  int   i, p; 
+  int   i, *p; 
   int   *nod_sizes, start_index;
   int   ierr;
 
@@ -1150,14 +1149,16 @@ int reenumerate_PETSc(MPI_Comm *comm)
 
   //  reenumeramos <eind>
   for(i=0;i<eptr[nelm];i++){
-    search_position_logn(mynod_glo, nmynod_glo, eind[i], &p);
-    if(p>=0){
-      eind[i] = p;
+    //    search_position_logn(mynod_glo, nmynod_glo, eind[i], &p);
+    p = bsearch(&eind[i], mynod_glo, nmynod_glo, sizeof(int), cmpfunc);
+    if(p != NULL){
+      eind[i] = *p;
     }
     else{
-      search_position_logn(ghosts, nghosts, eind[i], &p);
-      if(p>=0){
-	eind[i] = p;
+      //      search_position_logn(ghosts, nghosts, eind[i], &p);
+      p = bsearch(&eind[i], ghosts, nghosts, sizeof(int), cmpfunc);
+      if(p != NULL){
+	eind[i] = *p;
       }
       else{
 	printf("reenumerate_PETSc: value %d not found on <mynod_glo> neither <ghosts>\n",eind[i]);
@@ -1173,7 +1174,16 @@ int reenumerate_PETSc(MPI_Comm *comm)
     loc2petsc[i] = start_index + i;
   }
 
-  // y ahora los ghosts ( usamos el vector <ghostsranks> )
+  // y ahora los ghosts
+  int *peerghosts, *npeerghosts, *ghostsranks;
+
+//  ghostsranks = malloc(nghosts*sizeof(int));
+//  ghostsranks = malloc(nghosts*sizeof(int));
+//  ghostsranks = malloc(nghosts*sizeof(int));
+//
+//  free(peerghosts);
+//  free(npeerghosts);
+//  free(ghostsranks);
 
   return 0;
 }
@@ -1283,13 +1293,13 @@ int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, i
     //tenemos un guess nuevo de rankp
     if(rankp == rank){
       // si justo nos cayo entonces este <node> es nuestro
-      remoterank = rankp;
+      *remoterank = rankp;
       return 1;
     } 
     else{
       if(is_in_vector(node, &repeated[rankp][0], nrep[rankp])){
 	// lo encontramos pero está en otro rank
-      remoterank = rankp;
+	*remoterank = rankp;
 	return 0;
       }
       else{
