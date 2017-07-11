@@ -2,8 +2,6 @@
 # Makefile utilities
 # make --quite : prints only "echos" instruction
 #
-export PETSC_DIR=/home/guido/libs/petsc-3.7.5
-export PETSC_ARCH=arch-linux2-c-debug
 
 PWD:= $(shell pwd)
 
