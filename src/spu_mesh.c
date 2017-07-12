@@ -522,7 +522,7 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 	return 1;
     }
 
-    coord = malloc( NAllMyNod * sizeof(double));
+    coord = malloc( NAllMyNod*3 * sizeof(double));
 
     /**************************************************/
     //  go to "$Nodes" and then read coordinates 
@@ -548,9 +548,12 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 	    //
 	    // leemos todos los nodos en <MyNodOrig>
 	    //
-	    c = 0;
+	    i = c = 0;
 	    while( c < NMyNod ){
-	        fgets(buf,NBUF,fm); 
+	        while( i< MyNodOrig[c] ){
+		  fgets(buf,NBUF,fm); 
+		  i++;
+		}
 		data=strtok(buf," \n");
 		for( d=0;d<3;d++){
 		  data=strtok(NULL," \n");
@@ -567,6 +570,26 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 	ln ++;
     }
     fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
+    //
+    // leemos todos los nodos en <MyGhostOrig>
+    //
+    i = c = 0;
+    while( c < NMyGhost ){
+      while( i<MyGhostOrig[c] ){
+	fgets(buf,NBUF,fm); 
+	i++;
+      }
+      data=strtok(buf," \n");
+      for( d=0;d<3;d++){
+	data=strtok(NULL," \n");
+	coord[ (NMyNod + c)*3 + d] = atof(data);
+      }
+      c++;
+    }
+    if(c>=n){
+      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", mesh_n, n, c);
+      return 1;
+    }
     return 0;
 }
 
