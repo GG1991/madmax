@@ -125,12 +125,12 @@ int main(int argc, char **argv)
     /* OFF time lapse */
     /******************/
 
-    // We delete repeated nodes and save the <nnod_glo> values on <nod_glo> in order
+    // We delete repeated nodes and save the <NAllMyNodes> values on <AllMyNodes> in order
     /******************/
     /* ON time lapse */
-    clean_vector_qsort(&macro_comm, myname, eptr[nelm], eind, &nod_glo, &nnod_glo);
+    clean_vector_qsort(&macro_comm, myname, eptr[nelm], eind, &AllMyNodes, &NAllMyNodes);
     t1 = MPI_Wtime() - t0;
-    save_time(&macro_comm, "nod_glo calc", time_fl, t1);
+    save_time(&macro_comm, "AllMyNodes calc", time_fl, t1);
     /* OFF time lapse */
     /******************/
 

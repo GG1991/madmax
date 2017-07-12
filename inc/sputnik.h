@@ -66,19 +66,15 @@ int           nelm;                    // # of local elements
 int          *eptr;                    // list of indeces of nodes inside eind
 int          *eind;                    // list of nodes for elem "i" is between 
                                        // eind[eptr[i]] eind[eptr[i+1]] (not including)
-
-int           nnod_glo;                // # of local nodes (including ghost)
-int           nnod_tot;                // # of total nodes
-int           *nod_glo;                // local nodes numeration (Gmsh)
-
+int           *AllMyNodes;             // Original (gmsh) numbers of my nodes + my ghosts
+int           NAllMyNodes;             // <NMyNod> + <NMyGhost>
 int           *MyNodOrig;              // Original (gmsh) numbers of my nodes
 int           NMyNod;                  // Number of my nodes 
-int           *MyGhostOrig;            // Original (gmsh) numbers of my nodes
+int           *MyGhostOrig;            // Original (gmsh) numbers of my ghosts nodes
 int           NMyGhost;                // Number of my ghost nodes
 
 int           *loc2petsc;              // array of size <NMyNod>+<NMyGhost>
                                        // returns the position in PETSc matrix & vectors
-
 
 /*****************************************************************************************************
    SPUTNIK function definitions
