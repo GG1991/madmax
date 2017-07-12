@@ -1117,36 +1117,41 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
 int reenumerate_PETSc(MPI_Comm *comm)
 {
-  /* This routine :
+  /* 
+   * This routine :
    *
-   * a) reestablish the numeration of <eind> array to it local numeration
+   * a) reestablish the numeration of <eind> array to a local numeration
    *
-   * b) creates array <loc2petsc> of size <NMyNod> + <NMyGhost>
-   *    giving local numeration <n> returns the position in PETSc matrix 
-   *    & vector
+   * b) creates and fills array <loc2petsc> of size <NMyNod> + <NMyGhost>
+   *    in each local position <n> is stored the global position in PETSc matrix 
    * 
    */
 
   int   rank, nproc;
-  int   i, j, *p; 
-  int   *nod_sizes, start_index;
-  int   ierr;
+  int   i, j, *p, ierr; 
+  int   *StartIndexRank;
+  int   *PeerMyNodOrig;    // buffer to receive MyNodOrig from the other processes
+  int   *PeerNMyNodOrig;   // buffers' sizes with NMyNodOrig from every process
 
   MPI_Comm_rank(*comm, &rank);
   MPI_Comm_size(*comm, &nproc);
 
-  nod_sizes = malloc( nproc * sizeof(int));
-  ierr = MPI_Allgather(&NMyNod, 1, MPI_INT, nod_sizes, 1, MPI_INT, *comm);
+  PeerNMyNodOrig = malloc( nproc * sizeof(int));
+  StartIndexRank = malloc( nproc * sizeof(int));
+  ierr = MPI_Allgather(&NMyNod, 1, MPI_INT, PeerNMyNodOrig, 1, MPI_INT, *comm);
   if(ierr){
     return 1;
   }
   
-  i =  start_index = 0;
+  StartIndexRank[0] = 0;
+  i = 1;
   while(i<rank){
-    start_index += nod_sizes[i];
+    StartIndexRank[i] += StartIndexRank[i-1] + PeerNMyNodOrig[i];
     i++;
   }
 
+
+  //**************************************************
   //  reenumeramos <eind>
   for(i=0;i<eptr[nelm];i++){
     // is a local node
@@ -1169,29 +1174,28 @@ int reenumerate_PETSc(MPI_Comm *comm)
 
   loc2petsc = malloc( (NMyNod + NMyGhost) * sizeof(int));
 
+  //**************************************************
   // empezamos con los locales
   for(i=0;i<NMyNod;i++){
-    loc2petsc[i] = start_index + i;
+    loc2petsc[i] = StartIndexRank[rank] + i;
   }
 
-  /* And now ghosts nodes:
+  /*************************************************** 
+   * And now ghosts nodes:
    *
    *    each process sends <MyNodOrig> 
    *    and each process receives that vector
    *    and search if any ghost is inside.
-   *    With that information completes <ghostsranks>
+   *    With that information completes <GhostRank>
    *    and then using that completes finally <loc2petsc>
    */
 
-  int          *peer_nod_glo, *nod_glo_sizes, m, *ghosts_glo_index;
   MPI_Request  *request;
 
+  int   *MyGhostGlobalIndex;
+  
   request    = malloc(nproc*sizeof(MPI_Request));
-  nod_glo_sizes = malloc(nproc*sizeof(int));
-  ghostsranks = malloc(NMyGhost*sizeof(int));
-  ghosts_glo_index = malloc(NMyGhost*sizeof(int));
-
-  ierr = MPI_Allgather(&NMyNod, 1, MPI_INT, nod_glo_sizes, 1, MPI_INT, *comm);
+  MyGhostGlobalIndex = malloc(NMyGhost*sizeof(int));
 
   for(i=0;i<nproc;i++){
       if(i!=rank){
@@ -1199,29 +1203,29 @@ int reenumerate_PETSc(MPI_Comm *comm)
       }
   }
   for(i=0;i<nproc;i++){
+      // receive from all peer ranks "i"
       if(i!=rank){
-	  peer_nod_glo = malloc(nod_glo_sizes[i]*sizeof(int));
-	  ierr = MPI_Recv(peer_nod_glo, nod_glo_sizes[i], MPI_INT, i, 0, *comm, &status);
+	  PeerMyNodOrig = malloc(PeerNMyNodOrig[i]*sizeof(int));
+	  ierr = MPI_Recv(PeerMyNodOrig, PeerNMyNodOrig[i], MPI_INT, i, 0, *comm, &status);
 	  for(j=0;j<NMyGhost;j++){
-	      p = bsearch(&MyGhostOrig[j], peer_nod_glo, nod_glo_sizes[i], sizeof(int), cmpfunc);
+	      // search this ghost node on <PeerMyNodOrig>
+	      p = bsearch(&MyGhostOrig[j], PeerMyNodOrig, PeerNMyNodOrig[i], sizeof(int), cmpfunc);
 	      if(p!=NULL){
-		  ghostsranks[j] = i;
-		  m = start_index = 0;
-		  while(m<i){
-		    start_index += nod_glo_sizes[m];
-		    m++;
-		  }
-		  ghosts_glo_index[j] = start_index + p - peer_nod_glo;
+		  MyGhostGlobalIndex[j] = StartIndexRank[i] + p - PeerMyNodOrig;
 	      }
 	  }
-	  free(peer_nod_glo);
+	  free(PeerMyNodOrig);
       }
   }
 
   for(i=0;i<NMyGhost;i++){
-    loc2petsc[NMyNod + i] =  ghosts_glo_index[i];
+    loc2petsc[NMyNod + i] =  MyGhostGlobalIndex[i];
   }
 
+  free(PeerNMyNodOrig);
+  free(StartIndexRank);
+  free(MyGhostGlobalIndex);
+  free(request);
   return 0;
 }
 

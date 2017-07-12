@@ -70,15 +70,13 @@ int          *eind;                    // list of nodes for elem "i" is between
 int           nnod_glo;                // # of local nodes (including ghost)
 int           nnod_tot;                // # of total nodes
 int           *nod_glo;                // local nodes numeration (Gmsh)
-int           *ghostsranks;            // ghost ranks
-int           nnod;                    // # of local nodes (not including ghosts)
 
 int           *MyNodOrig;              // Original (gmsh) numbers of my nodes
-int           NMyNod;              // Number of my nodes 
+int           NMyNod;                  // Number of my nodes 
 int           *MyGhostOrig;            // Original (gmsh) numbers of my nodes
-int           NMyGhost;            // Number of my ghost nodes
+int           NMyGhost;                // Number of my ghost nodes
 
-int           *loc2petsc;              // array of size <nmynod_glo>+<nghosts>
+int           *loc2petsc;              // array of size <NMyNod>+<NMyGhost>
                                        // returns the position in PETSc matrix & vectors
 
 
