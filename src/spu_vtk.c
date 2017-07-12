@@ -42,6 +42,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
   fprintf(vtkfl, "SPUTNIK\n");
   fprintf(vtkfl, "ASCII\n");
   fprintf(vtkfl, "DATASET UNSTRUCTURED_GRID\n");
+  fprintf(vtkfl, "POINTS %d double\n", NAllMyNod);
 
   for (n=0;n<NAllMyNod;n++){
     for(d=0;d<3;d++){

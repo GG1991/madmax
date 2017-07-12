@@ -562,7 +562,7 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 		c++;
 	    }
 	    if(c>=n){
-	      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", mesh_n, n, c);
+	      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", n, mesh_n, c);
 	      return 1;
 	    }
 	    break;
@@ -587,7 +587,7 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
       c++;
     }
     if(c>=n){
-      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", mesh_n, n, c);
+      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", n, mesh_n, c);
       return 1;
     }
     return 0;
@@ -849,10 +849,15 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
    int   i, c, swi, val_o;
    int   *aux;
    int   rank;
-   
-   MPI_Comm_rank(*comm, &rank);
 
    (*n_notrep) = 0;
+
+   if(n==0){
+     // no hay nada que ordenar ni limpiar
+     return 0;
+   }
+   
+   MPI_Comm_rank(*comm, &rank);
 
    // we copy eind inside aux
    aux = malloc(n*sizeof(int));
@@ -1111,17 +1116,22 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   /******************/
   /* ON time lapse  */
   t0_loc = MPI_Wtime();      
-  int *rep_array, nreptot = 0, *rep_array_clean, nreptot_clean;
+  int *rep_array, nreptot, *rep_array_clean, nreptot_clean;
 
+  nreptot = 0;
   for(i=0;i<nproc;i++){
-    nreptot += nrep[i];
+    if(i!=rank){
+      nreptot += nrep[i];
+    }
   }
   rep_array = malloc(nreptot * sizeof(int));
   c = 0;
   for(i=0;i<nproc;i++){
-    for(j=0;j<nrep[i];j++){
-      rep_array[c] = repeated[i][j];
-      c ++;
+    if(i!=rank){
+      for(j=0;j<nrep[i];j++){
+	rep_array[c] = repeated[i][j];
+	c ++;
+      }
     }
   }
 
@@ -1147,14 +1157,16 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   NMyNod = NMyGhost = r = 0;
   for(i=0;i<NAllMyNod;i++){
-    if(AllMyNodOrig[i] == rep_array_clean[r]){
-      ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
-      r++;
-      if(ismine){
-	NMyNod ++;
-      }
-      else{
-	NMyGhost ++;
+    if(r<nreptot_clean){
+      if(AllMyNodOrig[i] == rep_array_clean[r]){
+	ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
+	r++;
+	if(ismine){
+	  NMyNod ++;
+	}
+	else{
+	  NMyGhost ++;
+	}
       }
     }
     else{
@@ -1180,16 +1192,18 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   c = r = g = 0;
   for(i=0;i<NAllMyNod;i++){
-    if(AllMyNodOrig[i] == rep_array_clean[r]){
-      ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
-      r++;
-      if(ismine){
-	MyNodOrig[c] = AllMyNodOrig[i];
-	c ++;
-      }
-      else{
-	MyGhostOrig[g] = AllMyNodOrig[i];
-	g ++;
+    if(r<nreptot_clean){
+      if(AllMyNodOrig[i] == rep_array_clean[r]){
+	ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
+	r++;
+	if(ismine){
+	  MyNodOrig[c] = AllMyNodOrig[i];
+	  c ++;
+	}
+	else{
+	  MyGhostOrig[g] = AllMyNodOrig[i];
+	  g ++;
+	}
       }
     }
     else{
@@ -1200,7 +1214,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   // free memory for <repeated>
   for(i=0;i<nproc;i++){
-     free(repeated[i]);
+    if(i!=rank){
+      free(repeated[i]);
+    }
   }
   free(repeated);
 
@@ -1236,7 +1252,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
   // >>>>> PRINT
 
-  return 1;
+  return 0;
 }
 
 /****************************************************************************************************/
