@@ -66,12 +66,14 @@ int           nelm;                    // # of local elements
 int          *eptr;                    // list of indeces of nodes inside eind
 int          *eind;                    // list of nodes for elem "i" is between 
                                        // eind[eptr[i]] eind[eptr[i+1]] (not including)
-int           *AllMyNodes;             // Original (gmsh) numbers of my nodes + my ghosts
-int           NAllMyNodes;             // <NMyNod> + <NMyGhost>
+int           *AllMyNodOrig;           // Original (gmsh) numbers of my nodes + my ghosts
+int           NAllMyNod;               // <NMyNod> + <NMyGhost>
 int           *MyNodOrig;              // Original (gmsh) numbers of my nodes
 int           NMyNod;                  // Number of my nodes 
 int           *MyGhostOrig;            // Original (gmsh) numbers of my ghosts nodes
 int           NMyGhost;                // Number of my ghost nodes
+
+double        *coord;                  // nodes' coordinates
 
 int           *loc2petsc;              // array of size <NMyNod>+<NMyGhost>
                                        // returns the position in PETSc matrix & vectors
@@ -87,6 +89,8 @@ int spu_parse_mesh( char * input );
 // spu_mesh.c
 int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);
 int read_mesh_elmv_CSR_GMSH(MPI_Comm *comm, char *myname, char *mesh_n);
+int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);
+int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n);
 int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm);
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *eind, int *npe_new, int *eind_new, int
 *cuts_npe, int *cuts_eind);
@@ -104,7 +108,7 @@ int search_position_logn(int *array, int size, int val, int *pos);
 
 
 // spu_vtk.c
-int spu_vtk_partition( char *myname, char *mesh_n, MPI_Comm *comm );
+int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );
 
 // spu_time.c
 int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);

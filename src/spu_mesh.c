@@ -467,6 +467,111 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 
 /****************************************************************************************************/
 
+int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
+{
+
+    /*
+
+       Reads the mesh coordinate according to the format specified
+
+       returns: 0 success
+                1 not found
+	       -1 failed
+
+     */
+
+    if(strcmp(mesh_f,"gmsh") == 0){
+	return read_mesh_coord_GMSH(comm, myname, mesh_n);
+    }else{
+      return 1;
+    }
+}
+
+/****************************************************************************************************/
+
+int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
+{
+
+  /* 
+   * Info:   Reads the coordinates of the mesh
+   *
+   * Input: 
+   * char   * mesh_n   : file name with path
+   * MPI_Comm comm     : the communicator of these processes
+   * 
+   * Output:
+   * int  * coord      : nodes' coordinates
+   *
+   */
+
+    FILE                 *fm;
+
+    int                  i, c, d, n; 
+    int                  ln, offset;  // line counter and offset for moving faster in the file
+    int                  rank, nproc;
+    
+    char                 buf[NBUF];   
+    char                 *data;
+
+    MPI_Comm_size(*comm, &nproc);
+    MPI_Comm_rank(*comm, &rank);
+
+    fm = fopen(mesh_n,"r");
+    if(!fm){
+	printf("file not found : %s\n",mesh_n);
+	return 1;
+    }
+
+    coord = malloc( NAllMyNod * sizeof(double));
+
+    /**************************************************/
+    //  go to "$Nodes" and then read coordinates 
+    //  of nodes in <MyNodOrig> position
+    //
+    offset   = 0;
+    while(fgets(buf,NBUF,fm)!=NULL){
+        offset += strlen(buf); 
+	data=strtok(buf," \n");
+	//
+	// leemos hasta encontrar $Elements
+	//
+	if(strcmp(data,"$Nodes")==0){
+	    //
+	    // leemos de nodos pero no lo usamos 
+	    // solo para hacer verificaciones
+	    //
+	    fgets(buf,NBUF,fm);
+	    offset += strlen(buf); 
+	    data  = strtok(buf," \n");
+	    n = atoi(data);
+
+	    //
+	    // leemos todos los nodos en <MyNodOrig>
+	    //
+	    c = 0;
+	    while( c < NMyNod ){
+	        fgets(buf,NBUF,fm); 
+		data=strtok(buf," \n");
+		for( d=0;d<3;d++){
+		  data=strtok(NULL," \n");
+		  coord[c*3 + d] = atof(data);
+		}
+		c++;
+	    }
+	    if(c>=n){
+	      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", mesh_n, n, c);
+	      return 1;
+	    }
+	    break;
+	}
+	ln ++;
+    }
+    fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
+    return 0;
+}
+
+/****************************************************************************************************/
+
 int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 {
 
@@ -483,7 +588,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
    * Output:
    * int  * elmdist  : number of elements for each process             (MAH)
    * int  * eptr     : array of indeces for "eind" (CSR format)        (MAH)
-   * int  * eind     : element conectivities with nodes (CSR format)	 (MAH)
+   * int  * eind     : element conectivities with nodes (CSR format)   (MAH)
    *
    *
    * 1) first counts the total number of volumetric element on the mesh nelm_tot
@@ -505,8 +610,6 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
    *    in the file
    *
    * c) int *elmdist, int *eptr, int *eind, int *part are globals
-   *
-   * Author: Guido Giuntoli
    *
    */
 
@@ -626,7 +729,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
     // per element and fill "eptr"
     // with this vector we can alloc memory for "eind"
     //    
-    fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
+    fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
     for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
       fgets(buf,NBUF,fm); 
       offset += strlen(buf); 
@@ -915,20 +1018,20 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 {
 
   /*
-   * This function determines which nodes of <*AllMyNodes> are <*MyGhostOrig>
+   * This function determines which nodes of <*AllMyNodOrig> are <*MyGhostOrig>
    *
    * strategy: 
    *
-   * 1) Allgather operation sending <NAllMyNodes>
+   * 1) Allgather operation sending <NAllMyNod>
    *
-   * 2) all processes sends to all (using Isend) the array <AllMyNodes> 
+   * 2) all processes sends to all (using Isend) the array <AllMyNodOrig> 
    *
    */
 
   int   i, j, c, g, rank, nproc;
   int   ierr;
 
-  int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <NAllMyNodes> coming from all the processes
+  int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <NAllMyNod> coming from all the processes
   int   **repeated, *nrep;
 
   double t0_loc, t1_loc;
@@ -938,7 +1041,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   MPI_Comm_rank(*comm, &rank);
   MPI_Comm_size(*comm, &nproc);
 
-  mysize     = NAllMyNodes;
+  mysize     = NAllMyNod;
   NMyGhost    = 0;
   peer_sizes = NULL;
 
@@ -955,14 +1058,14 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   for(i=0;i<nproc;i++){
     if(i!=rank){
-      ierr = MPI_Isend(AllMyNodes, mysize, MPI_INT, i, 0, *comm, &request[i]);
+      ierr = MPI_Isend(AllMyNodOrig, mysize, MPI_INT, i, 0, *comm, &request[i]);
     }
   }
   for(i=0;i<nproc;i++){
     if(i!=rank){
       peer_nod_glo = malloc(peer_sizes[i]*sizeof(int));
       ierr = MPI_Recv(peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, *comm, &status);
-      give_inter_sort(comm, myname, AllMyNodes, mysize, peer_nod_glo, peer_sizes[i], &repeated[i], &nrep[i]);
+      give_inter_sort(comm, myname, AllMyNodOrig, mysize, peer_nod_glo, peer_sizes[i], &repeated[i], &nrep[i]);
       free(peer_nod_glo);
     }
   }
@@ -1000,7 +1103,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
 
   clean_vector_qsort(comm, myname, nreptot, rep_array, &rep_array_clean, &nreptot_clean);
-  printf("%-6s r%2d %-20s : %8f\n", myname, rank, "nreptot [%]", (nreptot_clean*100.0)/NAllMyNodes ); 
+  printf("%-6s r%2d %-20s : %8f\n", myname, rank, "nreptot [%]", (nreptot_clean*100.0)/NAllMyNod ); 
   
   free(rep_array);
   t1_loc = MPI_Wtime() - t0_loc;
@@ -1008,7 +1111,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   /* OFF time lapse */
   /******************/
 
-  // calculamos la cantidad de puntos dentro de <AllMyNodes> que me pertenecen
+  // calculamos la cantidad de puntos dentro de <AllMyNodOrig> que me pertenecen
 
   /******************/
   /* ON time lapse  */
@@ -1020,9 +1123,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   int ismine, r, remoterank;
 
   NMyNod = NMyGhost = r = 0;
-  for(i=0;i<NAllMyNodes;i++){
-    if(AllMyNodes[i] == rep_array_clean[r]){
-      ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodes[i], &remoterank);
+  for(i=0;i<NAllMyNod;i++){
+    if(AllMyNodOrig[i] == rep_array_clean[r]){
+      ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
       r++;
       if(ismine){
 	NMyNod ++;
@@ -1035,8 +1138,8 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       NMyNod ++;
     }
   }
-  printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "NMyGhost/NAllMyNodes [%]", (NMyGhost*100.0)/NAllMyNodes,
-      "NMyNod/NAllMyNodes [%]", (NMyNod*100.0)/NAllMyNodes); 
+  printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "NMyGhost/NAllMyNod [%]", (NMyGhost*100.0)/NAllMyNod,
+      "NMyNod/NAllMyNod [%]", (NMyNod*100.0)/NAllMyNod); 
   t1_loc = MPI_Wtime() - t0_loc;
   save_time(comm, "    nmynode", time_fl, t1_loc );
   /* OFF time lapse */
@@ -1053,21 +1156,21 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   MyGhostOrig = malloc(NMyGhost*sizeof(int));
 
   c = r = g = 0;
-  for(i=0;i<NAllMyNodes;i++){
-    if(AllMyNodes[i] == rep_array_clean[r]){
-      ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodes[i], &remoterank);
+  for(i=0;i<NAllMyNod;i++){
+    if(AllMyNodOrig[i] == rep_array_clean[r]){
+      ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
       r++;
       if(ismine){
-	MyNodOrig[c] = AllMyNodes[i];
+	MyNodOrig[c] = AllMyNodOrig[i];
 	c ++;
       }
       else{
-	MyGhostOrig[g] = AllMyNodes[i];
+	MyGhostOrig[g] = AllMyNodOrig[i];
 	g ++;
       }
     }
     else{
-      MyNodOrig[c] = AllMyNodes[i];
+      MyNodOrig[c] = AllMyNodOrig[i];
       c ++;
     }
   }
@@ -1084,12 +1187,12 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   /* OFF time lapse */
   /******************/
 
-  printf("%-6s r%2d %-20s : %8d   %-20s : %8d\n", myname, rank, "NAllMyNodes", NAllMyNodes, "NMyNod", NMyNod);
+  printf("%-6s r%2d %-20s : %8d   %-20s : %8d\n", myname, rank, "NAllMyNod", NAllMyNod, "NMyNod", NMyNod);
   // >>>>> PRINT
   if(print_flag){
-    printf("%-6s r%2d %-20s : ", myname, rank, "AllMyNodes");
-    for(i=0;i<NAllMyNodes;i++){
-      printf("%3d ",AllMyNodes[i]);
+    printf("%-6s r%2d %-20s : ", myname, rank, "AllMyNodOrig");
+    for(i=0;i<NAllMyNod;i++){
+      printf("%3d ",AllMyNodOrig[i]);
     }
     printf("\n");
     printf("%-6s r%2d %-20s : ", myname, rank, "reps");

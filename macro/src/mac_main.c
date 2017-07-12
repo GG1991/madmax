@@ -125,12 +125,12 @@ int main(int argc, char **argv)
     /* OFF time lapse */
     /******************/
 
-    // We delete repeated nodes and save the <NAllMyNodes> values on <AllMyNodes> in order
+    // We delete repeated nodes and save the <NAllMyNod> values on <AllMyNodOrig> in order
     /******************/
     /* ON time lapse */
-    clean_vector_qsort(&macro_comm, myname, eptr[nelm], eind, &AllMyNodes, &NAllMyNodes);
+    clean_vector_qsort(&macro_comm, myname, eptr[nelm], eind, &AllMyNodOrig, &NAllMyNod);
     t1 = MPI_Wtime() - t0;
-    save_time(&macro_comm, "AllMyNodes calc", time_fl, t1);
+    save_time(&macro_comm, "AllMyNodOrig calc", time_fl, t1);
     /* OFF time lapse */
     /******************/
 
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
     /* OFF time lapse */
     /******************/
 
-    spu_vtk_partition( myname, mesh_n, &macro_comm );
+    spu_vtk_partition( myname, &macro_comm );
 
     fclose(time_fl);
 
