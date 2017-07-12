@@ -75,8 +75,8 @@ int           *ghosts;                 // ghost nodes
 int           *ghostsranks;            // ghost ranks
 int           nnod;                    // # of local nodes (not including ghosts)
 
-int           *mynod_glo;              // original global numeration of my nodes
-int           nmynod_glo;              // # of nodes that are mine
+int           *MyNodOrig;              // Original (gmsh) numbers of my nodes
+int           NMyNodOrig;              // Number of my nodes 
 
 int           *loc2petsc;              // array of size <nmynod_glo>+<nghosts>
                                        // returns the position in PETSc matrix & vectors

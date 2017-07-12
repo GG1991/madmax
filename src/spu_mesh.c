@@ -1014,29 +1014,29 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   /* ON time lapse  */
   t0_loc = MPI_Wtime();      
   if(rank==0){
-    printf("calculando nmynod_glo\n");
+    printf("calculando NMyNodOrig\n");
   }
 
   int ismine, r, remoterank;
 
-  nmynod_glo = nghosts = r = 0;
+  NMyNodOrig = nghosts = r = 0;
   for(i=0;i<nnod_glo;i++){
     if(nod_glo[i] == rep_array_clean[r]){
       ismine = ownership_selec_rule( comm, repeated, nrep, nod_glo[i], &remoterank);
       r++;
       if(ismine){
-	nmynod_glo ++;
+	NMyNodOrig ++;
       }
       else{
 	nghosts ++;
       }
     }
     else{
-      nmynod_glo ++;
+      NMyNodOrig ++;
     }
   }
   printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "nghosts/nnod_glo [%]", (nghosts*100.0)/nnod_glo,
-      "nmynod_glo/nnod_glo [%]", (nmynod_glo*100.0)/nnod_glo); 
+      "NMyNodOrig/nnod_glo [%]", (NMyNodOrig*100.0)/nnod_glo); 
   t1_loc = MPI_Wtime() - t0_loc;
   save_time(comm, "    nmynode", time_fl, t1_loc );
   /* OFF time lapse */
@@ -1047,9 +1047,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   t0_loc = MPI_Wtime();      
   /******************/
   if(rank==0){
-    printf("calculando mynod_glo\n");
+    printf("calculando MyNodOrig\n");
   }
-  mynod_glo = malloc(nmynod_glo*sizeof(int));
+  MyNodOrig = malloc(NMyNodOrig*sizeof(int));
   ghosts = malloc(nghosts*sizeof(int));
 
   c = r = g = 0;
@@ -1058,7 +1058,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       ismine = ownership_selec_rule( comm, repeated, nrep, nod_glo[i], &remoterank);
       r++;
       if(ismine){
-	mynod_glo[c] = nod_glo[i];
+	MyNodOrig[c] = nod_glo[i];
 	c ++;
       }
       else{
@@ -1067,7 +1067,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       }
     }
     else{
-      mynod_glo[c] = nod_glo[i];
+      MyNodOrig[c] = nod_glo[i];
       c ++;
     }
   }
@@ -1084,7 +1084,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   /* OFF time lapse */
   /******************/
 
-  printf("%-6s r%2d %-20s : %8d   %-20s : %8d\n", myname, rank, "nnod_glo", nnod_glo, "nmynod_glo", nmynod_glo);
+  printf("%-6s r%2d %-20s : %8d   %-20s : %8d\n", myname, rank, "nnod_glo", nnod_glo, "NMyNodOrig", NMyNodOrig);
   // >>>>> PRINT
   if(print_flag){
     printf("%-6s r%2d %-20s : ", myname, rank, "nod_glo");
@@ -1097,9 +1097,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       printf("%3d ",rep_array_clean[i]);
     }
     printf("\n");
-    printf("%-6s r%2d %-20s : ", myname, rank, "mynod_glo");
-    for(i=0;i<nmynod_glo;i++){
-      printf("%3d ",mynod_glo[i]);
+    printf("%-6s r%2d %-20s : ", myname, rank, "MyNodOrig");
+    for(i=0;i<NMyNodOrig;i++){
+      printf("%3d ",MyNodOrig[i]);
     }
     printf("\n");
     printf("%-6s r%2d %-20s : ", myname, rank, "ghosts");
@@ -1121,7 +1121,7 @@ int reenumerate_PETSc(MPI_Comm *comm)
    *
    * a) reestablish the numeration of <eind> array to it local numeration
    *
-   * b) creates array <loc2petsc> of size <nmynod_glo> + <nghosts>
+   * b) creates array <loc2petsc> of size <NMyNodOrig> + <nghosts>
    *    giving local numeration <n> returns the position in PETSc matrix 
    *    & vector
    * 
@@ -1136,7 +1136,7 @@ int reenumerate_PETSc(MPI_Comm *comm)
   MPI_Comm_size(*comm, &nproc);
 
   nod_sizes = malloc( nproc * sizeof(int));
-  ierr = MPI_Allgather(&nmynod_glo, 1, MPI_INT, nod_sizes, 1, MPI_INT, *comm);
+  ierr = MPI_Allgather(&NMyNodOrig, 1, MPI_INT, nod_sizes, 1, MPI_INT, *comm);
   if(ierr){
     return 1;
   }
@@ -1150,53 +1150,52 @@ int reenumerate_PETSc(MPI_Comm *comm)
   //  reenumeramos <eind>
   for(i=0;i<eptr[nelm];i++){
     // is a local node
-    //    search_position_logn(mynod_glo, nmynod_glo, eind[i], &p);
-    p = bsearch(&eind[i], mynod_glo, nmynod_glo, sizeof(int), cmpfunc);
+    p = bsearch(&eind[i], MyNodOrig, NMyNodOrig, sizeof(int), cmpfunc);
     if(p != NULL){
-      eind[i] = p - mynod_glo;
+      eind[i] = p - MyNodOrig;
     }
     else{
       // is a ghost node
-      //      search_position_logn(ghosts, nghosts, eind[i], &p);
       p = bsearch(&eind[i], ghosts, nghosts, sizeof(int), cmpfunc);
       if(p != NULL){
-	eind[i] = nmynod_glo + p - ghosts;
+	eind[i] = NMyNodOrig + p - ghosts;
       }
       else{
-	printf("reenumerate_PETSc: value %d not found on <mynod_glo> neither <ghosts>\n",eind[i]);
+	printf("reenumerate_PETSc: value %d not found on <MyNodOrig> neither <ghosts>\n",eind[i]);
 	return 1;
       }
     }
   }
 
-  loc2petsc = malloc( (nmynod_glo + nghosts) * sizeof(int));
+  loc2petsc = malloc( (NMyNodOrig + nghosts) * sizeof(int));
 
   // empezamos con los locales
-  for(i=0;i<nmynod_glo;i++){
+  for(i=0;i<NMyNodOrig;i++){
     loc2petsc[i] = start_index + i;
   }
 
   /* And now ghosts nodes:
    *
-   *    each process sends <mynod_glo> 
+   *    each process sends <MyNodOrig> 
    *    and each process receives that vector
    *    and search if any ghost is inside.
    *    With that information completes <ghostsranks>
    *    and then using that completes finally <loc2petsc>
    */
 
-  int          *peer_nod_glo, *nod_glo_sizes;
+  int          *peer_nod_glo, *nod_glo_sizes, m, *ghosts_glo_index;
   MPI_Request  *request;
 
   request    = malloc(nproc*sizeof(MPI_Request));
   nod_glo_sizes = malloc(nproc*sizeof(int));
   ghostsranks = malloc(nghosts*sizeof(int));
+  ghosts_glo_index = malloc(nghosts*sizeof(int));
 
-  ierr = MPI_Allgather(&nmynod_glo, 1, MPI_INT, nod_glo_sizes, 1, MPI_INT, *comm);
+  ierr = MPI_Allgather(&NMyNodOrig, 1, MPI_INT, nod_glo_sizes, 1, MPI_INT, *comm);
 
   for(i=0;i<nproc;i++){
       if(i!=rank){
-	  ierr = MPI_Isend(mynod_glo, nmynod_glo, MPI_INT, i, 0, *comm, &request[i]);
+	  ierr = MPI_Isend(MyNodOrig, NMyNodOrig, MPI_INT, i, 0, *comm, &request[i]);
       }
   }
   for(i=0;i<nproc;i++){
@@ -1207,10 +1206,20 @@ int reenumerate_PETSc(MPI_Comm *comm)
 	      p = bsearch(&ghosts[j], peer_nod_glo, nod_glo_sizes[i], sizeof(int), cmpfunc);
 	      if(p!=NULL){
 		  ghostsranks[j] = i;
+		  m = start_index = 0;
+		  while(m<i){
+		    start_index += nod_glo_sizes[m];
+		    m++;
+		  }
+		  ghosts_glo_index[j] = start_index + p - peer_nod_glo;
 	      }
 	  }
 	  free(peer_nod_glo);
       }
+  }
+
+  for(i=0;i<nghosts;i++){
+    loc2petsc[NMyNodOrig + i] =  ghosts_glo_index[i];
   }
 
   return 0;
