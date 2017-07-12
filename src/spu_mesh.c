@@ -1155,9 +1155,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   int ismine, r, remoterank;
 
-  NMyNod = NMyGhost = r = 0;
-  for(i=0;i<NAllMyNod;i++){
-    if(r<nreptot_clean){
+  if(nreptot_clean!=0){
+    NMyNod = NMyGhost = r = 0;
+    for(i=0;i<NAllMyNod;i++){
       if(AllMyNodOrig[i] == rep_array_clean[r]){
 	ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
 	r++;
@@ -1168,10 +1168,14 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 	  NMyGhost ++;
 	}
       }
+      else{
+	NMyNod ++;
+      }
     }
-    else{
-      NMyNod ++;
-    }
+  }
+  else{
+    NMyNod = NAllMyNod;
+    NMyGhost = 0;
   }
   printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "NMyGhost/NAllMyNod [%]", (NMyGhost*100.0)/NAllMyNod,
       "NMyNod/NAllMyNod [%]", (NMyNod*100.0)/NAllMyNod); 
@@ -1191,8 +1195,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   MyGhostOrig = malloc(NMyGhost*sizeof(int));
 
   c = r = g = 0;
-  for(i=0;i<NAllMyNod;i++){
-    if(r<nreptot_clean){
+  if(nreptot_clean!=0){
+    for(i=0;i<NAllMyNod;i++){
+      // podria ser un nodo que le pertenece a otro proceso
       if(AllMyNodOrig[i] == rep_array_clean[r]){
 	ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
 	r++;
@@ -1205,12 +1210,20 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 	  g ++;
 	}
       }
-    }
-    else{
-      MyNodOrig[c] = AllMyNodOrig[i];
-      c ++;
+      else{
+	// no está en la lista de repetidos
+	MyNodOrig[c] = AllMyNodOrig[i];
+	c ++;
+      }
     }
   }
+  else{
+    // no hay repetidos entonces es nuestro
+    for(i=0;i<NAllMyNod;i++){
+      MyNodOrig[i] = AllMyNodOrig[i];
+    }
+  }
+
 
   // free memory for <repeated>
   for(i=0;i<nproc;i++){
