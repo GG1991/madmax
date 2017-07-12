@@ -67,22 +67,14 @@ int main(int argc, char **argv)
       time_vec = calloc(nproc_mac, sizeof(double));
     }
 
-    t0 = MPI_Wtime();      /* ON time lapse */
-
+    /******************/
+    /* ON time lapse */
+    t0 = MPI_Wtime();
     spu_parse_mesh(input_n);
-
     t1 = MPI_Wtime() - t0;
-    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
-    if(ierr){
-      return 1;
-    }
-    if(rank_mac == 0){
-      fprintf(time_fl, "%-20s", "spu_parse_mesh");
-      for(i=0;i<nproc_mac;i++){
-	fprintf(time_fl," %e",time_vec[i]);
-      }
-      fprintf(time_fl,"\n");
-    }                       /* OFF time lapse */
+    save_time(&macro_comm, "spu_parse_mesh", time_fl, t1);
+    /* OFF time lapse */
+    /******************/
     
 
     //************************************************************ 
@@ -93,23 +85,15 @@ int main(int argc, char **argv)
     //
     // read mesh
     //    
-    t0 = MPI_Wtime();      /* ON time lapse */
-
+    /******************/
+    /* ON time lapse */
+    t0 = MPI_Wtime();
     strcpy(mesh_f,"gmsh");
     read_mesh_elmv(&macro_comm, myname, mesh_n, mesh_f);
-
     t1 = MPI_Wtime() - t0;
-    ierr = MPI_Gather(&t1, 1, MPI_DOUBLE, time_vec, 1, MPI_DOUBLE, 0, macro_comm);
-    if(ierr){
-      return 1;
-    }
-    if(rank_mac == 0){
-      fprintf(time_fl, "%-20s", "read_mesh");
-      for(i=0;i<nproc_mac;i++){
-	fprintf(time_fl," %e",time_vec[i]);
-      }
-      fprintf(time_fl,"\n");
-    }                       /* OFF time lapse */
+    save_time(&macro_comm, "read_mesh", time_fl, t1);
+    /* OFF time lapse */
+    /******************/
 
     nelm = elmdist[rank_mac+1] - elmdist[rank_mac];
     part = (int*)malloc(nelm * sizeof(int));
@@ -153,6 +137,15 @@ int main(int argc, char **argv)
     reenumerate_PETSc(&macro_comm);
     t1 = MPI_Wtime() - t0;
     save_time(&macro_comm, "reenumerate", time_fl, t1);
+    /* OFF time lapse */
+    /******************/
+
+    /******************/
+    /* ON time lapse */
+    t0 = MPI_Wtime();
+    read_mesh_coord(&macro_comm, myname, mesh_n, mesh_f);
+    t1 = MPI_Wtime() - t0;
+    save_time(&macro_comm, "read coord", time_fl, t1);
     /* OFF time lapse */
     /******************/
 
