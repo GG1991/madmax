@@ -149,7 +149,17 @@ int main(int argc, char **argv)
     /* OFF time lapse */
     /******************/
 
-    spu_vtk_partition( myname, &macro_comm );
+    /******************/
+    /* ON time lapse */
+    t0 = MPI_Wtime();
+    char  vtkfile_n[NBUF];
+
+    sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mac);
+    spu_vtk_partition( vtkfile_n, &macro_comm );
+    t1 = MPI_Wtime() - t0;
+    save_time(&macro_comm, "vtk_partition", time_fl, t1);
+    /* OFF time lapse */
+    /******************/
 
     fclose(time_fl);
 

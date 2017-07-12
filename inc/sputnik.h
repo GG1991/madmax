@@ -60,11 +60,11 @@ double       *time_vec;
 char         mesh_n[NBUF];             // Mesh file name
 char         mesh_f[4];                // Mesh format name
 
-int          *part;
-int          *elmdist;                 // number of elements inside each procesor
-int           nelm;                    // # of local elements
-int          *eptr;                    // list of indeces of nodes inside eind
-int          *eind;                    // list of nodes for elem "i" is between 
+int           *part;
+int           *elmdist;                // number of elements inside each procesor
+int            nelm;                   // # of local elements
+int           *eptr;                   // list of indeces of nodes inside eind
+int           *eind;                   // list of nodes for elem "i" is between 
                                        // eind[eptr[i]] eind[eptr[i+1]] (not including)
 int           *AllMyNodOrig;           // Original (gmsh) numbers of my nodes + my ghosts
 int           NAllMyNod;               // <NMyNod> + <NMyGhost>
@@ -109,6 +109,7 @@ int search_position_logn(int *array, int size, int val, int *pos);
 
 // spu_vtk.c
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );
+int vtkcode(int dim,int npe);
 
 // spu_time.c
 int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);
