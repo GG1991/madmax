@@ -23,9 +23,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
   FILE    *vtkfl;
 
   int     rank, nproc; 
-  int     count, d, j, n, e, ierr;
-  int     *eptr_a, *eind_a;
-  char    buf[NBUF], *data;
+  int     count, d, n, e;
 
   MPI_Comm_size(*comm, &nproc);
   MPI_Comm_rank(*comm, &rank);
@@ -67,6 +65,14 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
   fprintf(vtkfl, "CELL_TYPES %i\n", nelm);
   for (e=0;e<nelm;e++){
     fprintf(vtkfl, "%d\n",vtkcode(3,eptr[e+1] - eptr[e]));  
+  }
+
+  fprintf(vtkfl, "CELL_DATA %i\n",nelm);
+
+  fprintf(vtkfl, "SCALARS part FLOAT\n");
+  fprintf(vtkfl, "LOOKUP_TABLE default\n");
+  for (e=0;e<nelm;e++){
+    fprintf(vtkfl, "%lf\n",rank*1.0);
   }
 
   fclose(vtkfl);
