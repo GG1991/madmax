@@ -9,6 +9,7 @@
 *.out
 *.toc
 *.aux
+*.jpg
 
 obj/*.o
 micro/micro
