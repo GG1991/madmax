@@ -506,7 +506,7 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 
     FILE                 *fm;
 
-    int                  i, c, d, n; 
+    int                  i, c, d; 
     int                  ln, offset;  // line counter and offset for moving faster in the file
     int                  rank, nproc;
     
@@ -543,7 +543,7 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 	    fgets(buf,NBUF,fm);
 	    offset += strlen(buf); 
 	    data  = strtok(buf," \n");
-	    n = atoi(data);
+	    NTotalNod = atoi(data);
 
 	    //
 	    // leemos todos los nodos en <MyNodOrig>
@@ -561,8 +561,8 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 		}
 		c++;
 	    }
-	    if(c>=n){
-	      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", n, mesh_n, c);
+	    if(c>=NTotalNod){
+	      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
 	      return 1;
 	    }
 	    break;
@@ -586,8 +586,8 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
       }
       c++;
     }
-    if(c>=n){
-      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", n, mesh_n, c);
+    if(c>=NTotalNod){
+      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
       return 1;
     }
     return 0;
@@ -1284,7 +1284,6 @@ int reenumerate_PETSc(MPI_Comm *comm)
 
   int   rank, nproc;
   int   i, j, *p, ierr; 
-  int   *StartIndexRank;
   int   *PeerMyNodOrig;    // buffer to receive MyNodOrig from the other processes
   int   *PeerNMyNodOrig;   // buffers' sizes with NMyNodOrig from every process
 

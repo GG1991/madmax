@@ -57,8 +57,8 @@ double       *time_vec;
 
 // Structures to save de mesh on CSR format 
 
-char         mesh_n[NBUF];             // Mesh file name
-char         mesh_f[4];                // Mesh format name
+char          mesh_n[NBUF];            // Mesh file name
+char          mesh_f[4];               // Mesh format name
 
 int           *part;
 int           *elmdist;                // number of elements inside each procesor
@@ -66,17 +66,26 @@ int            nelm;                   // # of local elements
 int           *eptr;                   // list of indeces of nodes inside eind
 int           *eind;                   // list of nodes for elem "i" is between 
                                        // eind[eptr[i]] eind[eptr[i+1]] (not including)
+int           *StartIndexRank;
 int           *AllMyNodOrig;           // Original (gmsh) numbers of my nodes + my ghosts
 int           NAllMyNod;               // <NMyNod> + <NMyGhost>
 int           *MyNodOrig;              // Original (gmsh) numbers of my nodes
 int           NMyNod;                  // Number of my nodes 
 int           *MyGhostOrig;            // Original (gmsh) numbers of my ghosts nodes
 int           NMyGhost;                // Number of my ghost nodes
+int           NTotalNod;               // Number of total nodes in the mesh
 
 double        *coord;                  // nodes' coordinates
 
 int           *loc2petsc;              // array of size <NMyNod>+<NMyGhost>
                                        // returns the position in PETSc matrix & vectors
+
+// Matrices and vectors
+
+Mat           A;
+Vec           x, b;
+
+
 
 /*****************************************************************************************************
    SPUTNIK function definitions
