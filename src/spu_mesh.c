@@ -1086,7 +1086,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   for(i=0;i<nproc;i++){
     if(i!=rank){
-      ierr = MPI_Isend(AllMyNodOrig, mysize, MPI_INT, i, 0, *comm, &request[i]);
+      ierr = MPI_Isend(AllMyNodOrig, mysize, MPI_INT, i, 0, *comm, &request[i]);CHKERRQ(ierr);
     }
   }
   for(i=0;i<nproc;i++){

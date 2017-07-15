@@ -72,14 +72,14 @@ int main(int argc, char **argv)
     t0 = MPI_Wtime();
     spu_parse_mesh(input_n);
     t1 = MPI_Wtime() - t0;
-    save_time(&macro_comm, "spu_parse_mesh", time_fl, t1);
+    save_time(&MACRO_COMM, "spu_parse_mesh", time_fl, t1);
     /* OFF time lapse */
     /******************/
     
 
     //************************************************************ 
-    // Set PETSc communicator to macro_comm
-    PETSC_COMM_WORLD = macro_comm;
+    // Set PETSc communicator to MACRO_COMM
+    PETSC_COMM_WORLD = MACRO_COMM;
     ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
     //
@@ -89,9 +89,9 @@ int main(int argc, char **argv)
     /* ON time lapse */
     t0 = MPI_Wtime();
     strcpy(mesh_f,"gmsh");
-    read_mesh_elmv(&macro_comm, myname, mesh_n, mesh_f);
+    read_mesh_elmv(&MACRO_COMM, myname, mesh_n, mesh_f);
     t1 = MPI_Wtime() - t0;
-    save_time(&macro_comm, "read_mesh", time_fl, t1);
+    save_time(&MACRO_COMM, "read_mesh", time_fl, t1);
     /* OFF time lapse */
     /******************/
 
@@ -103,18 +103,18 @@ int main(int argc, char **argv)
     /******************/
     /* ON time lapse */
     t0 = MPI_Wtime();
-    part_mesh_PARMETIS(&macro_comm, time_fl, myname, NULL, PARMETIS_MESHKWAY );
+    part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );
     t1 = MPI_Wtime() - t0;
-    save_time(&macro_comm, "part_mesh_PARMETIS", time_fl, t1);
+    save_time(&MACRO_COMM, "part_mesh_PARMETIS", time_fl, t1);
     /* OFF time lapse */
     /******************/
 
     // We delete repeated nodes and save the <NAllMyNod> values on <AllMyNodOrig> in order
     /******************/
     /* ON time lapse */
-    clean_vector_qsort(&macro_comm, myname, eptr[nelm], eind, &AllMyNodOrig, &NAllMyNod);
+    clean_vector_qsort(&MACRO_COMM, myname, eptr[nelm], eind, &AllMyNodOrig, &NAllMyNod);
     t1 = MPI_Wtime() - t0;
-    save_time(&macro_comm, "AllMyNodOrig calc", time_fl, t1);
+    save_time(&MACRO_COMM, "AllMyNodOrig calc", time_fl, t1);
     /* OFF time lapse */
     /******************/
 
@@ -123,9 +123,9 @@ int main(int argc, char **argv)
     /******************/
     /* ON time lapse */
     t0 = MPI_Wtime();
-    calculate_ghosts(&macro_comm, myname);
+    calculate_ghosts(&MACRO_COMM, myname);
     t1 = MPI_Wtime() - t0;
-    save_time(&macro_comm, "ghosts", time_fl, t1);
+    save_time(&MACRO_COMM, "ghosts", time_fl, t1);
     /* OFF time lapse */
     /******************/
 
@@ -134,18 +134,18 @@ int main(int argc, char **argv)
     /******************/
     /* ON time lapse */
     t0 = MPI_Wtime();
-    reenumerate_PETSc(&macro_comm);
+    reenumerate_PETSc(&MACRO_COMM);
     t1 = MPI_Wtime() - t0;
-    save_time(&macro_comm, "reenumerate", time_fl, t1);
+    save_time(&MACRO_COMM, "reenumerate", time_fl, t1);
     /* OFF time lapse */
     /******************/
 
     /******************/
     /* ON time lapse */
     t0 = MPI_Wtime();
-    read_mesh_coord(&macro_comm, myname, mesh_n, mesh_f);
+    read_mesh_coord(&MACRO_COMM, myname, mesh_n, mesh_f);
     t1 = MPI_Wtime() - t0;
-    save_time(&macro_comm, "read coord", time_fl, t1);
+    save_time(&MACRO_COMM, "read coord", time_fl, t1);
     /* OFF time lapse */
     /******************/
 
@@ -155,11 +155,37 @@ int main(int argc, char **argv)
     char  vtkfile_n[NBUF];
 
     sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mac);
-    spu_vtk_partition( vtkfile_n, &macro_comm );
+    spu_vtk_partition( vtkfile_n, &MACRO_COMM );
     t1 = MPI_Wtime() - t0;
-    save_time(&macro_comm, "vtk_partition", time_fl, t1);
+    save_time(&MACRO_COMM, "vtk_partition", time_fl, t1);
     /* OFF time lapse */
     /******************/
+
+    AllocMatrixVector( MACRO_COMM, NMyNod*3, NTotalNod*3, &A, &x, &b);
+    /*
+       Currently, all PETSc parallel matrix formats are partitioned by
+       contiguous chunks of rows across the processors.  Determine which
+       rows of the matrix are locally owned.
+     */
+    int Istart, Iend;
+    ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
+    if( Istart != StartIndexRank[rank_mac]*3 ){
+      printf("AllocMatrixVector: error on indeces set for matrix and vector.\n");
+      return 1;
+    }
+    if(rank_mac<nproc_mac-1){
+      if( Iend != StartIndexRank[rank_mac+1]*3 ){
+	printf("AllocMatrixVector: error on indeces set for matrix and vector.\n");
+	return 1;
+      }
+    }
+    else{
+      if( Iend != NTotalNod*3 ){
+	printf("AllocMatrixVector: error on indeces set for matrix and vector.\n");
+	return 1;
+      }
+    }
+
 
     fclose(time_fl);
 

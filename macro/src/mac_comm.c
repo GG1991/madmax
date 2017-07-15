@@ -62,7 +62,7 @@ int mac_comm_init(void)
 
   /* 
 
-     Performs the creation of the new communicator "macro_comm" with its 
+     Performs the creation of the new communicator "MACRO_COMM" with its 
      inter-communicators with micro_comms if the scheme is MACRO_MICRO
 
      Are defined:
@@ -90,10 +90,10 @@ int mac_comm_init(void)
       return 1;
     }
 
-    // macro_comm creation
-    MPI_Comm_split(world_comm, color, 0, &macro_comm);
-    ierr = MPI_Comm_size(macro_comm, &nproc_mac);
-    ierr = MPI_Comm_rank(macro_comm, &rank_mac);
+    // MACRO_COMM creation
+    MPI_Comm_split(world_comm, color, 0, &MACRO_COMM);
+    ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
+    ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
 
     // we count the number of processes 
     // that are with micro and macro from id_vec

@@ -10,7 +10,7 @@
    MACRO global variables 
 *****************************************************************************************************/
 
-MPI_Comm         macro_comm;
+MPI_Comm         MACRO_COMM;
 
 int              nproc_mac;         //  # of processes (macro_comm)
 int              rank_mac;          //  rank on macro comm

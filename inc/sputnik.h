@@ -122,3 +122,6 @@ int vtkcode(int dim,int npe);
 
 // spu_time.c
 int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);
+
+// spu_alloc.c
+int AllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal, Mat *A, Vec *x, Vec *b);

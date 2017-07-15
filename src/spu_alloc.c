@@ -5,7 +5,7 @@
 
 #include "sputnik.h"
 
-int AllocMatrixVector(MPI_Comm *comm)
+int AllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal, Mat *A, Vec *x, Vec *b)
 {
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -21,39 +21,26 @@ int AllocMatrixVector(MPI_Comm *comm)
      Performance tuning note:  For problems of substantial size,
      preallocation of matrix memory is crucial for attaining good
      performance. See the matrix chapter of the users manual for details.
+
+     Input:
+     a) comm : MPI communicator
+     b) nlocal : # of local componenets
+     c) ntotal : # of total componenets
+     
+     Output:
+     a) A : the PETSc matrix
+     b) x,b : the PETSc vectors
   */
 
-  int Istart, Iend;
-  int ierr;
+  int rank, nproc, ierr;
 
-  MPI_Comm_size(*comm, &nproc);
-  MPI_Comm_rank(*comm, &rank);
+  MPI_Comm_size(comm, &nproc);
+  MPI_Comm_rank(comm, &rank);
 
-  ierr = MatCreate(*comm,&A);CHKERRQ(ierr);
-  ierr = MatSetSizes(A,NMyNod*3,NMyNod*3,NTotalNod*3,NTotalNod*3);CHKERRQ(ierr);
-  ierr = MatSetFromOptions(A);CHKERRQ(ierr);
-  ierr = MatMPIAIJSetPreallocation(A,81,NULL,81,NULL);CHKERRQ(ierr);
-
-  /*
-     Currently, all PETSc parallel matrix formats are partitioned by
-     contiguous chunks of rows across the processors.  Determine which
-     rows of the matrix are locally owned.
-  */
-  ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
-  if( Istart != StartIndexRank[rank]*3 ){
-    printf("AllocMatrixVector: error on indeces set for matrix and vector.\n");
-  }
-  if(rank<nproc-1){
-    if( Iend != StartIndexRank[rank+1]*3 ){
-      printf("AllocMatrixVector: error on indeces set for matrix and vector.\n");
-    }
-  }
-  else{
-    if( Iend != NTotalNod*3 ){
-      printf("AllocMatrixVector: error on indeces set for matrix and vector.\n");
-    }
-  }
-
+  ierr = MatCreate(comm,A);CHKERRQ(ierr);
+  ierr = MatSetSizes(*A,nlocal,nlocal,ntotal,ntotal);CHKERRQ(ierr);
+  ierr = MatSetFromOptions(*A);CHKERRQ(ierr);
+  ierr = MatMPIAIJSetPreallocation(*A,81,NULL,81,NULL);CHKERRQ(ierr);
 
   /*
      Create parallel vectors.
@@ -71,12 +58,10 @@ int AllocMatrixVector(MPI_Comm *comm)
         (replacing the PETSC_DECIDE argument in the VecSetSizes() statement
         below).
   */
-  ierr = VecCreate(*comm,&u);CHKERRQ(ierr);
-  ierr = VecSetSizes(u,NMyNod*3,m*n);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(u);CHKERRQ(ierr);
-  ierr = VecDuplicate(u,&b);CHKERRQ(ierr);
-  ierr = VecDuplicate(b,&x);CHKERRQ(ierr);
-
+  ierr = VecCreate(comm,x);CHKERRQ(ierr);
+  ierr = VecSetSizes(*x,nlocal,ntotal);CHKERRQ(ierr);
+  ierr = VecSetFromOptions(*x);CHKERRQ(ierr);
+  ierr = VecDuplicate(*x,b);CHKERRQ(ierr);
 
   return 0;
 }
