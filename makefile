@@ -9,14 +9,42 @@ SRC_DIR= ./src
 OBJ_DIR= ./obj
 DEP_DIR= ./inc
 
+SPU_INC_DIR= ./inc
+SPU_OBJ_DIR= ./obj
+SPU_SRC_DIR= ./src
+
+MAC_DIR= macro
+MAC_OBJ_DIR= ${MAC_DIR}/obj
+MAC_SRC_DIR= ${MAC_DIR}/src
+MAC_INC_DIR= ${MAC_DIR}/inc
+
+MIC_DIR= micro
+MIC_OBJ_DIR= ${MIC_DIR}/obj
+MIC_SRC_DIR= ${MIC_DIR}/src
+MIC_INC_DIR= ${MIC_DIR}/inc
+
 CFLAGS=-g -O0 
 	
-DEPS = ${DEP_DIR}/sputnik.h
+DEPS = ${DEP_DIR}/sputnik.h    \
+       ${MAC_INC_DIR}/macro.h  \
+       ${MIC_INC_DIR}/micro.h
 
-SPU_OBJ  = ${OBJ_DIR}/spu_parser.o \
-           ${OBJ_DIR}/spu_mesh.o   \
-           ${OBJ_DIR}/spu_time.o   \
-           ${OBJ_DIR}/spu_vtk.o      
+DEP_DIRS= ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
+
+SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o   \
+           $(SPU_OBJ_DIR)/spu_time.o   \
+           $(SPU_OBJ_DIR)/spu_parser.o \
+           $(SPU_OBJ_DIR)/spu_vtk.o    \
+           $(SPU_OBJ_DIR)/spu_alloc.o
+
+MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o   \
+           ${MAC_OBJ_DIR}/mac_comm.o       
+
+MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o   \
+           ${MIC_OBJ_DIR}/mic_comm.o       
+
+OBJ:= ${MAC_OBJ} ${MIC_OBJ} ${SPU_OBJ}
+
 
 ##############################
 # PARMETIS VARIABLES
@@ -28,42 +56,48 @@ PARMETIS_INC = -I${PARMETIS_DIR}/include       \
 
 PARMETIS_HEA = ${PARMETIS_DIR}/include/parmetis.h ${PARMETIS_DIR}/metis/include/metis.h
 
+LDFLAG = ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis/libparmetis.a \
+         ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libmetis/libmetis.a 
+
 INC = -I${DEP_DIR}
 
-.PHONY: clean_
+CFLAGS+= ${PARMETIS_INC} -I${SPU_INC_DIR}  -I${MAC_INC_DIR} -I${MIC_INC_DIR}
+
+.PHONY: clean_ all
 
 ##############################
 # LINK
-all: ${SPU_OBJ} 
-	${MAKE} -C macro 
-	${MAKE} -C micro 
-
+all: ${MAC_DIR}/macro ${MIC_DIR}/micro
 
 ##############################
-# SPU_PARSE.O
-obj/spu_parser.o: src/spu_parser.c inc/sputnik.h
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< -I./inc
-	@echo "spu_parser.o" 
-
-
-##############################
-# SPU_MESH.O
-obj/spu_mesh.o: src/spu_mesh.c ${DEPS} ${PARMETIS_HEA}
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $<  ${INC}  ${PARMETIS_INC} 
-	@echo "spu_mesh.o" 
+# MACRO
+${MAC_DIR}/macro: ${MAC_OBJ} ${SPU_OBJ}
+	gcc -o ${MAC_DIR}/macro $^ ${PETSC_KSP_LIB} -lgsl -lgslcblas -lm ${LDFLAG}
+	@echo "MACRO great :) !" 
 
 ##############################
-# SPU_VTK.O
-obj/spu_vtk.o: src/spu_vtk.c ${DEPS} ${PARMETIS_HEA}
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $<  ${INC}  ${PARMETIS_INC} 
-	@echo "spu_vtk.o" 
+# MICRO
+${MIC_DIR}/micro: ${MIC_OBJ} ${SPU_OBJ}
+	gcc -o ${MIC_DIR}/micro $^ ${PETSC_KSP_LIB} -lgsl -lgslcblas -lm ${LDFLAG}
+	@echo "MICRO great :) !" 
 
 ##############################
-# SPU_TIME.O
-obj/spu_time.o: src/spu_time.c ${DEPS} ${PARMETIS_HEA}
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $<  ${INC}  ${PARMETIS_INC} 
-	@echo "spu_vtk.o" 
+# SPUTNIK OBJECTS (do not work)
+${SPU_OBJ_DIR}/%.o: ${SPU_SRC_DIR}/%.c ${DEPS} ${PARMETIS_HEA}
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 
+	@echo ">>> "$@
 
+##############################
+# MACRO OBJECTS
+${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c ${DEPS}
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	
+	@echo ">>> "$@
+
+##############################
+# MICRO OBJECTS
+${MIC_OBJ_DIR}/%.o: ${MIC_SRC_DIR}/%.c ${DEPS}
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	
+	@echo ">>> "$@
 
 ##############################
 # LIST.O
@@ -79,7 +113,7 @@ vars:
 	@echo "PETSC_COMPILE = " ${PETSC_COMPILE}
 
 clean_:	    
-	rm -f obj/* 
+	rm -f obj/* macro/obj/* micro/obj/*
 
 include ${PETSC_DIR}/lib/petsc/conf/variables	
 include ${PETSC_DIR}/lib/petsc/conf/rules
