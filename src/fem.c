@@ -463,7 +463,7 @@ int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[8][3]
 
 /****************************************************************************************************/
 
-int FemGiveShapeDerivs(double ijac[3][3],int nsh,int gp,double ShapeDerivsMaster[8][3][8],double ShapeDerivs[8][3])
+int FemGiveShapeDerivs(double ijac[3][3],int nsh,int gp,double ***ShapeDerivsMaster,double ShapeDerivs[8][3])
 {
 
   int i, j, sh; 

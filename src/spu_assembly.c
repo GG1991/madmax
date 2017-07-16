@@ -23,6 +23,7 @@ int AssemblyJac(Mat *J)
   double ShapeDerivs[8][3];
   double DetJac;
   double ElemMatrix[8*3 * 8*3];
+  double BMatrix[6][3*8];
 
   ierr = MatZeroEntries(*J);CHKERRQ(ierr);
 
@@ -37,7 +38,7 @@ int AssemblyJac(Mat *J)
     for(gp=0;gp<ngp;gp++){
 
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
-
+      GetBMatrix( npe, ShapeDerivs, BMatrix );
 
 
     }
@@ -46,6 +47,45 @@ int AssemblyJac(Mat *J)
   }
   ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  return 0;
+
+}
+
+/****************************************************************************************************/
+
+int GetBMatrix( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
+{
+
+  int i;
+
+  for(i=0;i<npe;i++){
+
+    B[0][i*3+0] = ShapeDerivs[i][0]; 
+    B[0][i*3+1] = 0.0         ;
+    B[0][i*3+2] = 0.0         ; 
+
+    B[1][i*3+0] = 0.0         ;
+    B[1][i*3+1] = ShapeDerivs[i][1];
+    B[1][i*3+2] = 0.0         ; 
+    
+    B[2][i*3+0] = 0.0         ;
+    B[2][i*3+1] = 0.0         ;
+    B[2][i*3+2] = ShapeDerivs[i][2]; 
+
+    B[3][i*3+0] = ShapeDerivs[i][1];
+    B[3][i*3+1] = ShapeDerivs[i][0];
+    B[3][i*3+2] = 0.0         ; 
+
+    B[4][i*3+0] = 0.0         ;
+    B[4][i*3+1] = ShapeDerivs[i][2];
+    B[4][i*3+2] = ShapeDerivs[i][1];
+
+    B[5][i*3+0] = ShapeDerivs[i][2];
+    B[5][i*3+1] = 0.0         ;
+    B[5][i*3+2] = ShapeDerivs[i][0]; 
+
+  }
+
   return 0;
 
 }
