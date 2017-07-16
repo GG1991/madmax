@@ -35,7 +35,8 @@ SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o   \
            $(SPU_OBJ_DIR)/spu_time.o   \
            $(SPU_OBJ_DIR)/spu_parser.o \
            $(SPU_OBJ_DIR)/spu_vtk.o    \
-           $(SPU_OBJ_DIR)/spu_alloc.o
+           $(SPU_OBJ_DIR)/spu_alloc.o  \
+           $(SPU_OBJ_DIR)/spu_assembly.o    
 
 MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o   \
            ${MAC_OBJ_DIR}/mac_comm.o       
@@ -43,8 +44,13 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o   \
 MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o   \
            ${MIC_OBJ_DIR}/mic_comm.o       
 
-OBJ:= ${MAC_OBJ} ${MIC_OBJ} ${SPU_OBJ}
+EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o
+ 
+EXT_DEP  = $(SPU_INC_DIR)/fem.h
 
+DEPS+= $(EXT_DEP)
+
+SPU_OBJ+= $(EXT_OBJ)
 
 ##############################
 # PARMETIS VARIABLES
@@ -113,7 +119,7 @@ vars:
 	@echo "PETSC_COMPILE = " ${PETSC_COMPILE}
 
 clean_:	    
-	rm -f obj/* macro/obj/* micro/obj/*
+	rm -f obj/* macro/obj/* micro/obj/* macro/macro micro/micro
 
 include ${PETSC_DIR}/lib/petsc/conf/variables	
 include ${PETSC_DIR}/lib/petsc/conf/rules
