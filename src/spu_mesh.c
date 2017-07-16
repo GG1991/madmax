@@ -1285,22 +1285,22 @@ int reenumerate_PETSc(MPI_Comm *comm)
   int   rank, nproc;
   int   i, j, *p, ierr; 
   int   *PeerMyNodOrig;    // buffer to receive MyNodOrig from the other processes
-  int   *PeerNMyNodOrig;   // buffers' sizes with NMyNodOrig from every process
+  int   *PeerNMyNod;   // buffers' sizes with NMyNodOrig from every process
 
   MPI_Comm_rank(*comm, &rank);
   MPI_Comm_size(*comm, &nproc);
 
-  PeerNMyNodOrig = malloc( nproc * sizeof(int));
+  PeerNMyNod = malloc( nproc * sizeof(int));
   StartIndexRank = malloc( nproc * sizeof(int));
-  ierr = MPI_Allgather(&NMyNod, 1, MPI_INT, PeerNMyNodOrig, 1, MPI_INT, *comm);
+  ierr = MPI_Allgather(&NMyNod, 1, MPI_INT, PeerNMyNod, 1, MPI_INT, *comm);
   if(ierr){
     return 1;
   }
   
   StartIndexRank[0] = 0;
   i = 1;
-  while(i<rank){
-    StartIndexRank[i] += StartIndexRank[i-1] + PeerNMyNodOrig[i];
+  while(i<nproc){
+    StartIndexRank[i] = StartIndexRank[i-1] + PeerNMyNod[i-1];
     i++;
   }
 
@@ -1347,37 +1347,36 @@ int reenumerate_PETSc(MPI_Comm *comm)
   MPI_Request  *request;
 
   int   *MyGhostGlobalIndex;
-  
+
   request    = malloc(nproc*sizeof(MPI_Request));
   MyGhostGlobalIndex = malloc(NMyGhost*sizeof(int));
 
   for(i=0;i<nproc;i++){
-      if(i!=rank){
-	  ierr = MPI_Isend(MyNodOrig, NMyNod, MPI_INT, i, 0, *comm, &request[i]);
-      }
+    if(i!=rank){
+      ierr = MPI_Isend(MyNodOrig, NMyNod, MPI_INT, i, 0, *comm, &request[i]);
+    }
   }
   for(i=0;i<nproc;i++){
-      // receive from all peer ranks "i"
-      if(i!=rank){
-	  PeerMyNodOrig = malloc(PeerNMyNodOrig[i]*sizeof(int));
-	  ierr = MPI_Recv(PeerMyNodOrig, PeerNMyNodOrig[i], MPI_INT, i, 0, *comm, &status);
-	  for(j=0;j<NMyGhost;j++){
-	      // search this ghost node on <PeerMyNodOrig>
-	      p = bsearch(&MyGhostOrig[j], PeerMyNodOrig, PeerNMyNodOrig[i], sizeof(int), cmpfunc);
-	      if(p!=NULL){
-		  MyGhostGlobalIndex[j] = StartIndexRank[i] + p - PeerMyNodOrig;
-	      }
-	  }
-	  free(PeerMyNodOrig);
+    // receive from all peer ranks "i"
+    if(i!=rank){
+      PeerMyNodOrig = malloc(PeerNMyNod[i]*sizeof(int));
+      ierr = MPI_Recv(PeerMyNodOrig, PeerNMyNod[i], MPI_INT, i, 0, *comm, &status);
+      for(j=0;j<NMyGhost;j++){
+	// search this ghost node on <PeerMyNodOrig>
+	p = bsearch(&MyGhostOrig[j], PeerMyNodOrig, PeerNMyNod[i], sizeof(int), cmpfunc);
+	if(p!=NULL){
+	  MyGhostGlobalIndex[j] = StartIndexRank[i] + p - PeerMyNodOrig;
+	}
       }
+      free(PeerMyNodOrig);
+    }
   }
 
   for(i=0;i<NMyGhost;i++){
     loc2petsc[NMyNod + i] =  MyGhostGlobalIndex[i];
   }
 
-  free(PeerNMyNodOrig);
-  free(StartIndexRank);
+  free(PeerNMyNod);
   free(MyGhostGlobalIndex);
   free(request);
   return 0;
