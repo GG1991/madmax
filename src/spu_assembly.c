@@ -15,34 +15,43 @@ int AssemblyJac(Mat *J)
    *
    */
 
-  int e, gp, ngp, npe;
-  int PETScIndex[8*3];
+  int    e, gp, ngp, npe;
+  int    PETScIdx[8*3];
+  int    ierr;
 
   double ElemCoord[8][3];
   double ShapeDerivs[8][3];
   double DetJac;
+  double ElemMatrix[8*3 * 8*3];
+
+  ierr = MatZeroEntries(*J);CHKERRQ(ierr);
 
   for(e=0;e<nelm;e++){
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
-    GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIndex);
+    GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
+
+    // calculate <elemMat> by numerical integration
 
     for(gp=0;gp<ngp;gp++){
 
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
 
+
+
     }
-
-
-
+    ierr = MatSetValues(*J, npe*3, PETScIdx, npe*3, PETScIdx, ElemMatrix, ADD_VALUES);CHKERRQ(ierr);
 
   }
+  ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   return 0;
 
 }
 
 /****************************************************************************************************/
+
 int GetShapeDerivs(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac)
 {
 
