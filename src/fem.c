@@ -352,6 +352,33 @@ int fem_caljac3(double coor[8][3],double ***ds, int npe,int gp,double jac[3][3])
   return 0;
 }
 
+/****************************************************************************************************/
+
+int FemCalculateJac3D(double coor[8][3],double ***ds, int npe,int gp,double jac[3][3])
+{
+
+  int i, j, n;
+
+  if( !jac || !coor || !ds ) return 1;
+
+  for(i=0;i<3;i++){
+    for(j=0;j<3;j++){
+
+      jac[i][j]=0.0;
+
+      for(n=0;n<npe;n++){
+        jac[i][j] += ds[n][i][gp]*coor[n][j];
+      }
+
+    }
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+
 int fem_invjac3(double jac[3][3],double ijac[3][3],double *det)
 {
   double c00,c01,c02,c10,c11,c12,c20,c21,c22;
@@ -380,6 +407,40 @@ int fem_invjac3(double jac[3][3],double ijac[3][3],double *det)
   return 0;
 }
 
+/****************************************************************************************************/
+
+int FemInvertJac3D(double jac[3][3],double ijac[3][3],double *det)
+{
+
+  double c00,c01,c02,c10,c11,c12,c20,c21,c22;
+
+  if( !jac || !ijac ) return 1;
+
+  c00 = +jac[1][1]*jac[2][2]-jac[2][1]*jac[1][2];
+  c01 = -jac[1][0]*jac[2][2]+jac[2][0]*jac[1][2];
+  c02 = +jac[1][0]*jac[2][1]-jac[2][0]*jac[1][1];
+  c10 = -jac[0][1]*jac[2][2]+jac[2][1]*jac[0][2];
+  c11 = +jac[0][0]*jac[2][2]-jac[2][0]*jac[0][2];
+  c12 = -jac[0][0]*jac[2][1]+jac[2][0]*jac[0][1];
+  c20 = +jac[0][1]*jac[1][2]-jac[1][1]*jac[0][2];
+  c21 = -jac[0][0]*jac[1][2]+jac[1][0]*jac[0][2];
+  c22 = +jac[0][0]*jac[1][1]-jac[1][0]*jac[0][1];
+
+  (*det)=jac[0][0]*c00 + jac[0][1]*c01 + jac[0][2]*c02;
+  ijac[0][0]=c00/(*det);
+  ijac[0][1]=c10/(*det);
+  ijac[0][2]=c20/(*det);
+  ijac[1][0]=c01/(*det);
+  ijac[1][1]=c11/(*det);
+  ijac[1][2]=c21/(*det);
+  ijac[2][0]=c02/(*det);
+  ijac[2][1]=c12/(*det);
+  ijac[2][2]=c22/(*det);
+
+  return 0;
+}
+
+/****************************************************************************************************/
 
 int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[8][3])
 {
@@ -399,6 +460,31 @@ int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[8][3]
   }        
   return 0;
 }
+
+/****************************************************************************************************/
+
+int FemGiveShapeDerivs(double ijac[3][3],int nsh,int gp,double ShapeDerivsMaster[8][3][8],double ShapeDerivs[8][3])
+{
+
+  int i, j, sh; 
+
+  if( !ijac || !ShapeDerivsMaster || !ShapeDerivs ) return 1;
+
+  for(sh=0;sh<nsh;sh++){
+    for(i=0;i<3;i++){
+    
+      ShapeDerivs[sh][i]=0.0;
+      for(j=0;j<3;j++){
+        ShapeDerivs[sh][i] += ijac[i][j] * ShapeDerivsMaster[sh][j][gp];
+      }
+
+    }
+  }        
+
+  return 0;
+}
+
+/****************************************************************************************************/
 
 int fem_calshp(int nsh, int npe, int dim, int gp, double *val){
 
@@ -451,6 +537,8 @@ int fem_calshp(int nsh, int npe, int dim, int gp, double *val){
   return 0;
 }
 
+/****************************************************************************************************/
+
 int fem_calode(int npe, int dim, double ****oder){
 
   switch(dim)
@@ -494,6 +582,52 @@ int fem_calode(int npe, int dim, double ****oder){
   }
   return 0;
 }
+
+/****************************************************************************************************/
+
+double *** FemGetPointer2ShapeDerivsMaster(int npe, int dim)
+{
+
+  switch(dim){
+
+    case 1:
+      printf("FemGetPointer2DeriveMaster\n");
+      return NULL;
+
+    case 2:
+
+      switch(npe){
+        case 3:
+          return ds_tria_3;
+        case 4:
+          return ds_quad_4;
+        default:
+	  printf("FemGetPointer2DeriveMaster\n");
+          return NULL;
+      }
+
+    case 3:
+
+      switch(npe){
+        case 4:
+          return ds_tetra_4;
+        case 6:
+          return ds_prism_6;
+        case 8:
+          return ds_hexa_8;
+        default:
+	  printf("FemGetPointer2DeriveMaster\n");
+          return NULL;
+      }
+
+    default:
+      printf("FemGetPointer2DeriveMaster\n");
+      return NULL;
+  }
+
+}
+
+/****************************************************************************************************/
 
 int fem_calwei(int npe, int dim, double **wp)
 {

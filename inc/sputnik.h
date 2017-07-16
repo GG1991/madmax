@@ -9,6 +9,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "fem.h"
 
 #define MACRO              1     // MACRO IDs and colors
 #define MICRO              2     // MICRO IDs and colors
@@ -128,4 +129,6 @@ int AllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal, Mat *A, Vec *x, Vec
 
 // spu_assembly.c
 int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex);
+int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3]);
 int AssemblyJac(Mat *J);
+int GetShapeDerivs(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);

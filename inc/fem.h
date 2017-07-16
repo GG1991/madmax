@@ -21,6 +21,11 @@ int fem_vecmod(double *vec, int n, double *mod);
 int fem_dotdsh(int i, int j, double **derivs, int dim, double *p);
 int fem_vcross(double *v1, double *v2, double *vr);
 
+int FemCalculateJac3D(double coor[8][3],double ***ds, int npe,int gp,double jac[3][3]);
+int FemInvertJac3D(double jac[3][3],double ijac[3][3],double *det);
+double *** FemGetPointer2ShapeDerivsMaster(int npe, int dim);
+int FemGiveShapeDerivs(double ijac[3][3],int nsh,int gp,double ShapeDerivsMaster[8][3][8],double ShapeDerivs[8][3]);
+
 // Segment 2 nodes
 double **xp_segm_2;
 double *wp_segm_2;
