@@ -145,7 +145,10 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
       npe_size_new   = malloc(nproc*sizeof(int)); 
       
       // swap "npe" and "eind"
-      swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, PhysicalID, npe_swi, eind_swi, PhysicalID_swi, npe_swi_size, eind_swi_size );
+      swap_vectors_SCR( part, nproc, nelm, 
+	  npe, eptr, eind, PhysicalID,
+	  npe_swi, eind_swi, PhysicalID_swi,
+	  npe_swi_size, eind_swi_size );
 
 
       // free & reallocate memory for "npe" & "eind"
@@ -177,10 +180,12 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
       free(npe);
       free(eptr);
       free(eind);
+      free(PhysicalID);
 
       npe  = malloc(npe_size_new_tot*sizeof(int));
       eptr = malloc((npe_size_new_tot+1)*sizeof(int));
       eind = malloc(eind_size_new_tot * sizeof(int));
+      PhysicalID = malloc(npe_size_new_tot * sizeof(int));
 
       /* performe the MPI_Alltoall operation for calculating "npe" & "eind"
        *
@@ -213,6 +218,9 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 
       ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
 	  npe, npe_size_new, rdispls, MPI_INT, *comm);
+
+      ierr = MPI_Alltoallv(PhysicalID_swi, npe_swi_size, sdispls, MPI_INT, 
+	  PhysicalID, npe_size_new, rdispls, MPI_INT, *comm);
 
       // rebuild "eptr"
       eptr[0] = 0;
