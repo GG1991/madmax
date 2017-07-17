@@ -577,7 +577,7 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 		}
 		c++;
 	    }
-	    if(c>=NTotalNod){
+	    if(c>NTotalNod){
 	      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
 	      return 1;
 	    }
@@ -602,7 +602,7 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
       }
       c++;
     }
-    if(c>=NTotalNod){
+    if(c>NTotalNod){
       printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
       return 1;
     }

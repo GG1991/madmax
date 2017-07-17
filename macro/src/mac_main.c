@@ -171,18 +171,18 @@ int main(int argc, char **argv)
     int Istart, Iend;
     ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
     if( Istart != StartIndexRank[rank_mac]*3 ){
-      printf("AllocMatrixVector: error on indeces set for matrix and vector.\n");
+      printf("mac_main: error on indeces set for matrix and vector.\n");
       return 1;
     }
     if(rank_mac<nproc_mac-1){
       if( Iend != StartIndexRank[rank_mac+1]*3 ){
-	printf("AllocMatrixVector: error on indeces set for matrix and vector.\n");
+	printf("mac_main: error on indeces set for matrix and vector.\n");
 	return 1;
       }
     }
     else{
       if( Iend != NTotalNod*3 ){
-	printf("AllocMatrixVector: error on indeces set for matrix and vector.\n");
+	printf("mac_main: error on indeces set for matrix and vector.\n");
 	return 1;
       }
     }
