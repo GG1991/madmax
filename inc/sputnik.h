@@ -98,6 +98,7 @@ Vec           x, b;
 // spu_parser.c (common rutines for parser inputs files from MACRO and MICRO)
 int spu_parse_scheme( char *input );
 int spu_parse_mesh( char * input );
+int SpuParseMaterials( char * input );
 
 // spu_mesh.c
 int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);

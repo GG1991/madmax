@@ -237,13 +237,14 @@ int SpuParseMaterials( char * input )
     FILE   *file = fopen(input,"r");
     char   buf[NBUF];
     char   *data;
-    int    ln = 0, flag = 0;
-    int    flag_end_material = 0;
+    int    ln = 0;
+//    int    flag_end_material   = 0;
+    int    flag_start_material = 0;
 
     material_t material;
 
     if(!file){
-	return 1;
+      return 1;
     }
     
     list_init(&material_list, sizeof(material_t), NULL); 
@@ -256,25 +257,72 @@ int SpuParseMaterials( char * input )
 
       if(!strcmp(data,"$materials")){
 
+        flag_start_material=1;
 	while(fgets(buf,NBUF,file) != NULL)
 	{
 	  ln ++;
+
+	  // <name>
 	  data = strtok(buf," \n");
 	  if(!data){
 	    printf("SpuParseMaterials: <name> expected\n");
 	    return 1;
 	  }
 	  if(!strcmp(data,"$end_materials")) break;
-	  strcpy(material.name,data);
+//	  strcpy(material.name,data);
+	  material.name = strdup(data);
+
+	  // <type> & <options>
+	  data = strtok(NULL," \n");
+	  if(!data){
+	    printf("SpuParseMaterials: <name> expected\n");
+	    return 1;
+	  }
+	  if(!strcmp(data,"TYPE00")){
+
+	    material.typeID = TYPE00;
+	    material.type = malloc(sizeof(type_00));
+
+            // módulo de young
+	    data = strtok(NULL," \n");
+	    if(!data){
+	      printf("SpuParseMaterials: <E=<value>> expected\n");
+	      return 1;
+	    }
+	    if(strncmp(data,"E=",2)){
+	      printf("SpuParseMaterials: <E=<value>> expected\n");
+	      return 1;
+	    }
+	    ((type_00*)material.type)->young = atof(&data[2]);
+
+            // módulo de poisson
+	    data = strtok(NULL," \n");
+	    if(!data){
+	      printf("SpuParseMaterials: <v=<value>> expected\n");
+	      return 1;
+	    }
+	    if(strncmp(data,"v=",2)){
+	      printf("SpuParseMaterials: <v=<value>> expected\n");
+	      return 1;
+	    }
+	    ((type_00*)material.type)->young = atof(&data[2]);
+
+          }
+	  else{
+	    printf("SpuParseMaterials: %s unknown.\n", data);
+	    return 1;
+	  }
 
 	}
-        flag=1;
       } // inside $mesh
 
       if(!strcmp(data,"$end_materials")){
-	if(flag==0){
+	if(flag_start_material==0){
 	  printf("format error at line %d\n",ln);
 	  return -1;
+	}
+	else{
+	  list_insertlast(&material_list, &material);
 	}
 	return 0;
       }

@@ -8,12 +8,15 @@
 
 #include "list.h"
 
+#define TYPE00   0
+#define TYPE01   0
+
 #ifndef _MATERIALH_
 #define _MATERIALH_
 
 typedef struct material_t_{
 
-  char  name[32];
+  char  *name;
   int   typeID;
   void  *type;
 

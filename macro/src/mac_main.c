@@ -43,7 +43,8 @@ int main(int argc, char **argv)
       }
     }
 
-    spu_parse_scheme(input_n);
+    spu_parse_scheme( input_n );
+    SpuParseMaterials( input_n );
     
     /* 
        Stablish a new local communicator and a set of 
