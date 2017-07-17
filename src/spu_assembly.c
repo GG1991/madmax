@@ -86,7 +86,7 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 
   npe = eptr[e+1]-eptr[e];
 
-//  type = GetMaterialType(PhysicalID[e]);
+  //  type = GetMaterialType(PhysicalID[e]);
 
   switch(type){
 
@@ -130,7 +130,7 @@ int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
     B[1][i*3+0] = 0.0         ;
     B[1][i*3+1] = ShapeDerivs[i][1];
     B[1][i*3+2] = 0.0         ; 
-    
+
     B[2][i*3+0] = 0.0         ;
     B[2][i*3+1] = 0.0         ;
     B[2][i*3+2] = ShapeDerivs[i][2]; 
@@ -179,36 +179,36 @@ int GetShapeDerivs(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3],
 
 int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex)
 {
-   
-    /* 
-     * Gives the indeces to Gather fields and assembly on
-     * PETSc matrices and vectors
-     *
-     * Input:
-     *   LocalNod    :  array with local node numeration
-     *   n           : number of nodes of the element
-     *   local2PETSc : renumbering vetor to transform from local to PETSc
-     *
-     * Output:
-     *    PETScIndex : Array with PETSc numeration
-     *
-     */
 
-    int i, d;
+  /* 
+   * Gives the indeces to Gather fields and assembly on
+   * PETSc matrices and vectors
+   *
+   * Input:
+   *   LocalNod    :  array with local node numeration
+   *   n           : number of nodes of the element
+   *   local2PETSc : renumbering vetor to transform from local to PETSc
+   *
+   * Output:
+   *    PETScIndex : Array with PETSc numeration
+   *
+   */
 
-    for(i=0;i<n;i++){
-      for(d=0;d<3;d++){
-	PETScIndex[i*3+d] = local2PETSc[LocalNod[i]]*3+d;
-      }
+  int i, d;
+
+  for(i=0;i<n;i++){
+    for(d=0;d<3;d++){
+      PETScIndex[i*3+d] = local2PETSc[LocalNod[i]]*3+d;
     }
-    return 0;
+  }
+  return 0;
 }
 
 /****************************************************************************************************/
 
 int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3])
 {
-   
+
   /*
    *  Returns the coordinates of the vertex of that element
    */
