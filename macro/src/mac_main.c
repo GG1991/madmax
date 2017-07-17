@@ -76,7 +76,9 @@ int main(int argc, char **argv)
     save_time(&MACRO_COMM, "spu_parse_mesh", time_fl, t1);
     /* OFF time lapse */
     /******************/
-    
+  
+    list_init(&physical_list, sizeof(physical_t), NULL);
+    SpuParsePhysicalEntities(mesh_n);
 
     //************************************************************ 
     // Set PETSc communicator to MACRO_COMM
@@ -189,6 +191,7 @@ int main(int argc, char **argv)
 
 
     list_clear(&material_list);
+    list_clear(&physical_list);
     fclose(time_fl);
 
     ierr = PetscFinalize();

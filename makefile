@@ -28,6 +28,7 @@ CFLAGS=-g -O0
 	
 DEPS = ${DEP_DIR}/sputnik.h        \
        ${SPU_DEP_DIR}/list.h       \
+       ${SPU_DEP_DIR}/gmsh.h       \
        ${SPU_DEP_DIR}/material.h   \
        ${MAC_INC_DIR}/macro.h      \
        ${MIC_INC_DIR}/micro.h 
