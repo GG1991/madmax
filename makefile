@@ -8,6 +8,7 @@ PWD:= $(shell pwd)
 SRC_DIR= ./src
 OBJ_DIR= ./obj
 DEP_DIR= ./inc
+SPU_DEP_DIR= ./inc
 
 SPU_INC_DIR= ./inc
 SPU_OBJ_DIR= ./obj
@@ -25,9 +26,12 @@ MIC_INC_DIR= ${MIC_DIR}/inc
 
 CFLAGS=-g -O0 
 	
-DEPS = ${DEP_DIR}/sputnik.h    \
-       ${MAC_INC_DIR}/macro.h  \
-       ${MIC_INC_DIR}/micro.h
+DEPS = ${DEP_DIR}/sputnik.h        \
+       ${SPU_DEP_DIR}/list.h       \
+       ${SPU_DEP_DIR}/material.h   \
+       ${MAC_INC_DIR}/macro.h      \
+       ${MIC_INC_DIR}/micro.h 
+
 
 DEP_DIRS= ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
 

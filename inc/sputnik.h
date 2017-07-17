@@ -10,6 +10,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "fem.h"
+#include "material.h"
 
 #define MACRO              1     // MACRO IDs and colors
 #define MICRO              2     // MICRO IDs and colors
