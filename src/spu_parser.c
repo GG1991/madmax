@@ -143,6 +143,8 @@ int spu_parse_scheme( char * input )
     return 1;
 }
 
+/****************************************************************************************************/
+
 int spu_parse_mesh( char * input )
 {
 
@@ -208,4 +210,76 @@ int spu_parse_mesh( char * input )
       } // inside $mesh
     }
     return 1;
+}
+
+/****************************************************************************************************/
+
+int SpuParseMaterials( char * input )
+{
+
+    /*
+
+       Parse the materials of the problem
+
+       returns: 0 success
+               -1 failed
+	        1 not found 
+
+       Searchs for keywords:
+
+       $materials
+          <PhysicalName> <TYPEXX> <options>
+          IRON TYPE00 E=1.0e6 v=1.0e6
+       $end_materials
+
+     */
+
+    FILE   *file = fopen(input,"r");
+    char   buf[NBUF];
+    char   *data;
+    int    ln = 0, flag = 0;
+    int    flag_end_material = 0;
+
+    material_t material;
+
+    if(!file){
+	return 1;
+    }
+    
+    list_init(&material_list, sizeof(material_t), NULL); 
+
+    while(fgets(buf,NBUF,file) != NULL)
+    {
+
+      ln ++;
+      data = strtok(buf," \n");
+
+      if(!strcmp(data,"$materials")){
+
+	while(fgets(buf,NBUF,file) != NULL)
+	{
+	  ln ++;
+	  data = strtok(buf," \n");
+	  if(!data){
+	    printf("SpuParseMaterials: <name> expected\n");
+	    return 1;
+	  }
+	  if(!strcmp(data,"$end_materials")) break;
+	  strcpy(material.name,data);
+
+	}
+        flag=1;
+      } // inside $mesh
+
+      if(!strcmp(data,"$end_materials")){
+	if(flag==0){
+	  printf("format error at line %d\n",ln);
+	  return -1;
+	}
+	return 0;
+      }
+    }
+    // any material found 
+    printf("SpuParseMaterials: Any material found on input file\n");
+    return 0;
 }

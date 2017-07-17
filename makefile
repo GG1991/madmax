@@ -48,7 +48,8 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o   \
 MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o   \
            ${MIC_OBJ_DIR}/mic_comm.o       
 
-EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o
+EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o \
+           $(SPU_OBJ_DIR)/list.o 
  
 EXT_DEP  = $(SPU_INC_DIR)/fem.h
 

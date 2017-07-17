@@ -6,3 +6,6 @@ $end_scheme
 $mesh
  mesh ../../meshes/cube_unif/cube.msh
 $end_mesh
+$materials
+IRON TYPE00 E=1.0e6 v=1.0e6
+$end_materials

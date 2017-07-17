@@ -13,6 +13,7 @@
 
 typedef struct material_t_{
 
+  char  name[32];
   int   typeID;
   void  *type;
 
