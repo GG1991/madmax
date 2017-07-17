@@ -369,14 +369,16 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
 
      example:
 
-     swap = [ 0 2 1 0 ] (swap will be generally the "part" array)
-     npe  = [ 3 2 3 1 ]             
-     eind = [ 3 2 0 | 1 2 | 1 0 1 |3 ]   
+     swap        = [ 0 2 1 0 ] (swap will be generally the "part" array)
+     npe         = [ 3 2 3 1 ]             
+     PhysicalID  = [ 0 0 1 2 ]             
+     eind        = [ 3 2 0 | 1 2 | 1 0 1 |3 ]   
      | 
      (swap operation with swap_vectors_CSR)
      | 
-     npe_swi  = [ 3 1 3 2 ]
-     eind_swi = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]   
+     npe_swi     = [ 3 1 3 2 ]
+     PhysicalID  = [ 0 2 1 0 ]             
+     eind_swi    = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]   
 
      Notes:
 
@@ -391,7 +393,9 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
   if(n==0){
     return 0;
   }
-  if(!npe || !eind || !eind_swi || !npe_swi || !cuts_npe || !cuts_eind){
+  if(!npe || !eind || !PhysicalID ||
+    !eind_swi || !npe_swi || !PhysicalID_swi || 
+    !cuts_npe || !cuts_eind){
     return 1;
   }
   
