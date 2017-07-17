@@ -127,18 +127,15 @@ int list_delfirst(list_t * list){
     node_list_t *aux;
     if(!list)
         return 1;
-    if(list->sizelist==0) 
+    if(!list->head) 
         return 1;
-    if(list->sizelist==1){
-        free(list->head);
-        list->head=NULL;
-        list->tail=NULL;
-        list->sizelist--;
-        return 0;
-    }
-    aux = list->head->next;
-    free(list->head);
-    list->head=aux;    
+    aux = list->head;
+    list->head = aux->next;
+    if(aux->data)
+      free(aux->data);
+    free(aux);
+    if(list->sizelist == 1) 
+      list->tail=NULL;
     list->sizelist--;
     return 0;
 }
@@ -181,9 +178,9 @@ int list_del(list_t *list, node_list_t* pNod){
     return 0;
 }
 
-int list_free(list_t *list){
+int list_clear(list_t *list){
 
-    /* Frees the memory allocated by the list 
+    /* Frees the memory allocated in all the list 
     */
 
     if(!list)
@@ -191,7 +188,6 @@ int list_free(list_t *list){
     while(list->sizelist){
         list_delfirst(list);
     }
-    free(list);
     return 0;
 }
 

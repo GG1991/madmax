@@ -188,6 +188,7 @@ int main(int argc, char **argv)
     }
 
 
+    list_clear(&material_list);
     fclose(time_fl);
 
     ierr = PetscFinalize();
