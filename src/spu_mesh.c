@@ -2,7 +2,7 @@
 
    SPUTNIK mesh treatment functions
 
-*/
+ */
 
 #include "sputnik.h"
 #include "parmetis.h"
@@ -10,293 +10,293 @@
 int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm)
 {
 
-    /*
-     * Performes the mesh partition mesh saved on the mesh structures.
+  /*
+   * Performes the mesh partition mesh saved on the mesh structures.
+   *
+   * a) First it builds the dual graph (nodes are elements)  of the 
+   *    original (nodes are nodes)
+   * 
+   * b) Do the partition 
+   *
+   * c) distribute the graph to processes
+   *
+   * Note:
+   *
+   * -> int *elmdist, int *eptr, int *eind, int *part are globals
+   * 
+   */
+
+  int        rank, nproc, i,j, ierr;
+  idx_t    * elmwgt;           // (inp) Element weights
+  idx_t      wgtflag;          // (inp) Element weight flag (0 desactivated)
+  idx_t      numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
+  idx_t      ncon;             // (inp) number of constrains of the graph ?
+  idx_t      ncommonnodes;     // (inp) degree of connectivities among vertices in dual graph
+  idx_t      nparts;           // (inp) number of partitions
+  real_t   * tpwgts;           // (inp) array of size "ncon" x "npart" fraction of vertex for each subdomain
+  real_t   * ubvec;            // (inp) array of size "ncon"
+  idx_t      options[3];       // (inp) option parameters
+  idx_t      edgecut;          // (out) number of edges cut of the partition
+
+  double     t0_loc,t1_loc;    // local variables for timing
+
+  MPI_Comm_size(*comm, &nproc);
+  MPI_Comm_rank(*comm, &rank);
+
+  nelm = elmdist[rank+1] - elmdist[rank];
+
+  //**************************************************
+  //
+  // Set up some options
+  //    
+  elmwgt  = NULL; // no weights per elements
+  wgtflag = 0;    // no weights per elements
+  numflag = 0;    // C numeration
+
+  nparts = nproc; // number of partitions 
+
+  ncon = 1;
+  tpwgts = (real_t*)malloc(ncon * nparts * sizeof(real_t));
+  for(i=0; i < ncon * nparts ;i++){
+    // uniform distribution of vertex in all processes
+    tpwgts[i] = 1.0 / nparts;
+  }
+
+  ncommonnodes = 3;
+
+  options[0] = 0; // options (1,2) : 0 default, 1 considered
+  options[1] = 0; // level of information returned
+  options[2] = 0; // random seed
+
+  ubvec = (real_t*)malloc(ncon * sizeof(real_t));
+  for(i=0;i<ncon;i++){
+    ubvec[i] = 1.05;
+  }
+
+  //**************************************************
+
+  if(algorithm == PARMETIS_GEOMKWAY){
+
+  }
+  else if(algorithm == PARMETIS_GEOM){
+
+  }
+  else if(algorithm == PARMETIS_KWAY){
+
+  }
+  else if(algorithm == PARMETIS_MESHKWAY){
+
+    /******************/
+    /* ON time lapse  */
+    t0_loc = MPI_Wtime();      
+
+    // Performe the partition with no weights
+    ParMETIS_V3_PartMeshKway (
+	elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
+	&ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
+	options, &edgecut, part, comm );
+
+    t1_loc = MPI_Wtime() - t0_loc;
+    save_time(comm, "    partition", time_fl, t1_loc );
+    /* OFF time lapse */
+    /******************/
+
+    /* 
+     * Graph distribution
      *
-     * a) First it builds the dual graph (nodes are elements)  of the 
-     *    original (nodes are nodes)
-     * 
-     * b) Do the partition 
+     * First we create an array "npe" that follows
+     * the same function as eptr but is a global 
+     * reference 
      *
-     * c) distribute the graph to processes
+     * eptr = [ 0 3 5 8 9 ]
+     * npe  = [ 3 2 3 1 ]    (npe[i] = eptr[i+1] - eptr[i])
      *
-     * Note:
+     * Then vectors are switched acording to "part"
+     * we create npe_swi, eind_swi, npe_swi_size
      *
-     * -> int *elmdist, int *eptr, int *eind, int *part are globals
-     * 
+     * We do MPI_Alltoall of : "npe_swi_size"  ->  "npe_size_new"
+     *                         "eind_swi_size" ->  "eind_size_new"
+     *
+     * we free and reallocate memory for : "npe" using "npe_size" 
+     *                                     "eind" using "eind_size" 
+     *
      */
 
-    int        rank, nproc, i,j, ierr;
-    idx_t    * elmwgt;           // (inp) Element weights
-    idx_t      wgtflag;          // (inp) Element weight flag (0 desactivated)
-    idx_t      numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
-    idx_t      ncon;             // (inp) number of constrains of the graph ?
-    idx_t      ncommonnodes;     // (inp) degree of connectivities among vertices in dual graph
-    idx_t      nparts;           // (inp) number of partitions
-    real_t   * tpwgts;           // (inp) array of size "ncon" x "npart" fraction of vertex for each subdomain
-    real_t   * ubvec;            // (inp) array of size "ncon"
-    idx_t      options[3];       // (inp) option parameters
-    idx_t      edgecut;          // (out) number of edges cut of the partition
+    /******************/
+    /* ON time lapse  */
+    t0_loc = MPI_Wtime();      
 
-    double     t0_loc,t1_loc;    // local variables for timing
+    int *eind_swi, *eind_swi_size, *eind_size_new;
+    int *npe_swi, *npe_swi_size, *npe_size_new;         
+    int *PhysicalID_swi;
+    int *npe;
 
-    MPI_Comm_size(*comm, &nproc);
-    MPI_Comm_rank(*comm, &rank);
-
-    nelm = elmdist[rank+1] - elmdist[rank];
-
-    //**************************************************
-    //
-    // Set up some options
-    //    
-    elmwgt  = NULL; // no weights per elements
-    wgtflag = 0;    // no weights per elements
-    numflag = 0;    // C numeration
-    
-    nparts = nproc; // number of partitions 
-
-    ncon = 1;
-    tpwgts = (real_t*)malloc(ncon * nparts * sizeof(real_t));
-    for(i=0; i < ncon * nparts ;i++){
-      // uniform distribution of vertex in all processes
-      tpwgts[i] = 1.0 / nparts;
-    }
-    
-    ncommonnodes = 3;
-    
-    options[0] = 0; // options (1,2) : 0 default, 1 considered
-    options[1] = 0; // level of information returned
-    options[2] = 0; // random seed
-
-    ubvec = (real_t*)malloc(ncon * sizeof(real_t));
-    for(i=0;i<ncon;i++){
-      ubvec[i] = 1.05;
+    npe = malloc(nelm*sizeof(int));
+    for(i=0;i<nelm;i++){
+      npe[i] = eptr[i+1] - eptr[i];
     }
 
-    //**************************************************
+    eind_swi       = malloc(eptr[nelm]*sizeof(int)); 
+    npe_swi        = malloc(nelm*sizeof(int)); 
+    PhysicalID_swi = malloc(nelm*sizeof(int)); 
+    eind_swi_size  = malloc(nproc*sizeof(int)); 
+    npe_swi_size   = malloc(nproc*sizeof(int)); 
+    eind_size_new  = malloc(nproc*sizeof(int)); 
+    npe_size_new   = malloc(nproc*sizeof(int)); 
 
-    if(algorithm == PARMETIS_GEOMKWAY){
-
-    }
-    else if(algorithm == PARMETIS_GEOM){
-
-    }
-    else if(algorithm == PARMETIS_KWAY){
-
-    }
-    else if(algorithm == PARMETIS_MESHKWAY){
-
-      /******************/
-      /* ON time lapse  */
-      t0_loc = MPI_Wtime();      
-
-      // Performe the partition with no weights
-      ParMETIS_V3_PartMeshKway (
-	  elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
-	  &ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
-	  options, &edgecut, part, comm );
-
-      t1_loc = MPI_Wtime() - t0_loc;
-      save_time(comm, "    partition", time_fl, t1_loc );
-      /* OFF time lapse */
-      /******************/
-
-      /* 
-       * Graph distribution
-       *
-       * First we create an array "npe" that follows
-       * the same function as eptr but is a global 
-       * reference 
-       *
-       * eptr = [ 0 3 5 8 9 ]
-       * npe  = [ 3 2 3 1 ]    (npe[i] = eptr[i+1] - eptr[i])
-       *
-       * Then vectors are switched acording to "part"
-       * we create npe_swi, eind_swi, npe_swi_size
-       *
-       * We do MPI_Alltoall of : "npe_swi_size"  ->  "npe_size_new"
-       *                         "eind_swi_size" ->  "eind_size_new"
-       *
-       * we free and reallocate memory for : "npe" using "npe_size" 
-       *                                     "eind" using "eind_size" 
-       *
-       */
-
-      /******************/
-      /* ON time lapse  */
-      t0_loc = MPI_Wtime();      
-
-      int *eind_swi, *eind_swi_size, *eind_size_new;
-      int *npe_swi, *npe_swi_size, *npe_size_new;         
-      int *PhysicalID_swi;
-      int *npe;
-
-      npe = malloc(nelm*sizeof(int));
-      for(i=0;i<nelm;i++){
-	npe[i] = eptr[i+1] - eptr[i];
-      }
-
-      eind_swi       = malloc(eptr[nelm]*sizeof(int)); 
-      npe_swi        = malloc(nelm*sizeof(int)); 
-      PhysicalID_swi = malloc(nelm*sizeof(int)); 
-      eind_swi_size  = malloc(nproc*sizeof(int)); 
-      npe_swi_size   = malloc(nproc*sizeof(int)); 
-      eind_size_new  = malloc(nproc*sizeof(int)); 
-      npe_size_new   = malloc(nproc*sizeof(int)); 
-      
-      // swap "npe" and "eind"
-      swap_vectors_SCR( part, nproc, nelm, 
-	  npe, eptr, eind, PhysicalID,
-	  npe_swi, eind_swi, PhysicalID_swi,
-	  npe_swi_size, eind_swi_size );
+    // swap "npe" and "eind"
+    swap_vectors_SCR( part, nproc, nelm, 
+	npe, eptr, eind, PhysicalID,
+	npe_swi, eind_swi, PhysicalID_swi,
+	npe_swi_size, eind_swi_size );
 
 
-      // free & reallocate memory for "npe" & "eind"
-      int npe_size_new_tot;
-      int eind_size_new_tot;
+    // free & reallocate memory for "npe" & "eind"
+    int npe_size_new_tot;
+    int eind_size_new_tot;
 
-      ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, *comm);
-      if(ierr){
-	return 1;
-      }
-
-      ierr = MPI_Alltoall(eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *comm);
-      if(ierr){
-	return 1;
-      }
-      
-
-      npe_size_new_tot = 0;
-      for(i=0;i<nproc;i++){
-	npe_size_new_tot += npe_size_new[i];
-      }
-
-      eind_size_new_tot = 0;
-      for(i=0;i<nproc;i++){
-	eind_size_new_tot += eind_size_new[i];
-      }
-      
-
-      free(npe);
-      free(eptr);
-      free(eind);
-      free(PhysicalID);
-
-      npe  = malloc(npe_size_new_tot*sizeof(int));
-      eptr = malloc((npe_size_new_tot+1)*sizeof(int));
-      eind = malloc(eind_size_new_tot * sizeof(int));
-      PhysicalID = malloc(npe_size_new_tot * sizeof(int));
-
-      /* performe the MPI_Alltoall operation for calculating "npe" & "eind"
-       *
-       * for "npe"
-       * sdispls = npe_swi_size
-       * rdispls = npe_size_new
-       *
-       * for "eind"
-       * sdispls = eind_swi_size
-       * rdispls = eind_size_new
-       */
-
-      int *sdispls, *rdispls;
-
-      sdispls = malloc(nproc*sizeof(int)); 
-      rdispls = malloc(nproc*sizeof(int)); 
-
-      for(i=0;i<nproc;i++){
-	sdispls[i] = 0;
-	for(j=0;j<i;j++){
-	  sdispls[i] += npe_swi_size[j];
-	}
-      }
-      for(i=0;i<nproc;i++){
-	rdispls[i] = 0;
-	for(j=0;j<i;j++){
-	  rdispls[i] += npe_size_new[j];
-	}
-      }
-
-      ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
-	  npe, npe_size_new, rdispls, MPI_INT, *comm);
-
-      ierr = MPI_Alltoallv(PhysicalID_swi, npe_swi_size, sdispls, MPI_INT, 
-	  PhysicalID, npe_size_new, rdispls, MPI_INT, *comm);
-
-      // rebuild "eptr"
-      eptr[0] = 0;
-      for(i=0;i<npe_size_new_tot;i++){
-	 eptr[i+1] = eptr[i] + npe[i];
-      }
-      nelm = npe_size_new_tot;
-
-      for(i=0;i<nproc;i++){
-	sdispls[i] = 0;
-	for(j=0;j<i;j++){
-	  sdispls[i] += eind_swi_size[j];
-	}
-      }
-      for(i=0;i<nproc;i++){
-	rdispls[i] = 0;
-	for(j=0;j<i;j++){
-	  rdispls[i] += eind_size_new[j];
-	}
-      }
-
-      ierr = MPI_Alltoallv(eind_swi, eind_swi_size, sdispls, MPI_INT, 
-	  eind, eind_size_new, rdispls, MPI_INT, *comm);
-
-      free(eind_swi);
-      free(npe_swi);
-      
-      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
-      if(print_flag){
-
-	printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
-	for(i=0;i<nproc;i++){
-	  printf("%8d ",npe_swi_size[i]);
-	}
-	printf("\n");
-
-	printf("%-6s r%2d %-20s :", myname, rank, "eind_swi_size");
-	for(i=0;i<nproc;i++){
-	  printf("%8d ",eind_swi_size[i]);
-	}
-	printf("\n");
-
-	printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
-
-	printf("%-6s r%2d %-20s : ", myname, rank, "eind");
-	for(i=0;i<eptr[nelm];i++){
-	  printf("%3d ",eind[i]);
-	}
-	printf("\n");
-
-	printf("%-6s r%2d %-20s :", myname, rank, "npe_size_new");
-	for(i=0;i<nproc;i++){
-	  printf("%8d ",npe_size_new[i]);
-	}
-	printf("\n");
-
-	printf("%-6s r%2d %-20s :", myname, rank, "eind_size_new");
-	for(i=0;i<nproc;i++){
-	  printf("%8d ",eind_size_new[i]);
-	}
-	printf("\n");
-      }
-
-      t1_loc = MPI_Wtime() - t0_loc;
-      save_time(comm, "    distribution", time_fl, t1_loc );
-      /* OFF time lapse */
-      /******************/
-
-    }
-    else{
-
+    ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, *comm);
+    if(ierr){
       return 1;
     }
-    free(tpwgts);
 
-    return 0;
+    ierr = MPI_Alltoall(eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *comm);
+    if(ierr){
+      return 1;
+    }
+
+
+    npe_size_new_tot = 0;
+    for(i=0;i<nproc;i++){
+      npe_size_new_tot += npe_size_new[i];
+    }
+
+    eind_size_new_tot = 0;
+    for(i=0;i<nproc;i++){
+      eind_size_new_tot += eind_size_new[i];
+    }
+
+
+    free(npe);
+    free(eptr);
+    free(eind);
+    free(PhysicalID);
+
+    npe  = malloc(npe_size_new_tot*sizeof(int));
+    eptr = malloc((npe_size_new_tot+1)*sizeof(int));
+    eind = malloc(eind_size_new_tot * sizeof(int));
+    PhysicalID = malloc(npe_size_new_tot * sizeof(int));
+
+    /* performe the MPI_Alltoall operation for calculating "npe" & "eind"
+     *
+     * for "npe"
+     * sdispls = npe_swi_size
+     * rdispls = npe_size_new
+     *
+     * for "eind"
+     * sdispls = eind_swi_size
+     * rdispls = eind_size_new
+     */
+
+    int *sdispls, *rdispls;
+
+    sdispls = malloc(nproc*sizeof(int)); 
+    rdispls = malloc(nproc*sizeof(int)); 
+
+    for(i=0;i<nproc;i++){
+      sdispls[i] = 0;
+      for(j=0;j<i;j++){
+	sdispls[i] += npe_swi_size[j];
+      }
+    }
+    for(i=0;i<nproc;i++){
+      rdispls[i] = 0;
+      for(j=0;j<i;j++){
+	rdispls[i] += npe_size_new[j];
+      }
+    }
+
+    ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
+	npe, npe_size_new, rdispls, MPI_INT, *comm);
+
+    ierr = MPI_Alltoallv(PhysicalID_swi, npe_swi_size, sdispls, MPI_INT, 
+	PhysicalID, npe_size_new, rdispls, MPI_INT, *comm);
+
+    // rebuild "eptr"
+    eptr[0] = 0;
+    for(i=0;i<npe_size_new_tot;i++){
+      eptr[i+1] = eptr[i] + npe[i];
+    }
+    nelm = npe_size_new_tot;
+
+    for(i=0;i<nproc;i++){
+      sdispls[i] = 0;
+      for(j=0;j<i;j++){
+	sdispls[i] += eind_swi_size[j];
+      }
+    }
+    for(i=0;i<nproc;i++){
+      rdispls[i] = 0;
+      for(j=0;j<i;j++){
+	rdispls[i] += eind_size_new[j];
+      }
+    }
+
+    ierr = MPI_Alltoallv(eind_swi, eind_swi_size, sdispls, MPI_INT, 
+	eind, eind_size_new, rdispls, MPI_INT, *comm);
+
+    free(eind_swi);
+    free(npe_swi);
+
+    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
+    if(print_flag){
+
+      printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
+      for(i=0;i<nproc;i++){
+	printf("%8d ",npe_swi_size[i]);
+      }
+      printf("\n");
+
+      printf("%-6s r%2d %-20s :", myname, rank, "eind_swi_size");
+      for(i=0;i<nproc;i++){
+	printf("%8d ",eind_swi_size[i]);
+      }
+      printf("\n");
+
+      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
+
+      printf("%-6s r%2d %-20s : ", myname, rank, "eind");
+      for(i=0;i<eptr[nelm];i++){
+	printf("%3d ",eind[i]);
+      }
+      printf("\n");
+
+      printf("%-6s r%2d %-20s :", myname, rank, "npe_size_new");
+      for(i=0;i<nproc;i++){
+	printf("%8d ",npe_size_new[i]);
+      }
+      printf("\n");
+
+      printf("%-6s r%2d %-20s :", myname, rank, "eind_size_new");
+      for(i=0;i<nproc;i++){
+	printf("%8d ",eind_size_new[i]);
+      }
+      printf("\n");
+    }
+
+    t1_loc = MPI_Wtime() - t0_loc;
+    save_time(comm, "    distribution", time_fl, t1_loc );
+    /* OFF time lapse */
+    /******************/
+
+  }
+  else{
+
+    return 1;
+  }
+  free(tpwgts);
+
+  return 0;
 }
 
 /****************************************************************************************************/
@@ -304,23 +304,22 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
 {
 
-  /* 
-     swaps a vector
-
-     example:
-
-     swap       = [ 0 1 0 0 1 2 2 ]
-     vector     = [ 0 1 2 3 4 5 6 ]
-     n = 7
-
-     new_vector = [ 0 2 3 1 4 5 6 ] 
-     cut        = [ 3 2 2 ]
-
-     Notes:
-
-     -> if new_vector = NULL the result is saved on vector
-     -> swap should have values in [0,n)
-  */
+  /*
+   *  swaps a vector
+   *  example:
+   *
+   * swap       = [ 0 1 0 0 1 2 2 ]
+   * vector     = [ 0 1 2 3 4 5 6 ]
+   * n = 7
+   *
+   * new_vector = [ 0 2 3 1 4 5 6 ] 
+   * cut        = [ 3 2 2 ]
+   *
+   * Notes:
+   *
+   * -> if new_vector = NULL the result is saved on vector
+   * -> swap should have values in [0,n)
+   */
 
   int *aux_vector;
   int i,p,aux,j;
@@ -331,7 +330,7 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
   else if(vector == NULL || cuts == NULL){
     return 1;
   }
- 
+
   if(new_vector == NULL){
     aux_vector = vector;
   }
@@ -344,7 +343,7 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
     cuts[p] = 0;
     for(i=0;i<n;i++){
       if(swap[i] == p){
-        aux=vector[i];
+	aux=vector[i];
 	aux_vector[i] = vector[j];
 	aux_vector[j] = aux;
 	j ++;
@@ -364,29 +363,29 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
     int *cuts_npe, int *cuts_eind )
 {
 
-  /* 
-     swaps a vectors in SCR format 
-
-     example:
-
-     swap        = [ 0 2 1 0 ] (swap will be generally the "part" array)
-     npe         = [ 3 2 3 1 ]             
-     PhysicalID  = [ 0 0 1 2 ]             
-     eind        = [ 3 2 0 | 1 2 | 1 0 1 |3 ]   
-     | 
-     (swap operation with swap_vectors_CSR)
-     | 
-     npe_swi     = [ 3 1 3 2 ]
-     PhysicalID  = [ 0 2 1 0 ]             
-     eind_swi    = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]   
-
-     Notes:
-
-     -> <n> is the length of <npe>
-     -> <eptr> is used to identify quickly the <eind> values to be swapped
-     -> results are saved on <eind_swi> and <npe_swi> (memory is duplicated)
-     -> swap should have values in [0,nproc)
-  */
+  /*
+   * swaps a vectors in SCR format 
+   *
+   * example:
+   *
+   * swap        = [ 0 2 1 0 ] (swap will be generally the "part" array)
+   * npe         = [ 3 2 3 1 ]             
+   * PhysicalID  = [ 0 0 1 2 ]             
+   * eind        = [ 3 2 0 | 1 2 | 1 0 1 |3 ]
+   * | 
+   * (swap operation with swap_vectors_CSR)
+   * |
+   * npe_swi     = [ 3 1 3 2 ]
+   * PhysicalID  = [ 0 2 1 0 ]
+   * eind_swi    = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]
+   *
+   * Notes:
+   *
+   * -> <n> is the length of <npe>
+   * -> <eptr> is used to identify quickly the <eind> values to be swapped
+   * -> results are saved on <eind_swi> and <npe_swi> (memory is duplicated)
+   * -> swap should have values in [0,nproc)
+   */
 
   int e, p, i, j, lp, pi;
 
@@ -394,11 +393,11 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
     return 0;
   }
   if(!npe || !eind || !PhysicalID ||
-    !eind_swi || !npe_swi || !PhysicalID_swi || 
-    !cuts_npe || !cuts_eind){
+      !eind_swi || !npe_swi || !PhysicalID_swi || 
+      !cuts_npe || !cuts_eind){
     return 1;
   }
-  
+
   j = pi = lp = 0;
   for(p=0;p<nproc;p++){
 
@@ -408,13 +407,13 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
       if(swap[e] == p){
 
 	// swap npe
-        npe_swi[j] = npe[e];
-        PhysicalID_swi[j] = PhysicalID[e];
+	npe_swi[j] = npe[e];
+	PhysicalID_swi[j] = PhysicalID[e];
 	j ++;
 
 	// swap eind
 	// CSR_give_pointer( e, npe, eind, &pi);
-        pi = eptr[e];
+	pi = eptr[e];
 
 	for(i=0;i<npe[e];i++){
 	  eind_swi[lp] = eind[ pi + i ];
@@ -463,22 +462,22 @@ int CSR_give_pointer( int e, int *npe, int *eind, int *p)
 int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 {
 
-    /*
+  /*
+   *
+   *  Reads the mesh according to the format specified
+   *  and performs the partition if it is required
+   *
+   *  returns: 0 success
+   *  1 not found
+   *  -1 failed
+   *
+   */
 
-       Reads the mesh according to the format specified
-       and performs the partition if it is required
-
-       returns: 0 success
-                1 not found
-	       -1 failed
-
-     */
-
-    if(strcmp(mesh_f,"gmsh") == 0){
-	return read_mesh_elmv_CSR_GMSH(comm, myname, mesh_n);
-    }else{
-      return 1;
-    }
+  if(strcmp(mesh_f,"gmsh") == 0){
+    return read_mesh_elmv_CSR_GMSH(comm, myname, mesh_n);
+  }else{
+    return 1;
+  }
 }
 
 /****************************************************************************************************/
@@ -486,21 +485,21 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 {
 
-    /*
+  /*
+   *
+   *  Reads the mesh coordinate according to the format specified
+   *
+   *  returns: 0 success
+   *  1 not found
+   *  -1 failed
+   *
+   */
 
-       Reads the mesh coordinate according to the format specified
-
-       returns: 0 success
-                1 not found
-	       -1 failed
-
-     */
-
-    if(strcmp(mesh_f,"gmsh") == 0){
-	return read_mesh_coord_GMSH(comm, myname, mesh_n);
-    }else{
-      return 1;
-    }
+  if(strcmp(mesh_f,"gmsh") == 0){
+    return read_mesh_coord_GMSH(comm, myname, mesh_n);
+  }else{
+    return 1;
+  }
 }
 
 /****************************************************************************************************/
@@ -520,93 +519,93 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
    *
    */
 
-    FILE                 *fm;
+  FILE                 *fm;
 
-    int                  i, c, d; 
-    int                  ln, offset;  // line counter and offset for moving faster in the file
-    int                  rank, nproc;
-    
-    char                 buf[NBUF];   
-    char                 *data;
+  int                  i, c, d; 
+  int                  ln, offset;  // line counter and offset for moving faster in the file
+  int                  rank, nproc;
 
-    MPI_Comm_size(*comm, &nproc);
-    MPI_Comm_rank(*comm, &rank);
+  char                 buf[NBUF];   
+  char                 *data;
 
-    fm = fopen(mesh_n,"r");
-    if(!fm){
-	printf("file not found : %s\n",mesh_n);
-	return 1;
-    }
+  MPI_Comm_size(*comm, &nproc);
+  MPI_Comm_rank(*comm, &rank);
 
-    coord = malloc( NAllMyNod*3 * sizeof(double));
+  fm = fopen(mesh_n,"r");
+  if(!fm){
+    printf("file not found : %s\n",mesh_n);
+    return 1;
+  }
 
-    /**************************************************/
-    //  go to "$Nodes" and then read coordinates 
-    //  of nodes in <MyNodOrig> position
+  coord = malloc( NAllMyNod*3 * sizeof(double));
+
+  /**************************************************/
+  //  go to "$Nodes" and then read coordinates 
+  //  of nodes in <MyNodOrig> position
+  //
+  offset   = 0;
+  while(fgets(buf,NBUF,fm)!=NULL){
+    offset += strlen(buf); 
+    data=strtok(buf," \n");
     //
-    offset   = 0;
-    while(fgets(buf,NBUF,fm)!=NULL){
-        offset += strlen(buf); 
-	data=strtok(buf," \n");
-	//
-	// leemos hasta encontrar $Elements
-	//
-	if(strcmp(data,"$Nodes")==0){
-	    //
-	    // leemos de nodos pero no lo usamos 
-	    // solo para hacer verificaciones
-	    //
-	    fgets(buf,NBUF,fm);
-	    offset += strlen(buf); 
-	    data  = strtok(buf," \n");
-	    NTotalNod = atoi(data);
+    // leemos hasta encontrar $Elements
+    //
+    if(strcmp(data,"$Nodes")==0){
+      //
+      // leemos de nodos pero no lo usamos 
+      // solo para hacer verificaciones
+      //
+      fgets(buf,NBUF,fm);
+      offset += strlen(buf); 
+      data  = strtok(buf," \n");
+      NTotalNod = atoi(data);
 
-	    //
-	    // leemos todos los nodos en <MyNodOrig>
-	    //
-	    i = c = 0;
-	    while( c < NMyNod ){
-	        while( i< MyNodOrig[c] ){
-		  fgets(buf,NBUF,fm); 
-		  i++;
-		}
-		data=strtok(buf," \n");
-		for( d=0;d<3;d++){
-		  data=strtok(NULL," \n");
-		  coord[c*3 + d] = atof(data);
-		}
-		c++;
-	    }
-	    if(c>NTotalNod){
-	      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
-	      return 1;
-	    }
-	    break;
+      //
+      // leemos todos los nodos en <MyNodOrig>
+      //
+      i = c = 0;
+      while( c < NMyNod ){
+	while( i< MyNodOrig[c] ){
+	  fgets(buf,NBUF,fm); 
+	  i++;
 	}
-	ln ++;
-    }
-    fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
-    //
-    // leemos todos los nodos en <MyGhostOrig>
-    //
-    i = c = 0;
-    while( c < NMyGhost ){
-      while( i<MyGhostOrig[c] ){
-	fgets(buf,NBUF,fm); 
-	i++;
+	data=strtok(buf," \n");
+	for( d=0;d<3;d++){
+	  data=strtok(NULL," \n");
+	  coord[c*3 + d] = atof(data);
+	}
+	c++;
       }
-      data=strtok(buf," \n");
-      for( d=0;d<3;d++){
-	data=strtok(NULL," \n");
-	coord[ (NMyNod + c)*3 + d] = atof(data);
+      if(c>NTotalNod){
+	printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
+	return 1;
       }
-      c++;
+      break;
     }
-    if(c>NTotalNod){
-      printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
-      return 1;
+    ln ++;
+  }
+  fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
+  //
+  // leemos todos los nodos en <MyGhostOrig>
+  //
+  i = c = 0;
+  while( c < NMyGhost ){
+    while( i<MyGhostOrig[c] ){
+      fgets(buf,NBUF,fm); 
+      i++;
     }
-    return 0;
+    data=strtok(buf," \n");
+    for( d=0;d<3;d++){
+      data=strtok(NULL," \n");
+      coord[ (NMyNod + c)*3 + d] = atof(data);
+    }
+    c++;
+  }
+  if(c>NTotalNod){
+    printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
+    return 1;
+  }
+  return 0;
 }
 
 /****************************************************************************************************/
@@ -652,200 +651,200 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
    *
    */
 
-    FILE               * fm;
-    unsigned long int    offset;
+  FILE               * fm;
+  unsigned long int    offset;
 
-    int                  nelm, nelm_tot;
-    int                  npe;
-    int                  total;
-    int                  resto;
-    int                  i, d, n; 
-    int                  len;               // strlen(buf) for adding to offset
-    int                  ln;                // line counter
-    int                  ierr;
-    int                  ntag;              // ntag to read gmsh element conectivities
-    int                  rank;
-    int                  nproc;
-    
-    char                 buf[NBUF];   
-    char               * data;
+  int                  nelm, nelm_tot;
+  int                  npe;
+  int                  total;
+  int                  resto;
+  int                  i, d, n; 
+  int                  len;               // strlen(buf) for adding to offset
+  int                  ln;                // line counter
+  int                  ierr;
+  int                  ntag;              // ntag to read gmsh element conectivities
+  int                  rank;
+  int                  nproc;
 
-    MPI_Comm_size(*comm, &nproc);
-    MPI_Comm_rank(*comm, &rank);
+  char                 buf[NBUF];   
+  char               * data;
 
-    fm = fopen(mesh_n,"r");
-    if(!fm){
-	ierr = PetscPrintf(*comm,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
-	return 1;
-    }
+  MPI_Comm_size(*comm, &nproc);
+  MPI_Comm_rank(*comm, &rank);
 
-    /**************************************************/
-    //  count the total number of volumetric elements 
-    //  nelm_tot
+  fm = fopen(mesh_n,"r");
+  if(!fm){
+    ierr = PetscPrintf(*comm,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
+    return 1;
+  }
+
+  /**************************************************/
+  //  count the total number of volumetric elements 
+  //  nelm_tot
+  //
+  offset   = 0;
+  nelm_tot = 0;
+  while(fgets(buf,NBUF,fm)!=NULL){
+    offset += strlen(buf); 
+    data=strtok(buf," \n");
     //
-    offset   = 0;
-    nelm_tot = 0;
-    while(fgets(buf,NBUF,fm)!=NULL){
-        offset += strlen(buf); 
-	data=strtok(buf," \n");
-	//
-	// leemos hasta encontrar $Elements
-	//
-	if(strcmp(data,"$Elements")==0){
-	    //
-	    // leemos el numero total pero no lo usamos 
-	    // (incluye elementos de superficie y de volumen)
-	    //
-	    fgets(buf,NBUF,fm);
-	    offset += strlen(buf); 
-	    data  = strtok(buf," \n");
-	    total = atoi(data);
-
-	    //
-	    // leemos hasta $EndElements
-	    // y contamos el numero total de los elementos volumen
-	    //
-	    for(i=0; i<total; i++){
-	        fgets(buf,NBUF,fm); 
-		len = strlen(buf);
-		data=strtok(buf," \n");
-		data=strtok(NULL," \n");
-		if(atoi(data) == 4 || atoi(data) == 5 || atoi(data) == 6){
-		  nelm_tot ++;
-		}
-		else{
-		  // is a surface element so be continue counting
-		  ln ++;
-		  offset += len; 
-		}
-	    }
-	    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nelm_tot", nelm_tot);
-	    break;
-	}
-	ln ++;
-    }
+    // leemos hasta encontrar $Elements
     //
-    /**************************************************/
-
-    /**************************************************/
-    //  armamos el vector elmdist. 
-    //  example: P0 tiene sus elementos entre 
-    //  elmdist[0] a elemdist[1] (not included)
-    //  los elementos que sobran a la division 
-    //  nelm_tot/nproc los repartimos uno por 
-    //  uno entre los primeros procesos
-    //
-    elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
-    resto = nelm_tot % nproc;
-    elmdist[0] = 0;
-    for(i=1; i < nproc + 1; i++){
-	elmdist[i] = i * nelm_tot / nproc;
-        if(resto>0){
-	  elmdist[i] += 1;
-	  resto --;
-	}
-    }
-
-    if(print_flag){
-      printf("%-6s r%2d %-20s : ", myname, rank, "<elmdist>");
-      for(i=0; i < nproc + 1; i++){
-	printf("%8d ",elmdist[i]);
-      }
-      printf("\n");
-    }
-
-    // ya podemos allocar el vector "eptr" su dimension es :
-    // número de elementos locales + 1 = nelm + 1
-    nelm = elmdist[rank+1] - elmdist[rank];
-    eptr = malloc( (nelm + 1) * sizeof(int));
-    PhysicalID = malloc( nelm * sizeof(int));
-    //
-    /**************************************************/
-
-    /**************************************************/
-    //   
-    // we read the file again (from offset) 
-    // to count number of nodes 
-    // per element and fill "eptr"
-    // with this vector we can alloc memory for "eind"
-    //    
-    fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
-    for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
-      fgets(buf,NBUF,fm); 
+    if(strcmp(data,"$Elements")==0){
+      //
+      // leemos el numero total pero no lo usamos 
+      // (incluye elementos de superficie y de volumen)
+      //
+      fgets(buf,NBUF,fm);
       offset += strlen(buf); 
-    }
-    eptr[0] = 0;
-    for(i=1; i<nelm+1; i++){
-      fgets(buf,NBUF,fm); 
-      data=strtok(buf," \n");
-      data=strtok(NULL," \n");
-      switch(atoi(data)){
-	case 4:
-	  npe = 4;
-	  break;
-	case 5:
-	  npe = 8;
-	  break;
-	case 6:
-	  npe = 6;
-	  break;
-	default:
-	  break;
+      data  = strtok(buf," \n");
+      total = atoi(data);
+
+      //
+      // leemos hasta $EndElements
+      // y contamos el numero total de los elementos volumen
+      //
+      for(i=0; i<total; i++){
+	fgets(buf,NBUF,fm); 
+	len = strlen(buf);
+	data=strtok(buf," \n");
+	data=strtok(NULL," \n");
+	if(atoi(data) == 4 || atoi(data) == 5 || atoi(data) == 6){
+	  nelm_tot ++;
+	}
+	else{
+	  // is a surface element so be continue counting
+	  ln ++;
+	  offset += len; 
+	}
       }
-      eptr[i] = eptr[i-1] + npe; 
+      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nelm_tot", nelm_tot);
+      break;
     }
-    eind = malloc( eptr[nelm] * sizeof(int));
-    //
-    /**************************************************/
+    ln ++;
+  }
+  //
+  /**************************************************/
+
+  /**************************************************/
+  //  armamos el vector elmdist. 
+  //  example: P0 tiene sus elementos entre 
+  //  elmdist[0] a elemdist[1] (not included)
+  //  los elementos que sobran a la division 
+  //  nelm_tot/nproc los repartimos uno por 
+  //  uno entre los primeros procesos
+  //
+  elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
+  resto = nelm_tot % nproc;
+  elmdist[0] = 0;
+  for(i=1; i < nproc + 1; i++){
+    elmdist[i] = i * nelm_tot / nproc;
+    if(resto>0){
+      elmdist[i] += 1;
+      resto --;
+    }
+  }
+
+  if(print_flag){
+    printf("%-6s r%2d %-20s : ", myname, rank, "<elmdist>");
+    for(i=0; i < nproc + 1; i++){
+      printf("%8d ",elmdist[i]);
+    }
+    printf("\n");
+  }
+
+  // ya podemos allocar el vector "eptr" su dimension es :
+  // número de elementos locales + 1 = nelm + 1
+  nelm = elmdist[rank+1] - elmdist[rank];
+  eptr = malloc( (nelm + 1) * sizeof(int));
+  PhysicalID = malloc( nelm * sizeof(int));
+  //
+  /**************************************************/
+
+  /**************************************************/
+  //   
+  // we read the file again (from offset) 
+  // to count number of nodes 
+  // per element and fill "eptr"
+  // with this vector we can alloc memory for "eind"
+  //    
+  fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
+  for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
+    fgets(buf,NBUF,fm); 
+    offset += strlen(buf); 
+  }
+  eptr[0] = 0;
+  for(i=1; i<nelm+1; i++){
+    fgets(buf,NBUF,fm); 
+    data=strtok(buf," \n");
+    data=strtok(NULL," \n");
+    switch(atoi(data)){
+      case 4:
+	npe = 4;
+	break;
+      case 5:
+	npe = 8;
+	break;
+      case 6:
+	npe = 6;
+	break;
+      default:
+	break;
+    }
+    eptr[i] = eptr[i-1] + npe; 
+  }
+  eind = malloc( eptr[nelm] * sizeof(int));
+  //
+  /**************************************************/
 
 
-    /**************************************************/
-    //
-    // repetimos el proceso pero esta vez leemos los 
-    // nodos y completamos el vector "eind[eptr[nelm]]"
-    // empezamos a leer desde "offset"
-    //
-    fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
-    n = 0;
-    for(i=0; i < nelm ; i++){
-      fgets(buf,NBUF,fm); 
-      data=strtok(buf," \n");
-      data=strtok(NULL," \n");
-      switch(atoi(data)){
-	case 4:
-	  npe = 4;
-	  break;
-	case 5:
-	  npe = 8;
-	  break;
-	case 6:
-	  npe = 6;
-	  break;
-	default:
-	  break;
-      }
-      data=strtok(NULL," \n");
-      ntag = atoi(data);
-      // we read the PhysicalID
+  /**************************************************/
+  //
+  // repetimos el proceso pero esta vez leemos los 
+  // nodos y completamos el vector "eind[eptr[nelm]]"
+  // empezamos a leer desde "offset"
+  //
+  fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
+  n = 0;
+  for(i=0; i < nelm ; i++){
+    fgets(buf,NBUF,fm); 
+    data=strtok(buf," \n");
+    data=strtok(NULL," \n");
+    switch(atoi(data)){
+      case 4:
+	npe = 4;
+	break;
+      case 5:
+	npe = 8;
+	break;
+      case 6:
+	npe = 6;
+	break;
+      default:
+	break;
+    }
+    data=strtok(NULL," \n");
+    ntag = atoi(data);
+    // we read the PhysicalID
+    data = strtok(NULL," \n");
+    PhysicalID[i] = atoi(data);
+    d = 1;
+    while(d<ntag){
       data = strtok(NULL," \n");
-      PhysicalID[i] = atoi(data);
-      d = 1;
-      while(d<ntag){
-	data = strtok(NULL," \n");
-	d++;
-      }
-      d = 0;
-      while(d<npe){
-	data = strtok(NULL," \n");
-	eind[n+d] = atoi(data); 
-	d++;
-      }
-      n += npe;
+      d++;
     }
-    //
-    /**************************************************/
+    d = 0;
+    while(d<npe){
+      data = strtok(NULL," \n");
+      eind[n+d] = atoi(data); 
+      d++;
+    }
+    n += npe;
+  }
+  //
+  /**************************************************/
 
-    return 0;   
+  return 0;   
 }
 
 /****************************************************************************************************/
@@ -866,68 +865,68 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
    *
    */
 
-   int   i, c, swi, val_o;
-   int   *aux;
-   int   rank;
+  int   i, c, swi, val_o;
+  int   *aux;
+  int   rank;
 
-   (*n_notrep) = 0;
+  (*n_notrep) = 0;
 
-   if(n==0){
-     // no hay nada que ordenar ni limpiar
-     return 0;
-   }
-   
-   MPI_Comm_rank(*comm, &rank);
+  if(n==0){
+    // no hay nada que ordenar ni limpiar
+    return 0;
+  }
 
-   // we copy eind inside aux
-   aux = malloc(n*sizeof(int));
-   memcpy(aux, input, n*sizeof(int));
+  MPI_Comm_rank(*comm, &rank);
 
-   qsort(aux, n, sizeof(int), cmpfunc);
+  // we copy eind inside aux
+  aux = malloc(n*sizeof(int));
+  memcpy(aux, input, n*sizeof(int));
 
-   val_o = aux[0];
-   (*n_notrep) ++;
-   for(i=1;i<n;i++){
-     swi = 1;
-     if(aux[i] == val_o){
-       swi = 0;
-     }
-     else{
-       val_o = aux[i];
-       swi = 1;
-     }
-     if(swi==1){
-       (*n_notrep) ++;
-     }
-   }
-   (*output) = malloc( (*n_notrep) * sizeof(int));
-   if(print_flag){
-     printf("%-6s r%2d %-20s : %8d\n", myname, rank, "total elements", n);
-     printf("%-6s r%2d %-20s : %8d\n", myname, rank, "unique elements" , *n_notrep);
-   }
+  qsort(aux, n, sizeof(int), cmpfunc);
 
-   c = 0;
-   val_o = aux[0];
-   (*output)[c] = aux[0];
-   c ++;
-   for(i=1;i<n;i++){
-     swi = 1;
-     if(aux[i] == val_o){
-       swi = 0;
-     }
-     else{
-       val_o = aux[i];
-       swi = 1;
-     }
-     if(swi==1){
-       (*output)[c] = aux[i];
-       c ++;
-     }
-   }
+  val_o = aux[0];
+  (*n_notrep) ++;
+  for(i=1;i<n;i++){
+    swi = 1;
+    if(aux[i] == val_o){
+      swi = 0;
+    }
+    else{
+      val_o = aux[i];
+      swi = 1;
+    }
+    if(swi==1){
+      (*n_notrep) ++;
+    }
+  }
+  (*output) = malloc( (*n_notrep) * sizeof(int));
+  if(print_flag){
+    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "total elements", n);
+    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "unique elements" , *n_notrep);
+  }
 
-   free(aux);
+  c = 0;
+  val_o = aux[0];
+  (*output)[c] = aux[0];
+  c ++;
+  for(i=1;i<n;i++){
+    swi = 1;
+    if(aux[i] == val_o){
+      swi = 0;
+    }
+    else{
+      val_o = aux[i];
+      swi = 1;
+    }
+    if(swi==1){
+      (*output)[c] = aux[i];
+      c ++;
+    }
+  }
 
-   return 0;
+  free(aux);
+
+  return 0;
 }
 
 /****************************************************************************************************/
@@ -947,58 +946,58 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
    *
    */
 
-   int   i, c, swi, val_o;
-   int   *aux;
-   int   rank;
-   
-   MPI_Comm_rank(*comm, &rank);
+  int   i, c, swi, val_o;
+  int   *aux;
+  int   rank;
 
-   (*nrep) = 0;
+  MPI_Comm_rank(*comm, &rank);
 
-   // we copy eind inside aux
-   aux = malloc(n*sizeof(int));
-   memcpy(aux, input, n*sizeof(int));
+  (*nrep) = 0;
 
-   qsort(aux, n, sizeof(int), cmpfunc);
+  // we copy eind inside aux
+  aux = malloc(n*sizeof(int));
+  memcpy(aux, input, n*sizeof(int));
 
-   val_o = aux[0];
-   swi = 1;
-   for(i=1;i<n;i++){
-     if(aux[i] == val_o){
-       if(swi == 1){
-	 (*nrep) ++;
-	 swi = 0;
-       }
-     }
-     else if(aux[i] != val_o){
-       swi = 1;
-     }
-     val_o = aux[i];
-   }
-   (*output) = malloc( (*nrep) * sizeof(int));
-   printf("%-6s r%2d %-20s : %8d\n", myname, rank, "n", n);
-   printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nrep" , *nrep);
-   
-   c = 0;
-   val_o = aux[0];
-   swi = 1;
-   for(i=1;i<n;i++){
-     if(aux[i] == val_o){
-       if(swi == 1){
-	 (*output)[c] = val_o;
-	 c ++;
-	 swi = 0;
-       }
-     }
-     else if(aux[i] != val_o){
-       swi = 1;
-     }
-     val_o = aux[i];
-   }
+  qsort(aux, n, sizeof(int), cmpfunc);
 
-   free(aux);
+  val_o = aux[0];
+  swi = 1;
+  for(i=1;i<n;i++){
+    if(aux[i] == val_o){
+      if(swi == 1){
+	(*nrep) ++;
+	swi = 0;
+      }
+    }
+    else if(aux[i] != val_o){
+      swi = 1;
+    }
+    val_o = aux[i];
+  }
+  (*output) = malloc( (*nrep) * sizeof(int));
+  printf("%-6s r%2d %-20s : %8d\n", myname, rank, "n", n);
+  printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nrep" , *nrep);
 
-   return 0;
+  c = 0;
+  val_o = aux[0];
+  swi = 1;
+  for(i=1;i<n;i++){
+    if(aux[i] == val_o){
+      if(swi == 1){
+	(*output)[c] = val_o;
+	c ++;
+	swi = 0;
+      }
+    }
+    else if(aux[i] != val_o){
+      swi = 1;
+    }
+    val_o = aux[i];
+  }
+
+  free(aux);
+
+  return 0;
 }
 
 /****************************************************************************************************/
@@ -1125,7 +1124,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     }
     printf("\n");
   }
-  
+
   t1_loc = MPI_Wtime() - t0_loc;
   save_time(comm, "    repeated", time_fl, t1_loc );
   /* OFF time lapse */
@@ -1157,7 +1156,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   clean_vector_qsort(comm, myname, nreptot, rep_array, &rep_array_clean, &nreptot_clean);
   printf("%-6s r%2d %-20s : %8f\n", myname, rank, "nreptot [%]", (nreptot_clean*100.0)/NAllMyNod ); 
-  
+
   free(rep_array);
   t1_loc = MPI_Wtime() - t0_loc;
   save_time(comm, "    rep_array", time_fl, t1_loc );
@@ -1316,7 +1315,7 @@ int reenumerate_PETSc(MPI_Comm *comm)
   if(ierr){
     return 1;
   }
-  
+
   StartIndexRank[0] = 0;
   i = 1;
   while(i<nproc){
@@ -1497,7 +1496,7 @@ int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, i
   MPI_Comm_size(*comm, &nproc);
 
   int i, rankp;
- 
+
   // damos un guess inicial de <rankp> luego iremos buscamos 
   // hacia los ranks crecientes
   rankp = node % nproc; 
@@ -1567,5 +1566,5 @@ int is_in_vector(int val, int *vector, int size)
 
 int cmpfunc (const void * a, const void * b)
 {
-     return ( *(int*)a - *(int*)b );
+  return ( *(int*)a - *(int*)b );
 }
