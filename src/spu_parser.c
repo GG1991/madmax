@@ -307,6 +307,8 @@ int SpuParseMaterials( char * input )
 	    }
 	    ((type_00*)material.type)->young = atof(&data[2]);
 
+            // lo insertamos en la lista 
+	    list_insertlast(&material_list, &material);
           }
 	  else{
 	    printf("SpuParseMaterials: %s unknown.\n", data);
@@ -320,9 +322,6 @@ int SpuParseMaterials( char * input )
 	if(flag_start_material==0){
 	  printf("format error at line %d\n",ln);
 	  return -1;
-	}
-	else{
-	  list_insertlast(&material_list, &material);
 	}
 	return 0;
       }
