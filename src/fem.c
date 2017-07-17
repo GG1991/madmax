@@ -629,6 +629,45 @@ double *** FemGetPointer2ShapeDerivsMaster(int npe, int dim)
 
 /****************************************************************************************************/
 
+double * FemGetPointer2Weight(int npe, int dim)
+{
+
+  switch(dim){
+
+    case 1:
+      return NULL;
+
+    case 2:
+      switch(npe){
+        case 3:
+          return wp_tria_3;
+        case 4:
+          return wp_quad_4;
+        default:
+	  return NULL;
+      }
+
+    case 3:
+      switch(npe){
+        case 4:
+          return wp_tetra_4;
+        case 6:
+          return wp_prism_6;
+        case 8:
+          return wp_hexa_8;
+        default:
+	  return NULL;
+      }
+
+    default:
+      return NULL;
+  }
+
+}
+
+
+/****************************************************************************************************/
+
 int fem_calwei(int npe, int dim, double **wp)
 {
   switch(dim)

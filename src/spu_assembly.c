@@ -15,7 +15,7 @@ int AssemblyJac(Mat *J)
    *
    */
 
-  int    e, gp, ngp, npe;
+  int    i, j, k, e, gp, ngp, npe;
   int    PETScIdx[8*3];
   int    ierr;
 
@@ -23,7 +23,10 @@ int AssemblyJac(Mat *J)
   double ShapeDerivs[8][3];
   double DetJac;
   double ElemMatrix[8*3 * 8*3];
-  double BMatrix[6][3*8];
+  double B[6][3*8], Baux[6][3*8];
+  double DsDe[6][6];
+  double *wp = NULL;
+  double ElemDispls[8*3];
 
   ierr = MatZeroEntries(*J);CHKERRQ(ierr);
 
@@ -32,13 +35,32 @@ int AssemblyJac(Mat *J)
     ngp = npe;
     GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
+    GetWeight(npe, wp);
 
     // calculate <elemMat> by numerical integration
 
     for(gp=0;gp<ngp;gp++){
 
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
-      GetBMatrix( npe, ShapeDerivs, BMatrix );
+      GetB( npe, ShapeDerivs, B );
+      GetDsDe( npe, ElemDispls, DsDe );
+
+      for(i=0;i<6;i++){
+	for(j=0;j<npe*3;j++){
+	  Baux[i][j]=0.0;
+	  for(k=0;k<6;k++){
+	    Baux[i][j] += DsDe[i][k]*B[k][j];
+	  }
+	}
+      }
+
+      for(i=0;i<npe*3;i++){
+	for(j=0;j<npe*3;j++){
+	  for(k=0;k<3;k++){
+	    ElemMatrix[i*npe*3+j] += B[k][i]*Baux[k][j] * DetJac * wp[gp];
+	  }
+	}
+      }
 
 
     }
@@ -53,7 +75,24 @@ int AssemblyJac(Mat *J)
 
 /****************************************************************************************************/
 
-int GetBMatrix( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
+int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] )
+{
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int GetWeight(int npe, double *wp)
+{
+
+  wp = FemGetPointer2Weight(npe, 3);
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
 {
 
   int i;
