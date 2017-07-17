@@ -128,6 +128,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 
       int *eind_swi, *eind_swi_size, *eind_size_new;
       int *npe_swi, *npe_swi_size, *npe_size_new;         
+      int *PhysicalID_swi;
       int *npe;
 
       npe = malloc(nelm*sizeof(int));
@@ -135,15 +136,16 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 	npe[i] = eptr[i+1] - eptr[i];
       }
 
-      eind_swi      = malloc(eptr[nelm]*sizeof(int)); 
-      npe_swi       = malloc(nelm*sizeof(int)); 
-      eind_swi_size = malloc(nproc*sizeof(int)); 
-      npe_swi_size  = malloc(nproc*sizeof(int)); 
-      eind_size_new = malloc(nproc*sizeof(int)); 
-      npe_size_new  = malloc(nproc*sizeof(int)); 
+      eind_swi       = malloc(eptr[nelm]*sizeof(int)); 
+      npe_swi        = malloc(nelm*sizeof(int)); 
+      PhysicalID_swi = malloc(nelm*sizeof(int)); 
+      eind_swi_size  = malloc(nproc*sizeof(int)); 
+      npe_swi_size   = malloc(nproc*sizeof(int)); 
+      eind_size_new  = malloc(nproc*sizeof(int)); 
+      npe_size_new   = malloc(nproc*sizeof(int)); 
       
       // swap "npe" and "eind"
-      swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, npe_swi, eind_swi, npe_swi_size, eind_swi_size );
+      swap_vectors_SCR( part, nproc, nelm, npe, eptr, eind, PhysicalID, npe_swi, eind_swi, PhysicalID_swi, npe_swi_size, eind_swi_size );
 
 
       // free & reallocate memory for "npe" & "eind"
@@ -349,7 +351,8 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
 /****************************************************************************************************/
 
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
-    int *eptr, int *eind, int *npe_swi, int *eind_swi, 
+    int *eptr, int *eind, int *PhysicalID,
+    int *npe_swi, int *eind_swi, int *PhysicalID_swi,
     int *cuts_npe, int *cuts_eind )
 {
 
@@ -394,6 +397,7 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
 
 	// swap npe
         npe_swi[j] = npe[e];
+        PhysicalID_swi[j] = PhysicalID[e];
 	j ++;
 
 	// swap eind

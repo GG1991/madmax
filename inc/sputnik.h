@@ -104,8 +104,10 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm *comm, char *myname, char *mesh_n);
 int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);
 int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n);
 int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm);
-int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, int *eptr, int *eind, int *npe_new, int *eind_new, int
-*cuts_npe, int *cuts_eind);
+int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
+    int *eptr, int *eind, int *PhysicalID,
+    int *npe_swi, int *eind_swi, int *PhysicalID_swi,
+    int *cuts_npe, int *cuts_eind );
 int CSR_give_pointer( int e, int *npe, int *eind, int *p);
 int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *not_rep);
 int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep);
