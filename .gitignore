@@ -26,6 +26,7 @@ struct*
 *tmpi*
 *.swp*
 mpitests/IS
+mpitests/matPreAlloc/matpre
 ~
 
 # Special files
