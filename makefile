@@ -78,13 +78,13 @@ all: ${MAC_DIR}/macro ${MIC_DIR}/micro
 ##############################
 # MACRO
 ${MAC_DIR}/macro: ${MAC_OBJ} ${SPU_OBJ}
-	gcc -o ${MAC_DIR}/macro $^ ${PETSC_KSP_LIB} -lgsl -lgslcblas -lm ${LDFLAG}
+	gcc -o ${MAC_DIR}/macro $^ ${PETSC_KSP_LIB} -lm ${LDFLAG}
 	@echo "MACRO great :) !" 
 
 ##############################
 # MICRO
 ${MIC_DIR}/micro: ${MIC_OBJ} ${SPU_OBJ}
-	gcc -o ${MIC_DIR}/micro $^ ${PETSC_KSP_LIB} -lgsl -lgslcblas -lm ${LDFLAG}
+	gcc -o ${MIC_DIR}/micro $^ ${PETSC_KSP_LIB} -lm ${LDFLAG}
 	@echo "MICRO great :) !" 
 
 ##############################
