@@ -741,7 +741,8 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
     // ya podemos allocar el vector "eptr" su dimension es :
     // número de elementos locales + 1 = nelm + 1
     nelm = elmdist[rank+1] - elmdist[rank];
-    eptr = (int*)calloc( nelm + 1 ,sizeof(int));
+    eptr = malloc( (nelm + 1) * sizeof(int));
+    PhysicalID = malloc( nelm * sizeof(int));
     //
     /**************************************************/
 
@@ -777,7 +778,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
       }
       eptr[i] = eptr[i-1] + npe; 
     }
-    eind = (int*)calloc( eptr[nelm] ,sizeof(int));
+    eind = malloc( eptr[nelm] * sizeof(int));
     //
     /**************************************************/
 
@@ -809,7 +810,10 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
       }
       data=strtok(NULL," \n");
       ntag = atoi(data);
-      d = 0;
+      // we read the PhysicalID
+      data = strtok(NULL," \n");
+      PhysicalID[i] = atoi(data);
+      d = 1;
       while(d<ntag){
 	data = strtok(NULL," \n");
 	d++;

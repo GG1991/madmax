@@ -67,6 +67,8 @@ int            nelm;                   // # of local elements
 int           *eptr;                   // list of indeces of nodes inside eind
 int           *eind;                   // list of nodes for elem "i" is between 
                                        // eind[eptr[i]] eind[eptr[i+1]] (not including)
+int           *PhysicalID;             // element property number
+
 int           *StartIndexRank;
 int           *AllMyNodOrig;           // Original (gmsh) numbers of my nodes + my ghosts
 int           NAllMyNod;               // <NMyNod> + <NMyGhost>

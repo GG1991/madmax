@@ -75,8 +75,32 @@ int AssemblyJac(Mat *J)
 
 /****************************************************************************************************/
 
-int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] )
+int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 {
+
+  /*  Calculates constitutive tensor
+   *  according to the element type
+   */
+
+  int npe, type;
+
+  npe = eptr[e+1]-eptr[e];
+
+//  type = GetMaterialType(PhysicalID[e]);
+
+  switch(type){
+
+    case 0:
+      /* 
+       * Elástico lineal 
+       */
+
+      break;
+
+    default:
+      break;
+
+  }
 
   return 0;
 }
