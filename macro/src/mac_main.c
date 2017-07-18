@@ -170,6 +170,8 @@ int main(int argc, char **argv)
     ierr = SetGmshIDOnMaterials(); CHKERRQ(ierr); 
     ierr = CheckPhysicalID(); CHKERRQ(ierr);
 
+    // Allocate matrices & vectors
+    PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");
     AllocMatrixVector( MACRO_COMM, NMyNod*3, NTotalNod*3, &A, &x, &b);
     /*
        Currently, all PETSc parallel matrix formats are partitioned by
@@ -195,6 +197,9 @@ int main(int argc, char **argv)
       }
     }
     fem_inigau();
+
+    // assemblying Jacobian
+    PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
     AssemblyJac(&A);
 
     list_clear(&material_list);
