@@ -92,7 +92,7 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 
   switch(material->typeID){
 
-    case 0:
+    case TYPE00:
       /* 
        * Elástico lineal 
        */

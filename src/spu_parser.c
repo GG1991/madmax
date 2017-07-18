@@ -224,27 +224,26 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 {
 
   /*
-
-     Parse the materials of the problem
-
-returns: 0 success
--1 failed
-1 not found 
-
-Searchs for keywords:
-
-$materials
-<PhysicalName> <TYPEXX> <options>
-IRON TYPE00 E=1.0e6 v=1.0e6
-$end_materials
-
+   * 
+   * Parse the materials of the problem
+   * 
+   *    returns: 0 success
+   *            -1 failed
+   *             1 not found 
+   *    
+   *    Searchs for keywords:
+   *    
+   *    $materials
+   *    <PhysicalName> <TYPEXX> <options>
+   *    IRON TYPE00 E=1.0e6 v=1.0e6
+   *    $end_materials
+   * 
    */
 
   FILE   *file = fopen(input,"r");
   char   buf[NBUF];
   char   *data;
   int    ln = 0;
-  //    int    flag_end_material   = 0;
   int    flag_start_material = 0;
 
   material_t material;
