@@ -28,6 +28,17 @@
 #define PARMETIS_KWAY       3
 #define PARMETIS_MESHKWAY   4
 
+#define CHECK_SPU_ERROR(data)                                                          \
+     {if(!(data)){                                                                     \
+	 printf("SPUTNIK ERROR on %s line %d\n",__FILE__,__LINE__);                    \
+	 return -1;                                                                    \
+     }}
+
+#define CHECK_NEG_ERROR(data_int)                                                      \
+     {if(data_int<0){                                                                  \
+	 printf("SPUTNIK ERROR on %s line %d\n",__FILE__,__LINE__);                    \
+	 return -1;                                                                    \
+     }}
 
 /*****************************************************************************************************
    SPUTNIK global variables
@@ -143,3 +154,4 @@ int GetShapeDerivs(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3],
 int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] );
 int GetWeight(int npe, double **wp);
 int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );
+material_t * GetMaterial(int GmshIDToSearch);

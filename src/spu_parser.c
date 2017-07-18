@@ -8,7 +8,7 @@
 #include "sputnik.h"
 
 #define CHECK_INPUT_ERROR(data_char)                                                   \
-     {if(!(data_char)){                                                                  \
+     {if(!(data_char)){                                                                \
 	 printf("INPUT ERROR on %s line %d\n",__FILE__,__LINE__);                      \
 	 return -1;                                                                    \
      }}
@@ -303,7 +303,14 @@ $end_materials
 	    printf("SpuParseMaterials: <v=<value>> expected\n");
 	    return 1;
 	  }
-	  ((type_00*)material.type)->young = atof(&data[2]);
+	  ((type_00*)material.type)->poisson = atof(&data[2]);
+
+	  // calculamos parametros derivados
+	  double E, v;
+	  E = ((type_00*)material.type)->young;
+	  v = ((type_00*)material.type)->poisson;
+	  ((type_00*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
+	  ((type_00*)material.type)->mu = E/(2*(1+v));
 
 	  // lo insertamos en la lista 
 	  list_insertlast(&material_list, &material);

@@ -18,6 +18,7 @@ typedef struct material_t_{
 
   char  *name;
   int   typeID;
+  int   GmshID;
   void  *type;
 
 }material_t;

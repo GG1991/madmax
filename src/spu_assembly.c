@@ -84,17 +84,28 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
    */
 
   int npe, type;
+  double la, mu;
 
   npe = eptr[e+1]-eptr[e];
 
-  //  type = GetMaterialType(PhysicalID[e]);
+  material_t *material = GetMaterial(PhysicalID[e]); CHECK_SPU_ERROR(material);
 
-  switch(type){
+  switch(material->typeID){
 
     case 0:
       /* 
        * Elástico lineal 
        */
+
+      la = ((type_00*)material->type)->lambda;
+      mu = ((type_00*)material->type)->mu;
+
+      DsDe[0][0]=la+2*mu ;DsDe[0][1]=la      ;DsDe[0][2]=la      ;DsDe[0][3]=0.0; DsDe[0][4]=0.0; DsDe[0][5]=0.0;
+      DsDe[1][0]=la      ;DsDe[1][1]=la+2*mu ;DsDe[1][2]=la      ;DsDe[1][3]=0.0; DsDe[1][4]=0.0; DsDe[1][5]=0.0;
+      DsDe[2][0]=la      ;DsDe[2][1]=la      ;DsDe[2][2]=la+2*mu ;DsDe[2][3]=0.0; DsDe[2][4]=0.0; DsDe[2][5]=0.0;
+      DsDe[3][0]=0.0     ;DsDe[3][1]=0.0     ;DsDe[3][2]=0.0     ;DsDe[3][3]=mu ; DsDe[3][4]=0.0; DsDe[3][5]=0.0;
+      DsDe[4][0]=0.0     ;DsDe[4][1]=0.0     ;DsDe[4][2]=0.0     ;DsDe[4][3]=0.0; DsDe[4][4]=mu ; DsDe[4][5]=0.0;
+      DsDe[5][0]=0.0     ;DsDe[5][1]=0.0     ;DsDe[5][2]=0.0     ;DsDe[5][3]=0.0; DsDe[5][4]=0.0; DsDe[5][5]=mu ;
 
       break;
 
@@ -104,6 +115,28 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
   }
 
   return 0;
+}
+
+/****************************************************************************************************/
+
+material_t * GetMaterial(int GmshIDToSearch)
+{
+  
+  /* Search in the <material_list> if for the one
+   * that has <GmshIDToSearch>
+   *
+   */
+
+  node_list_t *pn;
+  pn = material_list.head;
+  while(pn)
+  {
+    if( ((material_t*)pn->data)->GmshID == GmshIDToSearch ) break;
+    pn = pn->next;
+  }
+  if(!pn) return NULL;
+  return (material_t*)pn->data;
+
 }
 
 /****************************************************************************************************/

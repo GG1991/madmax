@@ -191,7 +191,8 @@ int main(int argc, char **argv)
 	return 1;
       }
     }
-
+    fem_inigau();
+    AssemblyJac(&A);
 
     list_clear(&material_list);
     list_clear(&physical_list);
