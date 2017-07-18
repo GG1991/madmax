@@ -39,7 +39,7 @@ int AssemblyJac(Mat *J)
 
     // calculate <elemMat> by numerical integration
 
-    memset(ElemMatrix, 0.0, (i*npe*3+j)*sizeof(double));
+    memset(ElemMatrix, 0.0, (8*3*8*3)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
