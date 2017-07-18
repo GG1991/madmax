@@ -167,7 +167,7 @@ int main(int argc, char **argv)
     list_init(&physical_list, sizeof(physical_t), NULL);
     ierr = SpuParseMaterials( &MACRO_COMM, input_n );            
     ierr = SpuParsePhysicalEntities( &MACRO_COMM, mesh_n );
-//    ierr = SetGmshIDOnMaterials(); CHKERRQ(ierr); // CHECK_SPU_ERROR(ierr);
+    ierr = SetGmshIDOnMaterials(); CHKERRQ(ierr); 
     ierr = CheckPhysicalID(); CHKERRQ(ierr);
 
     AllocMatrixVector( MACRO_COMM, NMyNod*3, NTotalNod*3, &A, &x, &b);
