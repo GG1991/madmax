@@ -286,6 +286,7 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 	if(!strcmp(data,"TYPE00")){
 
 	  material.typeID = TYPE00;
+	  material.GmshID = -1;
 	  material.type = malloc(sizeof(type_00));
 
 	  // módulo de young
@@ -420,11 +421,65 @@ int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
       if(!strcmp(data,"$EndPhysicalNames")){
 	CHECK_INPUT_ERROR(flag_start_physical);
 	CHECK_INPUT_ERROR(physical_list.sizelist == ntot);
-	PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", mesh_n, physical_list.sizelist);
+	PetscPrintf(*PROBLEM_COMM, "# of physical found in %s : %d\n", mesh_n, physical_list.sizelist);
 	return 0;
       }
     }
     ln ++;
   }
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int SetGmshIDOnMaterials(void)
+{
+
+  /* For each material on <material_list> 
+   * Searchs for the <GmshID> in the 
+   * <physical_list>
+   */
+
+   node_list_t *pm, *pp;
+
+   pm = material_list.head;
+   while(pm){
+     pp = physical_list.head;
+     while(pp){
+       if( !strcmp( ((physical_t*)pp->data)->name, ((material_t*)pm->data)->name ) ){
+	 ((material_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
+	 break;
+       }
+       pp = pp->next;
+     }
+//     CHECK_SPU_ERROR(pp);
+     pm = pm->next;
+   }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int CheckPhysicalID(void)
+{
+
+  /* Checks if all the elements of <PhysicalID>
+   * have theri correspondent material in <material_list>
+   */
+
+  int e;
+
+  node_list_t *pm;
+
+  for(e=0;e<nelm;e++){
+    pm = material_list.head;
+    while(pm){
+      if( ((material_t*)pm->data)->GmshID == PhysicalID[e] ) break;
+      pm = pm->next;
+    }
+    if(!pm) return 1;
+  }
+
   return 0;
 }

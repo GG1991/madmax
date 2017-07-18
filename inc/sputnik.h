@@ -29,7 +29,7 @@
 #define PARMETIS_MESHKWAY   4
 
 #define CHECK_SPU_ERROR(data)                                                          \
-     {if(!(data)){                                                                     \
+     {if(!data){                                                                       \
 	 printf("SPUTNIK ERROR on %s line %d\n",__FILE__,__LINE__);                    \
 	 return -1;                                                                    \
      }}
@@ -112,6 +112,8 @@ int spu_parse_scheme( char *input );
 int spu_parse_mesh( char * input );
 int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input );
 int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n );
+int SetGmshIDOnMaterials(void);
+int CheckPhysicalID(void);
 
 // spu_mesh.c
 int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);

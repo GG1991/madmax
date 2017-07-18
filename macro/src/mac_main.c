@@ -83,10 +83,6 @@ int main(int argc, char **argv)
     PETSC_COMM_WORLD = MACRO_COMM;
     ierr = PetscInitialize(&argc,&argv,(char*)0,help);
     
-    // read materials and physical entities from input and mehs files
-    list_init(&physical_list, sizeof(physical_t), NULL);
-    SpuParseMaterials( &MACRO_COMM, input_n );            
-    SpuParsePhysicalEntities( &MACRO_COMM, mesh_n );
 
     //
     // read mesh
@@ -166,6 +162,13 @@ int main(int argc, char **argv)
     save_time(&MACRO_COMM, "vtk_partition", time_fl, t1);
     /* OFF time lapse */
     /******************/
+
+    // read materials and physical entities from input and mehs files
+    list_init(&physical_list, sizeof(physical_t), NULL);
+    ierr = SpuParseMaterials( &MACRO_COMM, input_n );            
+    ierr = SpuParsePhysicalEntities( &MACRO_COMM, mesh_n );
+//    ierr = SetGmshIDOnMaterials(); CHKERRQ(ierr); // CHECK_SPU_ERROR(ierr);
+    ierr = CheckPhysicalID(); CHKERRQ(ierr);
 
     AllocMatrixVector( MACRO_COMM, NMyNod*3, NTotalNod*3, &A, &x, &b);
     /*
