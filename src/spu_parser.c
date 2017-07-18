@@ -7,6 +7,18 @@
 
 #include "sputnik.h"
 
+//#define CHECK_INPUT_ERROR(rutine_char,data_char,input_char,line_int)                 \
+//     {if(!data_char){                                                                \
+//	 printf("%s:format error on %s line %d\n",rutine_char,input_char,line_int);    \
+//	 return -1;                                                                    \
+//     }}
+
+#define CHECK_INPUT_ERROR(data_char)                                                   \
+     {if(!data_char){                                                                  \
+	 printf("INPUT ERROR on %s line %d\n",__FILE__,__LINE__);                     \
+	 return -1;                                                                    \
+     }}
+
 int spu_parse_scheme( char * input )
 {
 
@@ -284,11 +296,7 @@ $end_materials
 	  material.type = malloc(sizeof(type_00));
 
 	  // módulo de young
-	  data = strtok(NULL," \n");
-	  if(!data){
-	    printf("SpuParseMaterials: <E=<value>> expected\n");
-	    return 1;
-	  }
+	  data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
 	  if(strncmp(data,"E=",2)){
 	    printf("SpuParseMaterials: <E=<value>> expected\n");
 	    return 1;
@@ -296,11 +304,7 @@ $end_materials
 	  ((type_00*)material.type)->young = atof(&data[2]);
 
 	  // módulo de poisson
-	  data = strtok(NULL," \n");
-	  if(!data){
-	    printf("SpuParseMaterials: <v=<value>> expected\n");
-	    return 1;
-	  }
+	  data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
 	  if(strncmp(data,"v=",2)){
 	    printf("SpuParseMaterials: <v=<value>> expected\n");
 	    return 1;
