@@ -7,15 +7,9 @@
 
 #include "sputnik.h"
 
-//#define CHECK_INPUT_ERROR(rutine_char,data_char,input_char,line_int)                 \
-//     {if(!data_char){                                                                \
-//	 printf("%s:format error on %s line %d\n",rutine_char,input_char,line_int);    \
-//	 return -1;                                                                    \
-//     }}
-
 #define CHECK_INPUT_ERROR(data_char)                                                   \
-     {if(!data_char){                                                                  \
-	 printf("INPUT ERROR on %s line %d\n",__FILE__,__LINE__);                     \
+     {if(!(data_char)){                                                                  \
+	 printf("INPUT ERROR on %s line %d\n",__FILE__,__LINE__);                      \
 	 return -1;                                                                    \
      }}
 
@@ -226,7 +220,7 @@ $end_mesh
 
 /****************************************************************************************************/
 
-int SpuParseMaterials( char * input )
+int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 {
 
   /*
@@ -323,10 +317,8 @@ $end_materials
     } // inside $mesh
 
     if(!strcmp(data,"$end_materials")){
-      if(flag_start_material==0){
-	printf("format error at line %d\n",ln);
-	return -1;
-      }
+      CHECK_INPUT_ERROR(flag_start_material);
+      PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", input, material_list.sizelist);
       return 0;
     }
   }
@@ -337,7 +329,7 @@ $end_materials
 
 /****************************************************************************************************/
 
-int SpuParsePhysicalEntities(char *mesh_n)
+int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
 {
 
   /* 
@@ -405,19 +397,11 @@ int SpuParsePhysicalEntities(char *mesh_n)
 	physical.dim = atoi(data);
 
 	// GmshID
-	data=strtok(NULL," \n");
-	if(!data){
-	  printf("format error at line %d on %s\n", ln, mesh_n);
-	  return -1;
-	}
+	data=strtok(NULL," \n");CHECK_INPUT_ERROR(data);
 	physical.GmshID = atoi(data);
 
-	// name
-	data=strtok(NULL," \n");
-	if(!data){
-	  printf("format error at line %d on %s\n", ln, mesh_n);
-	  return -1;
-	}
+	// name (le sacamos los \" de las puntas)
+	data=strtok(NULL," \n");CHECK_INPUT_ERROR(data);
 	physical.name = malloc((strlen(data)-1)*sizeof(char)); 
 	for(i=1;i<strlen(data)-1;i++){
 	  physical.name[i-1] = data[i];
@@ -428,14 +412,9 @@ int SpuParsePhysicalEntities(char *mesh_n)
 
       }
       if(!strcmp(data,"$EndPhysicalNames")){
-	if(flag_start_physical==0){
-	  printf("format error at line %d\n",ln);
-	  return -1;
-	}
-	if(physical_list.sizelist != ntot){
-	  printf("sizelist do not coincide with number of physical entities specified on %s file %d\n",mesh_n, ntot);
-	  return -1;
-	}
+	CHECK_INPUT_ERROR(flag_start_physical);
+	CHECK_INPUT_ERROR(physical_list.sizelist == ntot);
+	PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", mesh_n, physical_list.sizelist);
 	return 0;
       }
     }

@@ -44,13 +44,13 @@ int main(int argc, char **argv)
     }
 
     spu_parse_scheme( input_n );
-    SpuParseMaterials( input_n );
     
     /* 
        Stablish a new local communicator and a set of 
        intercommunicators with micro programs 
      */
     mac_comm_init();
+
     
     // file for measuring time in "main" rutine
     time_fl = fopen("time_mac.dat","w");
@@ -77,13 +77,16 @@ int main(int argc, char **argv)
     /* OFF time lapse */
     /******************/
   
-    list_init(&physical_list, sizeof(physical_t), NULL);
-    SpuParsePhysicalEntities(mesh_n);
 
     //************************************************************ 
     // Set PETSc communicator to MACRO_COMM
     PETSC_COMM_WORLD = MACRO_COMM;
     ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+    
+    // read materials and physical entities from input and mehs files
+    list_init(&physical_list, sizeof(physical_t), NULL);
+    SpuParseMaterials( &MACRO_COMM, input_n );            
+    SpuParsePhysicalEntities( &MACRO_COMM, mesh_n );
 
     //
     // read mesh

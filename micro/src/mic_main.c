@@ -43,7 +43,7 @@ int main(int argc, char **argv)
        intercommunicators with micro programs 
      */
     mic_comm_init();
-    
+
     // file for measuring time in "main" rutine
     time_fl = fopen("time_mic.dat","w");
 
