@@ -35,10 +35,11 @@ int AssemblyJac(Mat *J)
     ngp = npe;
     GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
-    GetWeight(npe, wp);
+    GetWeight(npe, &wp);
 
     // calculate <elemMat> by numerical integration
 
+    memset(ElemMatrix, 0.0, (i*npe*3+j)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
@@ -56,7 +57,7 @@ int AssemblyJac(Mat *J)
 
       for(i=0;i<npe*3;i++){
 	for(j=0;j<npe*3;j++){
-	  for(k=0;k<3;k++){
+	  for(k=0;k<6;k++){
 	    ElemMatrix[i*npe*3+j] += B[k][i]*Baux[k][j] * DetJac * wp[gp];
 	  }
 	}
@@ -107,10 +108,10 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 
 /****************************************************************************************************/
 
-int GetWeight(int npe, double *wp)
+int GetWeight(int npe, double **wp)
 {
 
-  wp = FemGetPointer2Weight(npe, 3);
+  *wp = FemGetPointer2Weight(npe, 3);
   return 0;
 }
 

@@ -141,5 +141,5 @@ int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3]);
 int AssemblyJac(Mat *J);
 int GetShapeDerivs(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);
 int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] );
-int GetWeight(int npe, double *wp);
+int GetWeight(int npe, double **wp);
 int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );
