@@ -7,7 +7,7 @@ break_mic=( 'spu_mesh.c:136' )
 #break_mac=( 'mac_comm.c:101' ) 
 #break_mic=( 'mic_comm.c:105' ) 
 
-NM=10
+NM=4
 Nm=1
 
 
@@ -27,7 +27,7 @@ exopt_mic+="-ex 'r'"
 
 if [ "$#" -eq 1 ];then
   if [ "$1" -eq 1 ];then  
-   exec_mac="../../macro/macro ex1.spu"
+   exec_mac="../../macro/macro ex1.spu -log_view ascii:log_summary_mac.dat"
    exec_mic="../../micro/micro ex1.spu"
    echo "mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
    eval  mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"

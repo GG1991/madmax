@@ -1,5 +1,5 @@
 lc=0.5;
-N = 101;
+N = 20;
 
 Point(1) = {-lc,-lc,-lc,0.1};
 Point(2) = {lc,-lc,-lc,0.1};
@@ -26,7 +26,7 @@ vol[]=Extrude {0, 0, 2*lc} {
   Surface{6};Layers{N - 1};Recombine;
 };
 
-Physical Volume("MAT") = {vol[1]};
+Physical Volume("IRON") = {vol[1]};
 Physical Surface("Z1") = {28};
 Physical Surface("Z2") = {6};
 Physical Surface("X1") = {27};

@@ -23,6 +23,12 @@ int main(int argc, char **argv)
     int        i, ierr;
     char       *myname = strdup("macro");
 
+  PetscLogEvent  CHECK_ERROR;    /* event number for error checking */
+
+#if defined(PETSC_USE_LOG)
+  PetscLogStage stages[3];
+#endif
+
     world_comm = MPI_COMM_WORLD;
 
     ierr = MPI_Init(&argc, &argv);
@@ -82,6 +88,22 @@ int main(int argc, char **argv)
     // Set PETSc communicator to MACRO_COMM
     PETSC_COMM_WORLD = MACRO_COMM;
     ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+  
+  /*
+     Register various stages for profiling
+  */
+  ierr = PetscLogStageRegister("Read Mesh Elements",&stages[0]);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("Linear System 1",&stages[1]);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("Linear System 2",&stages[2]);CHKERRQ(ierr);
+
+  /*
+     Register a user-defined event for profiling (error checking).
+  */
+  CHECK_ERROR = 0;
+  ierr        = PetscLogEventRegister("Check Error",KSP_CLASSID,&CHECK_ERROR);CHKERRQ(ierr);
+
+  ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
+
     
 
     //
@@ -96,6 +118,11 @@ int main(int argc, char **argv)
     save_time(&MACRO_COMM, "read_mesh", time_fl, t1);
     /* OFF time lapse */
     /******************/
+
+  /*
+     End curent profiling stage
+  */
+  ierr = PetscLogStagePop();CHKERRQ(ierr);
 
     nelm = elmdist[rank_mac+1] - elmdist[rank_mac];
     part = (int*)malloc(nelm * sizeof(int));
