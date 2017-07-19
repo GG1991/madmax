@@ -38,8 +38,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
   idx_t      options[3];       // (inp) option parameters
   idx_t      edgecut;          // (out) number of edges cut of the partition
 
-  double     t0_loc,t1_loc;    // local variables for timing
-
   MPI_Comm_size(*comm, &nproc);
   MPI_Comm_rank(*comm, &rank);
 
@@ -86,20 +84,11 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
   }
   else if(algorithm == PARMETIS_MESHKWAY){
 
-    /******************/
-    /* ON time lapse  */
-    t0_loc = MPI_Wtime();      
-
     // Performe the partition with no weights
     ParMETIS_V3_PartMeshKway (
 	elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
 	&ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
 	options, &edgecut, part, comm );
-
-    t1_loc = MPI_Wtime() - t0_loc;
-    save_time(comm, "    partition", time_fl, t1_loc );
-    /* OFF time lapse */
-    /******************/
 
     /* 
      * Graph distribution
@@ -121,10 +110,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
      *                                     "eind" using "eind_size" 
      *
      */
-
-    /******************/
-    /* ON time lapse  */
-    t0_loc = MPI_Wtime();      
 
     int *eind_swi, *eind_swi_size, *eind_size_new;
     int *npe_swi, *npe_swi_size, *npe_size_new;         
@@ -165,7 +150,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
       return 1;
     }
 
-
     npe_size_new_tot = 0;
     for(i=0;i<nproc;i++){
       npe_size_new_tot += npe_size_new[i];
@@ -175,7 +159,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
     for(i=0;i<nproc;i++){
       eind_size_new_tot += eind_size_new[i];
     }
-
 
     free(npe);
     free(eptr);
@@ -283,11 +266,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
       }
       printf("\n");
     }
-
-    t1_loc = MPI_Wtime() - t0_loc;
-    save_time(comm, "    distribution", time_fl, t1_loc );
-    /* OFF time lapse */
-    /******************/
 
   }
   else{
@@ -1081,8 +1059,6 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <NAllMyNod> coming from all the processes
   int   **repeated, *nrep;
 
-  double t0_loc, t1_loc;
-
   MPI_Request  *request;
 
   MPI_Comm_rank(*comm, &rank);
@@ -1098,10 +1074,6 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   nrep       = calloc(nproc,sizeof(int));
 
   ierr = MPI_Allgather(&mysize, 1, MPI_INT, peer_sizes, 1, MPI_INT, *comm);
-
-  /******************/
-  /* ON time lapse  */
-  t0_loc = MPI_Wtime();      
 
   for(i=0;i<nproc;i++){
     if(i!=rank){
@@ -1125,16 +1097,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     printf("\n");
   }
 
-  t1_loc = MPI_Wtime() - t0_loc;
-  save_time(comm, "    repeated", time_fl, t1_loc );
-  /* OFF time lapse */
-  /******************/
-
   // condensamos en 1 vector todo lo que hay en repeated
-
-  /******************/
-  /* ON time lapse  */
-  t0_loc = MPI_Wtime();      
   int *rep_array, nreptot, *rep_array_clean, nreptot_clean;
 
   nreptot = 0;
@@ -1158,16 +1121,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   printf("%-6s r%2d %-20s : %8f\n", myname, rank, "nreptot [%]", (nreptot_clean*100.0)/NAllMyNod ); 
 
   free(rep_array);
-  t1_loc = MPI_Wtime() - t0_loc;
-  save_time(comm, "    rep_array", time_fl, t1_loc );
-  /* OFF time lapse */
-  /******************/
 
   // calculamos la cantidad de puntos dentro de <AllMyNodOrig> que me pertenecen
 
-  /******************/
-  /* ON time lapse  */
-  t0_loc = MPI_Wtime();      
   if(rank==0){
     printf("calculando NMyNod\n");
   }
@@ -1198,15 +1154,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
   printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "NMyGhost/NAllMyNod [%]", (NMyGhost*100.0)/NAllMyNod,
       "NMyNod/NAllMyNod [%]", (NMyNod*100.0)/NAllMyNod); 
-  t1_loc = MPI_Wtime() - t0_loc;
-  save_time(comm, "    nmynode", time_fl, t1_loc );
-  /* OFF time lapse */
-  /******************/
 
-  /******************/
-  /* ON time lapse  */
-  t0_loc = MPI_Wtime();      
-  /******************/
   if(rank==0){
     printf("calculando MyNodOrig\n");
   }
@@ -1251,12 +1199,6 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     }
   }
   free(repeated);
-
-  /******************/
-  t1_loc = MPI_Wtime() - t0_loc;
-  save_time(comm, "    mynode", time_fl, t1_loc );
-  /* OFF time lapse */
-  /******************/
 
   printf("%-6s r%2d %-20s : %8d   %-20s : %8d\n", myname, rank, "NAllMyNod", NAllMyNod, "NMyNod", NMyNod);
   // >>>>> PRINT
