@@ -8,3 +8,12 @@ To use the PETSc profiling do:
  mpirun -np <np_mac> macro/macro input.mac -log_view ascii:log_summary_mac.dat :
         -np <np_mic> micro/micro input.mic -log_view ascii:log_summary_mic.dat 
 ```
+
+To plot PETSc trace do:
+
+```bash
+ mpirun -np <np_mac> macro/macro input.mac -log_trace ascii:trace_mac.dat :
+        -np <np_mic> micro/micro input.mic -log_trace ascii:trace_mic.dat 
+```
+
+It will gives you one file per processor
