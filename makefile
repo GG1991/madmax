@@ -24,7 +24,12 @@ MIC_OBJ_DIR= ${MIC_DIR}/obj
 MIC_SRC_DIR= ${MIC_DIR}/src
 MIC_INC_DIR= ${MIC_DIR}/inc
 
-CFLAGS=-g -O0 
+OPT = 0
+ifeq ($(OPT),1)
+CFLAGS=-O3
+else
+CFLAGS=-g -O0
+endif
 	
 DEPS = ${DEP_DIR}/sputnik.h        \
        ${SPU_DEP_DIR}/list.h       \
