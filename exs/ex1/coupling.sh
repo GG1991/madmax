@@ -31,6 +31,16 @@ if [ "$#" -eq 1 ];then
    exec_mic="../../micro/micro ex1.spu"
    echo "mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
    eval  mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
+  elif [ "$1" == "-log_view" ];then  
+   exec_mac="../../macro/macro ex1.spu -log_view ascii:log_summary_mac.dat"
+   exec_mic="../../micro/micro ex1.spu"
+   echo "mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
+   eval  mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
+  elif [ "$1" == "-log_trace" ];then  
+   exec_mac="../../macro/macro ex1.spu -log_trace macro_trace"
+   exec_mic="../../micro/micro ex1.spu"
+   echo "mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
+   eval  mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
   elif [ "$1" -eq 2 ];then
    exec_val2_mac="valgrind --log-file=\"valgrind_M.out\"  ../../macro/macro ex1.spu"
    exec_val2_mic="valgrind --log-file=\"valgrind_m.out\"  ../../micro/micro ex1.spu"
