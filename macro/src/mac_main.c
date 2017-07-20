@@ -158,9 +158,11 @@ int main(int argc, char **argv)
   //
   // read materials and physical entities from input and mehs files
   //
-  list_init(&physical_list, sizeof(physical_t), NULL);
-  ierr = SpuParseMaterials( &MACRO_COMM, input_n );            
-  ierr = SpuParsePhysicalEntities( &MACRO_COMM, mesh_n );
+  ierr = list_init(&physical_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
+  ierr = list_init(&function_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
+  ierr = SpuParseMaterials( &MACRO_COMM, input_n ); CHKERRQ(ierr);            
+  ierr = SpuParsePhysicalEntities( &MACRO_COMM, mesh_n ); CHKERRQ(ierr);
+  ierr = SpuParseBoundary( &MACRO_COMM, input_n ); CHKERRQ(ierr);
   ierr = SetGmshIDOnMaterials(); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   //

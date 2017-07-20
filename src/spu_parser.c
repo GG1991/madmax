@@ -58,92 +58,93 @@ int spu_parse_scheme( char * input )
 
     ln ++;
     data = strtok(buf," \n");
+    if(data){
+      if(!strcmp(data,"$scheme")){
 
-    if(!strcmp(data,"$scheme")){
-
-      if(fgets(buf,NBUF,file) == NULL){
-	printf("scheme section incomplete at line %d\n",ln);
-	printf("scheme keyword expected at line %d\n",ln);
-	return -1;
-      }
-      ln ++;
-      data = strtok(buf," \n");
-      if(strcmp(data,"scheme")){
-	printf("scheme keyword expected at line %d\n",ln);
-	return -1;
-      }
-      data = strtok(NULL," \n");
-      if(!strcmp(data,"MACRO_MICRO")){
-	scheme = MACRO_MICRO;
-      }
-      else if(!strcmp(data,"MACRO_ALONE")){
-	scheme = MACRO_ALONE;
-      }
-      else if(!strcmp(data,"MACRO_ALONE")){
-	scheme = MACRO_ALONE;
-      }
-      else{
-	printf("scheme type %s not valid at line %d\n",data,ln);
-	return -1;
-      }
-
-      if(scheme==MACRO_MICRO){ // MACRO_MICRO scheme
-
-	if(fgets(buf,NBUF,file) == NULL){ // num_micro_structures
+	if(fgets(buf,NBUF,file) == NULL){
 	  printf("scheme section incomplete at line %d\n",ln);
-	  printf("num_micro_struct keyword expected at line %d\n",ln);
+	  printf("scheme keyword expected at line %d\n",ln);
 	  return -1;
 	}
 	ln ++;
-	data = strtok(buf," \n");
-	if(strcmp(data,"num_micro_struct")){
-	  printf("nproc_per_mic keyword expected at line %d\n",ln);
+	data = strtok(buf," \n"); CHECK_INPUT_ERROR(data);
+	if(strcmp(data,"scheme")){
+	  printf("scheme keyword expected at line %d\n",ln);
 	  return -1;
 	}
-	data = strtok(NULL," \n");
-	nstruc_mic = atoi(data);
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	if(!strcmp(data,"MACRO_MICRO")){
+	  scheme = MACRO_MICRO;
+	}
+	else if(!strcmp(data,"MACRO_ALONE")){
+	  scheme = MACRO_ALONE;
+	}
+	else if(!strcmp(data,"MACRO_ALONE")){
+	  scheme = MACRO_ALONE;
+	}
+	else{
+	  printf("scheme type %s not valid at line %d\n",data,ln);
+	  return -1;
+	}
 
-	if(fgets(buf,NBUF,file) == NULL){ // nproc_micro_structures
-	  printf("scheme section incomplete at line %d\n",ln);
-	  printf("nproc_per_mic keyword expected at line %d\n",ln);
-	  return -1;
-	}
-	ln ++;
-	data = strtok(buf," \n");
-	if(strcmp(data,"nproc_per_mic")){
-	  printf("nproc_per_mic keyword expected at line %d\n",ln);
-	  return -1;
-	}
+	if(scheme==MACRO_MICRO){ // MACRO_MICRO scheme
 
-	nproc_per_mic = malloc(nstruc_mic * sizeof(int));
-	data = strtok(NULL," \n");
-	nproc_mic_group = i = 0;
-	while(data){
-	  nproc_per_mic[i] = atoi(data);
-	  nproc_mic_group += nproc_per_mic[i];
+	  if(fgets(buf,NBUF,file) == NULL){ // num_micro_structures
+	    printf("scheme section incomplete at line %d\n",ln);
+	    printf("num_micro_struct keyword expected at line %d\n",ln);
+	    return -1;
+	  }
+	  ln ++;
+	  data = strtok(buf," \n");
+	  if(strcmp(data,"num_micro_struct")){
+	    printf("nproc_per_mic keyword expected at line %d\n",ln);
+	    return -1;
+	  }
 	  data = strtok(NULL," \n");
-	  i++;
-	}
-	if(i!=nstruc_mic){
-	  printf("nproc_per_mic given are more then the specified previouly: %d at line %d\n", nstruc_mic, ln);
-	  return -1;
+	  nstruc_mic = atoi(data);
+
+	  if(fgets(buf,NBUF,file) == NULL){ // nproc_micro_structures
+	    printf("scheme section incomplete at line %d\n",ln);
+	    printf("nproc_per_mic keyword expected at line %d\n",ln);
+	    return -1;
+	  }
+	  ln ++;
+	  data = strtok(buf," \n");
+	  if(strcmp(data,"nproc_per_mic")){
+	    printf("nproc_per_mic keyword expected at line %d\n",ln);
+	    return -1;
+	  }
+
+	  nproc_per_mic = malloc(nstruc_mic * sizeof(int));
+	  data = strtok(NULL," \n");
+	  nproc_mic_group = i = 0;
+	  while(data){
+	    nproc_per_mic[i] = atoi(data);
+	    nproc_mic_group += nproc_per_mic[i];
+	    data = strtok(NULL," \n");
+	    i++;
+	  }
+	  if(i!=nstruc_mic){
+	    printf("nproc_per_mic given are more then the specified previouly: %d at line %d\n", nstruc_mic, ln);
+	    return -1;
+	  }
+
+	  if(fgets(buf,NBUF,file) == NULL){ // nproc_micro_structures
+	    printf("scheme section incomplete at line %d\n",ln);
+	    printf("$end_scheme keyword expected at line %d\n",ln);
+	    return -1;
+	  }
+	  data = strtok(buf," \n");
+	  if(!strcmp(data,"$end_scheme")){
+	    return 0;
+	  }
+
 	}
 
-	if(fgets(buf,NBUF,file) == NULL){ // nproc_micro_structures
-	  printf("scheme section incomplete at line %d\n",ln);
-	  printf("$end_scheme keyword expected at line %d\n",ln);
-	  return -1;
-	}
-	data = strtok(buf," \n");
-	if(!strcmp(data,"$end_scheme")){
-	  return 0;
-	}
+	return -1; //no encontro $end_scheme
 
-      }
-
-      return -1; //no encontro $end_scheme
-
-    } // inside $scheme
+      } // inside $scheme
+    }
 
   }
   return 1;
@@ -184,35 +185,36 @@ int spu_parse_mesh( char * input )
 
     ln ++;
     data = strtok(buf," \n");
+    if(data){
+      if(!strcmp(data,"$mesh")){
 
-    if(!strcmp(data,"$mesh")){
+	if(fgets(buf,NBUF,file) == NULL){
+	  printf("mesh section incomplete at line %d\n",ln);
+	  printf("mesh keyword expected at line %d\n",ln);
+	  return -1;
+	}
+	ln ++;
+	data = strtok(buf," \n");
+	if(strcmp(data,"mesh")){
+	  printf("mesh keyword expected at line %d\n",ln);
+	  return -1;
+	}
+	data = strtok(NULL," \n");
+	strcpy(mesh_n,data);
 
-      if(fgets(buf,NBUF,file) == NULL){
-	printf("mesh section incomplete at line %d\n",ln);
-	printf("mesh keyword expected at line %d\n",ln);
-	return -1;
-      }
-      ln ++;
-      data = strtok(buf," \n");
-      if(strcmp(data,"mesh")){
-	printf("mesh keyword expected at line %d\n",ln);
-	return -1;
-      }
-      data = strtok(NULL," \n");
-      strcpy(mesh_n,data);
+	if(fgets(buf,NBUF,file) == NULL){ 
+	  printf("mesh section incomplete at line %d\n",ln);
+	  printf("$end_mesh keyword expected at line %d\n",ln);
+	  return -1;
+	}
+	data = strtok(buf," \n");
+	if(!strcmp(data,"$end_mesh")){
+	  return 0;
+	}
+	return -1; //no se encontro $end_mesh
 
-      if(fgets(buf,NBUF,file) == NULL){ 
-	printf("mesh section incomplete at line %d\n",ln);
-	printf("$end_mesh keyword expected at line %d\n",ln);
-	return -1;
-      }
-      data = strtok(buf," \n");
-      if(!strcmp(data,"$end_mesh")){
-	return 0;
-      }
-      return -1; //no se encontro $end_mesh
-
-    } // inside $mesh
+      } // inside $mesh
+    }
   }
   return 1;
 }
@@ -257,75 +259,76 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 
     ln ++;
     data = strtok(buf," \n");
+    if(data){
+      if(!strcmp(data,"$materials")){
 
-    if(!strcmp(data,"$materials")){
+	flag_start_material=1;
+	while(fgets(buf,NBUF,file) != NULL)
+	{
+	  ln ++;
 
-      flag_start_material=1;
-      while(fgets(buf,NBUF,file) != NULL)
-      {
-	ln ++;
-
-	// <name>
-	data = strtok(buf," \n");
-	if(!data){
-	  printf("SpuParseMaterials: <name> expected\n");
-	  return 1;
-	}
-	if(!strcmp(data,"$end_materials")) break;
-	//	  strcpy(material.name,data);
-	material.name = strdup(data);
-
-	// <type> & <options>
-	data = strtok(NULL," \n");
-	if(!data){
-	  printf("SpuParseMaterials: <name> expected\n");
-	  return 1;
-	}
-	if(!strcmp(data,"TYPE00")){
-
-	  material.typeID = TYPE00;
-	  material.GmshID = -1;
-	  material.type = malloc(sizeof(type_00));
-
-	  // módulo de young
-	  data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
-	  if(strncmp(data,"E=",2)){
-	    printf("SpuParseMaterials: <E=<value>> expected\n");
+	  // <name>
+	  data = strtok(buf," \n");
+	  if(!data){
+	    printf("SpuParseMaterials: <name> expected\n");
 	    return 1;
 	  }
-	  ((type_00*)material.type)->young = atof(&data[2]);
+	  if(!strcmp(data,"$end_materials")) break;
+	  //	  strcpy(material.name,data);
+	  material.name = strdup(data);
 
-	  // módulo de poisson
-	  data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
-	  if(strncmp(data,"v=",2)){
-	    printf("SpuParseMaterials: <v=<value>> expected\n");
+	  // <type> & <options>
+	  data = strtok(NULL," \n");
+	  if(!data){
+	    printf("SpuParseMaterials: <name> expected\n");
 	    return 1;
 	  }
-	  ((type_00*)material.type)->poisson = atof(&data[2]);
+	  if(!strcmp(data,"TYPE00")){
 
-	  // calculamos parametros derivados
-	  double E, v;
-	  E = ((type_00*)material.type)->young;
-	  v = ((type_00*)material.type)->poisson;
-	  ((type_00*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
-	  ((type_00*)material.type)->mu = E/(2*(1+v));
+	    material.typeID = TYPE00;
+	    material.GmshID = -1;
+	    material.type = malloc(sizeof(type_00));
 
-	  // lo insertamos en la lista 
-	  list_insertlast(&material_list, &material);
+	    // módulo de young
+	    data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
+	    if(strncmp(data,"E=",2)){
+	      printf("SpuParseMaterials: <E=<value>> expected\n");
+	      return 1;
+	    }
+	    ((type_00*)material.type)->young = atof(&data[2]);
+
+	    // módulo de poisson
+	    data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
+	    if(strncmp(data,"v=",2)){
+	      printf("SpuParseMaterials: <v=<value>> expected\n");
+	      return 1;
+	    }
+	    ((type_00*)material.type)->poisson = atof(&data[2]);
+
+	    // calculamos parametros derivados
+	    double E, v;
+	    E = ((type_00*)material.type)->young;
+	    v = ((type_00*)material.type)->poisson;
+	    ((type_00*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
+	    ((type_00*)material.type)->mu = E/(2*(1+v));
+
+	    // lo insertamos en la lista 
+	    list_insertlast(&material_list, &material);
+	  }
+	  else{
+	    printf("SpuParseMaterials: %s unknown.\n", data);
+	    return 1;
+	  }
+
 	}
-	else{
-	  printf("SpuParseMaterials: %s unknown.\n", data);
-	  return 1;
-	}
+      } // inside $mesh
 
+      if(!strcmp(data,"$end_materials")){
+	CHECK_INPUT_ERROR(flag_start_material);
+	PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", input, material_list.sizelist);
+	return 0;
       }
-    } // inside $mesh
-
-    if(!strcmp(data,"$end_materials")){
-      CHECK_INPUT_ERROR(flag_start_material);
-      PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", input, material_list.sizelist);
-      return 0;
-    }
+    } // data != NULL
   }
   // any material found 
   printf("SpuParseMaterials: Any material found on input file\n");
@@ -522,52 +525,53 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 
     ln ++;
     data = strtok(buf," \n");
+    if(data){
+      if(!strcmp(data,"$Boundary")){
 
-    if(!strcmp(data,"$Boundary")){
+	flag_start_boundary=1;
+	while(fgets(buf,NBUF,file) != NULL)
+	{
+	  ln ++;
 
-      flag_start_boundary=1;
-      while(fgets(buf,NBUF,file) != NULL)
-      {
-	ln ++;
+	  // <name>
+	  data = strtok(buf," \n"); CHECK_INPUT_ERROR(data);
+	  if(!strcmp(data,"$EndBoundary")) break;
+	  boundary.name = strdup(data);
 
-	// <name>
-	data = strtok(buf," \n"); CHECK_INPUT_ERROR(data);
-	if(!strcmp(data,"$EndBoundary")) break;
-	boundary.name = strdup(data);
+	  // <order> 
+	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	  boundary.order = atoi(data);
 
-	// <order> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	boundary.order = atoi(data);
+	  // <kind> 
+	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	  boundary.kind = atoi(data);
 
-	// <kind> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	boundary.kind = atoi(data);
+	  // <nfx> 
+	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	  boundary.nfx = atoi(data);
 
-	// <nfx> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	boundary.nfx = atoi(data);
+	  // <nfy> 
+	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	  boundary.nfy = atoi(data);
 
-	// <nfy> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	boundary.nfy = atoi(data);
+	  // <nfz> 
+	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	  boundary.nfz = atoi(data);
 
-	// <nfz> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	boundary.nfz = atoi(data);
+	  boundary.fx = GetFunctionPointer(&function_list,boundary.nfx);CHECK_INPUT_ERROR(boundary.fx);
+	  boundary.fy = GetFunctionPointer(&function_list,boundary.nfy);CHECK_INPUT_ERROR(boundary.fy);
+	  boundary.fz = GetFunctionPointer(&function_list,boundary.nfz);CHECK_INPUT_ERROR(boundary.fz);
 
-	boundary.fx = GetFunctionPointer(&function_list,boundary.nfx);CHECK_INPUT_ERROR(boundary.fx);
-	boundary.fy = GetFunctionPointer(&function_list,boundary.nfy);CHECK_INPUT_ERROR(boundary.fy);
-	boundary.fz = GetFunctionPointer(&function_list,boundary.nfz);CHECK_INPUT_ERROR(boundary.fz);
+	  // si llegamos hasta acá esta todo 0K lo insertamos en la lista 
+	  list_insert_se(&boundary_list, &boundary);
+	}
+      } // inside $Boundary
 
-	// si llegamos hasta acá esta todo 0K lo insertamos en la lista 
-	list_insert_se(&boundary_list, &boundary);
+      if(!strcmp(data,"$EndBoundary")){
+	CHECK_INPUT_ERROR(flag_start_boundary);
+	PetscPrintf(*PROBLEM_COMM, "# of boundaries found in %s : %d\n", input, boundary_list.sizelist);
+	return 0;
       }
-    } // inside $Boundary
-
-    if(!strcmp(data,"$EndBoundary")){
-      CHECK_INPUT_ERROR(flag_start_boundary);
-      PetscPrintf(*PROBLEM_COMM, "# of boundaries found in %s : %d\n", input, boundary_list.sizelist);
-      return 0;
     }
   }
   // any boundary condition found

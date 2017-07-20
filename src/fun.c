@@ -70,11 +70,12 @@ f1d_t * GetFunctionPointer(list_t *function_list, int fnumToSearch)
    */
 
    if(!function_list) return NULL;
+   if(!function_list->sizelist) return NULL;
    node_list_t *pFun;
    pFun = function_list->head;
    while(pFun){
      if( ((f1d_t*)pFun->data)->fnum == fnumToSearch ) break;
    }
-   return pFun->data;
+   return (f1d_t*)pFun->data;
 
 }
