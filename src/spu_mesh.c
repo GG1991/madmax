@@ -6,7 +6,6 @@
 
 #include "sputnik.h"
 #include "parmetis.h"
-#include "boundary.h"
 
 int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm)
 {
@@ -490,11 +489,12 @@ int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
    * Info:   Reads the nodes of the boundary and save them on <boundary_list>
    *
    * Input: 
-   * char     *mesh_n   : file name with path
-   * MPI_Comm *comm     : the communicator of these processes
+   * char     *mesh_n     : file name with path
+   * MPI_Comm *comm       : the communicator of these processes
    * 
    * Output:
-   * list_t  boundary_list : list that store <boundary_t> elements
+   * boundary_list->nodes : list that store <boundary_t> elements
+   *
    *
    */
 
@@ -516,7 +516,13 @@ int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
   char                 buf[NBUF];   
   char               * data;
 
-  list_init(&boundary_list, sizeof(boundary_t), cmpfuncBou);
+  
+  typedef struct nodes_t_{
+    int GmshID;
+    list_t nodes;
+  }nodes_t;
+
+  list_t nodes_list;
 
   MPI_Comm_size(*comm, &nproc);
   MPI_Comm_rank(*comm, &rank);
@@ -558,7 +564,17 @@ int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
 	len = strlen(buf);
 	data=strtok(buf," \n");
 	data=strtok(NULL," \n");
-	if(atoi(data) == 4 || atoi(data) == 5 || atoi(data) == 6){
+	if(GmshIsAsurfaceElement(atoi(data))){
+	  data=strtok(NULL," \n");
+	  ntag = atoi(data);
+	  // we read the PhysicalID
+	  data = strtok(NULL," \n");
+
+	  d = 1;
+	  while(d<ntag){
+	    data = strtok(NULL," \n");
+	    d++;
+	  }
 	  nelm_tot ++;
 	}
 	else{

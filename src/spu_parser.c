@@ -17,25 +17,25 @@ int spu_parse_scheme( char * input )
 {
 
   /*
-
-     Parse the communication scheme from input file
-
-returns: 0 success
--1 failed
-1 not found 
-
-Searchs for keywords:
-
-$scheme
-...
-$end_scheme
-
-Examples:
-
-scheme          MACRO_MICRO
-nstruc_mic      <ns>
-nproc_per_mic   <np1> <np1> <np1> ... <npns> 
-
+   * 
+   *  Parse the communication scheme from input file
+   * 
+   *  returns: 0 success
+   *  -1 failed
+   *  1 not found 
+   *  
+   *  Searchs for keywords:
+   *  
+   *  $scheme
+   *  ...
+   *  $end_scheme
+   *  
+   *  Examples:
+   *  
+   *  scheme          MACRO_MICRO
+   *  nstruc_mic      <ns>
+   *  nproc_per_mic   <np1> <np1> <np1> ... <npns> 
+   * 
    */
 
   FILE * file = fopen(input,"r");
@@ -155,19 +155,18 @@ int spu_parse_mesh( char * input )
 {
 
   /*
-
-     Parse the mesh name from input file
-
-returns: 0 success
--1 failed
-1 not found 
-
-Searchs for keywords:
-
-$mesh
-mesh <mesh_file>
-$end_mesh
-
+   *   Parse the mesh name from input file
+   * 
+   *   returns: 0 success
+   *   -1 failed
+   *   1 not found 
+   *   
+   *   Searchs for keywords:
+   *   
+   *   $mesh
+   *   mesh <mesh_file>
+   *   $end_mesh
+   * 
    */
 
   FILE * file = fopen(input,"r");
@@ -224,7 +223,6 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 {
 
   /*
-   * 
    * Parse the materials of the problem
    * 
    *    returns: 0 success
@@ -481,5 +479,14 @@ int CheckPhysicalID(void)
     if(!pm) return 1;
   }
 
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int SpuParseBoundary( char *input )
+{
+
+  list_init(&boundary_list, sizeof(boundary_t), cmpfuncBou);
   return 0;
 }

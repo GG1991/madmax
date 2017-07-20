@@ -12,6 +12,7 @@
 #include "fem.h"
 #include "material.h"
 #include "gmsh.h"
+#include "boundary.h"
 
 #define MACRO              1     // MACRO IDs and colors
 #define MICRO              2     // MICRO IDs and colors
@@ -114,6 +115,7 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input );
 int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n );
 int SetGmshIDOnMaterials(void);
 int CheckPhysicalID(void);
+int SpuParseBoundary( char *input );
 
 // spu_mesh.c
 int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);
