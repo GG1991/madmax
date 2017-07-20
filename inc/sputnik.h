@@ -136,6 +136,7 @@ int is_in_vector(int val, int *vector, int size);
 int reenumerate_PETSc(MPI_Comm *comm);
 int search_position_linear(int *array, int size, int val, int *pos);
 int search_position_logn(int *array, int size, int val, int *pos);
+int SpuReadBoundaryGmsh(MPI_Comm * comm, char *myname, char *mesh_n);
 
 
 // spu_vtk.c

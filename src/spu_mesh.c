@@ -460,6 +460,267 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 
 /****************************************************************************************************/
 
+int SpuReadBoundary(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
+{
+
+  /*
+   *  Read boundary nodes and completes the structure <boundary>
+   *
+   *  returns: 0 success
+   *  1 not found
+   *  -1 failed
+   *
+   */
+
+  if(strcmp(mesh_f,"gmsh") == 0){
+    return SpuReadBoundaryGmsh(comm, myname, mesh_n);
+  }else{
+    return 1;
+  }
+}
+
+/****************************************************************************************************/
+
+int SpuReadBoundaryGmsh(MPI_Comm * comm, char *myname, char *mesh_n)
+{
+
+  /* 
+   *
+   * Info:   Reads the elements with the nodes conectivities and saves on 
+   *         "elmdist[]", "eptr[]" and "eind[]" in CSR format (same names
+   *         that parmetis)
+   *
+   * Input: 
+   * char   * mesh_n   : file name with path
+   * MPI_Comm comm     : the communicator of these processes
+   * 
+   * Output:
+   * int  * elmdist  : number of elements for each process             (MAH)
+   * int  * eptr     : array of indeces for "eind" (CSR format)        (MAH)
+   * int  * eind     : element conectivities with nodes (CSR format)   (MAH)
+   *
+   *
+   * 1) first counts the total number of volumetric element on the mesh nelm_tot
+   *
+   * 2) calculates nelm = nelm_tot/nproc (elements assigned to this process)
+   *    calculates the vector elmdist in order to know how many elems will be for each process 
+   *
+   * 3) read the mesh again, each process reads its own group of elements and see
+   *    element types determines "npe" and fills "eptr[nelm+1]"
+   *    finally alloc memory for "eind[eptr[nelm]]"
+   *
+   * 4) reads the mesh again and fill "eind[]"
+   *
+   * Notes:
+   *
+   * a) rank and nproc are going to be respect to the communicator "comm"
+   *
+   * b) all processes do fopen and fread up to their corresponding position
+   *    in the file
+   *
+   * c) int *elmdist, int *eptr, int *eind, int *part are globals
+   *
+   */
+
+  FILE               * fm;
+  unsigned long int    offset;
+
+  int                  nelm, nelm_tot;
+  int                  npe;
+  int                  total;
+  int                  resto;
+  int                  i, d, n; 
+  int                  len;               // strlen(buf) for adding to offset
+  int                  ln;                // line counter
+  int                  ierr;
+  int                  ntag;              // ntag to read gmsh element conectivities
+  int                  rank;
+  int                  nproc;
+
+  char                 buf[NBUF];   
+  char               * data;
+
+  MPI_Comm_size(*comm, &nproc);
+  MPI_Comm_rank(*comm, &rank);
+
+  fm = fopen(mesh_n,"r");
+  if(!fm){
+    ierr = PetscPrintf(*comm,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
+    return 1;
+  }
+
+  /**************************************************/
+  //  count the total number of volumetric elements 
+  //  nelm_tot
+  //
+  offset   = 0;
+  nelm_tot = 0;
+  while(fgets(buf,NBUF,fm)!=NULL){
+    offset += strlen(buf); 
+    data=strtok(buf," \n");
+    //
+    // leemos hasta encontrar $Elements
+    //
+    if(strcmp(data,"$Elements")==0){
+      //
+      // leemos el numero total pero no lo usamos 
+      // (incluye elementos de superficie y de volumen)
+      //
+      fgets(buf,NBUF,fm);
+      offset += strlen(buf); 
+      data  = strtok(buf," \n");
+      total = atoi(data);
+
+      //
+      // leemos hasta $EndElements
+      // y contamos el numero total de los elementos volumen
+      //
+      for(i=0; i<total; i++){
+	fgets(buf,NBUF,fm); 
+	len = strlen(buf);
+	data=strtok(buf," \n");
+	data=strtok(NULL," \n");
+	if(atoi(data) == 4 || atoi(data) == 5 || atoi(data) == 6){
+	  nelm_tot ++;
+	}
+	else{
+	  // is a surface element so be continue counting
+	  ln ++;
+	  offset += len; 
+	}
+      }
+      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nelm_tot", nelm_tot);
+      break;
+    }
+    ln ++;
+  }
+  //
+  /**************************************************/
+
+  /**************************************************/
+  //  armamos el vector elmdist. 
+  //  example: P0 tiene sus elementos entre 
+  //  elmdist[0] a elemdist[1] (not included)
+  //  los elementos que sobran a la division 
+  //  nelm_tot/nproc los repartimos uno por 
+  //  uno entre los primeros procesos
+  //
+  elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
+  resto = nelm_tot % nproc;
+  elmdist[0] = 0;
+  for(i=1; i < nproc + 1; i++){
+    elmdist[i] = i * nelm_tot / nproc;
+    if(resto>0){
+      elmdist[i] += 1;
+      resto --;
+    }
+  }
+
+  if(print_flag){
+    printf("%-6s r%2d %-20s : ", myname, rank, "<elmdist>");
+    for(i=0; i < nproc + 1; i++){
+      printf("%8d ",elmdist[i]);
+    }
+    printf("\n");
+  }
+
+  // ya podemos allocar el vector "eptr" su dimension es :
+  // número de elementos locales + 1 = nelm + 1
+  nelm = elmdist[rank+1] - elmdist[rank];
+  eptr = malloc( (nelm + 1) * sizeof(int));
+  PhysicalID = malloc( nelm * sizeof(int));
+  //
+  /**************************************************/
+
+  /**************************************************/
+  //   
+  // we read the file again (from offset) 
+  // to count number of nodes 
+  // per element and fill "eptr"
+  // with this vector we can alloc memory for "eind"
+  //    
+  fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
+  for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
+    fgets(buf,NBUF,fm); 
+    offset += strlen(buf); 
+  }
+  eptr[0] = 0;
+  for(i=1; i<nelm+1; i++){
+    fgets(buf,NBUF,fm); 
+    data=strtok(buf," \n");
+    data=strtok(NULL," \n");
+    switch(atoi(data)){
+      case 4:
+	npe = 4;
+	break;
+      case 5:
+	npe = 8;
+	break;
+      case 6:
+	npe = 6;
+	break;
+      default:
+	break;
+    }
+    eptr[i] = eptr[i-1] + npe; 
+  }
+  eind = malloc( eptr[nelm] * sizeof(int));
+  //
+  /**************************************************/
+
+
+  /**************************************************/
+  //
+  // repetimos el proceso pero esta vez leemos los 
+  // nodos y completamos el vector "eind[eptr[nelm]]"
+  // empezamos a leer desde "offset"
+  //
+  fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
+  n = 0;
+  for(i=0; i < nelm ; i++){
+    fgets(buf,NBUF,fm); 
+    data=strtok(buf," \n");
+    data=strtok(NULL," \n");
+    switch(atoi(data)){
+      case 4:
+	npe = 4;
+	break;
+      case 5:
+	npe = 8;
+	break;
+      case 6:
+	npe = 6;
+	break;
+      default:
+	break;
+    }
+    data=strtok(NULL," \n");
+    ntag = atoi(data);
+    // we read the PhysicalID
+    data = strtok(NULL," \n");
+    PhysicalID[i] = atoi(data);
+    d = 1;
+    while(d<ntag){
+      data = strtok(NULL," \n");
+      d++;
+    }
+    d = 0;
+    while(d<npe){
+      data = strtok(NULL," \n");
+      eind[n+d] = atoi(data); 
+      d++;
+    }
+    n += npe;
+  }
+  //
+  /**************************************************/
+
+  return 0;   
+}
+
+
+/****************************************************************************************************/
+
 int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 {
 
