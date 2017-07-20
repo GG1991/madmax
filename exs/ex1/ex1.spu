@@ -8,4 +8,5 @@ $mesh
 $end_mesh
 $materials
 IRON TYPE00 E=1.0e6 v=0.3
+PLAS TYPE00 E=1.0e6 v=0.3
 $end_materials
