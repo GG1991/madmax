@@ -26,20 +26,12 @@ $Boundary
 $EndBoundary
 
 $Function
-  funcknd 1D
-  funcnum 0
-  funcint INTER1
-  start
-   0.0  0.0
-  end
+  0 INTER1 1
+  0.0  0.0
 $EndFunction
 
 $Function
-  funcknd 1D
-  funcnum 1
-  funcint INTER1
-  start
-    0.0  0.0
-    0.2  10.0
-  end
+  1 INTER1 2
+  0.0  0.0
+  0.2  10.0
 $EndFunction

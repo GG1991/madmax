@@ -133,6 +133,7 @@ int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n );
 int SetGmshIDOnMaterials(void);
 int CheckPhysicalID(void);
 int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input );
+int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input );
 
 // spu_mesh.c
 int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);

@@ -490,7 +490,6 @@ int CheckPhysicalID(void)
 int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 {
 
-
   /*
    * Parse the boundary of the problem
    * 
@@ -575,10 +574,99 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
     }
   }
   // any boundary condition found
-  printf("SpuParseBoundary: Any material found on input file\n");
+  printf("SpuParseBoundary: Any boundary found on input file\n");
   return 1;
 }
 
+/****************************************************************************************************/
+
+int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
+{
+
+  /*
+   * Parse the boundary of the problem
+   * 
+   *    returns: 0 success
+   *            -1 failed
+   *             1 not found 
+   *    
+   *    Searchs for keywords:
+   *    
+   *    $materials
+   *    <PhysicalName> <TYPEXX> <options>
+   *    IRON TYPE00 E=1.0e6 v=1.0e6
+   *    $end_materials
+   * 
+   */
+
+  FILE   *file = fopen(input,"r");
+  char   buf[NBUF];
+  char   *data;
+  int    ln = 0, n;
+  int    flag_start_function = 0;
+
+  if(!file){
+    return 1;
+  }
+
+  f1d_t f1d;
+  list_init(&function_list, sizeof(f1d_t), NULL);
+
+  while(fgets(buf,NBUF,file) != NULL)
+  {
+
+    ln ++;
+    data = strtok(buf," \n");
+    if(data){
+      if(!strcmp(data,"$Function")){
+        
+	if(flag_start_function) CHECK_INPUT_ERROR(NULL);
+	flag_start_function=1;
+	CHECK_INPUT_ERROR(fgets(buf,NBUF,file)); ln ++;
+
+	// <fnum>
+	data = strtok(buf," \n"); CHECK_INPUT_ERROR(data);
+	f1d.fnum = atoi(data);
+
+	// <inter> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	if(!strcmp(data,"INTER1")){
+	    f1d.inter = INTER1 ;
+	}
+	else{
+	  return 1;
+	}
+
+	// <n>
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	f1d.n = atoi(data);
+	f1d.x = malloc(n*sizeof(double));
+	f1d.y = malloc(n*sizeof(double));
+        
+	n = 0;
+	while( fgets(buf,NBUF,file) != NULL ){
+	  if(n >= f1d.n) break;
+	  data = strtok(buf," \n"); CHECK_INPUT_ERROR(data); 
+	  f1d.x[n] = atof(data);
+	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data); 
+	  f1d.y[n] = atof(data);
+	  n++;
+	}
+	data = strtok(buf," \n"); CHECK_INPUT_ERROR(data); 
+	if(strcmp(data,"$EndFunction"))return 1;
+	// si llegamos hasta acá esta todo 0K lo insertamos en la lista 
+	list_insertlast(&function_list, &f1d);
+      } // inside $Function
+
+      if(!strcmp(data,"$EndFunction")){
+	CHECK_INPUT_ERROR(flag_start_function);
+	flag_start_function = 0;
+      }
+    }
+  }
+  PetscPrintf(*PROBLEM_COMM, "# of functions found in %s : %d\n", input, function_list.sizelist);
+  return 0;
+}
 
 /****************************************************************************************************/
 
