@@ -642,8 +642,8 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
 	// <n>
 	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
 	f1d.n = atoi(data);
-	f1d.x = malloc(n*sizeof(double));
-	f1d.y = malloc(n*sizeof(double));
+	f1d.x = malloc(f1d.n*sizeof(double));
+	f1d.y = malloc(f1d.n*sizeof(double));
         
 	n = 0;
 	while( fgets(buf,NBUF,file) != NULL ){

@@ -75,6 +75,7 @@ f1d_t * GetFunctionPointer(list_t *function_list, int fnumToSearch)
    pFun = function_list->head;
    while(pFun){
      if( ((f1d_t*)pFun->data)->fnum == fnumToSearch ) break;
+     pFun = pFun->next;
    }
    return (f1d_t*)pFun->data;
 

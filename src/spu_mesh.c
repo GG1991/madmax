@@ -922,6 +922,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
     fgets(buf,NBUF,fm); 
     data=strtok(buf," \n");
     data=strtok(NULL," \n");
+    npe = -1;
     switch(atoi(data)){
       case 4:
 	npe = 4;
@@ -935,6 +936,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
       default:
 	break;
     }
+    if(npe<0)return 1;
     eptr[i] = eptr[i-1] + npe; 
   }
   eind = malloc( eptr[nelm] * sizeof(int));
