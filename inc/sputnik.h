@@ -139,6 +139,8 @@ int SpuReadBoundary(MPI_Comm * comm, char *mesh_f);
 int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n);
 int cmpfunc (const void * a, const void * b);
 int cmpfuncBou (void * a, void * b);
+int GmshNodesPerElement(int code);
+int GmshIsAsurfaceElement(int code);
 
 
 // spu_vtk.c

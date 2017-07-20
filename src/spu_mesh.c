@@ -575,6 +575,37 @@ int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
   /**************************************************/
   return 0;   
 }
+/****************************************************************************************************/
+
+int GmshNodesPerElement(int code)
+{
+    
+    switch(code){
+	case 1:  
+	    return 2; 
+	case 2:    
+	    return 3;
+	case 3:    
+	    return 4;
+	case 4:    
+	    return 4;
+	case 5:    
+	    return 8;
+	case 6:   
+	    return 6;
+	case 15:   
+	    return 1;
+	default:    
+	    return -1;
+    }
+}
+
+/****************************************************************************************************/
+
+int GmshIsAsurfaceElement(int code)
+{
+  return (code == 2 || code == 3 || code == 15) ? 1 : 0;
+}
 
 
 /****************************************************************************************************/
