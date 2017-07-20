@@ -1676,10 +1676,3 @@ int cmpfunc (const void * a, const void * b)
 {
   return ( *(int*)a - *(int*)b );
 }
-
-/****************************************************************************************************/
-
-int cmpfuncBou (void * a, void * b)
-{
-  return -( ((boundary_t *)a)->order - ((boundary_t *)b)->order );
-}

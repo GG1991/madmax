@@ -1,12 +1,46 @@
+
 $scheme
   scheme MACRO_MICRO
   num_micro_struct 1
   nproc_per_mic    1
 $end_scheme
+
 $mesh
  mesh ../../meshes/cube_unif/cube.msh
 $end_mesh
+
 $materials
 IRON TYPE00 E=1.0e6 v=0.3
 PLAS TYPE00 E=1.0e6 v=0.3
 $end_materials
+
+$Boundary
+  #      p   knd   fx  fy  fz
+P000     1   111   0   0   0
+P100     2   011   1   0   0
+P110     3   001   1   0   0
+P010     4   101   0   0   0
+P001     5   110   0   0   0
+P101     6   010   1   0   0
+P111     7   000   1   0   0
+P011     8   100   0   0   0
+$EndBoundary
+
+$Function
+  funcknd 1D
+  funcnum 0
+  funcint INTER1
+  start
+   0.0  0.0
+  end
+$EndFunction
+
+$Function
+  funcknd 1D
+  funcnum 1
+  funcint INTER1
+  start
+    0.0  0.0
+    0.2  10.0
+  end
+$EndFunction
