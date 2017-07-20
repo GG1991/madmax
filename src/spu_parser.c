@@ -494,15 +494,15 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
    * Parse the boundary of the problem
    * 
    *    returns: 0 success
-   *            -1 failed
-   *             1 not found 
+   *             1 failed
    *    
    *    Searchs for keywords:
    *    
-   *    $materials
-   *    <PhysicalName> <TYPEXX> <options>
-   *    IRON TYPE00 E=1.0e6 v=1.0e6
-   *    $end_materials
+   *    $Boundary
+   *    <name1> <order> <kind> <fnumx> <fnumy> <fnumz>
+   *    <name2> <order> <kind> <fnumx> <fnumy> <fnumz>
+   *    ...
+   *    $EndBoundary
    * 
    */
 
@@ -584,18 +584,20 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
 {
 
   /*
-   * Parse the boundary of the problem
+   * Parse the functions of the problem
    * 
    *    returns: 0 success
-   *            -1 failed
-   *             1 not found 
+   *             1 failed
    *    
    *    Searchs for keywords:
    *    
-   *    $materials
-   *    <PhysicalName> <TYPEXX> <options>
-   *    IRON TYPE00 E=1.0e6 v=1.0e6
-   *    $end_materials
+   *    $Function
+   *    <fnum> <inter> <n>
+   *    x1 y1
+   *    x2 y2
+   *    ...
+   *    xn yn
+   *    $EndFunction
    * 
    */
 
