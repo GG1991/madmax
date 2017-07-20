@@ -499,7 +499,6 @@ int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
    */
 
   FILE               * fm;
-  unsigned long int    offset;
 
   int                  nelm, nelm_tot;
   int                  npe;
@@ -516,13 +515,25 @@ int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
   char                 buf[NBUF];   
   char               * data;
 
-  
-  typedef struct nodes_t_{
+  typedef struct physicalBound_t_{
     int GmshID;
     list_t nodes;
-  }nodes_t;
+  }PhysicalBound_t;
 
-  list_t nodes_list;
+  PhysicalBound_t PhysicalBound;
+
+  list_t PhysicalBoundList;
+  list_init(&PhysicalBoundList,sizeof(PhysicalBound_t), NULL);
+ 
+  node_list_t  *pBound;
+  pBound = boundary_list.head;
+  while(pBound){
+    // asignamos el GmshID the cada boundary 
+    PhysicalBound.GmshID = ((boundary_t*)pBound->data)->GmshID;
+    // inicializamos la lista de nodos adentro de cada <PhysicalBound>
+    list_init(&PhysicalBound.nodes,sizeof(int), NULL);
+    pBound=pBound->next;
+  }
 
   MPI_Comm_size(*comm, &nproc);
   MPI_Comm_rank(*comm, &rank);
@@ -533,14 +544,7 @@ int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
     return 1;
   }
 
-  /**************************************************/
-  //  count the total number of volumetric elements 
-  //  nelm_tot
-  //
-  offset   = 0;
-  nelm_tot = 0;
   while(fgets(buf,NBUF,fm)!=NULL){
-    offset += strlen(buf); 
     data=strtok(buf," \n");
     //
     // leemos hasta encontrar $Elements
@@ -551,7 +555,6 @@ int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
       // (incluye elementos de superficie y de volumen)
       //
       fgets(buf,NBUF,fm);
-      offset += strlen(buf); 
       data  = strtok(buf," \n");
       total = atoi(data);
 
@@ -580,7 +583,6 @@ int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
 	else{
 	  // is a surface element so be continue counting
 	  ln ++;
-	  offset += len; 
 	}
       }
       break;
