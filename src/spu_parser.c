@@ -509,7 +509,6 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
   char   *data;
   int    ln = 0;
   int    flag_start_boundary = 0;
-  int    flag_end_boundary = 1;
 
   if(!file){
     return 1;
@@ -526,8 +525,6 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 
     if(!strcmp(data,"$Boundary")){
 
-      if(flag_end_boundary == 0) CHKERRQ(1);
-
       flag_start_boundary=1;
       while(fgets(buf,NBUF,file) != NULL)
       {
@@ -535,7 +532,7 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 
 	// <name>
 	data = strtok(buf," \n"); CHECK_INPUT_ERROR(data);
-	if(!strcmp(data,"$end_materials")) break;
+	if(!strcmp(data,"$EndBoundary")) break;
 	boundary.name = strdup(data);
 
 	// <order> 
@@ -558,9 +555,9 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
 	boundary.nfz = atoi(data);
 
-	boundary.fx = GetFunctionPointer(&function_list,boundary.fx);CHECK_INPUT_ERROR(boundary.fx);
-	boundary.fy = GetFunctionPointer(&function_list,boundary.fy);CHECK_INPUT_ERROR(boundary.fy);
-	boundary.fz = GetFunctionPointer(&function_list,boundary.fz);CHECK_INPUT_ERROR(boundary.fz);
+	boundary.fx = GetFunctionPointer(&function_list,boundary.nfx);CHECK_INPUT_ERROR(boundary.fx);
+	boundary.fy = GetFunctionPointer(&function_list,boundary.nfy);CHECK_INPUT_ERROR(boundary.fy);
+	boundary.fz = GetFunctionPointer(&function_list,boundary.nfz);CHECK_INPUT_ERROR(boundary.fz);
 
 	// si llegamos hasta acá esta todo 0K lo insertamos en la lista 
 	list_insert_se(&boundary_list, &boundary);
@@ -569,12 +566,12 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 
     if(!strcmp(data,"$EndBoundary")){
       CHECK_INPUT_ERROR(flag_start_boundary);
-      PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", input, material_list.sizelist);
+      PetscPrintf(*PROBLEM_COMM, "# of boundaries found in %s : %d\n", input, boundary_list.sizelist);
       return 0;
     }
   }
   // any boundary condition found
-  printf("SpuParseMaterials: Any material found on input file\n");
+  printf("SpuParseBoundary: Any material found on input file\n");
   return 1;
 }
 
