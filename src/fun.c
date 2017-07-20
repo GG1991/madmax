@@ -63,3 +63,18 @@ int cmp_f1d(void *a, void *b){
     }
 }
 
+f1d_t * GetFunctionPointer(list_t *function_list, int fnumToSearch)
+{
+  /*
+   * Returns a pointer to <f1d_t> element in function list
+   */
+
+   if(!function_list) return NULL;
+   node_list_t *pFun;
+   pFun = function_list->head;
+   while(pFun){
+     if( ((f1d_t*)pFun->data)->fnum == fnumToSearch ) break;
+   }
+   return pFun->data;
+
+}

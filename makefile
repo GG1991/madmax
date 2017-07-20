@@ -34,6 +34,8 @@ endif
 DEPS = ${DEP_DIR}/sputnik.h        \
        ${SPU_DEP_DIR}/list.h       \
        ${SPU_DEP_DIR}/gmsh.h       \
+       ${SPU_DEP_DIR}/boundary.h   \
+       ${SPU_DEP_DIR}/fun.h        \
        ${SPU_DEP_DIR}/material.h   \
        ${MAC_INC_DIR}/macro.h      \
        ${MIC_INC_DIR}/micro.h 
@@ -54,8 +56,9 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o   \
 MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o   \
            ${MIC_OBJ_DIR}/mic_comm.o       
 
-EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o \
-           $(SPU_OBJ_DIR)/list.o 
+EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o  \
+           $(SPU_OBJ_DIR)/list.o \
+           $(SPU_OBJ_DIR)/fun.o 
  
 EXT_DEP  = $(SPU_INC_DIR)/fem.h
 
