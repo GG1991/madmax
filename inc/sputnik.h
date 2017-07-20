@@ -11,8 +11,10 @@
 #include "string.h"
 #include "fem.h"
 #include "material.h"
-#include "gmsh.h"
 #include "boundary.h"
+
+#ifndef SPUTNIK_H
+#define SPUTNIK_H
 
 #define MACRO              1     // MACRO IDs and colors
 #define MICRO              2     // MICRO IDs and colors
@@ -40,6 +42,19 @@
 	 printf("SPUTNIK ERROR on %s line %d\n",__FILE__,__LINE__);                    \
 	 return -1;                                                                    \
      }}
+
+/*****************************************************************************************************
+   SPUTNIK user defined structures
+*****************************************************************************************************/
+
+typedef struct _physical_t{
+    
+    int    dim;
+    int    GmshID;
+    char   *name; 
+
+}physical_t;
+
 
 /*****************************************************************************************************
    SPUTNIK global variables
@@ -104,6 +119,7 @@ Vec           x, b;
 
 // List of different utilities
 list_t function_list;
+list_t physical_list;
 
 /*****************************************************************************************************
    SPUTNIK function definitions
@@ -165,3 +181,5 @@ int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] );
 int GetWeight(int npe, double **wp);
 int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );
 material_t * GetMaterial(int GmshIDToSearch);
+
+#endif

@@ -33,7 +33,6 @@ endif
 	
 DEPS = ${DEP_DIR}/sputnik.h        \
        ${SPU_DEP_DIR}/list.h       \
-       ${SPU_DEP_DIR}/gmsh.h       \
        ${SPU_DEP_DIR}/boundary.h   \
        ${SPU_DEP_DIR}/fun.h        \
        ${SPU_DEP_DIR}/material.h   \
