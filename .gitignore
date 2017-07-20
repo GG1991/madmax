@@ -11,6 +11,8 @@
 *.aux
 *.jpg
 
+null
+
 obj/*.o
 micro/micro
 macro/macro
