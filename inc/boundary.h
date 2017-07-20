@@ -12,7 +12,7 @@
 typedef struct boundary_t_{
 
   char   *name;
-  int    typeID;
+  int    kind;
   int    order;
   int    nfx;
   int    nfy;

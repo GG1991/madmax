@@ -102,7 +102,8 @@ int           *loc2petsc;              // array of size <NMyNod>+<NMyGhost>
 Mat           A;
 Vec           x, b;
 
-
+// List of different utilities
+list_t function_list;
 
 /*****************************************************************************************************
    SPUTNIK function definitions

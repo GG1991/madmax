@@ -515,6 +515,7 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
     return 1;
   }
 
+  boundary_t boundary;
   list_init(&boundary_list, sizeof(boundary_t), cmpfuncBou);
 
   while(fgets(buf,NBUF,file) != NULL)
@@ -523,7 +524,7 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
     ln ++;
     data = strtok(buf," \n");
 
-    if(!strcmp(data,"$boundary")){
+    if(!strcmp(data,"$Boundary")){
 
       if(flag_end_boundary == 0) CHKERRQ(1);
 
@@ -533,62 +534,40 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 	ln ++;
 
 	// <name>
-	data = strtok(buf," \n");
-	if(!data){
-	  printf("SpuParseMaterials: <name> expected\n");
-	  return 1;
-	}
+	data = strtok(buf," \n"); CHECK_INPUT_ERROR(data);
 	if(!strcmp(data,"$end_materials")) break;
-	//	  strcpy(material.name,data);
-	material.name = strdup(data);
+	boundary.name = strdup(data);
 
-	// <type> & <options>
-	data = strtok(NULL," \n");
-	if(!data){
-	  printf("SpuParseMaterials: <name> expected\n");
-	  return 1;
-	}
-	if(!strcmp(data,"TYPE00")){
+	// <order> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	boundary.order = atoi(data);
 
-	  material.typeID = TYPE00;
-	  material.GmshID = -1;
-	  material.type = malloc(sizeof(type_00));
+	// <kind> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	boundary.kind = atoi(data);
 
-	  // módulo de young
-	  data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
-	  if(strncmp(data,"E=",2)){
-	    printf("SpuParseMaterials: <E=<value>> expected\n");
-	    return 1;
-	  }
-	  ((type_00*)material.type)->young = atof(&data[2]);
+	// <nfx> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	boundary.nfx = atoi(data);
 
-	  // módulo de poisson
-	  data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
-	  if(strncmp(data,"v=",2)){
-	    printf("SpuParseMaterials: <v=<value>> expected\n");
-	    return 1;
-	  }
-	  ((type_00*)material.type)->poisson = atof(&data[2]);
+	// <nfy> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	boundary.nfy = atoi(data);
 
-	  // calculamos parametros derivados
-	  double E, v;
-	  E = ((type_00*)material.type)->young;
-	  v = ((type_00*)material.type)->poisson;
-	  ((type_00*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
-	  ((type_00*)material.type)->mu = E/(2*(1+v));
+	// <nfz> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	boundary.nfz = atoi(data);
 
-	  // lo insertamos en la lista 
-	  list_insertlast(&material_list, &material);
-	}
-	else{
-	  printf("SpuParseMaterials: %s unknown.\n", data);
-	  return 1;
-	}
+	boundary.fx = GetFunctionPointer(&function_list,boundary.fx);CHECK_INPUT_ERROR(boundary.fx);
+	boundary.fy = GetFunctionPointer(&function_list,boundary.fy);CHECK_INPUT_ERROR(boundary.fy);
+	boundary.fz = GetFunctionPointer(&function_list,boundary.fz);CHECK_INPUT_ERROR(boundary.fz);
 
+	// si llegamos hasta acá esta todo 0K lo insertamos en la lista 
+	list_insert_se(&boundary_list, &boundary);
       }
-    } // inside $mesh
+    } // inside $Boundary
 
-    if(!strcmp(data,"$end_boundary")){
+    if(!strcmp(data,"$EndBoundary")){
       CHECK_INPUT_ERROR(flag_start_boundary);
       PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", input, material_list.sizelist);
       return 0;
@@ -599,7 +578,9 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
   return 1;
 }
 
+
 /****************************************************************************************************/
+
 
 int cmpfuncBou (void * a, void * b)
 {
