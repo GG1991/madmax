@@ -28,6 +28,8 @@ int AssemblyJacobianSmallDeformation(Mat *J)
   double *wp = NULL;
   double ElemDispls[8*3];
 
+  register double IntegralWeight;
+
   ierr = MatZeroEntries(*J);CHKERRQ(ierr);
 
   for(e=0;e<nelm;e++){
@@ -55,10 +57,11 @@ int AssemblyJacobianSmallDeformation(Mat *J)
 	}
       }
 
+      IntegralWeight = DetJac * wp[gp];
       for(i=0;i<npe*3;i++){
 	for(j=0;j<npe*3;j++){
 	  for(k=0;k<6;k++){
-	    ElemMatrix[i*npe*3+j] += B[k][i]*Baux[k][j] * DetJac * wp[gp];
+	    ElemMatrix[i*npe*3+j] += B[k][i]*Baux[k][j] * IntegralWeight;
 	  }
 	}
       }
@@ -97,6 +100,8 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
   double *wp = NULL;
   double ElemDispls[8*3];
 
+  register double IntegralWeight;
+
   ierr = VecZeroEntries(*Residue);CHKERRQ(ierr);
 
   for(e=0;e<nelm;e++){
@@ -131,9 +136,10 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 	}
       }
 
+      IntegralWeight = DetJac * wp[gp];
       for(i=0;i<npe*3;i++){
 	  for(k=0;k<6;k++){
-	    ElemResidual[i] += B[k][i]*Sigma[k] * DetJac * wp[gp];
+	    ElemResidual[i] += B[k][i]*Sigma[k] * IntegralWeight;
 	  }
       }
 
