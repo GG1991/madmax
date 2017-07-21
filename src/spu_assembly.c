@@ -39,7 +39,7 @@ int AssemblyJacobianSmallDeformation(Mat *J)
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
     GetWeight(npe, &wp);
 
-    // calculate <elemMat> by numerical integration
+    // calculate <ElemMatrix> by numerical integration
 
     memset(ElemMatrix, 0.0, (8*3*8*3)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
@@ -71,6 +71,8 @@ int AssemblyJacobianSmallDeformation(Mat *J)
     ierr = MatSetValues(*J, npe*3, PETScIdx, npe*3, PETScIdx, ElemMatrix, ADD_VALUES);CHKERRQ(ierr);
 
   }
+
+  /* communication between processes */
   ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   return 0;
@@ -111,7 +113,7 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
     GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
     GetWeight(npe, &wp);
-    VecGetValues( *Displacement_old, npe*3, &eind[eptr[e]], ElemDispls );
+    GetElemenDispls( e, Displacement_old, ElemDispls );
 
     // calculate <ElemResidue> by numerical integration
 
@@ -148,10 +150,31 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
     ierr = VecSetValues(*Residue, npe*3, PETScIdx, ElemResidual, ADD_VALUES);CHKERRQ(ierr);
 
   }
+
+  /* communication between processes */
   ierr = VecAssemblyBegin(*Residue);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(*Residue);CHKERRQ(ierr);
   return 0;
 
+}
+
+/****************************************************************************************************/
+
+int GetElemenDispls( int e, Vec *Displacement, double *ElemDispls )
+{
+
+  int  Indeces[8*3];
+  int  d, n, npe;
+
+  npe = eptr[e+1]-eptr[e];
+  for(n=0;n<npe;n++){
+    for(d=0;d<3;d++){
+      Indeces[n*3+d] = eind[eptr[e]+n]*3 + d;
+    }
+  }
+  
+  VecGetValues( *Displacement, npe*3, Indeces, ElemDispls );
+  return 0;
 }
 
 /****************************************************************************************************/

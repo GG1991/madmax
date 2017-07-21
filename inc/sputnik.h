@@ -116,8 +116,10 @@ int           *loc2petsc;              // array of size <NMyNod>+<NMyGhost>
 
 // Matrices and vectors
 
-Mat           A;
-Vec           x, b;
+Mat           A;       /* Jacobian Matrix          */
+Vec           x, b;    /* Vectors unknowns and RHS */
+KSP           ksp;     /* linear solver context    */
+KSPConvergedReason  reason;
 
 // List of different utilities
 list_t function_list;
@@ -186,5 +188,6 @@ int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] );
 int GetWeight(int npe, double **wp);
 int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );
 material_t * GetMaterial(int GmshIDToSearch);
+int GetElemenDispls( int e, Vec *Displacement, double *ElemDisps );
 
 #endif

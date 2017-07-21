@@ -24,6 +24,7 @@ int main(int argc, char **argv)
   char       *myname = strdup("macro");
 
   PetscLogEvent  CHECK_ERROR;    /* event number for error checking */
+  PetscViewer    viewer,viewer1;
 
 #if defined(PETSC_USE_LOG)
   PetscLogStage stages[3];
@@ -34,7 +35,8 @@ int main(int argc, char **argv)
                 EVENT_READ_COORD,
 		EVENT_INIT_GAUSS,
                 EVENT_ALLOC_MATVEC,
-                EVENT_ASSEMBLY_JAC;
+                EVENT_ASSEMBLY_JAC,
+                EVENT_ASSEMBLY_RES;
 #endif
 
   world_comm = MPI_COMM_WORLD;
@@ -98,7 +100,8 @@ int main(int argc, char **argv)
   ierr = PetscLogEventRegister("read_mesh_coord    Event",PETSC_VIEWER_CLASSID,&EVENT_READ_COORD);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("fem_inigau         Event",PETSC_VIEWER_CLASSID,&EVENT_INIT_GAUSS);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("AllocMatrixVector  Event",PETSC_VIEWER_CLASSID,&EVENT_ALLOC_MATVEC);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Assembly Jacobi    Event",PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_JAC);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("Assembly Jacobian  Event",PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_JAC);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("Assembly Residual  Event",PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);CHKERRQ(ierr);
 #endif
 
   //
@@ -183,7 +186,6 @@ int main(int argc, char **argv)
   ierr = SetGmshIDOnMaterialsAndBoundaries(); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = SpuReadBoundary( &MACRO_COMM, mesh_n, mesh_f, FileOutputStructures );CHKERRQ(ierr);
-  // Up to here we should write some information on output file
   //
   // Allocate matrices & vectors
   // 
@@ -215,22 +217,58 @@ int main(int argc, char **argv)
   }
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
+  //
+  // Setting solver options 
+  //
+  ierr = KSPCreate(MACRO_COMM,&ksp); CHKERRQ(ierr);
+  ierr = KSPSetType(ksp,KSPCG); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+  ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
+
   ierr = PetscLogEventBegin(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
   fem_inigau();
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
+  int KspIterationNum;
   //
-  // assemblying Jacobian
+  // Assemblying Jacobian
   //
   ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
   PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
   AssemblyJacobianSmallDeformation(&A);
   ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-  
+  PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
+  ierr = MatView(A,viewer); CHKERRQ(ierr);
+  //
+  // Assemblying Residual
+  //
+  ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+  ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");CHKERRQ(ierr);
+  ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+  PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer1); CHKERRQ(ierr);
+  ierr = VecView(b,viewer1); CHKERRQ(ierr);
+  //
+  // Solving Problem
+  //
+  PetscPrintf(MACRO_COMM, "Solving Linear System\n");
+//  KSPSolve(ksp,b,x);
+//  KSPGetConvergedReason(ksp,&reason);
+//  ierr = KSPGetIterationNumber(ksp,&KspIterationNum);CHKERRQ(ierr);
+  PetscPrintf(MACRO_COMM, "OOKK !\n");
+
+  //
+  // Free Memory and close things
+  //
   if(rank_mac==0) fclose(FileOutputStructures); 
 
   list_clear(&material_list);
   list_clear(&physical_list);
+
+  ierr = MatDestroy(&A);CHKERRQ(ierr);
+  ierr = VecDestroy(&x);CHKERRQ(ierr);  
+  ierr = VecDestroy(&b);CHKERRQ(ierr);  
+  ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
 
   ierr = PetscFinalize();
   ierr = MPI_Finalize();
