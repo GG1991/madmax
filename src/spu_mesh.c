@@ -589,7 +589,7 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n)
 	  pAuxBound = AuxBoundaryList.head;
 	  while(pAuxBound){
 	    // buscamos ese GmshIDTo search en la lista auxiliar
-	    if(AuxBoundary.GmshID == GmshIDToSearch ) break;
+	    if( ((AuxBoundary_t *)pAuxBound->data)->GmshID == GmshIDToSearch ) break;
 	    pAuxBound = pAuxBound->next;
 	  }
 	  if(pAuxBound){
@@ -603,7 +603,7 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n)
 	    while(n<NPE){
 	      data = strtok(NULL," \n");
 	      NodeToSearch = atoi(data);
-	      pNodeFound = bsearch( &NodeToSearch, &MyNodOrig, NMyNod, sizeof(int), cmpfunc);
+	      pNodeFound = bsearch( &NodeToSearch, MyNodOrig, NMyNod, sizeof(int), cmpfunc);
 	      if(pNodeFound){
 		list_insert_se( &(((AuxBoundary_t *)pAuxBound->data)->Nods), pNodeFound);
 	      }

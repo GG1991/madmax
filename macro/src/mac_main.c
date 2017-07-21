@@ -77,6 +77,9 @@ int main(int argc, char **argv)
   //
   PETSC_COMM_WORLD = MACRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+  PetscPrintf(MACRO_COMM,"--------------------------------------------------\n"
+      "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
+      "--------------------------------------------------\n");
 
 #if defined(PETSC_USE_LOG)
   ierr = PetscLogEventRegister("read_mesh_elmv     Event",PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);CHKERRQ(ierr);
@@ -108,6 +111,7 @@ int main(int argc, char **argv)
   // read mesh
   //    
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
+  PetscPrintf(MACRO_COMM,"MACRO: Reading mesh elements\n");
   strcpy(mesh_f,"gmsh");
   read_mesh_elmv(&MACRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
@@ -123,30 +127,33 @@ int main(int argc, char **argv)
   //
   // partition the mesh
   //
+  PetscPrintf(MACRO_COMM,"MACRO: Partitioning and distributing mesh\n");
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
   part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
-
   //
   // We delete repeated nodes and save the <NAllMyNod> values on <AllMyNodOrig> in order
-  // this should be inside part_mesh_PARMETIS
+  // this should be inside part_mesh_PARMETIS ?
   //
   clean_vector_qsort(&MACRO_COMM, myname, eptr[nelm], eind, &AllMyNodOrig, &NAllMyNod);
-
   //
-  // calculate <*ghosts> and <nghosts> 
+  // Calculate <*ghosts> and <nghosts> 
   //
+  PetscPrintf(MACRO_COMM,"MACRO: Calculating Ghost Nodes\n");
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
   calculate_ghosts(&MACRO_COMM, myname);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
-
   //
-  // reenumerate nodes
+  // Reenumerate Nodes
   //
+  PetscPrintf(MACRO_COMM,"MACRO: Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
   reenumerate_PETSc(&MACRO_COMM);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-
+  //
+  // Coordinate Reading
+  //
+  PetscPrintf(MACRO_COMM,"MACRO: Reading Coordinates\n");
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
   read_mesh_coord(&MACRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
@@ -164,9 +171,10 @@ int main(int argc, char **argv)
   ierr = SpuParsePhysicalEntities( &MACRO_COMM, mesh_n ); CHKERRQ(ierr);
   ierr = SpuParseFunctions( &MACRO_COMM, input_n ); CHKERRQ(ierr); 
   ierr = SpuParseBoundary(&MACRO_COMM, input_n ); CHKERRQ(ierr); 
-  ierr = SetGmshIDOnMaterials(); CHKERRQ(ierr); 
+  ierr = SetGmshIDOnMaterialsAndBoundaries(); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
-  ierr = SpuReadBoundary( &MACRO_COMM, mesh_n, mesh_f );
+  ierr = SpuReadBoundary( &MACRO_COMM, mesh_n, mesh_f );CHKERRQ(ierr);
+  // Up to here we should write some information on output file
   //
   // Allocate matrices & vectors
   // 

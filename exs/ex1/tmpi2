@@ -6,10 +6,10 @@
 # runs multiple MPI processes as a grid in a new tmux window and multiplexes keyboard input to all of them
 
 # BREAKPOINTS
-#break_mac=( 'mac_main.c:170' ) 
-#break_mac=( 'SpuParseMaterials' ) 
+#break_mac=( 'mac_main.c:167' ) 
+#break_mac=( 'spu_parser.c:449' ) 
 #break_mic=( 'mic_main.c:46' ) 
-#break_mac=( 'spu_mesh.c:294' ) 
+break_mac=( 'spu_mesh.c:606' ) 
 #break_mic=( 'mic_comm.c:104' ) 
 #break_mac=( 'spu_vtk.c:22' ) 
 #break_mic=( 'mic_comm.c:105' ) 
@@ -17,7 +17,7 @@
 #break_mac=( 'spu_parser.c:416' ) 
 #break_mac=( 'main' ) 
 #break_mic=( 'main' ) 
-break_mac=( 'spu_assembly.c:45' ) 
+#break_mac=( 'spu_assembly.c:45' ) 
 
 additional_vars=( LD_LIBRARY_PATH LD_PRELOAD )
 export "${additional_vars[@]}"

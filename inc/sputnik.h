@@ -131,7 +131,7 @@ int spu_parse_scheme( char *input );
 int spu_parse_mesh( char * input );
 int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input );
 int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n );
-int SetGmshIDOnMaterials(void);
+int SetGmshIDOnMaterialsAndBoundaries(void);
 int CheckPhysicalID(void);
 int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input);
 int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input );

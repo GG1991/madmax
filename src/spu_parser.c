@@ -432,7 +432,7 @@ int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
 
 /****************************************************************************************************/
 
-int SetGmshIDOnMaterials(void)
+int SetGmshIDOnMaterialsAndBoundaries(void)
 {
 
   /* For each material on <material_list> 
@@ -454,6 +454,22 @@ int SetGmshIDOnMaterials(void)
      }
      if(!pp){ 
        SETERRQ1(PETSC_COMM_SELF,1,"Material %s not found in Gmsh File.",((material_t*)pm->data)->name);
+     }
+     pm = pm->next;
+   }
+
+   pm = boundary_list.head;
+   while(pm){
+     pp = physical_list.head;
+     while(pp){
+       if( !strcmp( ((physical_t*)pp->data)->name, ((boundary_t*)pm->data)->name ) ){
+	 ((boundary_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
+	 break;
+       }
+       pp = pp->next;
+     }
+     if(!pp){ 
+       SETERRQ1(PETSC_COMM_SELF,1,"Boundary %s not found in Gmsh File.",((boundary_t*)pm->data)->name);
      }
      pm = pm->next;
    }
