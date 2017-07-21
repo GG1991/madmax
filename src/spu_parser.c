@@ -260,7 +260,7 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
     ln ++;
     data = strtok(buf," \n");
     if(data){
-      if(!strcmp(data,"$materials")){
+      if(!strcmp(data,"$Materials")){
 
 	flag_start_material=1;
 	while(fgets(buf,NBUF,file) != NULL)
@@ -268,71 +268,70 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 	  ln ++;
 
 	  // <name>
-	  data = strtok(buf," \n");
-	  if(!data){
-	    printf("SpuParseMaterials: <name> expected\n");
-	    return 1;
-	  }
-	  if(!strcmp(data,"$end_materials")) break;
-	  //	  strcpy(material.name,data);
-	  material.name = strdup(data);
+	  data = strtok(buf," \n"); 
+	  if(!data) SETERRQ(PETSC_COMM_SELF,1,"SpuParseMaterials: <name> expected.");
 
-	  // <type> & <options>
-	  data = strtok(NULL," \n");
-	  if(!data){
-	    printf("SpuParseMaterials: <name> expected\n");
-	    return 1;
-	  }
-	  if(!strcmp(data,"TYPE00")){
+	  if(data[0]!='#'){
 
-	    material.typeID = TYPE00;
-	    material.GmshID = -1;
-	    material.type = malloc(sizeof(type_00));
+	    if(!strcmp(data,"$EndMaterials")) break;
+	    //	  strcpy(material.name,data);
+	    material.name = strdup(data);
 
-	    // módulo de young
-	    data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
-	    if(strncmp(data,"E=",2)){
-	      printf("SpuParseMaterials: <E=<value>> expected\n");
+	    // <type> & <options>
+	    data = strtok(NULL," \n");
+	    if(!data) SETERRQ(PETSC_COMM_SELF,1,"SpuParseMaterials: <type> expected.");
+
+	    if(!strcmp(data,"TYPE00")){
+
+	      material.typeID = TYPE00;
+	      material.GmshID = -1;
+	      material.type = malloc(sizeof(type_00));
+
+	      // módulo de young
+	      data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
+	      if(strncmp(data,"E=",2)){
+		printf("SpuParseMaterials: <E=<value>> expected\n");
+		return 1;
+	      }
+	      ((type_00*)material.type)->young = atof(&data[2]);
+
+	      // módulo de poisson
+	      data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
+	      if(strncmp(data,"v=",2)){
+		printf("SpuParseMaterials: <v=<value>> expected\n");
+		return 1;
+	      }
+	      ((type_00*)material.type)->poisson = atof(&data[2]);
+
+	      // calculamos parametros derivados
+	      double E, v;
+	      E = ((type_00*)material.type)->young;
+	      v = ((type_00*)material.type)->poisson;
+	      ((type_00*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
+	      ((type_00*)material.type)->mu = E/(2*(1+v));
+
+	      // lo insertamos en la lista 
+	      list_insertlast(&material_list, &material);
+	    }
+	    else{
+	      printf("SpuParseMaterials: %s unknown.\n", data);
 	      return 1;
 	    }
-	    ((type_00*)material.type)->young = atof(&data[2]);
 
-	    // módulo de poisson
-	    data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
-	    if(strncmp(data,"v=",2)){
-	      printf("SpuParseMaterials: <v=<value>> expected\n");
-	      return 1;
-	    }
-	    ((type_00*)material.type)->poisson = atof(&data[2]);
-
-	    // calculamos parametros derivados
-	    double E, v;
-	    E = ((type_00*)material.type)->young;
-	    v = ((type_00*)material.type)->poisson;
-	    ((type_00*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
-	    ((type_00*)material.type)->mu = E/(2*(1+v));
-
-	    // lo insertamos en la lista 
-	    list_insertlast(&material_list, &material);
 	  }
-	  else{
-	    printf("SpuParseMaterials: %s unknown.\n", data);
-	    return 1;
-	  }
-
 	}
-      } // inside $mesh
+      } // inside $Materials
 
-      if(!strcmp(data,"$end_materials")){
-	CHECK_INPUT_ERROR(flag_start_material);
+      if(!strcmp(data,"$EndMaterials")){
+	if(!flag_start_material)SETERRQ(PETSC_COMM_SELF,1,"$EndMaterials detected without $Materials above.");
 	PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", input, material_list.sizelist);
+	fclose(file);
 	return 0;
       }
     } // data != NULL
   }
-  // any material found 
-  printf("SpuParseMaterials: Any material found on input file\n");
-  return 1;
+  // any $Material found
+  SETERRQ(PETSC_COMM_SELF,1,"$Materials section not found on input file."); 
 }
 
 /****************************************************************************************************/
@@ -453,7 +452,9 @@ int SetGmshIDOnMaterials(void)
        }
        pp = pp->next;
      }
-//     CHECK_SPU_ERROR(pp);
+     if(!pp){ 
+       SETERRQ1(PETSC_COMM_SELF,1,"Material %s not found in Gmsh File.",((material_t*)pm->data)->name);
+     }
      pm = pm->next;
    }
 
@@ -466,7 +467,7 @@ int CheckPhysicalID(void)
 {
 
   /* Checks if all the elements of <PhysicalID>
-   * have theri correspondent material in <material_list>
+   * have their correspondent material in <material_list>
    */
 
   int e;

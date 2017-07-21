@@ -3,6 +3,7 @@
 *****************************************************************************************************/
 
 #include "petscksp.h"
+#include "petscsys.h"
 #include "list.h"
 #include "mpi.h"
 #include "stdbool.h"

@@ -9,20 +9,19 @@ $mesh
  mesh ../../meshes/cube_unif/cube.msh
 $end_mesh
 
-$materials
+$Materials
 IRON TYPE00 E=1.0e6 v=0.3
-PLAS TYPE00 E=1.0e6 v=0.3
-$end_materials
+#PLAS TYPE00 E=1.0e6 v=0.3
+$EndMaterials
 
 $Boundary
   P000     1   111   0   0   0
-  P100     2   011   1   0   0
-  P110     3   001   1   0   0
-  P010     4   101   0   0   0
-  P001     5   110   0   0   0
-  P101     6   010   1   0   0
-  P111     7   000   1   0   0
-  P011     8   100   0   0   0
+  X0       2   100   0   0   0
+  X1       3   100   1   0   0
+  Z0       4   001   0   0   0
+  Z1       5   000   0   0   0
+  Y0       6   010   0   0   0
+  Y1       7   000   0   0   0
 $EndBoundary
 
 $Function

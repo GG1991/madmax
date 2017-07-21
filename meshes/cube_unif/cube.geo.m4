@@ -27,8 +27,8 @@ vol[]=Extrude {0, 0, 2*lc} {
 };
 
 Physical Volume("IRON") = {vol[1]};
-Physical Surface("Z1") = {28};
-Physical Surface("Z2") = {6};
+Physical Surface("Z0") = {28};
+Physical Surface("Z1") = {6};
 Physical Surface("X1") = {27};
 Physical Surface("X0") = {19};
 Physical Surface("Y1") = {15};

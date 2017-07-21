@@ -166,6 +166,7 @@ int main(int argc, char **argv)
   ierr = SpuParseBoundary(&MACRO_COMM, input_n ); CHKERRQ(ierr); 
   ierr = SetGmshIDOnMaterials(); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
+  ierr = SpuReadBoundary( &MACRO_COMM, mesh_n, mesh_f );
   //
   // Allocate matrices & vectors
   // 
