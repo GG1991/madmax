@@ -460,7 +460,7 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 
 /****************************************************************************************************/
 
-int SpuReadBoundary(MPI_Comm * comm, char *mesh_n, char *mesh_f)
+int SpuReadBoundary(MPI_Comm * comm, char *mesh_n, char *mesh_f, FILE *outfile)
 {
 
   /*
@@ -473,7 +473,7 @@ int SpuReadBoundary(MPI_Comm * comm, char *mesh_n, char *mesh_f)
    */
 
   if(strcmp(mesh_f,"gmsh") == 0){
-    return SpuReadBoundaryGmsh(comm, mesh_n);
+    return SpuReadBoundaryGmsh(comm, mesh_n, outfile);
   }else{
     return 1;
   }
@@ -481,7 +481,7 @@ int SpuReadBoundary(MPI_Comm * comm, char *mesh_n, char *mesh_f)
 
 /****************************************************************************************************/
 
-int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n)
+int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile)
 {
 
   /* 
@@ -519,6 +519,7 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n)
   int    NodeToSearch; 
   int    *pNodeFound; 
   int    NPE;
+  int    rank, nproc;
 
   char   buf[NBUF];   
   char   *data;
@@ -533,6 +534,9 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n)
 
   list_t AuxBoundaryList;
   list_init(&AuxBoundaryList,sizeof(AuxBoundary_t), NULL);
+
+  MPI_Comm_size(*PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(*PROBLEM_COMM, &rank);
  
   node_list_t  *pBound, *pAuxBound;
   pBound = boundary_list.head;
@@ -541,7 +545,7 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n)
     // asignamos el GmshID the cada boundary 
     AuxBoundary.GmshID = ((boundary_t*)pBound->data)->GmshID;
     // inicializamos la lista de nodos adentro de cada <PhysicalBound>
-    list_init(&AuxBoundary.Nods,sizeof(int), NULL);
+    list_init(&AuxBoundary.Nods,sizeof(int), cmpfunc_for_list);
     // insertamos en el mismo orden dentro de <AuxBoundarylist>
     list_insertlast(&AuxBoundaryList,&AuxBoundary);
     pBound=pBound->next;
@@ -618,10 +622,49 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n)
 	  break;
 	}
 	i++;
+      } // i < total de elementos especificados en Gmsh file
+      // ahora metemos los nodos de las listas en la estructura posta <boundary_list>
+      int numnodes;
+
+      pBound = boundary_list.head;
+      pAuxBound = AuxBoundaryList.head;
+      while(pBound){
+	// asignamos el NNods, allocamos memory y guardamos los nods 
+	// (ya van a estar ordenados y sin repetir
+	numnodes = ((AuxBoundary_t *)pAuxBound->data)->Nods.sizelist;
+	((boundary_t*)pBound->data)->NNods = numnodes;
+	((boundary_t*)pBound->data)->Nods = malloc( numnodes * sizeof(int) );
+	n=0;
+	while(n<numnodes){
+	  ((boundary_t*)pBound->data)->Nods[n] = *(int*)(((AuxBoundary_t *)pAuxBound->data)->Nods.head->data);
+	  list_delfirst( &(((AuxBoundary_t *)pAuxBound->data)->Nods) ) ;
+	  n++;
+	}
+	list_clear(&(((AuxBoundary_t *)pAuxBound->data)->Nods));
+	pBound=pBound->next;
+	pAuxBound=pAuxBound->next;
       }
+      list_clear(&AuxBoundaryList);
       break;
     }
     ln ++;
+  }
+
+  if(outfile!=NULL){
+    // queremos escribir algo
+    if(rank==0){
+      fprintf(outfile,"boundary_list\n");
+      pBound = boundary_list.head;
+      while(pBound){
+	fprintf(outfile,"name: %-8s NNod: %6d\n",
+	    ((boundary_t*)pBound->data)->name,((boundary_t*)pBound->data)->NNods);
+	for(i=0;i<((boundary_t*)pBound->data)->NNods;i++){
+	  fprintf(outfile,"%6d ", ((boundary_t*)pBound->data)->Nods[i]);
+	}
+	fprintf(outfile,"\n");
+	pBound=pBound->next;
+      }
+    }
   }
   //
   /**************************************************/
@@ -1711,6 +1754,13 @@ int is_in_vector(int val, int *vector, int size)
 /****************************************************************************************************/
 
 int cmpfunc (const void * a, const void * b)
+{
+  return ( *(int*)a - *(int*)b );
+}
+
+/****************************************************************************************************/
+
+int cmpfunc_for_list (void * a, void * b)
 {
   return ( *(int*)a - *(int*)b );
 }

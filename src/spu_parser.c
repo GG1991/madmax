@@ -692,5 +692,5 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
 
 int cmpfuncBou (void * a, void * b)
 {
-  return -( ((boundary_t *)a)->order - ((boundary_t *)b)->order );
+  return ( ((boundary_t *)a)->order - ((boundary_t *)b)->order );
 }

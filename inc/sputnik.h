@@ -83,6 +83,7 @@ int          scheme;                   // communication approach
 // Time measurement
 
 FILE         *time_fl;
+FILE         *FileOutputStructures;
 double       t0,t1;
 double       *time_vec;
 
@@ -156,9 +157,10 @@ int is_in_vector(int val, int *vector, int size);
 int reenumerate_PETSc(MPI_Comm *comm);
 int search_position_linear(int *array, int size, int val, int *pos);
 int search_position_logn(int *array, int size, int val, int *pos);
-int SpuReadBoundary(MPI_Comm * comm, char *mesh_n, char *mesh_f );
-int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n );
+int SpuReadBoundary(MPI_Comm * comm, char *mesh_n, char *mesh_f, FILE *outfile );
+int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile);
 int cmpfunc (const void * a, const void * b);
+int cmpfunc_for_list (void * a, void * b);
 int cmpfuncBou (void * a, void * b);
 int GmshNodesPerElement(int code);
 int GmshIsAsurfaceElement(int code);

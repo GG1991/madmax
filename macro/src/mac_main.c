@@ -56,6 +56,11 @@ int main(int argc, char **argv)
       print_flag = true;
     }
   }
+  //
+  // File to print information about Mesh:
+  // -> number of elements (before and after partition)
+  // -> number of nodes for each <boundary_t>
+  //
 
   spu_parse_scheme( input_n );
 
@@ -64,6 +69,7 @@ int main(int argc, char **argv)
   // intercommunicators with micro programs 
   //
   mac_comm_init();
+  
 
   // here we collect time from all processes
   if(rank_mac == 0){
@@ -80,6 +86,9 @@ int main(int argc, char **argv)
   PetscPrintf(MACRO_COMM,"--------------------------------------------------\n"
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
       "--------------------------------------------------\n");
+
+  FileOutputStructures = NULL;
+  if(rank_mac==0) FileOutputStructures = fopen("macro_structures.dat","w");
 
 #if defined(PETSC_USE_LOG)
   ierr = PetscLogEventRegister("read_mesh_elmv     Event",PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);CHKERRQ(ierr);
@@ -173,7 +182,7 @@ int main(int argc, char **argv)
   ierr = SpuParseBoundary(&MACRO_COMM, input_n ); CHKERRQ(ierr); 
   ierr = SetGmshIDOnMaterialsAndBoundaries(); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
-  ierr = SpuReadBoundary( &MACRO_COMM, mesh_n, mesh_f );CHKERRQ(ierr);
+  ierr = SpuReadBoundary( &MACRO_COMM, mesh_n, mesh_f, FileOutputStructures );CHKERRQ(ierr);
   // Up to here we should write some information on output file
   //
   // Allocate matrices & vectors
@@ -217,6 +226,8 @@ int main(int argc, char **argv)
   PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
   AssemblyJac(&A);
   ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
+  
+  if(rank_mac==0) fclose(FileOutputStructures); 
 
   list_clear(&material_list);
   list_clear(&physical_list);
