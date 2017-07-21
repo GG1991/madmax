@@ -179,7 +179,8 @@ int AllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal, Mat *A, Vec *x, Vec
 // spu_assembly.c
 int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex);
 int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3]);
-int AssemblyJac(Mat *J);
+int AssemblyJacobianSmallDeformation(Mat *J);
+int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue);
 int GetShapeDerivs(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);
 int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] );
 int GetWeight(int npe, double **wp);

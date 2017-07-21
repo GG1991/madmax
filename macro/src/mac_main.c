@@ -224,7 +224,7 @@ int main(int argc, char **argv)
   //
   ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
   PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
-  AssemblyJac(&A);
+  AssemblyJacobianSmallDeformation(&A);
   ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
   
   if(rank_mac==0) fclose(FileOutputStructures); 

@@ -7,7 +7,7 @@
 
 /****************************************************************************************************/
 
-int AssemblyJac(Mat *J)
+int AssemblyJacobianSmallDeformation(Mat *J)
 {
 
   /*    Assembly the Jacobian for Small Deformation
@@ -44,7 +44,7 @@ int AssemblyJac(Mat *J)
 
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
       GetB( npe, ShapeDerivs, B );
-      GetDsDe( npe, ElemDispls, DsDe );
+      GetDsDe( e, ElemDispls, DsDe );
 
       for(i=0;i<6;i++){
 	for(j=0;j<npe*3;j++){
@@ -76,6 +76,80 @@ int AssemblyJac(Mat *J)
 
 /****************************************************************************************************/
 
+int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
+{
+
+  /*    Assembly the Residual for Small Deformation
+   *    approach.
+   *
+   */
+
+  int    i, k, e, gp, ngp, npe;
+  int    PETScIdx[8*3];
+  int    ierr;
+
+  double ElemCoord[8][3];
+  double ShapeDerivs[8][3];
+  double DetJac;
+  double ElemResidual[8*3];
+  double B[6][3*8], Sigma[6], Epsilon[6];
+  double DsDe[6][6];
+  double *wp = NULL;
+  double ElemDispls[8*3];
+
+  ierr = VecZeroEntries(*Residue);CHKERRQ(ierr);
+
+  for(e=0;e<nelm;e++){
+
+    npe = eptr[e+1]-eptr[e];
+    ngp = npe;
+    GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
+    GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
+    GetWeight(npe, &wp);
+    VecGetValues( *Displacement_old, npe*3, &eind[eptr[e]], ElemDispls );
+
+    // calculate <ElemResidue> by numerical integration
+
+    memset(ElemResidual, 0.0, (8*3)*sizeof(double));
+    for(gp=0;gp<ngp;gp++){
+
+      GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      GetB( npe, ShapeDerivs, B );
+      GetDsDe( e, ElemDispls, DsDe );
+
+      for(i=0;i<6;i++){
+	Epsilon[i]=0.0;
+	for(k=0;k<npe*3;k++){
+	  Epsilon[i] += B[i][k]*ElemDispls[k];
+	}
+      }
+
+      for(i=0;i<6;i++){
+	Sigma[i]=0.0;
+	for(k=0;k<6;k++){
+	  Sigma[i] += DsDe[i][k]*Epsilon[k];
+	}
+      }
+
+      for(i=0;i<npe*3;i++){
+	  for(k=0;k<6;k++){
+	    ElemResidual[i] += B[k][i]*Sigma[k] * DetJac * wp[gp];
+	  }
+      }
+
+
+    }
+    ierr = VecSetValues(*Residue, npe*3, PETScIdx, ElemResidual, ADD_VALUES);CHKERRQ(ierr);
+
+  }
+  ierr = VecAssemblyBegin(*Residue);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(*Residue);CHKERRQ(ierr);
+  return 0;
+
+}
+
+/****************************************************************************************************/
+
 int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 {
 
@@ -83,10 +157,10 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
    *  according to the element type
    */
 
-  int npe, type;
+//  int npe, type;
   double la, mu;
 
-  npe = eptr[e+1]-eptr[e];
+//  npe = eptr[e+1]-eptr[e];
 
   material_t *material = GetMaterial(PhysicalID[e]); CHECK_SPU_ERROR(material);
 
