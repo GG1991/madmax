@@ -460,7 +460,7 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 
 /****************************************************************************************************/
 
-int SpuReadBoundary(MPI_Comm * comm, char *mesh_f)
+int SpuReadBoundary(MPI_Comm * comm, char *mesh_n, char *mesh_f)
 {
 
   /*
@@ -481,69 +481,80 @@ int SpuReadBoundary(MPI_Comm * comm, char *mesh_f)
 
 /****************************************************************************************************/
 
-int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
+int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n)
 {
 
   /* 
-   *
    * Info:   Reads the nodes of the boundary and save them on <boundary_list>
    *
    * Input: 
    * char     *mesh_n     : file name with path
-   * MPI_Comm *comm       : the communicator of these processes
    * 
    * Output:
    * boundary_list->nodes : list that store <boundary_t> elements
    *
+   * 1) We determine which elements that follow $Elements are surface elements
+   *    we look if one of it nodes belongs to <MyNodOrig> if the answer is YES 
+   *    we add in sort exclusive way to an auxiliary list called 
+   *    <AuxBoundaryList> that stores <AuxBoundary_t> structures. The node is 
+   *    added to the correspondent GmshID of that surface element. If NO we 
+   *    continue with the others.
+   *    
+   * 2) For each element in the list we allocate memory (<NNods>) and copy on
+   *    the array <Nods> the values saved on the <AuxBoundaryList> for the 
+   *    correspondent <GmshID>
+   *
+   * Note: No MPI communicator is need here
    *
    */
 
-  FILE               * fm;
+  FILE   *fm;
 
-  int                  nelm, nelm_tot;
-  int                  npe;
-  int                  total;
-  int                  resto;
-  int                  i, d, n; 
-  int                  len;               // strlen(buf) for adding to offset
-  int                  ln;                // line counter
-  int                  ierr;
-  int                  ntag;              // ntag to read gmsh element conectivities
-  int                  rank;
-  int                  nproc;
+  int    total;
+  int    i, d, n; 
+  int    ln;                // line counter
+  int    ierr;
+  int    ntag;              // ntag to read gmsh element conectivities
+  int    GmshIDToSearch; 
+  int    NodeToSearch; 
+  int    *pNodeFound; 
+  int    NPE;
 
-  char                 buf[NBUF];   
-  char               * data;
+  char   buf[NBUF];   
+  char   *data;
 
-  typedef struct physicalBound_t_{
+  typedef struct AuxBoundary_t_{
+
     int GmshID;
-    list_t nodes;
-  }PhysicalBound_t;
+    list_t Nods;
 
-  PhysicalBound_t PhysicalBound;
+  }AuxBoundary_t;
+  AuxBoundary_t AuxBoundary;
 
-  list_t PhysicalBoundList;
-  list_init(&PhysicalBoundList,sizeof(PhysicalBound_t), NULL);
+  list_t AuxBoundaryList;
+  list_init(&AuxBoundaryList,sizeof(AuxBoundary_t), NULL);
  
-  node_list_t  *pBound;
+  node_list_t  *pBound, *pAuxBound;
   pBound = boundary_list.head;
+  pAuxBound = AuxBoundaryList.head;
   while(pBound){
     // asignamos el GmshID the cada boundary 
-    PhysicalBound.GmshID = ((boundary_t*)pBound->data)->GmshID;
+    AuxBoundary.GmshID = ((boundary_t*)pBound->data)->GmshID;
     // inicializamos la lista de nodos adentro de cada <PhysicalBound>
-    list_init(&PhysicalBound.nodes,sizeof(int), NULL);
+    list_init(&AuxBoundary.Nods,sizeof(int), NULL);
+    // insertamos en el mismo orden dentro de <AuxBoundarylist>
+    list_insertlast(&AuxBoundaryList,&AuxBoundary);
     pBound=pBound->next;
   }
 
-  MPI_Comm_size(*comm, &nproc);
-  MPI_Comm_rank(*comm, &rank);
-
   fm = fopen(mesh_n,"r");
   if(!fm){
-    ierr = PetscPrintf(*comm,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
+    ierr = PetscPrintf(*PROBLEM_COMM,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
     return 1;
   }
-
+  //
+  // Ahora hay que completar la lista <Nods>
+  //
   while(fgets(buf,NBUF,fm)!=NULL){
     data=strtok(buf," \n");
     //
@@ -557,33 +568,56 @@ int SpuReadBoundaryGmsh(MPI_Comm * comm, char *mesh_n)
       fgets(buf,NBUF,fm);
       data  = strtok(buf," \n");
       total = atoi(data);
-
       //
-      // leemos hasta $EndElements
-      // y contamos el numero total de los elementos volumen
+      // leemos hasta $EndElements o encontramos un elemento de
+      // de volumen. En general todos los de superficie estan
+      // antes que los de volumen en Gmsh.
       //
-      for(i=0; i<total; i++){
-	fgets(buf,NBUF,fm); 
-	len = strlen(buf);
+      i=0;
+      while( i<total ){
+	fgets(buf,NBUF,fm); ln ++;
 	data=strtok(buf," \n");
 	data=strtok(NULL," \n");
 	if(GmshIsAsurfaceElement(atoi(data))){
+	  NPE = GmshNodesPerElement(atoi(data));
 	  data=strtok(NULL," \n");
 	  ntag = atoi(data);
-	  // we read the PhysicalID
+	  // read the GmshID (or the same as PhysicalID for volumes)
 	  data = strtok(NULL," \n");
-
-	  d = 1;
-	  while(d<ntag){
-	    data = strtok(NULL," \n");
-	    d++;
+	  GmshIDToSearch = atoi(data);
+	  // search in <AuxBoundaryList> the element with the same GmshID
+	  pAuxBound = AuxBoundaryList.head;
+	  while(pAuxBound){
+	    // buscamos ese GmshIDTo search en la lista auxiliar
+	    if(AuxBoundary.GmshID == GmshIDToSearch ) break;
+	    pAuxBound = pAuxBound->next;
 	  }
-	  nelm_tot ++;
+	  if(pAuxBound){
+	    // salteamos los tags y nos vamos derecho para los nodos
+	    d = 1;
+	    while(d<ntag){
+	      data = strtok(NULL," \n");
+	      d++;
+	    }
+	    n=0;
+	    while(n<NPE){
+	      data = strtok(NULL," \n");
+	      NodeToSearch = atoi(data);
+	      pNodeFound = bsearch( &NodeToSearch, &MyNodOrig, NMyNod, sizeof(int), cmpfunc);
+	      if(pNodeFound){
+		list_insert_se( &(((AuxBoundary_t *)pAuxBound->data)->Nods), pNodeFound);
+	      }
+	      n++;
+	    }
+	  }
+
 	}
 	else{
-	  // is a surface element so be continue counting
-	  ln ++;
+	  // is a volume element so I expect not to 
+	  // see surface elements far beyond this file
+	  break;
 	}
+	i++;
       }
       break;
     }

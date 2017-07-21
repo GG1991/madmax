@@ -21,8 +21,8 @@ typedef struct boundary_t_{
   f1d_t  *fy;
   f1d_t  *fz;
   int    GmshID;
-  int    NNod;
-  int    *MyNod;
+  int    NNods;
+  int    *Nods;
 
 }boundary_t;
 
