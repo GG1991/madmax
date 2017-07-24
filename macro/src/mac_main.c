@@ -251,10 +251,14 @@ int main(int argc, char **argv)
   //
   // Solving Problem
   //
+  int its;	
+  double norm;
   PetscPrintf(MACRO_COMM, "Solving Linear System\n");
-//  KSPSolve(ksp,b,x);
-//  KSPGetConvergedReason(ksp,&reason);
-//  ierr = KSPGetIterationNumber(ksp,&KspIterationNum);CHKERRQ(ierr);
+  KSPSolve(ksp,b,x);
+  ierr = VecNorm(x,NORM_2,&norm);CHKERRQ(ierr);
+  ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
+  KSPGetConvergedReason(ksp,&reason);
+  ierr = PetscPrintf(MACRO_COMM,"Norm of error %g Iterations %D reason %d\n",norm,its,reason);CHKERRQ(ierr);
   PetscPrintf(MACRO_COMM, "OOKK !\n");
 
   //
