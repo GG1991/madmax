@@ -39,8 +39,8 @@ int AllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal, Mat *A, Vec *x, Vec
 
   ierr = MatCreate(comm,A);CHKERRQ(ierr);
   ierr = MatSetSizes(*A,nlocal,nlocal,ntotal,ntotal);CHKERRQ(ierr);
-  ierr = MatSetType(*A,MATMPIAIJ);CHKERRQ(ierr);
   ierr = MatSetFromOptions(*A);CHKERRQ(ierr);
+  ierr = MatSeqAIJSetPreallocation(*A,81,NULL);CHKERRQ(ierr);
   ierr = MatMPIAIJSetPreallocation(*A,81,NULL,81,NULL);CHKERRQ(ierr);
 
   /*
