@@ -23,8 +23,18 @@ typedef struct boundary_t_{
   int      GmshID;
   int      NNods;
   int      *Nods;
+
+  /* Staff to set boundary conditions */
+  int      NDirPerNode;
+  int      NNeuPerNode;
   int      *indeces;
+  int      NDirIndeces;
+  int      *DirichletIndeces;
+  int      NNeuIndeces;
+  int      *NeumannIndeces;
   double   *values;
+  double   *DirichletValues; 
+  double   *NeumannValues;
 
 }boundary_t;
 
