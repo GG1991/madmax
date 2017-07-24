@@ -29,3 +29,6 @@ int main(int argc, char **args);
 
 // mac_comm.c
 int mac_comm_init(void);
+
+// mac_boundary.c
+int MacroSetBoundaryConditions( double time, Vec *x );

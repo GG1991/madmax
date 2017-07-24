@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 
   double time;
 
-//  ierr = SetBoundaryConditionsOnX( &x, time);
+  ierr = MacroSetBoundaryConditions( time, &x);
 
   int KspIterationNum;
   //
