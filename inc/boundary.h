@@ -11,18 +11,20 @@
 
 typedef struct boundary_t_{
 
-  char   *name;
-  int    kind;
-  int    order;
-  int    nfx;
-  int    nfy;
-  int    nfz;
-  f1d_t  *fx; 
-  f1d_t  *fy;
-  f1d_t  *fz;
-  int    GmshID;
-  int    NNods;
-  int    *Nods;
+  char     *name;
+  int      kind;
+  int      order;
+  int      nfx;
+  int      nfy;
+  int      nfz;
+  f1d_t    *fx; 
+  f1d_t    *fy;
+  f1d_t    *fz;
+  int      GmshID;
+  int      NNods;
+  int      *Nods;
+  int      *indeces;
+  double   *values;
 
 }boundary_t;
 

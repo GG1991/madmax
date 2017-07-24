@@ -634,9 +634,14 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile)
 	numnodes = ((AuxBoundary_t *)pAuxBound->data)->Nods.sizelist;
 	((boundary_t*)pBound->data)->NNods = numnodes;
 	((boundary_t*)pBound->data)->Nods = malloc( numnodes * sizeof(int) );
+	((boundary_t*)pBound->data)->indeces = malloc( numnodes * 3 * sizeof(int) );
+	((boundary_t*)pBound->data)->values = malloc( numnodes * 3 * sizeof(double) );
 	n=0;
 	while(n<numnodes){
 	  ((boundary_t*)pBound->data)->Nods[n] = *(int*)(((AuxBoundary_t *)pAuxBound->data)->Nods.head->data);
+	  for(d=0;d<3;d++){
+	    ((boundary_t*)pBound->data)->indeces[n*3+d] = *(int*)(((AuxBoundary_t *)pAuxBound->data)->Nods.head->data) * 3 + d;
+	  }
 	  list_delfirst( &(((AuxBoundary_t *)pAuxBound->data)->Nods) ) ;
 	  n++;
 	}

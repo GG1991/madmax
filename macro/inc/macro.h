@@ -31,4 +31,4 @@ int main(int argc, char **args);
 int mac_comm_init(void);
 
 // mac_boundary.c
-int MacroSetBoundaryConditions( double time, Vec *x );
+int MacroSetBoundaryDisplacement( double time, Vec *x );

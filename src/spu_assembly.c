@@ -148,7 +148,6 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 
     }
     ierr = VecSetValues(*Residue, npe*3, PETScIdx, ElemResidual, ADD_VALUES);CHKERRQ(ierr);
-
   }
 
   /* communication between processes */

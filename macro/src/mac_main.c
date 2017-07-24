@@ -229,9 +229,11 @@ int main(int argc, char **argv)
   fem_inigau();
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
-  double time;
+  double time = 1.0;
 
-  ierr = MacroSetBoundaryConditions( time, &x);
+  ierr = MacroSetBoundaryDisplacement( time, &x);
+  ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
+  ierr = VecView(x,viewer); CHKERRQ(ierr);
 
   int KspIterationNum;
   //
