@@ -229,15 +229,19 @@ int main(int argc, char **argv)
   fem_inigau();
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
+  double time;
+
+//  ierr = SetBoundaryConditionsOnX( &x, time);
+
   int KspIterationNum;
   //
   // Assemblying Jacobian
   //
   ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-  PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
-  AssemblyJacobianSmallDeformation(&A);
+  ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
+  ierr = AssemblyJacobianSmallDeformation(&A);
   ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-  PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
   ierr = MatView(A,viewer); CHKERRQ(ierr);
   //
   // Assemblying Residual
@@ -246,20 +250,20 @@ int main(int argc, char **argv)
   ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");CHKERRQ(ierr);
   ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-  PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer1); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer1); CHKERRQ(ierr);
   ierr = VecView(b,viewer1); CHKERRQ(ierr);
   //
   // Solving Problem
   //
   int its;	
   double norm;
-  PetscPrintf(MACRO_COMM, "Solving Linear System\n");
-  KSPSolve(ksp,b,x);
+  ierr = PetscPrintf(MACRO_COMM, "Solving Linear System\n");
+  ierr = KSPSolve(ksp,b,x);CHKERRQ(ierr);
   ierr = VecNorm(x,NORM_2,&norm);CHKERRQ(ierr);
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
-  KSPGetConvergedReason(ksp,&reason);
+  ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
   ierr = PetscPrintf(MACRO_COMM,"Norm of error %g Iterations %D reason %d\n",norm,its,reason);CHKERRQ(ierr);
-  PetscPrintf(MACRO_COMM, "OOKK !\n");
+  ierr = PetscPrintf(MACRO_COMM, "OOKK !\n");
 
   //
   // Free Memory and close things
