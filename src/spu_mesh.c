@@ -511,7 +511,7 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile)
   FILE   *fm;
 
   int    total;
-  int    i, d, n; 
+  int    i, j, h, k, d, n; 
   int    ln;                // line counter
   int    ierr;
   int    ntag;              // ntag to read gmsh element conectivities
@@ -578,24 +578,28 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile)
       // antes que los de volumen en Gmsh.
       //
       i=0;
-      while( i<total ){
+      while(i<total)
+      {
 	fgets(buf,NBUF,fm); ln ++;
 	data=strtok(buf," \n");
 	data=strtok(NULL," \n");
+
 	if(GmshIsAsurfaceElement(atoi(data))){
+
 	  NPE = GmshNodesPerElement(atoi(data));
 	  data=strtok(NULL," \n");
 	  ntag = atoi(data);
 	  // read the GmshID (or the same as PhysicalID for volumes)
 	  data = strtok(NULL," \n");
 	  GmshIDToSearch = atoi(data);
-	  // search in <AuxBoundaryList> the element with the same GmshID
+
+	  // search in <AuxBoundaryList> the element with the same <GmshIDToSearch>
 	  pAuxBound = AuxBoundaryList.head;
 	  while(pAuxBound){
-	    // buscamos ese GmshIDTo search en la lista auxiliar
 	    if( ((AuxBoundary_t *)pAuxBound->data)->GmshID == GmshIDToSearch ) break;
 	    pAuxBound = pAuxBound->next;
 	  }
+
 	  if(pAuxBound){
 	    // salteamos los tags y nos vamos derecho para los nodos
 	    d = 1;
@@ -609,11 +613,12 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile)
 	      NodeToSearch = atoi(data);
 	      pNodeFound = bsearch( &NodeToSearch, MyNodOrig, NMyNod, sizeof(int), cmpfunc);
 	      if(pNodeFound){
-		list_insert_se( &(((AuxBoundary_t *)pAuxBound->data)->Nods), pNodeFound);
+		list_insert_se( &(((AuxBoundary_t*)pAuxBound->data)->Nods), pNodeFound);
 	      }
 	      n++;
 	    }
 	  }
+
 
 	}
 	else{
@@ -623,6 +628,38 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile)
 	}
 	i++;
       } // i < total de elementos especificados en Gmsh file
+
+      /* Quitamos los repetidos en order decendente 
+         TODO: Evaluar la performance de esto y ver si
+	 hay algo mejor (seguro hay con quick search + arrays)
+      */
+      node_list_t  *nbb, *nba, *nnb, *nna;
+
+      for(i=AuxBoundaryList.sizelist;i>0;i--){
+	nbb=AuxBoundaryList.head;
+	for(j=0;j<i-1;j++){
+	  nbb=nbb->next;
+	}
+	nba=AuxBoundaryList.head;
+	for(j=0;j<i-1;j++){
+	  nna=((AuxBoundary_t*)nba->data)->Nods.head;
+	  for(h=0;h<((AuxBoundary_t*)nba->data)->Nods.sizelist;h++){
+	    nnb=((AuxBoundary_t*)nbb->data)->Nods.head;
+	    for(k=0;k<((AuxBoundary_t*)nbb->data)->Nods.sizelist;k++){
+	      if(*(int*)nnb->data==*(int*)nna->data){
+		if(list_del(&((AuxBoundary_t*)nbb->data)->Nods,nnb)){
+		  return 1;
+		}
+		break;
+	      }
+	      nnb=nnb->next;
+	    }
+	    nna=nna->next;
+	  }
+	  nba=nba->next;
+	}
+      }
+
       // ahora metemos los nodos de las listas en la estructura posta <boundary_list>
       int numnodes;
 
