@@ -562,17 +562,17 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
 	  boundary.kind = atoi(data);
 
-	  // <nfx> 
+	  // <nfz> 
 	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	  boundary.nfx = atoi(data);
+	  boundary.nfz = atoi(data);
 
 	  // <nfy> 
 	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
 	  boundary.nfy = atoi(data);
 
-	  // <nfz> 
+	  // <nfx> 
 	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	  boundary.nfz = atoi(data);
+	  boundary.nfx = atoi(data);
 
 	  boundary.fx = GetFunctionPointer(&function_list,boundary.nfx);CHECK_INPUT_ERROR(boundary.fx);
 	  boundary.fy = GetFunctionPointer(&function_list,boundary.nfy);CHECK_INPUT_ERROR(boundary.fy);
