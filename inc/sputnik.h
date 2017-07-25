@@ -53,6 +53,7 @@ typedef struct _physical_t{
     int    dim;
     int    GmshID;
     char   *name; 
+    int    FlagFound;
 
 }physical_t;
 
@@ -134,10 +135,11 @@ int spu_parse_scheme( char *input );
 int spu_parse_mesh( char * input );
 int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input );
 int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n );
-int SetGmshIDOnMaterialsAndBoundaries(void);
+int SetGmshIDOnMaterialsAndBoundaries(MPI_Comm PROBLEM_COMM);
 int CheckPhysicalID(void);
 int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input);
 int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input );
+int StrBin2Dec(char *str);
 
 // spu_mesh.c
 int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);

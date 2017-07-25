@@ -414,6 +414,8 @@ int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
 	  physical.name[i-1] = data[i];
 	}
 	physical.name[i-1] = '\0';
+	/* This flag is to check if we find it on input file */
+	physical.FlagFound = 0;
 
 	list_insertlast(&physical_list,&physical);
 
@@ -432,7 +434,7 @@ int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
 
 /****************************************************************************************************/
 
-int SetGmshIDOnMaterialsAndBoundaries(void)
+int SetGmshIDOnMaterialsAndBoundaries(MPI_Comm PROBLEM_COMM)
 {
 
   /* For each material on <material_list> 
@@ -452,9 +454,10 @@ int SetGmshIDOnMaterialsAndBoundaries(void)
        }
        pp = pp->next;
      }
-     if(!pp){ 
-       SETERRQ1(PETSC_COMM_SELF,1,"Material %s not found in Gmsh File.",((material_t*)pm->data)->name);
-     }
+
+     if(!pp){SETERRQ1(PETSC_COMM_SELF,1,"Material %s not found in Gmsh File.",((material_t*)pm->data)->name);}
+
+     ((physical_t*)pp->data)->FlagFound = 1;
      pm = pm->next;
    }
 
@@ -471,7 +474,17 @@ int SetGmshIDOnMaterialsAndBoundaries(void)
      if(!pp){ 
        SETERRQ1(PETSC_COMM_SELF,1,"Boundary %s not found in Gmsh File.",((boundary_t*)pm->data)->name);
      }
+     ((physical_t*)pp->data)->FlagFound = 1;
      pm = pm->next;
+   }
+
+   /* Check Physical not found a print a warning */
+   pp = physical_list.head;
+   while(pp)
+   {
+     if( !((physical_t*)pp->data)->FlagFound ){PetscPrintf(PROBLEM_COMM,
+       "WARNING:Physical %s not found on input file.\n",((physical_t*)pp->data)->name);}
+     pp = pp->next;
    }
 
   return 0;
@@ -541,53 +554,53 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 
     ln ++;
     data = strtok(buf," \n");
-    if(data){
-      if(!strcmp(data,"$Boundary")){
+    if(data){ if(!strcmp(data,"$Boundary")){
 
-	flag_start_boundary=1;
-	while(fgets(buf,NBUF,file) != NULL)
-	{
-	  ln ++;
+      flag_start_boundary=1;
+      while(fgets(buf,NBUF,file) != NULL)
+      {
+	ln ++;
 
-	  // <name>
-	  data = strtok(buf," \n"); CHECK_INPUT_ERROR(data);
-	  if(!strcmp(data,"$EndBoundary")) break;
-	  boundary.name = strdup(data);
+	// <name>
+	data = strtok(buf," \n"); CHECK_INPUT_ERROR(data);
+	if(!strcmp(data,"$EndBoundary")) break;
+	boundary.name = strdup(data);
 
-	  // <order> 
-	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	  boundary.order = atoi(data);
+	// <order> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	boundary.order = atoi(data);
 
-	  // <kind> 
-	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	  boundary.kind = atoi(data);
+	// <kind> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	boundary.kind = StrBin2Dec(data);
+	if(boundary.kind < 0 || boundary.kind > 7 ){SETERRQ(PETSC_COMM_SELF,1,"Bad <kind> code on boundary element.");}
 
-	  // <nfz> 
-	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	  boundary.nfz = atoi(data);
+	// <nfz> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	boundary.nfz = atoi(data);
 
-	  // <nfy> 
-	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	  boundary.nfy = atoi(data);
+	// <nfy> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	boundary.nfy = atoi(data);
 
-	  // <nfx> 
-	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	  boundary.nfx = atoi(data);
+	// <nfx> 
+	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	boundary.nfx = atoi(data);
 
-	  boundary.fx = GetFunctionPointer(&function_list,boundary.nfx);CHECK_INPUT_ERROR(boundary.fx);
-	  boundary.fy = GetFunctionPointer(&function_list,boundary.nfy);CHECK_INPUT_ERROR(boundary.fy);
-	  boundary.fz = GetFunctionPointer(&function_list,boundary.nfz);CHECK_INPUT_ERROR(boundary.fz);
+	boundary.fx = GetFunctionPointer(&function_list,boundary.nfx);CHECK_INPUT_ERROR(boundary.fx);
+	boundary.fy = GetFunctionPointer(&function_list,boundary.nfy);CHECK_INPUT_ERROR(boundary.fy);
+	boundary.fz = GetFunctionPointer(&function_list,boundary.nfz);CHECK_INPUT_ERROR(boundary.fz);
 
-	  // si llegamos hasta acá esta todo 0K lo insertamos en la lista 
-	  list_insert_se(&boundary_list, &boundary);
-	}
-      } // inside $Boundary
-
-      if(!strcmp(data,"$EndBoundary")){
-	CHECK_INPUT_ERROR(flag_start_boundary);
-	PetscPrintf(*PROBLEM_COMM, "# of boundaries found in %s : %d\n", input, boundary_list.sizelist);
-	return 0;
+	// si llegamos hasta acá esta todo 0K lo insertamos en la lista 
+	list_insert_se(&boundary_list, &boundary);
       }
+    } // inside $Boundary
+
+    if(!strcmp(data,"$EndBoundary")){
+      CHECK_INPUT_ERROR(flag_start_boundary);
+      PetscPrintf(*PROBLEM_COMM, "# of boundaries found in %s : %d\n", input, boundary_list.sizelist);
+      return 0;
+    }
     }
   }
   // any boundary condition found
@@ -689,8 +702,30 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
 
 /****************************************************************************************************/
 
-
 int cmpfuncBou (void * a, void * b)
 {
   return ( ((boundary_t *)a)->order - ((boundary_t *)b)->order );
+}
+
+/****************************************************************************************************/
+
+int StrBin2Dec(char *str)
+{
+
+  /* Converts the string in "str" that suppose to have a continuue
+   * sequence of "0" and "1" to its decimal representation.
+   */
+
+  int i;
+  int dec = 0; 
+
+  for(i=strlen(str)-1;i>=0;i--){
+    if(str[i]=='0' || str[i]=='1'){
+      if(str[i]=='1')
+	dec+=(int)pow(2,strlen(str)-1-i);
+    }else{
+      return -1;
+    }
+  }
+  return dec;
 }
