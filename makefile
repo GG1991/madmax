@@ -26,11 +26,9 @@ MIC_INC_DIR= ${MIC_DIR}/inc
 
 OPT = 0
 ifeq ($(OPT),1)
-  CFLAGS=-O3
-  PETSC_ARCH=arch-linux-opt
+CFLAGS=-O3
 else
-  CFLAGS=-g -O0
-  PETSC_ARCH=arch-linux-debug
+CFLAGS=-g -O0
 endif
 	
 DEPS = ${DEP_DIR}/sputnik.h        \
