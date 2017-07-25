@@ -232,8 +232,10 @@ int main(int argc, char **argv)
   double time = 1.0;
 
   ierr = MacroSetBoundaryDisplacement( time, &x);
-  ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-  ierr = VecView(x,viewer); CHKERRQ(ierr);
+  if(print_flag){
+    ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
+    ierr = VecView(x,viewer); CHKERRQ(ierr);
+  }
 
   int KspIterationNum;
   //
@@ -243,8 +245,10 @@ int main(int argc, char **argv)
   ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
   ierr = AssemblyJacobianSmallDeformation(&A);
   ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-  ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
-  ierr = MatView(A,viewer); CHKERRQ(ierr);
+  if(print_flag){
+    ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
+    ierr = MatView(A,viewer); CHKERRQ(ierr);
+  }
   //
   // Assemblying Residual
   //
@@ -252,8 +256,10 @@ int main(int argc, char **argv)
   ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");CHKERRQ(ierr);
   ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-  ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer1); CHKERRQ(ierr);
-  ierr = VecView(b,viewer1); CHKERRQ(ierr);
+  if(print_flag){
+    ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer1); CHKERRQ(ierr);
+    ierr = VecView(b,viewer1); CHKERRQ(ierr);
+  }
   //
   // Solving Problem
   //
