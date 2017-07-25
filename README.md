@@ -17,3 +17,11 @@ To plot PETSc trace do:
 ```
 
 It will gives you one file per processor
+
+# ParMETIS
+
+```bash
+cmake -DGKLIB_PATH=$HOME/libs/parmetis-4.0.3/metis/GKlib 
+      -DMETIS_PATH=$HOME/libs/parmetis-4.0.3/metis 
+      -DCMAKE_C_COMPILER=$HOME/libs/openmpi-install/bin/mpicc .
+```
