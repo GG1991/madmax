@@ -564,7 +564,7 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
     //
     // leemos hasta encontrar $Elements
     //
-    if(strcmp(data,"$Elements")==0){
+    if(!strcmp(data,"$Elements")){
       //
       // leemos el numero total pero no lo usamos 
       // (incluye elementos de superficie y de volumen)
@@ -618,7 +618,9 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
 	      n++;
 	    }
 	  }
-
+	  else{
+            /* Warning a physical entity specified on Gmsh file will not have boundary condition */
+	  }
 
 	}
 	else{
@@ -628,107 +630,110 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
 	}
 	i++;
       } // i < total de elementos especificados en Gmsh file
-
-      ln ++;
-    }
-    fclose(fm);
-
-    /* 
-       Terminamos de leer el archivo ahora quitamos los repetidos en order decendente 
-       TODO> Evaluar la performance de esto y ver si
-       hay algo mejor (seguro hay con quick search + arrays)
-     */
-    node_list_t  *nbb, *nba, *nnb, *nna;
-
-    for(i=AuxBoundaryList.sizelist;i>0;i--){
-      nbb=AuxBoundaryList.head;
-      for(j=0;j<i-1;j++){
-	nbb=nbb->next;
-      }
-      nba=AuxBoundaryList.head;
-      for(j=0;j<i-1;j++){
-	nna=((AuxBoundary_t*)nba->data)->Nods.head;
-	for(h=0;h<((AuxBoundary_t*)nba->data)->Nods.sizelist;h++){
-	  nnb=((AuxBoundary_t*)nbb->data)->Nods.head;
-	  for(k=0;k<((AuxBoundary_t*)nbb->data)->Nods.sizelist;k++){
-	    if(*(int*)nnb->data==*(int*)nna->data){
-	      if(list_del(&((AuxBoundary_t*)nbb->data)->Nods,nnb)){
-		return 1;
-	      }
-	      break;
-	    }
-	    nnb=nnb->next;
-	  }
-	  nna=nna->next;
-	}
-	nba=nba->next;
-      }
-    }
-
-    // ahora metemos los nodos de las listas en la estructura posta <boundary_list>
-    int NodeOrig, NodeLocal, numnodes, kind, NDirPerNode= -1, NNeuPerNode = -1, *pIndex;
-    int DirCount, NeuCount, *p;
-
-    pBound = boundary_list.head;
-    pAuxBound = AuxBoundaryList.head;
-    while(pBound){
-      /* 
-	 asignamos el NNods, allocamos memory y guardamos los nods 
-	 (ya van a estar ordenados y sin repetir)
-       */
-      numnodes = ((AuxBoundary_t *)pAuxBound->data)->Nods.sizelist;
-      kind     = ((boundary_t *)pBound->data)->kind;
-
-      if(kind==0)                  { NDirPerNode = 0; NNeuPerNode = 3;}
-      if(kind==1||kind==2||kind==4){ NDirPerNode = 1; NNeuPerNode = 2;}
-      if(kind==3||kind==5||kind==6){ NDirPerNode = 2; NNeuPerNode = 1;}
-      if(kind==7)                  { NDirPerNode = 3; NNeuPerNode = 0;}
-
-      ((boundary_t*)pBound->data)->NNods             = numnodes;
-      ((boundary_t*)pBound->data)->Nods              = malloc( numnodes * sizeof(int) );
-      ((boundary_t*)pBound->data)->indeces           = malloc( numnodes * 3 * sizeof(int) );
-      ((boundary_t*)pBound->data)->values            = malloc( numnodes * 3 * sizeof(double) );
-      ((boundary_t*)pBound->data)->NDirPerNode       = NDirPerNode;
-      ((boundary_t*)pBound->data)->NNeuPerNode       = NNeuPerNode;
-      ((boundary_t*)pBound->data)->NDirIndeces       = numnodes * NDirPerNode;
-      ((boundary_t*)pBound->data)->DirichletIndeces  = malloc( numnodes * NDirPerNode * sizeof(int) );
-      ((boundary_t*)pBound->data)->DirichletValues   = malloc( numnodes * NDirPerNode * sizeof(double) );
-      ((boundary_t*)pBound->data)->NNeuIndeces       = numnodes * NNeuPerNode;
-      ((boundary_t*)pBound->data)->NeumannIndeces    = malloc( numnodes * NNeuPerNode * sizeof(int) );
-      ((boundary_t*)pBound->data)->NeumannValues     = malloc( numnodes * NNeuPerNode * sizeof(double) );
-      pIndex = ((boundary_t*)pBound->data)->Nods;
-
-      n=0; DirCount = 0; NeuCount = 0;
-      while(n<numnodes)
-      {
-	/* we set the Original node numeration first */
-	NodeOrig = *(int*)(((AuxBoundary_t *)pAuxBound->data)->Nods.head->data); 
-	p = bsearch(&NodeOrig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); if(!p) SETERRQ2(PROBLEM_COMM,1,"A boundary node (%d) seems now to not belong to this process (rank:%d)",NodeOrig,rank);
-
-	NodeLocal = p - MyNodOrig;
-
-	for(d=0;d<3;d++)
-	{
-	  if( (kind & (1<<d)) == (1<<d) ){
-	    /* Dirichlet */
-	    ((boundary_t*)pBound->data)->DirichletIndeces[DirCount] = NodeLocal*3 + d; DirCount++;
-	  }
-	  else{
-	    /* Neumann */
-	    ((boundary_t*)pBound->data)->NeumannIndeces[NeuCount]   = NodeLocal*3 + d; NeuCount++;
-	  }
-	}
-
-	n++;
-	list_delfirst( &(((AuxBoundary_t *)pAuxBound->data)->Nods) ) ;
-      }
-      if(((AuxBoundary_t *)pAuxBound->data)->Nods.head) SETERRQ(PROBLEM_COMM,1,"It's seems that there some more nodes in the list.");
-      list_clear(&(((AuxBoundary_t *)pAuxBound->data)->Nods));
-      pBound = pBound->next;	pAuxBound = pAuxBound->next;
-    }
-    list_clear(&AuxBoundaryList);
-    break;
+      break;
+    } // inside $Elements - $EndElements
+    ln ++;
   }
+  fclose(fm);
+
+  /* 
+     Terminamos de leer el archivo ahora quitamos los repetidos en order decendente 
+     TODO> Evaluar la performance de esto y ver si
+     hay algo mejor (seguro hay con quick search + arrays)
+   */
+  node_list_t  *nbb, *nba, *nnb, *nna;
+
+  for(i=AuxBoundaryList.sizelist;i>0;i--){
+    nbb=AuxBoundaryList.head;
+    for(j=0;j<i-1;j++){
+      nbb=nbb->next;
+    }
+    nba=AuxBoundaryList.head;
+    for(j=0;j<i-1;j++){
+      nna=((AuxBoundary_t*)nba->data)->Nods.head;
+      for(h=0;h<((AuxBoundary_t*)nba->data)->Nods.sizelist;h++){
+	nnb=((AuxBoundary_t*)nbb->data)->Nods.head;
+	for(k=0;k<((AuxBoundary_t*)nbb->data)->Nods.sizelist;k++){
+	  if(*(int*)nnb->data==*(int*)nna->data){
+	    if(list_del(&((AuxBoundary_t*)nbb->data)->Nods,nnb)){
+	      return 1;
+	    }
+	    break;
+	  }
+	  nnb=nnb->next;
+	}
+	nna=nna->next;
+      }
+      nba=nba->next;
+    }
+  }
+
+  // ahora metemos los nodos de las listas en la estructura posta <boundary_list>
+  int NodeOrig, NodeLocal, numnodes, kind, NDirPerNode= -1, NNeuPerNode = -1;
+  int DirCount, NeuCount, *p;
+
+  pBound = boundary_list.head;
+  pAuxBound = AuxBoundaryList.head;
+  while(pBound)
+  {
+    /* 
+       asignamos el NNods, allocamos memory y guardamos los nods 
+       (ya van a estar ordenados y sin repetir)
+     */
+    numnodes = ((AuxBoundary_t *)pAuxBound->data)->Nods.sizelist;
+    kind     = ((boundary_t *)pBound->data)->kind;
+
+    if(kind==0)                  { NDirPerNode = 0; NNeuPerNode = 3;}
+    if(kind==1||kind==2||kind==4){ NDirPerNode = 1; NNeuPerNode = 2;}
+    if(kind==3||kind==5||kind==6){ NDirPerNode = 2; NNeuPerNode = 1;}
+    if(kind==7)                  { NDirPerNode = 3; NNeuPerNode = 0;}
+
+    ((boundary_t*)pBound->data)->NNods             = numnodes;
+    ((boundary_t*)pBound->data)->Nods              = malloc( numnodes * sizeof(int) );
+    ((boundary_t*)pBound->data)->indeces           = malloc( numnodes * 3 * sizeof(int) );
+    ((boundary_t*)pBound->data)->values            = malloc( numnodes * 3 * sizeof(double) );
+    ((boundary_t*)pBound->data)->NDirPerNode       = NDirPerNode;
+    ((boundary_t*)pBound->data)->NNeuPerNode       = NNeuPerNode;
+    ((boundary_t*)pBound->data)->NDirIndeces       = numnodes * NDirPerNode;
+    ((boundary_t*)pBound->data)->DirichletIndeces  = malloc( numnodes * NDirPerNode * sizeof(int) );
+    ((boundary_t*)pBound->data)->DirichletValues   = malloc( numnodes * NDirPerNode * sizeof(double) );
+    ((boundary_t*)pBound->data)->NNeuIndeces       = numnodes * NNeuPerNode;
+    ((boundary_t*)pBound->data)->NeumannIndeces    = malloc( numnodes * NNeuPerNode * sizeof(int) );
+    ((boundary_t*)pBound->data)->NeumannValues     = malloc( numnodes * NNeuPerNode * sizeof(double) );
+
+    n=0; DirCount = 0; NeuCount = 0;
+    while(n<numnodes)
+    {
+      /* we set the Original node numeration first */
+      NodeOrig = *(int*)(((AuxBoundary_t *)pAuxBound->data)->Nods.head->data); 
+      ((boundary_t*)pBound->data)->Nods[n] = NodeOrig;
+
+      p = bsearch(&NodeOrig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); 
+      if(!p){SETERRQ2(PROBLEM_COMM,1,
+	  "A boundary node (%d) seems now to not belong to this process (rank:%d)",NodeOrig,rank);}
+
+      NodeLocal = p - MyNodOrig;
+
+      for(d=0;d<3;d++)
+      {
+	if( (kind & (1<<d)) == (1<<d) ){
+	  /* Dirichlet */
+	  ((boundary_t*)pBound->data)->DirichletIndeces[DirCount] = NodeLocal*3 + d; DirCount++;
+	}
+	else{
+	  /* Neumann */
+	  ((boundary_t*)pBound->data)->NeumannIndeces[NeuCount]   = NodeLocal*3 + d; NeuCount++;
+	}
+      }
+
+      n++;
+      list_delfirst( &(((AuxBoundary_t *)pAuxBound->data)->Nods) ) ;
+    }
+    if(((AuxBoundary_t *)pAuxBound->data)->Nods.head) SETERRQ(PROBLEM_COMM,1,"It's seems that there some more nodes in the list.");
+    list_clear(&(((AuxBoundary_t *)pAuxBound->data)->Nods));
+    pBound = pBound->next;	pAuxBound = pAuxBound->next;
+  }
+  list_clear(&AuxBoundaryList);
 
   if(outfile!=NULL){
     // queremos escribir algo

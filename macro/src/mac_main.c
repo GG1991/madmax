@@ -183,7 +183,7 @@ int main(int argc, char **argv)
   ierr = SpuParsePhysicalEntities( &MACRO_COMM, mesh_n ); CHKERRQ(ierr);
   ierr = SpuParseFunctions( &MACRO_COMM, input_n ); CHKERRQ(ierr); 
   ierr = SpuParseBoundary(&MACRO_COMM, input_n ); CHKERRQ(ierr); 
-  ierr = SetGmshIDOnMaterialsAndBoundaries(); CHKERRQ(ierr); 
+  ierr = SetGmshIDOnMaterialsAndBoundaries(MACRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = SpuReadBoundary(MACRO_COMM, mesh_n, mesh_f, FileOutputStructures );CHKERRQ(ierr);
   //

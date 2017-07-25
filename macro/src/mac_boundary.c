@@ -68,7 +68,7 @@ int MacroSetBoundaryDisplacement( double time, Vec *x )
 
       if( (kind & (1<<d)) == (1<<d) ){
 	/* es Dirichlet */
-	for(i=0;i<numnodes;i++){ pToNeuValues[i*NDirPerNode + ofs_dir] = ValueToSet;}
+	for(i=0;i<numnodes;i++){ pToDirValues[i*NDirPerNode + ofs_dir] = ValueToSet;}
 	ofs_dir++;
       }
       else{
@@ -79,7 +79,10 @@ int MacroSetBoundaryDisplacement( double time, Vec *x )
       /* pToValues = [ valx valy valz valx valy valz ... valx valy valz ] */
     }
 
-    //  usamos VecSetValuesLocal aqui ya que vamos a modificar valores locales unicamente
+    /*  
+	Dirichlet Boundary condition set is set on <x> 
+	usamos VecSetValuesLocal aqui ya que vamos a modificar valores locales unicamente
+     */
     ierr = VecSetValuesLocal( *x, NDirIndeces, pToDirIndeces, pToDirValues, INSERT_VALUES); CHKERRQ(ierr);
     pBound = pBound->next;
   }
