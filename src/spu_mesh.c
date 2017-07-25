@@ -460,7 +460,7 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 
 /****************************************************************************************************/
 
-int SpuReadBoundary(MPI_Comm * comm, char *mesh_n, char *mesh_f, FILE *outfile)
+int SpuReadBoundary(MPI_Comm PROBLEM_COMM, char *mesh_n, char *mesh_f, FILE *outfile)
 {
 
   /*
@@ -473,7 +473,7 @@ int SpuReadBoundary(MPI_Comm * comm, char *mesh_n, char *mesh_f, FILE *outfile)
    */
 
   if(strcmp(mesh_f,"gmsh") == 0){
-    return SpuReadBoundaryGmsh(comm, mesh_n, outfile);
+    return SpuReadBoundaryGmsh(PROBLEM_COMM, mesh_n, outfile);
   }else{
     return 1;
   }
@@ -481,31 +481,31 @@ int SpuReadBoundary(MPI_Comm * comm, char *mesh_n, char *mesh_f, FILE *outfile)
 
 /****************************************************************************************************/
 
-int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile)
+int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
 {
 
   /* 
-   * Info:   Reads the nodes of the boundary and save them on <boundary_list>
-   *
-   * Input: 
-   * char     *mesh_n     : file name with path
-   * 
-   * Output:
-   * boundary_list->nodes : list that store <boundary_t> elements
-   *
-   * 1) We determine which elements that follow $Elements are surface elements
-   *    we look if one of it nodes belongs to <MyNodOrig> if the answer is YES 
-   *    we add in sort exclusive way to an auxiliary list called 
-   *    <AuxBoundaryList> that stores <AuxBoundary_t> structures. The node is 
-   *    added to the correspondent GmshID of that surface element. If NO we 
-   *    continue with the others.
-   *    
-   * 2) For each element in the list we allocate memory (<NNods>) and copy on
-   *    the array <Nods> the values saved on the <AuxBoundaryList> for the 
-   *    correspondent <GmshID>
-   *
-   * Note: No MPI communicator is need here
-   *
+     Info >   Reads the nodes of the boundary and save them on <boundary_list>
+
+     Input> 
+     char      mesh_n     > file name with path
+
+     Output>
+     boundary_list->nodes > list that store <boundary_t> elements
+
+     1) We determine which elements that follow $Elements are surface elements
+     we look if one of it nodes belongs to <MyNodOrig> if the answer is YES 
+     we add in sort exclusive way to an auxiliary list called 
+     <AuxBoundaryList> that stores <AuxBoundary_t> structures. The node is 
+     added to the correspondent GmshID of that surface element. If NO we 
+     continue with the others.
+
+     2) For each element in the list we allocate memory (<NNods>) and copy on
+     the array <Nods> the values saved on the <AuxBoundaryList> for the 
+     correspondent <GmshID>
+
+     Note> No MPI communicator is need here
+
    */
 
   FILE   *fm;
@@ -535,8 +535,8 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile)
   list_t AuxBoundaryList;
   list_init(&AuxBoundaryList,sizeof(AuxBoundary_t), NULL);
 
-  MPI_Comm_size(*PROBLEM_COMM, &nproc);
-  MPI_Comm_rank(*PROBLEM_COMM, &rank);
+  MPI_Comm_size(PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(PROBLEM_COMM, &rank);
  
   node_list_t  *pBound, *pAuxBound;
   pBound = boundary_list.head;
@@ -553,7 +553,7 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile)
 
   fm = fopen(mesh_n,"r");
   if(!fm){
-    ierr = PetscPrintf(*PROBLEM_COMM,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
+    ierr = PetscPrintf(PROBLEM_COMM,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
     return 1;
   }
   //
@@ -629,96 +629,105 @@ int SpuReadBoundaryGmsh(MPI_Comm *PROBLEM_COMM, char *mesh_n, FILE *outfile)
 	i++;
       } // i < total de elementos especificados en Gmsh file
 
-      /* 
-	 Quitamos los repetidos en order decendente 
-         TODO: Evaluar la performance de esto y ver si
-	 hay algo mejor (seguro hay con quick search + arrays)
-      */
-      node_list_t  *nbb, *nba, *nnb, *nna;
-
-      for(i=AuxBoundaryList.sizelist;i>0;i--){
-	nbb=AuxBoundaryList.head;
-	for(j=0;j<i-1;j++){
-	  nbb=nbb->next;
-	}
-	nba=AuxBoundaryList.head;
-	for(j=0;j<i-1;j++){
-	  nna=((AuxBoundary_t*)nba->data)->Nods.head;
-	  for(h=0;h<((AuxBoundary_t*)nba->data)->Nods.sizelist;h++){
-	    nnb=((AuxBoundary_t*)nbb->data)->Nods.head;
-	    for(k=0;k<((AuxBoundary_t*)nbb->data)->Nods.sizelist;k++){
-	      if(*(int*)nnb->data==*(int*)nna->data){
-		if(list_del(&((AuxBoundary_t*)nbb->data)->Nods,nnb)){
-		  return 1;
-		}
-		break;
-	      }
-	      nnb=nnb->next;
-	    }
-	    nna=nna->next;
-	  }
-	  nba=nba->next;
-	}
-      }
-
-      // ahora metemos los nodos de las listas en la estructura posta <boundary_list>
-      int numnodes, kind, NDirPerNode= -1, NNeuPerNode = -1, *pIndex;
-      int DirCount, NeuCount;
-
-      pBound = boundary_list.head;
-      pAuxBound = AuxBoundaryList.head;
-      while(pBound){
-	/* 
-	   asignamos el NNods, allocamos memory y guardamos los nods 
-	   (ya van a estar ordenados y sin repetir)
-	*/
-	numnodes = ((AuxBoundary_t *)pAuxBound->data)->Nods.sizelist;
-	kind     = ((boundary_t *)pBound->data)->kind;
-	if(kind==0)                  { NDirPerNode = 0; NNeuPerNode = 3;}
-	if(kind==1||kind==2||kind==4){ NDirPerNode = 1; NNeuPerNode = 2;}
-	if(kind==3||kind==5||kind==6){ NDirPerNode = 2; NNeuPerNode = 1;}
-	if(kind==7)                  { NDirPerNode = 3; NNeuPerNode = 0;}
-	((boundary_t*)pBound->data)->NNods             = numnodes;
-	((boundary_t*)pBound->data)->Nods              = malloc( numnodes * sizeof(int) );
-	((boundary_t*)pBound->data)->indeces           = malloc( numnodes * 3 * sizeof(int) );
-	((boundary_t*)pBound->data)->values            = malloc( numnodes * 3 * sizeof(double) );
-	((boundary_t*)pBound->data)->NDirPerNode       = NDirPerNode;
-	((boundary_t*)pBound->data)->NNeuPerNode       = NNeuPerNode;
-	((boundary_t*)pBound->data)->NDirIndeces       = numnodes * NDirPerNode;
-	((boundary_t*)pBound->data)->DirichletIndeces  = malloc( numnodes * NDirPerNode * sizeof(int) );
-	((boundary_t*)pBound->data)->DirichletValues   = malloc( numnodes * NDirPerNode * sizeof(double) );
-	((boundary_t*)pBound->data)->NNeuIndeces       = numnodes * NNeuPerNode;
-	((boundary_t*)pBound->data)->NeumannIndeces    = malloc( numnodes * NNeuPerNode * sizeof(int) );
-	((boundary_t*)pBound->data)->NeumannValues     = malloc( numnodes * NNeuPerNode * sizeof(double) );
-	pIndex = ((boundary_t*)pBound->data)->Nods;
-
-	n=0; DirCount = 0; NeuCount = 0;
-	while(n<numnodes)
-	{
-	  pIndex[n] = *(int*)(((AuxBoundary_t *)pAuxBound->data)->Nods.head->data);
-	  for(d=0;d<3;d++){
-	    pIndex[n*3+d] = *(int*)(((AuxBoundary_t *)pAuxBound->data)->Nods.head->data) * 3 + d;
-	    if( (kind & (1<<d)) == (1<<d) ){
-	      /* es Dirichlet */
-	      ((boundary_t*)pBound->data)->DirichletIndeces[DirCount] = pIndex[n];
-	      DirCount++;
-	    }
-	    else{
-	      ((boundary_t*)pBound->data)->NeumannIndeces[NeuCount] = pIndex[n];
-	      NeuCount++;
-	    }
-	  }
-	  list_delfirst( &(((AuxBoundary_t *)pAuxBound->data)->Nods) ) ;
-	  n++;
-	}
-	list_clear(&(((AuxBoundary_t *)pAuxBound->data)->Nods));
-	pBound=pBound->next;
-	pAuxBound=pAuxBound->next;
-      }
-      list_clear(&AuxBoundaryList);
-      break;
+      ln ++;
     }
-    ln ++;
+    fclose(fm);
+
+    /* 
+       Terminamos de leer el archivo ahora quitamos los repetidos en order decendente 
+       TODO> Evaluar la performance de esto y ver si
+       hay algo mejor (seguro hay con quick search + arrays)
+     */
+    node_list_t  *nbb, *nba, *nnb, *nna;
+
+    for(i=AuxBoundaryList.sizelist;i>0;i--){
+      nbb=AuxBoundaryList.head;
+      for(j=0;j<i-1;j++){
+	nbb=nbb->next;
+      }
+      nba=AuxBoundaryList.head;
+      for(j=0;j<i-1;j++){
+	nna=((AuxBoundary_t*)nba->data)->Nods.head;
+	for(h=0;h<((AuxBoundary_t*)nba->data)->Nods.sizelist;h++){
+	  nnb=((AuxBoundary_t*)nbb->data)->Nods.head;
+	  for(k=0;k<((AuxBoundary_t*)nbb->data)->Nods.sizelist;k++){
+	    if(*(int*)nnb->data==*(int*)nna->data){
+	      if(list_del(&((AuxBoundary_t*)nbb->data)->Nods,nnb)){
+		return 1;
+	      }
+	      break;
+	    }
+	    nnb=nnb->next;
+	  }
+	  nna=nna->next;
+	}
+	nba=nba->next;
+      }
+    }
+
+    // ahora metemos los nodos de las listas en la estructura posta <boundary_list>
+    int NodeOrig, NodeLocal, numnodes, kind, NDirPerNode= -1, NNeuPerNode = -1, *pIndex;
+    int DirCount, NeuCount, *p;
+
+    pBound = boundary_list.head;
+    pAuxBound = AuxBoundaryList.head;
+    while(pBound){
+      /* 
+	 asignamos el NNods, allocamos memory y guardamos los nods 
+	 (ya van a estar ordenados y sin repetir)
+       */
+      numnodes = ((AuxBoundary_t *)pAuxBound->data)->Nods.sizelist;
+      kind     = ((boundary_t *)pBound->data)->kind;
+
+      if(kind==0)                  { NDirPerNode = 0; NNeuPerNode = 3;}
+      if(kind==1||kind==2||kind==4){ NDirPerNode = 1; NNeuPerNode = 2;}
+      if(kind==3||kind==5||kind==6){ NDirPerNode = 2; NNeuPerNode = 1;}
+      if(kind==7)                  { NDirPerNode = 3; NNeuPerNode = 0;}
+
+      ((boundary_t*)pBound->data)->NNods             = numnodes;
+      ((boundary_t*)pBound->data)->Nods              = malloc( numnodes * sizeof(int) );
+      ((boundary_t*)pBound->data)->indeces           = malloc( numnodes * 3 * sizeof(int) );
+      ((boundary_t*)pBound->data)->values            = malloc( numnodes * 3 * sizeof(double) );
+      ((boundary_t*)pBound->data)->NDirPerNode       = NDirPerNode;
+      ((boundary_t*)pBound->data)->NNeuPerNode       = NNeuPerNode;
+      ((boundary_t*)pBound->data)->NDirIndeces       = numnodes * NDirPerNode;
+      ((boundary_t*)pBound->data)->DirichletIndeces  = malloc( numnodes * NDirPerNode * sizeof(int) );
+      ((boundary_t*)pBound->data)->DirichletValues   = malloc( numnodes * NDirPerNode * sizeof(double) );
+      ((boundary_t*)pBound->data)->NNeuIndeces       = numnodes * NNeuPerNode;
+      ((boundary_t*)pBound->data)->NeumannIndeces    = malloc( numnodes * NNeuPerNode * sizeof(int) );
+      ((boundary_t*)pBound->data)->NeumannValues     = malloc( numnodes * NNeuPerNode * sizeof(double) );
+      pIndex = ((boundary_t*)pBound->data)->Nods;
+
+      n=0; DirCount = 0; NeuCount = 0;
+      while(n<numnodes)
+      {
+	/* we set the Original node numeration first */
+	NodeOrig = *(int*)(((AuxBoundary_t *)pAuxBound->data)->Nods.head->data); 
+	p = bsearch(&NodeOrig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); if(!p) SETERRQ2(PROBLEM_COMM,1,"A boundary node (%d) seems now to not belong to this process (rank:%d)",NodeOrig,rank);
+
+	NodeLocal = p - MyNodOrig;
+
+	for(d=0;d<3;d++)
+	{
+	  if( (kind & (1<<d)) == (1<<d) ){
+	    /* Dirichlet */
+	    ((boundary_t*)pBound->data)->DirichletIndeces[DirCount] = NodeLocal*3 + d; DirCount++;
+	  }
+	  else{
+	    /* Neumann */
+	    ((boundary_t*)pBound->data)->NeumannIndeces[NeuCount]   = NodeLocal*3 + d; NeuCount++;
+	  }
+	}
+
+	n++;
+	list_delfirst( &(((AuxBoundary_t *)pAuxBound->data)->Nods) ) ;
+      }
+      if(((AuxBoundary_t *)pAuxBound->data)->Nods.head) SETERRQ(PROBLEM_COMM,1,"It's seems that there some more nodes in the list.");
+      list_clear(&(((AuxBoundary_t *)pAuxBound->data)->Nods));
+      pBound = pBound->next;	pAuxBound = pAuxBound->next;
+    }
+    list_clear(&AuxBoundaryList);
+    break;
   }
 
   if(outfile!=NULL){

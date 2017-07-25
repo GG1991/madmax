@@ -14,7 +14,7 @@ int MacroSetBoundaryDisplacement( double time, Vec *x )
 
      2) luego procedemos con VecSetValues ya tenemos los indices guardados
 
-     Nota: No deberiamos hacer mallocs aqui dentro
+     Nota > No deberiamos hacer mallocs aqui dentro
 
    */
 
@@ -35,48 +35,50 @@ int MacroSetBoundaryDisplacement( double time, Vec *x )
   pBound = boundary_list.head;
   while(pBound)
   {
-    numnodes     = ((boundary_t*)pBound->data)->NNods;
-    NDirPerNode  = ((boundary_t*)pBound->data)->NDirPerNode;
-    NNeuPerNode  = ((boundary_t*)pBound->data)->NNeuPerNode;
-    pToDirIndeces  = ((boundary_t*)pBound->data)->DirichletIndeces;
-    NDirIndeces  = ((boundary_t*)pBound->data)->NDirIndeces;
-    pToNeuIndeces  = ((boundary_t*)pBound->data)->NeumannIndeces;
-    NNeuIndeces  = ((boundary_t*)pBound->data)->NNeuIndeces;
-    numnodes     = ((boundary_t*)pBound->data)->NNods;
-    kind         = ((boundary_t*)pBound->data)->kind;
-    pToDirValues = ((boundary_t*)pBound->data)->DirichletValues;
-    pToNeuValues = ((boundary_t*)pBound->data)->NeumannValues;
+    numnodes      = ((boundary_t*)pBound->data)->NNods;
+    NDirPerNode   = ((boundary_t*)pBound->data)->NDirPerNode;
+    NNeuPerNode   = ((boundary_t*)pBound->data)->NNeuPerNode;
+    pToDirIndeces = ((boundary_t*)pBound->data)->DirichletIndeces;
+    NDirIndeces   = ((boundary_t*)pBound->data)->NDirIndeces;
+    pToNeuIndeces = ((boundary_t*)pBound->data)->NeumannIndeces;
+    NNeuIndeces   = ((boundary_t*)pBound->data)->NNeuIndeces;
+    numnodes      = ((boundary_t*)pBound->data)->NNods;
+    kind          = ((boundary_t*)pBound->data)->kind;
+    pToDirValues  = ((boundary_t*)pBound->data)->DirichletValues;
+    pToNeuValues  = ((boundary_t*)pBound->data)->NeumannValues;
     ofs_neu = ofs_dir = 0;
 
-    for(d=0;d<3;d++){
+    for(d=0;d<3;d++)
+    {
       /* Barremos primero las dirección x -> y -> z */
-	switch(d){
-	  case 0:
-	    f1d_aux = ((boundary_t*)pBound->data)->fx;
-	    break;
-	  case 1:
-	    f1d_aux = ((boundary_t*)pBound->data)->fy;
-	    break;
-	  case 2:
-	    f1d_aux = ((boundary_t*)pBound->data)->fz;
-	    break;
-	  default:
-	    return 1;
-	}
-	f1d_eval( time, f1d_aux, &ValueToSet );
+      switch(d){
+	case 0:
+	  f1d_aux = ((boundary_t*)pBound->data)->fx;
+	  break;
+	case 1:
+	  f1d_aux = ((boundary_t*)pBound->data)->fy;
+	  break;
+	case 2:
+	  f1d_aux = ((boundary_t*)pBound->data)->fz;
+	  break;
+	default:
+	  return 1;
+      }
+      f1d_eval( time, f1d_aux, &ValueToSet );
 
       if( (kind & (1<<d)) == (1<<d) ){
 	/* es Dirichlet */
-	for(i=0;i<numnodes;i++) pToNeuValues[i*NDirPerNode + ofs_dir] = ValueToSet;
+	for(i=0;i<numnodes;i++){ pToNeuValues[i*NDirPerNode + ofs_dir] = ValueToSet;}
 	ofs_dir++;
       }
       else{
 	/* es Neumann */
-	for(i=0;i<numnodes;i++) pToNeuValues[i*NNeuPerNode + ofs_neu] = ValueToSet;
+	for(i=0;i<numnodes;i++){ pToNeuValues[i*NNeuPerNode + ofs_neu] = ValueToSet;}
 	ofs_neu++;
       }
       /* pToValues = [ valx valy valz valx valy valz ... valx valy valz ] */
     }
+
     //  usamos VecSetValuesLocal aqui ya que vamos a modificar valores locales unicamente
     ierr = VecSetValuesLocal( *x, NDirIndeces, pToDirIndeces, pToDirValues, INSERT_VALUES); CHKERRQ(ierr);
     pBound = pBound->next;
