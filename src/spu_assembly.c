@@ -102,9 +102,14 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
   double *wp = NULL;
   double ElemDispls[8*3];
 
+  Vec xlocal;
+
   register double IntegralWeight;
 
   ierr = VecZeroEntries(*Residue);CHKERRQ(ierr);
+  VecGhostUpdateBegin(*Displacement_old,INSERT_VALUES,SCATTER_FORWARD);
+  VecGhostUpdateEnd(*Displacement_old,INSERT_VALUES,SCATTER_FORWARD);
+  VecGhostGetLocalForm(*Displacement_old,&xlocal);
 
   for(e=0;e<nelm;e++){
 
@@ -113,7 +118,7 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
     GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
     GetWeight(npe, &wp);
-    GetElemenDispls( e, Displacement_old, ElemDispls );
+    GetElemenDispls( e, &xlocal, ElemDispls );
 
     // calculate <ElemResidue> by numerical integration
 
