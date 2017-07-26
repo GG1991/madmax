@@ -38,7 +38,7 @@ int main(int argc, char **args);
 int mac_comm_init(void);
 
 // mac_boundary.c
-int MacroSetBoundaryDisplacement( double time, Vec *x );
+int MacroSetDisplacementOnBoundary( double time, Vec *x );
 
 // mac_alloc.c
 int MacroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal);

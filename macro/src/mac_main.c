@@ -36,6 +36,7 @@ int main(int argc, char **argv)
                 EVENT_READ_COORD,
 		EVENT_INIT_GAUSS,
                 EVENT_ALLOC_MATVEC,
+                EVENT_SET_DISP_BOU,
                 EVENT_ASSEMBLY_JAC,
                 EVENT_ASSEMBLY_RES,
 		EVENT_SOLVE_SYSTEM;
@@ -103,6 +104,7 @@ int main(int argc, char **argv)
   ierr = PetscLogEventRegister("Read Coordinates"      ,PETSC_VIEWER_CLASSID,&EVENT_READ_COORD);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Init Gauss Points"     ,PETSC_VIEWER_CLASSID,&EVENT_INIT_GAUSS);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Allocate Mat and Vec"  ,PETSC_VIEWER_CLASSID,&EVENT_ALLOC_MATVEC);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("Set Displ on Bou "     ,PETSC_VIEWER_CLASSID,&EVENT_SET_DISP_BOU);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Assembly Jacobian"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_JAC);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Assembly Residual"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Solve Linear System"   ,PETSC_VIEWER_CLASSID,&EVENT_SOLVE_SYSTEM);CHKERRQ(ierr);
@@ -178,9 +180,9 @@ int main(int argc, char **argv)
 
   sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mac);
   spu_vtk_partition( vtkfile_n, &MACRO_COMM );
-  //
-  // read materials and physical entities from input and mehs files
-  //
+  /*
+     read materials and physical entities from input and mehs files
+  */
   ierr = list_init(&physical_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
   ierr = list_init(&function_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
   ierr = SpuParseMaterials( &MACRO_COMM, input_n ); CHKERRQ(ierr);            
@@ -217,17 +219,22 @@ int main(int argc, char **argv)
   int    KspIterationNum;
   double norm;
 
+  // Initial condition <x> = 0
+  ierr = VecZeroEntries(x);CHKERRQ(ierr);
+
   while( t < (tf + 1.0e-10))
   {
 
     /*
        Setting Displacement on Dirichlet Indeces on <x>
     */
-    ierr = MacroSetBoundaryDisplacement( t, &x);
+    ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
+    ierr = MacroSetDisplacementOnBoundary( t, &x);
     if(print_flag){
       ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
       ierr = VecView(x,viewer); CHKERRQ(ierr);
     }
+    ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
 
     /*
        Assemblying Jacobian
@@ -235,11 +242,11 @@ int main(int argc, char **argv)
     ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
     ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
     ierr = AssemblyJacobianSmallDeformation(&A);
-    ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
     if(print_flag){
       ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
       ierr = MatView(A,viewer); CHKERRQ(ierr);
     }
+    ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
     /*
        Assemblying Residual
     */
@@ -261,6 +268,7 @@ int main(int argc, char **argv)
     ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
     ierr = KSPGetIterationNumber(ksp,&KspIterationNum);CHKERRQ(ierr);
     ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
+    ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
     ierr = PetscPrintf(MACRO_COMM,"Iterations %D reason %d\n",KspIterationNum,reason);CHKERRQ(ierr);
     ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
 

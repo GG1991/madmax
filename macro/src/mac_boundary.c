@@ -1,6 +1,6 @@
 #include "sputnik.h"
 
-int MacroSetBoundaryDisplacement( double time, Vec *x )
+int MacroSetDisplacementOnBoundary( double time, Vec *x )
 {
 
   /* 
