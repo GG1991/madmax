@@ -2,10 +2,12 @@
 
 #break_mac=( 'mac_main.c:66' ) 
 #break_mic=( 'mic_main.c:56' ) 
-break_mac=( 'spu_mesh.c:136' ) 
-break_mic=( 'spu_mesh.c:136' ) 
+#break_mac=( 'spu_mesh.c:136' ) 
+#break_mic=( 'spu_mesh.c:136' ) 
 #break_mac=( 'mac_comm.c:101' ) 
 #break_mic=( 'mic_comm.c:105' ) 
+#break_mac=( 'spu_assembly.c:142' ) 
+#break_mac=( 'spu_boundary.c:148' ) 
 
 NM=1
 Nm=1

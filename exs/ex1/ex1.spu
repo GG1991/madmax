@@ -10,18 +10,19 @@ $mesh
 $end_mesh
 
 $Materials
-IRON TYPE00 E=1.0e6 v=0.3
+IRON TYPE00  E=1.0e6 v=0.25
 #PLAS TYPE00 E=1.0e6 v=0.3
 $EndMaterials
 
 $Boundary
   P000     1   111   0   0   0
-  X0       2   001   0   0   0
-  X1       3   001   0   0   1
-  Z0       4   100   0   0   0
-  Z1       5   000   0   0   0
-  Y0       6   010   0   0   0
-  Y1       7   000   0   0   0
+  P100     2   111   0   0   1
+  X0       3   001   0   0   0
+  X1       4   001   0   0   1
+  Z0       5   100   0   0   0
+  Z1       6   000   0   0   0
+  Y0       7   010   0   0   0
+  Y1       8   000   0   0   0
 $EndBoundary
 
 $Function
@@ -32,5 +33,5 @@ $EndFunction
 $Function
   1 INTER1 2
   0.0  0.0
-  0.2  10.0
+  1.0  0.005
 $EndFunction
