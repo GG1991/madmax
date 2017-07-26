@@ -22,7 +22,6 @@ int main(int argc, char **argv)
 
   int        i, ierr;
   char       *myname = strdup("macro");
-  double     t0 = 0.0, tf = 1.0, dt = 1.0, t = t0;
 
   PetscLogEvent  CHECK_ERROR;    /* event number for error checking */
   PetscViewer    viewer,viewer1;
@@ -97,7 +96,7 @@ int main(int argc, char **argv)
   if(rank_mac==0) FileOutputStructures = fopen("macro_structures.dat","w");
 
 #if defined(PETSC_USE_LOG)
-  ierr = PetscLogEventRegister("read_mesh_elmv     Event",PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("Read Elems of Mesh",PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Partition Mesh"        ,PETSC_VIEWER_CLASSID,&EVENT_PART_MESH);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Calculate Ghosts Nodes",PETSC_VIEWER_CLASSID,&EVENT_CALC_GHOSTS);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Reenumerates Nodes"    ,PETSC_VIEWER_CLASSID,&EVENT_REENUMERATE);CHKERRQ(ierr);
@@ -216,14 +215,18 @@ int main(int argc, char **argv)
   /*
      Begin time dependent loop
   */
-  int    KspIterationNum;
-  double norm;
+  int    nr_its = -1, KspIterationNum = -1;
+  int    time_step = 0;
+  double t0 = 0.0, tf = 1.0, dt = 1.0, t = t0;
+  double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3;
+
 
   // Initial condition <x> = 0
   ierr = VecZeroEntries(x);CHKERRQ(ierr);
 
   while( t < (tf + 1.0e-10))
   {
+    ierr = PetscPrintf(MACRO_COMM, "\nTime step %3d %e seg\n", time_step, t);CHKERRQ(ierr);
 
     /*
        Setting Displacement on Dirichlet Indeces on <x>
@@ -237,19 +240,8 @@ int main(int argc, char **argv)
     ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
 
     /*
-       Assemblying Jacobian
-    */
-    ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-    ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
-    ierr = AssemblyJacobianSmallDeformation(&A);
-    if(print_flag){
-      ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
-      ierr = MatView(A,viewer); CHKERRQ(ierr);
-    }
-    ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-    /*
        Assemblying Residual
-    */
+     */
     ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
     ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");CHKERRQ(ierr);
     ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
@@ -260,19 +252,57 @@ int main(int argc, char **argv)
       ierr = VecView(b,viewer1); CHKERRQ(ierr);
     }
     ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+
     /*
-       Solving Problem
+       If the Residual Norm is bigger than <NormTol>
+       we should iterate
     */
-    ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-    ierr = PetscPrintf(MACRO_COMM, "Solving Linear System\n");
-    ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
-    ierr = KSPGetIterationNumber(ksp,&KspIterationNum);CHKERRQ(ierr);
-    ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
-    ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
-    ierr = PetscPrintf(MACRO_COMM,"Iterations %D reason %d\n",KspIterationNum,reason);CHKERRQ(ierr);
-    ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
+
+    nr_its = 0;
+    while( nr_its < NRMaxIts && norm > NormTol )
+    {
+
+      /*
+	 Assemblying Jacobian
+       */
+      ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
+      ierr = AssemblyJacobianSmallDeformation(&A);
+      if(print_flag){
+	ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
+	ierr = MatView(A,viewer); CHKERRQ(ierr);
+      }
+      ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
+      /*
+	 Solving Problem
+       */
+      ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM, "Solving Linear System\n");
+      ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
+      ierr = KSPGetIterationNumber(ksp,&KspIterationNum);CHKERRQ(ierr);
+      ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
+      ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM,"Iterations %D reason %d\n",KspIterationNum,reason);CHKERRQ(ierr);
+      ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
+      /*
+	 Assemblying Residual
+       */
+      ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");CHKERRQ(ierr);
+      ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
+      ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
+      if(print_flag){
+	ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer1); CHKERRQ(ierr);
+	ierr = VecView(b,viewer1); CHKERRQ(ierr);
+      }
+      ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+
+      nr_its ++;
+    }
 
     t += dt;
+    time_step ++;
   }
 
   /*
