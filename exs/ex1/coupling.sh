@@ -7,7 +7,7 @@ break_mic=( 'spu_mesh.c:136' )
 #break_mac=( 'mac_comm.c:101' ) 
 #break_mic=( 'mic_comm.c:105' ) 
 
-NM=4
+NM=1
 Nm=1
 
 
@@ -24,41 +24,41 @@ do
 done
 exopt_mic+="-ex 'r'"
 
-
+#-mat_type mpiaij 
 if [ "$#" -eq 1 ];then
   if [ "$1" -eq 1 ];then  
    exec_mac="../../macro/macro ex1.spu -log_view ascii:log_summary_mac.dat"
    exec_mic="../../micro/micro ex1.spu"
-   echo "mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
-   eval  mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
+   echo "./mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
+   eval  ./mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
   elif [ "$1" == "-log_view" ];then  
    exec_mac="../../macro/macro ex1.spu -log_view ascii:log_summary_mac.dat"
    exec_mic="../../micro/micro ex1.spu"
-   echo "mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
-   eval  mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
+   echo "./mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
+   eval  ./mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
   elif [ "$1" == "-log_trace" ];then  
    exec_mac="../../macro/macro ex1.spu -log_trace macro_trace"
    exec_mic="../../micro/micro ex1.spu"
-   echo "mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
-   eval  mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
+   echo "./mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic""
+   eval  ./mpirun -np $NM "$exec_mac" : -np $Nm "$exec_mic"
   elif [ "$1" -eq 2 ];then
    exec_val2_mac="valgrind --log-file=\"valgrind_M.out\"  ../../macro/macro ex1.spu"
    exec_val2_mic="valgrind --log-file=\"valgrind_m.out\"  ../../micro/micro ex1.spu"
-   echo "mpirun -np $NM "$exec_val2_mac" : -np $Nm "$exec_val2_mic""
-   eval  mpirun -np $NM "$exec_val2_mac" : -np $Nm "$exec_val2_mic" 
+   echo "./mpirun -np $NM "$exec_val2_mac" : -np $Nm "$exec_val2_mic""
+   eval  ./mpirun -np $NM "$exec_val2_mac" : -np $Nm "$exec_val2_mic" 
   elif [ "$1" -eq 3 ];then
    exec_val3_mac="valgrind --leak-check=full ../../macro/macro ex1.spu"
    exec_val3_mic="valgrind --leak-check=full ../../micro/micro ex1.spu"
-   echo "mpirun -np 2 "$exec_val3_mac" : -np 2 "$exec_val3_mic""
-   eval  mpirun -np 2 "$exec_val3_mac" : -np 2 "$exec_val3_mic" > valgrind3-1.out 2>&1
+   echo "./mpirun -np 2 "$exec_val3_mac" : -np 2 "$exec_val3_mic""
+   eval  ./mpirun -np 2 "$exec_val3_mac" : -np 2 "$exec_val3_mic" > valgrind3-1.out 2>&1
   elif [ "$1" -eq 4 ];then
    exec_val4_mac="valgrind --leak-check=full ../../macro/macro ex1.spu"
    exec_val4_mic="valgrind --leak-check=full ../../micro/micro ex1.spu"
-   echo "mpirun -np 2 "$exec_val4_mac" : -np 2 "$exec_val4_mic""
-   eval  mpirun -np 2 "$exec_val4_mac" : -np 2 "$exec_val4_mic"
+   echo "./mpirun -np 2 "$exec_val4_mac" : -np 2 "$exec_val4_mic""
+   eval  ./mpirun -np 2 "$exec_val4_mac" : -np 2 "$exec_val4_mic"
   fi
 else
    gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu"
    gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ex1.spu"
-   mpirun -np $NM xterm -e "$gdbcomm_mac" : -np $Nm xterm -e "$gdbcomm_mic"
+   ./mpirun -np $NM xterm -e "$gdbcomm_mac" : -np $Nm xterm -e "$gdbcomm_mic"
 fi
