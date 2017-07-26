@@ -163,6 +163,8 @@ int GmshIsAsurfaceElement(int code);
 
 // spu_boundary.c
 int SputnikSetDisplacementOnBoundary( double time, Vec *x );
+int SputnikSetBoundaryOnJacobian( Mat *J );
+int SputnikSetBoundaryOnResidual( Vec *b );
 
 // spu_vtk.c
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );

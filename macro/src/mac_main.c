@@ -272,6 +272,7 @@ int main(int argc, char **argv)
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
 	ierr = MatView(A,viewer); CHKERRQ(ierr);
       }
+      ierr = SputnikSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
       ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
       /*
 	 Solving Problem
@@ -296,6 +297,7 @@ int main(int argc, char **argv)
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer1); CHKERRQ(ierr);
 	ierr = VecView(b,viewer1); CHKERRQ(ierr);
       }
+      ierr = SputnikSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
       ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
 
       nr_its ++;

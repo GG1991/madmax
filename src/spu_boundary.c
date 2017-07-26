@@ -91,3 +91,63 @@ int SputnikSetDisplacementOnBoundary( double time, Vec *x )
   ierr = VecAssemblyEnd(*x);CHKERRQ(ierr);
   return 0;
 }
+
+/****************************************************************************************************/
+
+int SputnikSetBoundaryOnJacobian( Mat *J )
+{
+  /* 
+     Sets 1's on the diagonal corresponding to Dirichlet indeces and 0's
+     on the rest of the row and column 
+  */
+
+  int    *pToDirIndeces;
+  int    NDirIndeces;
+  int    ierr;
+
+  node_list_t *pBound;
+
+  pBound = boundary_list.head;
+  while(pBound)
+  {
+    pToDirIndeces = ((boundary_t*)pBound->data)->DirichletIndeces;
+    NDirIndeces   = ((boundary_t*)pBound->data)->NDirIndeces;
+    ierr = MatZeroRowsColumns(*J, NDirIndeces, pToDirIndeces, 1.0, NULL, NULL); CHKERRQ(ierr);
+    pBound = pBound->next;
+  }
+
+  /* communication between processes */
+  ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int SputnikSetBoundaryOnResidual( Vec *b )
+{
+  /* 
+     Sets 0's on the Dirichlet indeces over the Residual <b>
+  */
+
+  int    *pToDirIndeces, NDirIndeces;
+  double *pToDirValues;
+  int    ierr;
+
+  node_list_t *pBound;
+
+  pBound = boundary_list.head;
+  while(pBound)
+  {
+    pToDirIndeces = ((boundary_t*)pBound->data)->DirichletIndeces;
+    NDirIndeces   = ((boundary_t*)pBound->data)->NDirIndeces;
+
+    memset(pToDirValues, 0.0, NDirIndeces*sizeof(int));
+    ierr = VecSetValuesLocal( *b, NDirIndeces, pToDirIndeces, pToDirValues, INSERT_VALUES); CHKERRQ(ierr);
+    pBound = pBound->next;
+  }
+  /* communication between processes */
+  ierr = VecAssemblyBegin(*b);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(*b);CHKERRQ(ierr);
+  return 0;
+}
