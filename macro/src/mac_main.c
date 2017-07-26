@@ -247,10 +247,12 @@ int main(int argc, char **argv)
     ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
     ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
     ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
+    ierr = SputnikSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
     if(print_flag){
       ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer1); CHKERRQ(ierr);
       ierr = VecView(b,viewer1); CHKERRQ(ierr);
     }
+    ierr = VecScale(b,-1.0); CHKERRQ(ierr);
     ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
 
     /*
@@ -285,6 +287,8 @@ int main(int argc, char **argv)
       ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
       if(print_flag){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
+	ierr = VecView(dx,viewer); CHKERRQ(ierr);
+	ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(x,viewer); CHKERRQ(ierr);
       }
       ierr = PetscPrintf(MACRO_COMM,"Iterations %D reason %d\n",KspIterationNum,reason);CHKERRQ(ierr);
@@ -302,6 +306,7 @@ int main(int argc, char **argv)
       }
       ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
       ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
+      ierr = VecScale(b,-1.0); CHKERRQ(ierr);
       ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
 
       nr_its ++;
