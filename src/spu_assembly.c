@@ -127,19 +127,19 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
     memset(ElemResidual, 0.0, (8*3)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
+      memset(Epsilon, 0.0, 6*sizeof(double));
+      memset(Sigma  , 0.0, 6*sizeof(double));
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
 
       for(i=0;i<6;i++){
-	Epsilon[i]=0.0;
 	for(k=0;k<npe*3;k++){
 	  Epsilon[i] += B[i][k]*ElemDispls[k];
 	}
       }
 
       for(i=0;i<6;i++){
-	Sigma[i]=0.0;
 	for(k=0;k<6;k++){
 	  Sigma[i] += DsDe[i][k]*Epsilon[k];
 	}
@@ -151,7 +151,6 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 	  ElemResidual[i] += B[k][i]*Sigma[k] * IntegralWeight;
 	}
       }
-
 
     }
     ierr = VecSetValues(*Residue, npe*3, PETScIdx, ElemResidual, ADD_VALUES);CHKERRQ(ierr);
