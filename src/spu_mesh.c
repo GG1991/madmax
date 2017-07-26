@@ -669,7 +669,7 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
   }
 
   // ahora metemos los nodos de las listas en la estructura posta <boundary_list>
-  int NodeOrig, NodeLocal, numnodes, kind, NDirPerNode= -1, NNeuPerNode = -1;
+  int NodeOrig, NodeLocal, NodeGlobal, numnodes, kind, NDirPerNode= -1, NNeuPerNode = -1;
   int DirCount, NeuCount, *p;
 
   pBound = boundary_list.head;
@@ -712,24 +712,28 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
       if(!p){SETERRQ2(PROBLEM_COMM,1,
 	  "A boundary node (%d) seems now to not belong to this process (rank:%d)",NodeOrig,rank);}
 
-      NodeLocal = p - MyNodOrig;
+      NodeLocal  = p - MyNodOrig;        // Local numeracion
+      NodeGlobal = loc2petsc[NodeLocal]; // PETSc numeracion
 
       for(d=0;d<3;d++)
       {
 	if( (kind & (1<<d)) == (1<<d) ){
 	  /* Dirichlet */
-	  ((boundary_t*)pBound->data)->DirichletIndeces[DirCount] = NodeLocal*3 + d; DirCount++;
+	  ((boundary_t*)pBound->data)->DirichletIndeces[DirCount] = NodeGlobal*3 + d; DirCount++;
 	}
 	else{
 	  /* Neumann */
-	  ((boundary_t*)pBound->data)->NeumannIndeces[NeuCount]   = NodeLocal*3 + d; NeuCount++;
+	  ((boundary_t*)pBound->data)->NeumannIndeces[NeuCount]   = NodeGlobal*3 + d; NeuCount++;
 	}
       }
 
       n++;
       list_delfirst( &(((AuxBoundary_t *)pAuxBound->data)->Nods) ) ;
     }
-    if(((AuxBoundary_t *)pAuxBound->data)->Nods.head) SETERRQ(PROBLEM_COMM,1,"It's seems that there some more nodes in the list.");
+
+    if(((AuxBoundary_t *)pAuxBound->data)->Nods.head)
+      SETERRQ(PROBLEM_COMM,1,"It's seems that there some more nodes in the list.");
+
     list_clear(&(((AuxBoundary_t *)pAuxBound->data)->Nods));
     pBound = pBound->next;	pAuxBound = pAuxBound->next;
   }
