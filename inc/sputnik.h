@@ -161,6 +161,8 @@ int cmpfuncBou (void * a, void * b);
 int GmshNodesPerElement(int code);
 int GmshIsAsurfaceElement(int code);
 
+// spu_boundary.c
+int SputnikSetDisplacementOnBoundary( double time, Vec *x );
 
 // spu_vtk.c
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );

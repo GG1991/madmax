@@ -232,7 +232,7 @@ int main(int argc, char **argv)
        Setting Displacement on Dirichlet Indeces on <x>
     */
     ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-    ierr = MacroSetDisplacementOnBoundary( t, &x);
+    ierr = SputnikSetDisplacementOnBoundary( t, &x);
     if(print_flag){
       ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
       ierr = VecView(x,viewer); CHKERRQ(ierr);

@@ -42,16 +42,16 @@ DEPS = ${DEP_DIR}/sputnik.h        \
 
 DEP_DIRS= ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
 
-SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o   \
-           $(SPU_OBJ_DIR)/spu_time.o   \
-           $(SPU_OBJ_DIR)/spu_parser.o \
-           $(SPU_OBJ_DIR)/spu_vtk.o    \
+SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o     \
+           $(SPU_OBJ_DIR)/spu_time.o     \
+           $(SPU_OBJ_DIR)/spu_parser.o   \
+           $(SPU_OBJ_DIR)/spu_boundary.o \
+           $(SPU_OBJ_DIR)/spu_vtk.o      \
            $(SPU_OBJ_DIR)/spu_assembly.o    
 
 MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o      \
            ${MAC_OBJ_DIR}/mac_comm.o      \
-           ${MAC_OBJ_DIR}/mac_alloc.o     \
-           ${MAC_OBJ_DIR}/mac_boundary.o       
+           ${MAC_OBJ_DIR}/mac_alloc.o       
 
 MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o   \
            ${MIC_OBJ_DIR}/mic_comm.o       

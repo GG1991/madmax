@@ -75,6 +75,17 @@ int AssemblyJacobianSmallDeformation(Mat *J)
   /* communication between processes */
   ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+  /* 
+     Set 1's on the diagonal corresponding to Dirichlet indeces and 0's
+     on the rest of the row and column 
+  */
+
+
+  /* communication between processes */
+  ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
   return 0;
 
 }
