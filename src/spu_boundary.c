@@ -83,7 +83,7 @@ int SputnikSetDisplacementOnBoundary( double time, Vec *x )
 	Dirichlet Boundary condition set is set on <x> 
 	usamos VecSetValuesLocal aqui ya que vamos a modificar valores locales unicamente
      */
-    ierr = VecSetValuesLocal( *x, NDirIndeces, pToDirIndeces, pToDirValues, INSERT_VALUES); CHKERRQ(ierr);
+    ierr = VecSetValues( *x, NDirIndeces, pToDirIndeces, pToDirValues, INSERT_VALUES); CHKERRQ(ierr);
     pBound = pBound->next;
   }
   /* communication between processes */
@@ -101,6 +101,7 @@ int SputnikSetBoundaryOnJacobian( Mat *J )
      on the rest of the row and column 
   */
 
+  int    i;
   int    *pToDirIndeces;
   int    NDirIndeces;
   int    ierr;
@@ -143,8 +144,8 @@ int SputnikSetBoundaryOnResidual( Vec *b )
     pToDirValues  = ((boundary_t*)pBound->data)->DirichletValues;
     NDirIndeces   = ((boundary_t*)pBound->data)->NDirIndeces;
 
-    memset(pToDirValues, 0.0, NDirIndeces*sizeof(int));
-    ierr = VecSetValuesLocal( *b, NDirIndeces, pToDirIndeces, pToDirValues, INSERT_VALUES); CHKERRQ(ierr);
+    memset(pToDirValues, 0.0, NDirIndeces*sizeof(double));
+    ierr = VecSetValues( *b, NDirIndeces, pToDirIndeces, pToDirValues, INSERT_VALUES); CHKERRQ(ierr);
     pBound = pBound->next;
   }
   /* communication between processes */
