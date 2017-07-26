@@ -246,22 +246,22 @@ int main(int argc, char **argv)
     ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
     ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");CHKERRQ(ierr);
     ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
-    ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+    ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
+    ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
     if(print_flag){
       ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer1); CHKERRQ(ierr);
       ierr = VecView(b,viewer1); CHKERRQ(ierr);
     }
+    ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
     /*
        Solving Problem
     */
     ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
     ierr = PetscPrintf(MACRO_COMM, "Solving Linear System\n");
-    ierr = KSPSolve(ksp,b,x);CHKERRQ(ierr);
-    ierr = VecNorm(x,NORM_2,&norm);CHKERRQ(ierr);
+    ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
     ierr = KSPGetIterationNumber(ksp,&KspIterationNum);CHKERRQ(ierr);
     ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
-    ierr = PetscPrintf(MACRO_COMM,"Norm of error %g Iterations %D reason %d\n",norm,KspIterationNum,reason);CHKERRQ(ierr);
-    ierr = PetscPrintf(MACRO_COMM, "OOKK !\n");
+    ierr = PetscPrintf(MACRO_COMM,"Iterations %D reason %d\n",KspIterationNum,reason);CHKERRQ(ierr);
     ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
 
     t += dt;
@@ -279,6 +279,11 @@ int main(int argc, char **argv)
   ierr = VecDestroy(&x);CHKERRQ(ierr);  
   ierr = VecDestroy(&b);CHKERRQ(ierr);  
   ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
+
+  PetscPrintf(MACRO_COMM,
+      "--------------------------------------------------\n"
+      "  MACRO: FINISH COMPLETE\n"
+      "--------------------------------------------------\n");
 
   ierr = PetscFinalize();
   ierr = MPI_Finalize();
