@@ -268,11 +268,11 @@ int main(int argc, char **argv)
       ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
       ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
       ierr = AssemblyJacobianSmallDeformation(&A);
+      ierr = SputnikSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
       if(print_flag){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
 	ierr = MatView(A,viewer); CHKERRQ(ierr);
       }
-      ierr = SputnikSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
       ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
       /*
 	 Solving Problem
@@ -283,6 +283,10 @@ int main(int argc, char **argv)
       ierr = KSPGetIterationNumber(ksp,&KspIterationNum);CHKERRQ(ierr);
       ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
       ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
+      if(print_flag){
+	ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
+	ierr = VecView(x,viewer); CHKERRQ(ierr);
+      }
       ierr = PetscPrintf(MACRO_COMM,"Iterations %D reason %d\n",KspIterationNum,reason);CHKERRQ(ierr);
       ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
       /*
@@ -291,13 +295,13 @@ int main(int argc, char **argv)
       ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
       ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");CHKERRQ(ierr);
       ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
-      ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-      ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
+      ierr = SputnikSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
       if(print_flag){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer1); CHKERRQ(ierr);
 	ierr = VecView(b,viewer1); CHKERRQ(ierr);
       }
-      ierr = SputnikSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
+      ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
       ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
 
       nr_its ++;

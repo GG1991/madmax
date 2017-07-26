@@ -140,6 +140,7 @@ int SputnikSetBoundaryOnResidual( Vec *b )
   while(pBound)
   {
     pToDirIndeces = ((boundary_t*)pBound->data)->DirichletIndeces;
+    pToDirValues  = ((boundary_t*)pBound->data)->DirichletValues;
     NDirIndeces   = ((boundary_t*)pBound->data)->NDirIndeces;
 
     memset(pToDirValues, 0.0, NDirIndeces*sizeof(int));

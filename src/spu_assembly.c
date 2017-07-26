@@ -41,7 +41,7 @@ int AssemblyJacobianSmallDeformation(Mat *J)
 
     // calculate <ElemMatrix> by numerical integration
 
-    memset(ElemMatrix, 0.0, (8*3*8*3)*sizeof(double));
+    memset(ElemMatrix, 0.0, (npe*3*npe*3)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
@@ -147,9 +147,9 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 
       IntegralWeight = DetJac * wp[gp];
       for(i=0;i<npe*3;i++){
-	  for(k=0;k<6;k++){
-	    ElemResidual[i] += B[k][i]*Sigma[k] * IntegralWeight;
-	  }
+	for(k=0;k<6;k++){
+	  ElemResidual[i] += B[k][i]*Sigma[k] * IntegralWeight;
+	}
       }
 
 
