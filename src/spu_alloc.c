@@ -65,6 +65,7 @@ int AllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal, Mat *A, Vec *x, Vec
 //  ierr = VecCreate(comm,x);CHKERRQ(ierr);
 //  ierr = VecSetSizes(*x,NMyNod,NTotalNod);CHKERRQ(ierr);
   ierr = VecCreateGhost(comm, NMyNod*3, NTotalNod*3, NMyGhost*3, ghostsIndex, x); CHKERRQ(ierr);
+  ierr = VecDuplicate(*x,dx);CHKERRQ(ierr);
   ierr = VecDuplicate(*x,b);CHKERRQ(ierr);
 
   free(ghostsIndex);

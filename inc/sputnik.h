@@ -114,13 +114,6 @@ double        *coord;                  // nodes' coordinates
 int           *loc2petsc;              // array of size <NMyNod>+<NMyGhost>
                                        // returns the position in PETSc matrix & vectors
 
-// Matrices and vectors
-
-Mat           A;       /* Jacobian Matrix          */
-Vec           x, b;    /* Vectors unknowns and RHS */
-KSP           ksp;     /* linear solver context    */
-KSPConvergedReason  reason;
-
 // List of different utilities
 list_t function_list;
 list_t physical_list;
@@ -175,9 +168,6 @@ int vtkcode(int dim,int npe);
 
 // spu_time.c
 int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);
-
-// spu_alloc.c
-int AllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal, Mat *A, Vec *x, Vec *b);
 
 // spu_assembly.c
 int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex);

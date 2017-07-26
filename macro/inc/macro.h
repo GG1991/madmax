@@ -19,6 +19,13 @@ int             *remote_ranks;      //  remote ranks if micro processes
 
 int              nev;
 
+// Matrices and vectors
+
+Mat           A;          /* Jacobian Matrix          */
+Vec           x, dx, b;   /* Vectors unknowns and RHS */
+KSP           ksp;        /* linear solver context    */
+KSPConvergedReason  reason;
+
 
 /*****************************************************************************************************
    MACRO function definitions
@@ -32,3 +39,7 @@ int mac_comm_init(void);
 
 // mac_boundary.c
 int MacroSetBoundaryDisplacement( double time, Vec *x );
+
+// mac_alloc.c
+int MacroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal);
+

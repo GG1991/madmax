@@ -423,7 +423,7 @@ int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
       if(!strcmp(data,"$EndPhysicalNames")){
 	CHECK_INPUT_ERROR(flag_start_physical);
 	CHECK_INPUT_ERROR(physical_list.sizelist == ntot);
-	PetscPrintf(*PROBLEM_COMM, "# of physical found in %s : %d\n", mesh_n, physical_list.sizelist);
+	PetscPrintf(*PROBLEM_COMM, "# of physical found in mesh : %d\n", physical_list.sizelist);
 	return 0;
       }
     }
