@@ -179,7 +179,6 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
    */
 
   int    i, k, e, gp, ngp, npe;
-  int    indeces[6];
   int    ierr;
 
   double ElemCoord[8][3];
@@ -262,20 +261,16 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
 int GetElemenDispls( int e, double *Displacement, double *ElemDispls )
 {
 
-  int  Indeces[8*3];
   int  d, n, npe;
-  int  ierr;
 
   npe = eptr[e+1]-eptr[e];
   for(n=0;n<npe;n++){
     for(d=0;d<3;d++){
       // para usar VecGetValues usamos la numeracion global
       ElemDispls[n*3+d] = Displacement[eind[eptr[e]+n]*3+d];
-//      Indeces[n*3+d] = loc2petsc[eind[eptr[e]+n]]*3 + d; 
     }
   }
   
-//  ierr = VecGetValues( *Displacement, npe*3, Indeces, ElemDispls ); CHKERRQ(ierr);
   return 0;
 }
 
@@ -299,7 +294,7 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 
     case TYPE00:
       /* 
-       * Elástico lineal 
+	 Elástico lineal 
        */
 
       la = ((type_00*)material->type)->lambda;
