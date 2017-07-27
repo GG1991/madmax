@@ -82,7 +82,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
 
 /****************************************************************************************************/
 
-int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, Vec *Strain, Vec *Stress)
+int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strain, double *Stress)
 {
 
   /* 
@@ -158,21 +158,31 @@ int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
   for (n=0;n<NAllMyNod;n++){
     for (d=0;d<3;d++){
-//      index = n*3+d;
-//      ierr = VecGetValues(xlocal, 1, &index, &value); CHKERRQ(ierr);
       fprintf(vtkfl, "%lf ", xvalues[n*3+d]);
     }
     fprintf(vtkfl,"\n");
   }
   VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
 
-//  fprintf(vtkfl, "CELL_DATA %i\n",nelm);
-//
-//  fprintf(vtkfl, "SCALARS Strain FLOAT\n");
+  fprintf(vtkfl, "CELL_DATA %i\n",nelm);
+
+  fprintf(vtkfl, "TENSORS Strain FLOAT\n");
 //  fprintf(vtkfl, "LOOKUP_TABLE default\n");
-//  for (e=0;e<nelm;e++){
-//    fprintf(vtkfl, "%lf\n",rank*1.0);
-//  }
+  for (e=0;e<nelm;e++){
+    fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+0],Strain[e*6+4],Strain[e*6+5]);
+    fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+4],Strain[e*6+1],Strain[e*6+3]);
+    fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+5],Strain[e*6+3],Strain[e*6+2]);
+    fprintf(vtkfl, "\n"); 
+  }
+
+  fprintf(vtkfl, "TENSORS Stress FLOAT\n");
+//  fprintf(vtkfl, "LOOKUP_TABLE default\n");
+  for (e=0;e<nelm;e++){
+    fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+0],Stress[e*6+4],Stress[e*6+5]);
+    fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+4],Stress[e*6+1],Stress[e*6+3]);
+    fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+5],Stress[e*6+3],Stress[e*6+2]);
+    fprintf(vtkfl, "\n"); 
+  }
 
   fclose(vtkfl);
 

@@ -15,9 +15,6 @@ static char help[] = "Solves the displacement field inside a solid structure. \
 		      "-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
 
 
-#define   FLAG_VTK_NONE 0
-#define   FLAG_VTK_PART 1
-#define   FLAG_VTK_DISP 2
 
 #include "macro.h"
 
@@ -26,7 +23,6 @@ int main(int argc, char **argv)
 {
 
   int        i, ierr;
-  int        flag_print_vtk = FLAG_VTK_NONE;
   char       *myname = strdup("macro");
   PetscBool  set;
 
@@ -119,6 +115,7 @@ int main(int argc, char **argv)
   /*
      Get command line arguments
   */
+  flag_print_vtk = FLAG_VTK_NONE;
   ierr = PetscOptionsGetInt(NULL, NULL, "-p_vtk", &flag_print_vtk, &set); CHKERRQ(ierr); 
 
   //
@@ -311,8 +308,12 @@ int main(int argc, char **argv)
     }
 
     if(flag_print_vtk & FLAG_VTK_DISP){ 
+      strain = malloc(nelm*6*sizeof(double));
+      stress = malloc(nelm*6*sizeof(double));
+      ierr = SpuCalcStressOnElement(&x, strain, stress);
       sprintf(vtkfile_n,"%s_displ_%d.vtk",myname,rank_mac);
-      SpuVTKPlot_Displ_Strain_Stress(MACRO_COMM, vtkfile_n, &x, &Strain, &Stress);
+      ierr = SpuVTKPlot_Displ_Strain_Stress(MACRO_COMM, vtkfile_n, &x, strain, stress);
+      free(stress); free(strain);
     }
 
     t += dt;

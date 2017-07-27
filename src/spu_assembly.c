@@ -86,9 +86,9 @@ int AssemblyJacobianSmallDeformation(Mat *J)
 int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 {
 
-  /*    Assembly the Residual for Small Deformation
-   *    approach.
-   *
+  /*
+     Assembly the Residual for Small Deformation
+     approach.
    */
 
   int    i, k, e, gp, ngp, npe;
@@ -167,6 +167,94 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
   ierr = VecAssemblyEnd(*Residue);CHKERRQ(ierr);
   return 0;
 
+}
+
+/****************************************************************************************************/
+
+int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
+{
+
+  /*    
+	Calculate averange Strain and Stress tensors on each element
+   */
+
+  int    i, k, e, gp, ngp, npe;
+  int    indeces[6];
+  int    ierr;
+
+  double ElemCoord[8][3];
+  double ShapeDerivs[8][3];
+  double DetJac;
+  double B[6][3*8], Sigma[6], Epsilon[6];
+  double DsDe[6][6];
+  double *wp = NULL;
+  double ElemDispls[8*3];
+  double *xvalues;
+  double vol = -1.0;
+
+  Vec xlocal;
+
+  register double IntegralWeight;
+
+  /* 
+     Local representation of <x> with ghost padding
+  */
+  ierr = VecGhostUpdateBegin(*Displacement,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(*Displacement,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostGetLocalForm(*Displacement,&xlocal); CHKERRQ(ierr);
+  ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr); CHKERRQ(ierr);
+
+  for(e=0;e<nelm;e++){
+
+    npe = eptr[e+1]-eptr[e];
+    ngp = npe;
+
+    GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
+    GetWeight(npe, &wp);
+    GetElemenDispls( e, xvalues, ElemDispls );
+
+    // calculate <ElemResidue> by numerical integration
+
+    memset(Epsilon, 0.0, 6*sizeof(double));
+    memset(Sigma  , 0.0, 6*sizeof(double));
+    vol = 0.0;
+
+    for(gp=0;gp<ngp;gp++){
+
+      GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      GetB( npe, ShapeDerivs, B );
+      GetDsDe( e, ElemDispls, DsDe );
+      IntegralWeight = DetJac*wp[gp];
+
+      for(i=0;i<6;i++){
+	for(k=0;k<npe*3;k++){
+	  Epsilon[i] += B[i][k]*ElemDispls[k];
+	}
+      }
+
+      for(i=0;i<6;i++){
+	for(k=0;k<6;k++){
+	  Sigma[i] += DsDe[i][k]*Epsilon[k];
+	}
+      }
+
+      for(i=0;i<6;i++){
+	Sigma[i] *= IntegralWeight;
+	Epsilon[i] *= IntegralWeight;
+      }
+
+      vol += DetJac*wp[gp];
+
+    }
+    for(i=0;i<6;i++){
+      Strain[e*6+i] = Epsilon[i] / vol; 
+      Stress[e*6+i] = Sigma[i]   / vol;
+    }
+
+  }
+  VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
+
+  return 0;
 }
 
 /****************************************************************************************************/

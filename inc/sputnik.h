@@ -168,7 +168,7 @@ int SputnikSetBoundaryOnResidual( Vec *b );
 
 // spu_vtk.c
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );
-int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, Vec *Strain, Vec *Stress);
+int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strain, double *Stress);
 int vtkcode(int dim,int npe);
 
 // spu_time.c
@@ -185,5 +185,6 @@ int GetWeight(int npe, double **wp);
 int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );
 material_t * GetMaterial(int GmshIDToSearch);
 int GetElemenDispls( int e, double *Displacement, double *ElemDispls );
+int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress);
 
 #endif

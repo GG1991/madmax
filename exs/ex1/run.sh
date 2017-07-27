@@ -10,7 +10,7 @@
 #	 -p_vtk   2  \
 #       : -np 1 ../../micro/micro ex1.spu
 
-./mpirun -np 2 ../../macro/macro ex1.spu \
+./mpirun -np 4 ../../macro/macro ex1.spu \
          -ksp_type cg  \
 	 -ksp_rtol 1.0e-13 \
 	 -p_vtk   2  \
