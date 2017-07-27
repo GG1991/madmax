@@ -103,15 +103,20 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
   double DsDe[6][6];
   double *wp = NULL;
   double ElemDispls[8*3];
+  double *xvalues;
 
   Vec xlocal;
 
   register double IntegralWeight;
 
-  ierr = VecZeroEntries(*Residue);CHKERRQ(ierr);
-  VecGhostUpdateBegin(*Displacement_old,INSERT_VALUES,SCATTER_FORWARD);
-  VecGhostUpdateEnd(*Displacement_old,INSERT_VALUES,SCATTER_FORWARD);
-  VecGhostGetLocalForm(*Displacement_old,&xlocal);
+  /* 
+     Local representation of <x> with ghost padding
+  */
+  ierr = VecZeroEntries(*Residue); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(*Displacement_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(*Displacement_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostGetLocalForm(*Displacement_old,&xlocal); CHKERRQ(ierr);
+  ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr); CHKERRQ(ierr);
 
   for(e=0;e<nelm;e++){
 
@@ -120,7 +125,7 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
     GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
     GetWeight(npe, &wp);
-    GetElemenDispls( e, &xlocal, ElemDispls );
+    GetElemenDispls( e, xvalues, ElemDispls );
 
     // calculate <ElemResidue> by numerical integration
 
@@ -155,6 +160,7 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
     }
     ierr = VecSetValues(*Residue, npe*3, PETScIdx, ElemResidual, ADD_VALUES);CHKERRQ(ierr);
   }
+  VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
 
   /* communication between processes */
   ierr = VecAssemblyBegin(*Residue);CHKERRQ(ierr);
@@ -165,7 +171,7 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 
 /****************************************************************************************************/
 
-int GetElemenDispls( int e, Vec *Displacement, double *ElemDispls )
+int GetElemenDispls( int e, double *Displacement, double *ElemDispls )
 {
 
   int  Indeces[8*3];
@@ -176,11 +182,12 @@ int GetElemenDispls( int e, Vec *Displacement, double *ElemDispls )
   for(n=0;n<npe;n++){
     for(d=0;d<3;d++){
       // para usar VecGetValues usamos la numeracion global
-      Indeces[n*3+d] = loc2petsc[eind[eptr[e]+n]]*3 + d; 
+      ElemDispls[n*3+d] = Displacement[eind[eptr[e]+n]*3+d];
+//      Indeces[n*3+d] = loc2petsc[eind[eptr[e]+n]]*3 + d; 
     }
   }
   
-  ierr = VecGetValues( *Displacement, npe*3, Indeces, ElemDispls ); CHKERRQ(ierr);
+//  ierr = VecGetValues( *Displacement, npe*3, Indeces, ElemDispls ); CHKERRQ(ierr);
   return 0;
 }
 

@@ -184,6 +184,6 @@ int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] );
 int GetWeight(int npe, double **wp);
 int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );
 material_t * GetMaterial(int GmshIDToSearch);
-int GetElemenDispls( int e, Vec *Displacement, double *ElemDisps );
+int GetElemenDispls( int e, double *Displacement, double *ElemDispls );
 
 #endif

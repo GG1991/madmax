@@ -154,7 +154,7 @@ int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *
   fprintf(vtkfl, "POINT_DATA %i\n",NAllMyNod);
 
   fprintf(vtkfl, "VECTORS Displa FLOAT\n");
-  fprintf(vtkfl, "LOOKUP_TABLE default\n");
+//  fprintf(vtkfl, "LOOKUP_TABLE default\n");
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
   for (n=0;n<NAllMyNod;n++){
     for (d=0;d<3;d++){
