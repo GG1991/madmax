@@ -1,0 +1,26 @@
+\documentclass[a4paper]{article}
+\usepackage{tikz}
+\usepackage{standalone}
+\usetikzlibrary{shapes,arrows,fit,positioning} % Tikz libraries required for the flow chart in the template
+
+\begin{document}
+
+\begin{tikzpicture}[remember picture,overlay]
+\tikzstyle{block}  = [rectangle, draw, fill=blue!20 , text width=5em, text centered, minimum height=2em]
+\coordinate (bottom_left) at (0,0);
+\coordinate (top_right) at (10,10);
+\node at (current page.center) {Center};
+
+    \node [block] (sput) at (5,9)  {sputnik};
+    \node[fit={(3,1.0) (5,1.1)}, inner sep=0pt, draw=blue, fill=blue!20, thick] (rect1) {};
+    \node[fit={(5.1,1.0) (5.8,1.1)}, inner sep=0pt, draw=blue, fill=blue!20, thick] {};
+    \node[fit={(5.1,1.0) (5.8,1.1)}, inner sep=0pt, draw=blue, fill=blue!20, thick] {};
+    \node[fit={(3,1.2) (5,1.3)}, inner sep=0pt, draw=blue, fill=blue!20, thick] (rect) {};
+    \node[fit={(3,1.4) (5,1.5)}, inner sep=0pt, draw=blue, fill=blue!20, thick] (rect) {};
+    \node[fit={(3,1.6) (5,1.7)}, inner sep=0pt, draw=blue, fill=blue!20, thick] (rect) {};
+
+\end{tikzpicture}   
+
+
+
+\end{document}
