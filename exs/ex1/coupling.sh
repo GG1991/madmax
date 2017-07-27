@@ -6,7 +6,7 @@
 #break_mic=( 'spu_mesh.c:136' ) 
 #break_mac=( 'mac_comm.c:101' ) 
 #break_mic=( 'mic_comm.c:105' ) 
-#break_mac=( 'spu_assembly.c:142' ) 
+break_mac=( 'spu_assembly.c:123' ) 
 #break_mac=( 'spu_boundary.c:148' ) 
 
 NM=1
@@ -54,7 +54,7 @@ if [ "$#" -eq 1 ];then
    echo "./mpirun -np 2 "$exec_val3_mac" : -np 2 "$exec_val3_mic""
    eval  ./mpirun -np 2 "$exec_val3_mac" : -np 2 "$exec_val3_mic" > valgrind3-1.out 2>&1
   elif [ "$1" == "-p" ];then
-   exec_print_mac="../../macro/macro ex1.spu -p"
+   exec_print_mac="../../macro/macro ex1.spu -p -pc_type lu"
    exec_print_mic="../../micro/micro ex1.spu -p"
    echo "./mpirun -np $NM "$exec_print_mac" : -np $Nm "$exec_print_mic""
    eval  ./mpirun -np $NM "$exec_print_mac" : -np $Nm "$exec_print_mic"
