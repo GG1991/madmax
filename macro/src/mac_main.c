@@ -11,8 +11,13 @@
 
 
 static char help[] = "Solves the displacement field inside a solid structure. \
-		      It has the capability of being couple with MICRO, a code for solving and RVE problem.n\n";
+		      It has the capability of being couple with MICRO, a code for solving and RVE problem.n\n"
+		      "-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
 
+
+#define   FLAG_VTK_NONE 0
+#define   FLAG_VTK_PART 1
+#define   FLAG_VTK_DISP 2
 
 #include "macro.h"
 
@@ -21,7 +26,9 @@ int main(int argc, char **argv)
 {
 
   int        i, ierr;
+  int        flag_print_vtk = FLAG_VTK_NONE;
   char       *myname = strdup("macro");
+  PetscBool  set;
 
   PetscLogEvent  CHECK_ERROR;    /* event number for error checking */
   PetscViewer    viewer;
@@ -68,10 +75,10 @@ int main(int argc, char **argv)
 
   spu_parse_scheme( input_n );
 
-  // 
-  // Stablish a new local communicator and a set of 
-  // intercommunicators with micro programs 
-  //
+  /* 
+     Stablish a new local communicator and a set of 
+     intercommunicators with micro programs 
+  */
   mac_comm_init();
   
 
@@ -82,9 +89,9 @@ int main(int argc, char **argv)
 
   spu_parse_mesh(input_n);
 
-  //
-  // Set PETSc communicator to MACRO_COMM
-  //
+  /*
+     Set PETSc communicator to MACRO_COMM
+  */
   PETSC_COMM_WORLD = MACRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
   PetscPrintf(MACRO_COMM,
@@ -96,7 +103,7 @@ int main(int argc, char **argv)
   if(rank_mac==0) FileOutputStructures = fopen("macro_structures.dat","w");
 
 #if defined(PETSC_USE_LOG)
-  ierr = PetscLogEventRegister("Read Elems of Mesh",PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("Read Elems of Mesh"    ,PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Partition Mesh"        ,PETSC_VIEWER_CLASSID,&EVENT_PART_MESH);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Calculate Ghosts Nodes",PETSC_VIEWER_CLASSID,&EVENT_CALC_GHOSTS);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Reenumerates Nodes"    ,PETSC_VIEWER_CLASSID,&EVENT_REENUMERATE);CHKERRQ(ierr);
@@ -108,6 +115,11 @@ int main(int argc, char **argv)
   ierr = PetscLogEventRegister("Assembly Residual"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Solve Linear System"   ,PETSC_VIEWER_CLASSID,&EVENT_SOLVE_SYSTEM);CHKERRQ(ierr);
 #endif
+
+  /*
+     Get command line arguments
+  */
+  ierr = PetscOptionsGetInt(NULL, NULL, "-p_vtk", &flag_print_vtk, &set); CHKERRQ(ierr); 
 
   //
   // Register various stages for profiling
@@ -310,6 +322,11 @@ int main(int argc, char **argv)
       ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
 
       nr_its ++;
+    }
+
+    if(flag_print_vtk & FLAG_VTK_DISP){ 
+      sprintf(vtkfile_n,"%s_displ_%d.vtk",myname,rank_mac);
+      SpuVTKPlot_Displ_Strain_Stress(MACRO_COMM, vtkfile_n, &x, &Strain, &Stress);
     }
 
     t += dt;

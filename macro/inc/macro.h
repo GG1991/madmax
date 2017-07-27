@@ -26,6 +26,8 @@ Vec           x, dx, b;   /* Vectors unknowns and RHS */
 KSP           ksp;        /* linear solver context    */
 KSPConvergedReason  reason;
 
+Vec           Stress, Strain;
+
 
 /*****************************************************************************************************
    MACRO function definitions

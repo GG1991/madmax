@@ -168,6 +168,7 @@ int SputnikSetBoundaryOnResidual( Vec *b );
 
 // spu_vtk.c
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );
+int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, Vec *Strain, Vec *Stress);
 int vtkcode(int dim,int npe);
 
 // spu_time.c
