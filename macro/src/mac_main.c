@@ -227,10 +227,10 @@ int main(int argc, char **argv)
   /*
      Begin time dependent loop
   */
-  int    nr_its = -1, KspIterationNum = -1;
+  int    nr_its = -1, kspits = -1;
   int    time_step = 0;
   double t0 = 0.0, tf = 1.0, dt = 1.0, t = t0;
-  double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3;
+  double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
 
 
   // Initial condition <x> = 0
@@ -252,30 +252,30 @@ int main(int argc, char **argv)
     ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
 
     /*
-       Assemblying Residual
-     */
-    ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-    ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");CHKERRQ(ierr);
-    ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
-    ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-    ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
-    ierr = SputnikSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
-    if(print_flag){
-      ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
-      ierr = VecView(b,viewer); CHKERRQ(ierr);
-    }
-    ierr = VecScale(b,-1.0); CHKERRQ(ierr);
-    ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-
-    /*
        If the Residual Norm is bigger than <NormTol>
        we should iterate
     */
 
-    nr_its = 0;
+    nr_its = 0; norm = 2*NormTol;
     while( nr_its < NRMaxIts && norm > NormTol )
     {
 
+      /*
+	 Assemblying Residual
+       */
+      ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM, "Assembling Residual ");CHKERRQ(ierr);
+      ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
+      ierr = SputnikSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
+      if(print_flag){
+	ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
+	ierr = VecView(b,viewer); CHKERRQ(ierr);
+      }
+      ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
+      ierr = VecScale(b,-1.0); CHKERRQ(ierr);
+      ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+      if( !(norm > NormTol) )break;
       /*
 	 Assemblying Jacobian
        */
@@ -292,10 +292,11 @@ int main(int argc, char **argv)
 	 Solving Problem
        */
       ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MACRO_COMM, "Solving Linear System\n");
+      ierr = PetscPrintf(MACRO_COMM, "Solving Linear System ");
       ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
-      ierr = KSPGetIterationNumber(ksp,&KspIterationNum);CHKERRQ(ierr);
+      ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
       ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
+      ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
       ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
       if(print_flag){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
@@ -303,23 +304,8 @@ int main(int argc, char **argv)
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(x,viewer); CHKERRQ(ierr);
       }
-      ierr = PetscPrintf(MACRO_COMM,"Iterations %D reason %d\n",KspIterationNum,reason);CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM,"Iterations %D Norm %e reason %d\n",kspits, kspnorm, reason);CHKERRQ(ierr);
       ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-      /*
-	 Assemblying Residual
-       */
-      ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");CHKERRQ(ierr);
-      ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
-      ierr = SputnikSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
-      if(print_flag){
-	ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
-	ierr = VecView(b,viewer); CHKERRQ(ierr);
-      }
-      ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-      ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
-      ierr = VecScale(b,-1.0); CHKERRQ(ierr);
-      ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
 
       nr_its ++;
     }
