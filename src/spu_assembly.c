@@ -124,7 +124,7 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 
     // calculate <ElemResidue> by numerical integration
 
-    memset(ElemResidual, 0.0, (8*3)*sizeof(double));
+    memset(ElemResidual, 0.0, (npe*3)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
       memset(Epsilon, 0.0, 6*sizeof(double));
@@ -170,15 +170,17 @@ int GetElemenDispls( int e, Vec *Displacement, double *ElemDispls )
 
   int  Indeces[8*3];
   int  d, n, npe;
+  int  ierr;
 
   npe = eptr[e+1]-eptr[e];
   for(n=0;n<npe;n++){
     for(d=0;d<3;d++){
-      Indeces[n*3+d] = eind[eptr[e]+n]*3 + d;
+      // para usar VecGetValues usamos la numeracion global
+      Indeces[n*3+d] = loc2petsc[eind[eptr[e]+n]]*3 + d; 
     }
   }
   
-  VecGetValues( *Displacement, npe*3, Indeces, ElemDispls );
+  ierr = VecGetValues( *Displacement, npe*3, Indeces, ElemDispls ); CHKERRQ(ierr);
   return 0;
 }
 
