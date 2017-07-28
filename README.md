@@ -1,6 +1,6 @@
 # sputnik
 
-This is a high performance algorithm for solving multi-scale problems.
+A high performance program for solving really large multi-scale problems.
 
 To use the PETSc profiling do:
 

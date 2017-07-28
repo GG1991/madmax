@@ -63,12 +63,7 @@ int main(int argc, char **argv)
       print_flag = true;
     }
   }
-  //
-  // File to print information about Mesh:
-  // -> number of elements (before and after partition)
-  // -> number of nodes for each <boundary_t>
-  //
-
+  
   spu_parse_scheme( input_n );
 
   /* 
@@ -77,12 +72,6 @@ int main(int argc, char **argv)
   */
   mac_comm_init();
   
-
-  // here we collect time from all processes
-  if(rank_mac == 0){
-    time_vec = calloc(nproc_mac, sizeof(double));
-  }
-
   spu_parse_mesh(input_n);
 
   /*
@@ -118,67 +107,60 @@ int main(int argc, char **argv)
   flag_print_vtk = FLAG_VTK_NONE;
   ierr = PetscOptionsGetInt(NULL, NULL, "-p_vtk", &flag_print_vtk, &set); CHKERRQ(ierr); 
 
-  //
-  // Register various stages for profiling
-  //
+  /*
+     Register various stages for profiling
+  */
   ierr = PetscLogStageRegister("Read Mesh Elements",&stages[0]);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("Linear System 1",&stages[1]);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("Linear System 2",&stages[2]);CHKERRQ(ierr);
 
-  //
-  // Register a user-defined event for profiling (error checking).
-  //
+  /*
+     Register a user-defined event for profiling (error checking).
+  */
   CHECK_ERROR = 0;
-  ierr        = PetscLogEventRegister("Check Error",KSP_CLASSID,&CHECK_ERROR);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("Check Error",KSP_CLASSID,&CHECK_ERROR);CHKERRQ(ierr);
 
+
+  /*
+     read mesh
+  */    
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
-  //
-  // read mesh
-  //    
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
   PetscPrintf(MACRO_COMM,"MACRO: Reading mesh elements\n");
   strcpy(mesh_f,"gmsh");
   read_mesh_elmv(&MACRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
 
-  //
-  // End curent profiling stage
-  //
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
-  nelm = elmdist[rank_mac+1] - elmdist[rank_mac];
-  part = (int*)malloc(nelm * sizeof(int));
-
-  //
-  // partition the mesh
-  //
+  /*
+     partition the mesh
+  */
   PetscPrintf(MACRO_COMM,"MACRO: Partitioning and distributing mesh\n");
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
   part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
-  //
-  // We delete repeated nodes and save the <NAllMyNod> values on <AllMyNodOrig> in order
-  // this should be inside part_mesh_PARMETIS ?
-  //
-  clean_vector_qsort(&MACRO_COMM, myname, eptr[nelm], eind, &AllMyNodOrig, &NAllMyNod);
-  //
-  // Calculate <*ghosts> and <nghosts> 
-  //
+
+  /*
+     Calculate <*ghosts> and <nghosts> 
+  */
   PetscPrintf(MACRO_COMM,"MACRO: Calculating Ghost Nodes\n");
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
   calculate_ghosts(&MACRO_COMM, myname);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
-  //
-  // Reenumerate Nodes
-  //
+
+  /*
+     Reenumerate Nodes
+  */
   PetscPrintf(MACRO_COMM,"MACRO: Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
   reenumerate_PETSc(&MACRO_COMM);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-  //
-  // Coordinate Reading
-  //
+
+  /*
+     Coordinate Reading
+  */
   PetscPrintf(MACRO_COMM,"MACRO: Reading Coordinates\n");
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
   read_mesh_coord(&MACRO_COMM, myname, mesh_n, mesh_f);
@@ -188,6 +170,7 @@ int main(int argc, char **argv)
 
   sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mac);
   spu_vtk_partition( vtkfile_n, &MACRO_COMM );
+
   /*
      read materials and physical entities from input and mehs files
   */

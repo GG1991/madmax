@@ -274,6 +274,11 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
   }
   free(tpwgts);
 
+  /*
+     We delete repeated nodes and save the <NAllMyNod> values on <AllMyNodOrig> in order
+  */
+  clean_vector_qsort(comm, myname, eptr[nelm], eind, &AllMyNodOrig, &NAllMyNod);
+
   return 0;
 }
 
@@ -1155,6 +1160,8 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
     }
     n += npe;
   }
+  nelm = elmdist[rank+1] - elmdist[rank];
+  part = malloc(nelm * sizeof(int));
   //
   /**************************************************/
 
