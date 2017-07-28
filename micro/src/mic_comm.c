@@ -146,9 +146,10 @@ int mic_comm_init(void)
     ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
     ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
 
-    // remote ranks
-    // these remote ranks correspond to
-    // the remote micro leaders
+    /*
+       these remote ranks correspond to
+       the remote micro leaders
+     */
     remote_ranks = malloc(nproc_mac_tot * sizeof(int));
     m = 0;
     for(i=0;i<nproc_wor;i++){
@@ -168,6 +169,115 @@ int mic_comm_init(void)
   }
   else{
       return 1;
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int MicCommWaitStartSignal( MPI_Comm WORLD_COMM )
+{
+
+  /*
+     The processes will wait here until they receive a signal
+  */
+
+  int ierr, signal;
+  MPI_Status status;
+
+  ierr = MPI_Recv(&signal, 1, MPI_INT, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+
+  return(signal == MPI_MICRO_START) ? 0 : 1;
+}
+
+/****************************************************************************************************/
+
+int MicCommRecvStrain( MPI_Comm WORLD_COMM )
+{
+
+  /*
+     The processes will wait here until they receive a signal
+  */
+
+  int ierr;
+  MPI_Status status;
+
+  ierr = MPI_Recv(mac_eps, 6, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int MicCommRecvGPnum( MPI_Comm WORLD_COMM )
+{
+
+  /*
+     The processes will wait here until they receive a signal
+  */
+
+  int ierr;
+  MPI_Status status;
+
+  ierr = MPI_Recv(&mac_gp, 1, MPI_INT, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int MicCommSendAveStressAndTanTensor( MPI_Comm WORLD_COMM )
+{
+
+  /*
+     Sends to macro leader the contiguos vector that has the averange 
+     stress and tangent strain tensor calculated here
+  */
+
+  int ierr;
+  MPI_Status status;
+
+  if(rank_mic==0){
+    ierr = MPI_Ssend(mic_stress_ttensor, 6+81, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int MicCommSendAveStress( MPI_Comm WORLD_COMM )
+{
+
+  /*
+     Sends to macro leader the averange Stress tensor calculated here
+  */
+
+  int ierr;
+  MPI_Status status;
+
+  if(rank_mic==0){
+    ierr = MPI_Ssend(mic_stress, 6, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int MicCommSendAveTTensor( MPI_Comm WORLD_COMM )
+{
+
+  /*
+     Sends to macro leader the averange Tangent Tensor calculated here
+  */
+
+  int ierr;
+  MPI_Status status;
+
+  if(rank_mic==0){
+    ierr = MPI_Ssend(mic_ttensor, 9, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
   }
 
   return 0;

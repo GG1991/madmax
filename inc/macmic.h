@@ -18,6 +18,8 @@
 #define  FLAG_VTK_PART 1
 #define  FLAG_VTK_DISP 2
 
+#define  MPI_MICRO_START 1
+
 /*
    This structure represents a Gauss points
    in this case it has an element called 
