@@ -202,7 +202,7 @@ int main(int argc, char **argv)
   ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
 
   ierr = PetscLogEventBegin(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
-  fem_inigau();
+  ierr = fem_inigau(); CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
   /*

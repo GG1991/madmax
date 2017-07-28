@@ -170,6 +170,18 @@ int main(int argc, char **argv)
   MicroAllocMatrixVector( MICRO_COMM, NMyNod*3, NTotalNod*3);
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
+  /*
+     Setting solver options 
+  */
+  ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
+  ierr = KSPSetType(ksp,KSPCG); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+  ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
+
+  ierr = PetscLogEventBegin(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
+  ierr = fem_inigau(); CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
+
   ierr = PetscFinalize();
   ierr = MPI_Finalize();
 

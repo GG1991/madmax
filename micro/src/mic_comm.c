@@ -76,20 +76,20 @@ int mic_comm_init(void)
 
      Are defined:
 
-     id_vec        : vector of size nproc_tot that 
-                     id_vec[rank_wor] = MACRO|MICRO
+     id_vec        > vector of size nproc_tot that 
+     id_vec[rank_wor] = MACRO|MICRO
 
      <--------nproc_wor-------------->
 
      [ 1 1 2 1 2 2 2 1 2 1 2 2 ... 2 ]
 
-     micro_world   : this communicator holds all those processes
-                     that belong to the same micro-world are going
-		     to solve the micro structure in a distributed way
-     
-     micmac_inter_comm   : array of inter-comunicators for message interchange 
-                     between the "MICRO_COMM" and "macro_comm" communicators 
-                     (all the macro communicators)
+     micro_world   > this communicator holds all those processes
+     that belong to the same micro-world are going
+     to solve the micro structure in a distributed way
+
+     micmac_inter_comm   > array of inter-comunicators for message interchange 
+     between the "MICRO_COMM" and "macro_comm" communicators 
+     (all the macro communicators)
 
    */
 
