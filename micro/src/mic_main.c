@@ -75,7 +75,7 @@ int main(int argc, char **argv)
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
   FileOutputStructures = NULL;
-  if(rank_mic==0) FileOutputStructures = fopen("macro_structures.dat","w");
+  if(rank_mic==0) FileOutputStructures = fopen("micro_structures.dat","w");
 
 #if defined(PETSC_USE_LOG)
   ierr = PetscLogEventRegister("Read_Elems_of_Mesh"    ,PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);CHKERRQ(ierr);
@@ -116,7 +116,59 @@ int main(int argc, char **argv)
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
+  /*
+     partition the mesh
+  */
+  ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
   part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );
+  ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
+
+  /*
+     Calculate <*ghosts> and <nghosts> 
+  */
+  ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
+  calculate_ghosts(&MICRO_COMM, myname);
+  ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
+
+  /*
+     Reenumerate Nodes
+  */
+  ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
+  reenumerate_PETSc(&MICRO_COMM);
+  ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
+
+  /*
+     Coordinate Reading
+  */
+  ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
+  read_mesh_coord(&MICRO_COMM, myname, mesh_n, mesh_f);
+  ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
+
+  char  vtkfile_n[NBUF];
+
+  sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mic);
+  spu_vtk_partition( vtkfile_n, &MICRO_COMM );
+
+  /*
+     read materials and physical entities from input and mehs files
+  */
+  ierr = list_init(&physical_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
+  ierr = list_init(&function_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
+  ierr = SpuParseMaterials( &MICRO_COMM, input_n ); CHKERRQ(ierr);            
+  ierr = SpuParsePhysicalEntities( &MICRO_COMM, mesh_n ); CHKERRQ(ierr);
+  ierr = SpuParseFunctions( &MICRO_COMM, input_n ); CHKERRQ(ierr); 
+  ierr = SpuParseBoundary(&MICRO_COMM, input_n ); CHKERRQ(ierr); 
+  ierr = SetGmshIDOnMaterialsAndBoundaries(MICRO_COMM); CHKERRQ(ierr); 
+  ierr = CheckPhysicalID(); CHKERRQ(ierr);
+  ierr = SpuReadBoundary(MICRO_COMM, mesh_n, mesh_f, FileOutputStructures );CHKERRQ(ierr);
+  ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
+
+  /*
+     Allocate matrices & vectors
+  */ 
+  ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
+  MicroAllocMatrixVector( MICRO_COMM, NMyNod*3, NTotalNod*3);
+  ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
   ierr = PetscFinalize();
   ierr = MPI_Finalize();

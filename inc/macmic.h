@@ -9,6 +9,7 @@
 */
 
 #include <stdlib.h>
+#include "petscksp.h"
 
 #ifndef MACMIC_H
 #define MACMIC_H
@@ -36,6 +37,15 @@ gauss_t * gauss;
    Global Variables
 */
 int           flag_print_vtk;
+
+// Matrices and vectors
+
+Mat           A;                    /* Jacobian Matrix          */
+Vec           x, dx, b;             /* Vectors unknowns and RHS */
+KSP           ksp;                  /* linear solver context    */
+KSPConvergedReason  reason;
+
+double        *stress, *strain;     // Averange strain and stress on each element
 
 /*
    Common functions

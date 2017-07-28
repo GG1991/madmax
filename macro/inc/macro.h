@@ -18,16 +18,6 @@ int             *remote_ranks;      //  remote ranks if micro processes
 
 int              nev;
 
-// Matrices and vectors
-
-Mat           A;                    /* Jacobian Matrix          */
-Vec           x, dx, b;             /* Vectors unknowns and RHS */
-KSP           ksp;                  /* linear solver context    */
-KSPConvergedReason  reason;
-
-double        *stress, *strain;     // Averange strain and stress on each element
-
-
 
 /*****************************************************************************************************
    MACRO function definitions

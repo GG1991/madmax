@@ -20,9 +20,6 @@ int             *remote_ranks;      //  remote ranks if micro processes
 
 int              nev;
 
-char             input_n[NBUF];     // Input file name
-char             mesh_n[NBUF];      // Mesh file name
-char             mesh_f[4];         // Mesh format name
 
 /*****************************************************************************************************
    MICRO function definitions
@@ -33,3 +30,6 @@ int main(int argc, char **args);
 
 // mac_comm.c
 int mic_comm_init(void);
+
+// mic_alloc.c
+int MicroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal);
