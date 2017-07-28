@@ -44,11 +44,11 @@ int main(int argc, char **argv)
 		EVENT_SOLVE_SYSTEM;
 #endif
 
-  world_comm = MPI_COMM_WORLD;
+  WORLD_COMM = MPI_COMM_WORLD;
 
   ierr = MPI_Init(&argc, &argv);
-  ierr = MPI_Comm_size(world_comm, &nproc_wor);
-  ierr = MPI_Comm_rank(world_comm, &rank_wor);
+  ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
+  ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
   if(argc>1){
     strcpy(input_n,argv[1]);
@@ -104,8 +104,24 @@ int main(int argc, char **argv)
   /*
      Get command line arguments
   */
-  flag_print_vtk = FLAG_VTK_NONE;
+  
   ierr = PetscOptionsGetInt(NULL, NULL, "-p_vtk", &flag_print_vtk, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE) flag_print_vtk = FLAG_VTK_NONE;
+  ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
+
+  if(flag_coupling){
+    PetscPrintf(MACRO_COMM,
+	"--------------------------------------------------\n"
+	"  MACRO: COUPLING \n"
+	"--------------------------------------------------\n");
+  }
+  else{
+    PetscPrintf(MACRO_COMM,
+	"--------------------------------------------------\n"
+	"  MACRO: STANDALONE \n"
+	"--------------------------------------------------\n");
+  }
 
   /*
      Register various stages for profiling
@@ -201,6 +217,9 @@ int main(int argc, char **argv)
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
 
+  /*
+     Init Gauss point shapes functions and derivatives
+  */
   ierr = PetscLogEventBegin(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
   ierr = fem_inigau(); CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);

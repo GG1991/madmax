@@ -63,17 +63,17 @@ typedef struct _physical_t{
 
 char         input_n[NBUF];            // Input file name
 
-MPI_Comm     world_comm;
+MPI_Comm     WORLD_COMM;
 MPI_Status   status;
 
 bool         print_flag;
 
 int          rank_wor;                 //  rank on world comm
-int          nproc_wor;                //  # of processes (world_comm)
+int          nproc_wor;                //  # of processes (WORLD_COMM)
 
 int          *id_vec;                  // ID vector size = #proc (info of which ID has each rank
-int          nproc_mac_tot;            // number of macro processes total (inside world_comm)
-int          nproc_mic_tot;            // number of micro processes total (inside world_comm)
+int          nproc_mac_tot;            // number of macro processes total (inside WORLD_COMM)
+int          nproc_mic_tot;            // number of micro processes total (inside WORLD_COMM)
 int          nstruc_mic;               // number of micro structures
 int          *nproc_per_mic;           // number of processes per micro structure ( size = nstruc_mic )
 int          nproc_mic_group;          // number of micro process in a group = sum_i nproc_per_mic[i]

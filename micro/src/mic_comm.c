@@ -102,7 +102,7 @@ int mic_comm_init(void)
 
     // fills the id_vec array (collective with macro code)
     id_vec = malloc(nproc_wor * sizeof(int));
-    ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,world_comm);
+    ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);
     if(ierr){
       return 1;
     }
@@ -142,7 +142,7 @@ int mic_comm_init(void)
     color += c;
 
     // MICRO_COMM creation
-    MPI_Comm_split(world_comm, color, 0, &MICRO_COMM);
+    MPI_Comm_split(WORLD_COMM, color, 0, &MICRO_COMM);
     ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
     ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
 

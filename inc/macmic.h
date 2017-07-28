@@ -39,6 +39,7 @@ gauss_t * gauss;
    Global Variables
 */
 int           flag_print_vtk;
+PetscBool     flag_coupling;
 
 // Matrices and vectors
 

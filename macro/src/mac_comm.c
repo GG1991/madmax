@@ -85,13 +85,13 @@ int mac_comm_init(void)
 
     // fills the id_vec array (collective with micro code)
     id_vec = malloc(nproc_wor * sizeof(int));
-    ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,world_comm);
+    ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);
     if(ierr){
       return 1;
     }
 
     // MACRO_COMM creation
-    MPI_Comm_split(world_comm, color, 0, &MACRO_COMM);
+    MPI_Comm_split(WORLD_COMM, color, 0, &MACRO_COMM);
     ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
     ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
 
