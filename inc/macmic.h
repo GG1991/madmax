@@ -13,6 +13,10 @@
 #ifndef MACMIC_H
 #define MACMIC_H
 
+#define  FLAG_VTK_NONE 0
+#define  FLAG_VTK_PART 1
+#define  FLAG_VTK_DISP 2
+
 /*
    This structure represents a Gauss points
    in this case it has an element called 
@@ -27,6 +31,15 @@ typedef struct gauss_t_{
 }gauss_t;
 
 gauss_t * gauss;
+
+/*
+   Global Variables
+*/
+int           flag_print_vtk;
+
+/*
+   Common functions
+*/
 
 int MacMicInitGaussStructure(int *eptr, int nelm);
 

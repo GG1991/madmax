@@ -71,7 +71,7 @@ int mic_comm_init(void)
 
   /* 
 
-     Performs the creation of the new communicator "micro_comm" with its 
+     Performs the creation of the new communicator "MICRO_COMM" with its 
      inter-communicators with macro_comms if the scheme is MACRO_MICRO
 
      Are defined:
@@ -88,7 +88,7 @@ int mic_comm_init(void)
 		     to solve the micro structure in a distributed way
      
      micmac_inter_comm   : array of inter-comunicators for message interchange 
-                     between the "micro_comm" and "macro_comm" communicators 
+                     between the "MICRO_COMM" and "macro_comm" communicators 
                      (all the macro communicators)
 
    */
@@ -141,10 +141,10 @@ int mic_comm_init(void)
     }
     color += c;
 
-    // micro_comm creation
-    MPI_Comm_split(world_comm, color, 0, &micro_comm);
-    ierr = MPI_Comm_size(micro_comm, &nproc_mic);
-    ierr = MPI_Comm_rank(micro_comm, &rank_mic);
+    // MICRO_COMM creation
+    MPI_Comm_split(world_comm, color, 0, &MICRO_COMM);
+    ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
+    ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
 
     // remote ranks
     // these remote ranks correspond to

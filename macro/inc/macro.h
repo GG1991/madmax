@@ -5,10 +5,6 @@
 #include "sputnik.h"
 #include "macmic.h"  /* Routines inside sputinik that are common for <macro> and <micro> only */
 
-#define  FLAG_VTK_NONE 0
-#define  FLAG_VTK_PART 1
-#define  FLAG_VTK_DISP 2
-
 /*****************************************************************************************************
    MACRO global variables 
 *****************************************************************************************************/
@@ -31,7 +27,6 @@ KSPConvergedReason  reason;
 
 double        *stress, *strain;     // Averange strain and stress on each element
 
-int           flag_print_vtk;
 
 
 /*****************************************************************************************************

@@ -2,9 +2,8 @@
    MICRO external lybraries
 *****************************************************************************************************/
 
-#include "petscksp.h"
 #include "sputnik.h"
-#include <stdbool.h>
+#include "macmic.h"  /* Routines inside sputinik that are common for <macro> and <micro> only */
 
 #define  DIM   3
 
@@ -12,7 +11,7 @@
    MICRO global variables 
 *****************************************************************************************************/
 
-MPI_Comm         micro_comm;
+MPI_Comm         MICRO_COMM;
 
 int              nproc_mac;         //  # of macro processes (world_comm)  
 int              nproc_mic;         //  # of micro processes (micro_comm)
