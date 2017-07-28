@@ -236,7 +236,6 @@ int MicCommSendAveStressAndTanTensor( MPI_Comm WORLD_COMM )
   */
 
   int ierr;
-  MPI_Status status;
 
   if(rank_mic==0){
     ierr = MPI_Ssend(mic_stress_ttensor, 6+81, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
@@ -255,7 +254,6 @@ int MicCommSendAveStress( MPI_Comm WORLD_COMM )
   */
 
   int ierr;
-  MPI_Status status;
 
   if(rank_mic==0){
     ierr = MPI_Ssend(mic_stress, 6, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
@@ -274,7 +272,6 @@ int MicCommSendAveTTensor( MPI_Comm WORLD_COMM )
   */
 
   int ierr;
-  MPI_Status status;
 
   if(rank_mic==0){
     ierr = MPI_Ssend(mic_ttensor, 9, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);

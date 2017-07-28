@@ -35,9 +35,30 @@ typedef struct gauss_t_{
 
 gauss_t * gauss;
 
+#define  COMM_NULL        0
+#define  COMM_MACRO_MICRO 1
+
+typedef struct comm_1_t_{
+
+  int   my_macro_leader;
+  int   my_micro_worker;
+  int   im_the_micro_leader;
+
+}comm_1_t;
+
+typedef struct communication_t_{
+
+  int  comm_type;
+  void *comm;
+
+}communication_t;
+
+communication_t comm_scheme;
+
 /*
    Global Variables
 */
+
 int           flag_print_vtk;
 PetscBool     flag_coupling;
 

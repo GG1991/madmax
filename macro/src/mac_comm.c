@@ -51,6 +51,7 @@
 
 
    Author: Guido Giuntoli
+   Date: 28-07-2017
    
 */
 
@@ -85,26 +86,25 @@ int mac_comm_init(void)
 
     // fills the id_vec array (collective with micro code)
     id_vec = malloc(nproc_wor * sizeof(int));
-    ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);
-    if(ierr){
-      return 1;
-    }
+    ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);CHKERRQ(ierr);
 
     // MACRO_COMM creation
     MPI_Comm_split(WORLD_COMM, color, 0, &MACRO_COMM);
     ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
     ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
 
-    // we count the number of processes 
-    // that are with micro and macro from id_vec
+    /* 
+       we count the number of processes 
+       that are with micro and macro from id_vec
+     */
     nproc_mic_tot = nproc_mac_tot = 0;
     for(i=0;i<nproc_wor;i++){
-        if(id_vec[i] == MICRO){
-	  nproc_mic_tot ++;
-	}
-	else{
-	  nproc_mac_tot++;
-	}
+      if(id_vec[i] == MICRO){
+	nproc_mic_tot ++;
+      }
+      else{
+	nproc_mac_tot++;
+      }
     }
     if(!rank_mac){
       printf("MACRO: # of macro process (id_vec) = %d\n",nproc_mac_tot);
@@ -116,29 +116,49 @@ int mac_comm_init(void)
     }
     nmic_worlds = nproc_mic_tot / nproc_mic_group;
 
-    // remote_rank array is filled 
-    // these ranks correspond to the 
-    // micro processes' leaders
+    /* 
+       remote_rank array is filled 
+       these ranks correspond to the 
+       micro processes' leaders
+    */ 
     remote_ranks = malloc(nmic_worlds * sizeof(int));
     m = c = 0;
     for(i=0;i<nproc_wor;i++){
-        if(id_vec[i] == MICRO){
-	  if(c == 0){
-	    remote_ranks[m] = i;
-	    c = nproc_per_mic[m % nstruc_mic];
-	    m ++;
-	  }
-	  else{
-	    c--;
-	  }
+      if(id_vec[i] == MICRO){
+	if(c == 0){
+	  remote_ranks[m] = i;
+	  c = nproc_per_mic[m % nstruc_mic];
+	  m ++;
 	}
+	else{
+	  c--;
+	}
+      }
     }
+    mymicro_rank_worker = remote_ranks[m];
 
   }
-
   else{
-      return 1;
+    return 1;
   }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int MacCommSendStartSignal( MPI_Comm WORLD_COMM )
+{
+
+  /*
+     Each <macro> process send the starting signal to the <micro> leaders
+  */
+
+  int ierr, signal;
+
+  signal = MPI_MICRO_START;
+
+  ierr = MPI_Ssend(&signal, 1, MPI_INT, mymicro_rank_worker, 0, WORLD_COMM); CHKERRQ(ierr);
 
   return 0;
 }
