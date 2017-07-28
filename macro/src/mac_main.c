@@ -200,6 +200,7 @@ int main(int argc, char **argv)
   ierr = SetGmshIDOnMaterialsAndBoundaries(MACRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = SpuReadBoundary(MACRO_COMM, mesh_n, mesh_f, FileOutputStructures );CHKERRQ(ierr);
+  ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
 
   /*
      Allocate matrices & vectors
