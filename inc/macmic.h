@@ -43,14 +43,14 @@ gauss_t * gauss;
 
 typedef struct coupMac_1_t_{
 
-  int   myMicWorker;
+  int   mic_rank; /* rank of micro worker */
 
 }coupMac_1_t;
 
 typedef struct coupMic_1_t_{
 
-  int   myMacLeader;
-  int   imMicLeader;
+  int   mac_rank; /* rank of macro leader */
+  int   im_leader;/* 1 if im the leader 0 if not */
 
 }coupMic_1_t;
 
@@ -78,19 +78,18 @@ int          *remote_ranks;     //  remote ranks if micro processes
 int          nev;
 
 MPI_Comm     WORLD_COMM;
+int          color;
 int          rank_wor;                 //  rank on world comm
 int          nproc_wor;                //  # of processes (WORLD_COMM)
-int          flag_print_vtk;
-int          *id_vec;                  // ID vector size = #proc (info of which ID has each rank
-int          nproc_mac_tot;            // number of macro processes total (inside WORLD_COMM)
-int          nproc_mic_tot;            // number of micro processes total (inside WORLD_COMM)
+
 int          nstruc_mic;               // number of micro structures
 int          *nproc_per_mic;           // number of processes per micro structure ( size = nstruc_mic )
 int          nproc_mic_group;          // number of micro process in a group = sum_i nproc_per_mic[i]
 int          nmic_worlds;              // number of micro worlds nproc_mic / nproc_mic_group
 int          scheme;                   // communication approach
-PetscBool    flag_coupling;
 
+PetscBool    flag_coupling;
+int          flag_print_vtk;
 // Matrices and vectors
 
 Mat           A;                    /* Jacobian Matrix          */
@@ -106,6 +105,6 @@ double        *stress, *strain;     // Averange strain and stress on each elemen
 
 int MacMicInitGaussStructure(int *eptr, int nelm);
 int MacMicParseScheme( char *input );
-int MacMicColoring(int id);
+int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM);
 
 #endif

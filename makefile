@@ -54,11 +54,9 @@ SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o     \
            $(SPU_OBJ_DIR)/macmic.o    
 
 MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o      \
-           ${MAC_OBJ_DIR}/mac_comm.o      \
            ${MAC_OBJ_DIR}/mac_alloc.o       
 
 MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o      \
-           ${MIC_OBJ_DIR}/mic_comm.o      \
            ${MIC_OBJ_DIR}/mic_alloc.o       
 
 EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o  \

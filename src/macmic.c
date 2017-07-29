@@ -86,7 +86,7 @@ int MacMicParseScheme( char *input )
 
 /****************************************************************************************************/
 
-int MacMicColoring(int id)
+int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM)
 {
 
   /* 
@@ -114,150 +114,72 @@ int MacMicColoring(int id)
    */
 
   int  i, ierr, c, m;
-  int  color;
+  int  *id_vec = malloc(nproc_wor * sizeof(int));
+  int  nproc_wor, rank_wor;
+  int  nmic_worlds;
+  int  nproc_mac_tot, nproc_mic_tot, nproc_mic_aux;
+  int  nproc_local, rank_local;
+  int  mac_rank, mic_rank, im_leader;
 
-  if(id == MICRO){
+  ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
+  ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
-    color = MICRO;
+  // fills the id_vec array (collective with MICRO code)
+  ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);CHKERRQ(ierr);
 
-    if(macmic.type == COUP_1){
+  for(i=0;i<nproc_wor;i++){
+    if(id_vec[i] == MACRO){
+      nproc_mac_tot++;
+    }
+    else if(id_vec[i] == MICRO){
+      nproc_mic_tot++;
+    }
+    else{
+      return 1;
+    }
+  }
 
-      // fills the id_vec array (collective with macro code)
-      id_vec = malloc(nproc_wor * sizeof(int));
-      ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);
-      if(ierr){
-	return 1;
-      }
+  if(macmic->type == COUP_1){
 
-      // determines nproc_mac_tot and nproc_mic_tot
-      nproc_mic_tot = nproc_mac_tot = 0;
-      for(i=0;i<nproc_wor;i++){
-	if(id_vec[i] == MACRO){
-	  nproc_mac_tot++;
-	}
-	else if(id_vec[i] == MICRO){
-	  nproc_mic_tot++;
-	}
-	else{
-	  return 1;
-	}
-      }
-      if(nproc_mic_tot % nproc_mic_group != 0){
-	printf("mod(nproc_mic,nproc_mic_group) = %d\n",nproc_mic_tot % nproc_mic_group);
-	return 1;
-      }
-      nmic_worlds = nproc_mic_tot / nproc_mic_group;
+    // determines nproc_mac_tot and nproc_mic_tot
+    nproc_mic_tot = nproc_mac_tot = 0;
+    if(nproc_mic_tot % nproc_mac_tot != 0){
+      printf("mod(nproc_mic_tot,nproc_mac_tot) = %d\n",nproc_mic_tot % nproc_mac_tot);
+      return 1;
+    }
+    nproc_mic_aux = nproc_mic_tot / nproc_mac_tot;
 
-      // color for MICRO
+    // calculate color for MICRO only 2-3-...-N
+    if(*color == MICRO){
       m = c = 0;
       for(i=0;i<rank_wor;i++){
 	if(id_vec[i] == MICRO){
-	  if( m == nproc_per_mic[c % nstruc_mic] ){
-	    c ++;
-	    m = 0;
-	  }
-	  else{
-	    m ++;
-	  }
+	  if( m == nproc_mic_aux ){c ++;m = 0;}else{m ++;}
 	}
       }
-      color += c;
-
-      // MICRO_COMM creation
-      MPI_Comm_split(WORLD_COMM, color, 0, &MICRO_COMM);
-      ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
-      ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
-
-      /*
-	 these remote ranks correspond to
-	 the remote MACRO leaders
-       */
-      remote_ranks = malloc(nproc_mac_tot * sizeof(int));
-      m = 0;
-      for(i=0;i<nproc_wor;i++){
-	if(id_vec[i] == MACRO){
-	  remote_ranks[m] = i;
-	  m++;
-	}
+      *color += c;
+      if(m == 0){
+	im_leader = 1;
+	mac_rank = 1;
+      }else{
+	im_leader = 0;
+	mac_rank = -1;
       }
-      printf("nproc_mac = %d m = %d\n",nproc_mac_tot,m);
-
-      /* 
-	 Initialize structure <coupling_t macmic>
-       */
-      macmic.type = COUP_1;
-      macmic.coup = malloc(sizeof(coupMic_1_t));
-      ((coupMic_1_t*)macmic.coup)->myMacLeader = remote_ranks[rank_mic];
-      ((coupMic_1_t*)macmic.coup)->imMicLeader = 0;
-
     }
-    else
-      return 1;
 
-  }else if(id==MACRO){
-
-    color = MACRO;
-
-    if(macmic.type == COUP_1){
-
-      // fills the id_vec array (collective with MICRO code)
-      id_vec = malloc(nproc_wor * sizeof(int));
-      ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);CHKERRQ(ierr);
-
-      // MACRO_COMM creation
-      MPI_Comm_split(WORLD_COMM, color, 0, &MACRO_COMM);
-      ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
-      ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
-
-      /* 
-	 we count the number of processes 
-	 that are with micro and macro from id_vec
-       */
-      nproc_mic_tot = nproc_mac_tot = 0;
-      for(i=0;i<nproc_wor;i++){
-	if(id_vec[i] == MICRO){
-	  nproc_mic_tot ++;
-	}
-	else{
-	  nproc_mac_tot++;
-	}
-      }
-      if(!rank_mac){
-	printf("MACRO: # of macro process (id_vec) = %d\n",nproc_mac_tot);
-	printf("MACRO: # of micro process (id_vec) = %d\n",nproc_mic_tot);
-      }
-      if(nproc_mic_tot % nproc_mic_group != 0){
-	printf("MACRO: mod(nproc_mic,nproc_mic_group) = %d\n",nproc_mic_tot % nproc_mic_group);
-	return 1;
-      }
-      nmic_worlds = nproc_mic_tot / nproc_mic_group;
-
-      /* 
-	 remote_rank array is filled 
-	 these ranks correspond to the 
-	 micro processes' leaders
-       */ 
-      remote_ranks = malloc(nmic_worlds * sizeof(int));
-      m = c = 0;
-      for(i=0;i<nproc_wor;i++){
-	if(id_vec[i] == MICRO){
-	  if(c == 0){
-	    remote_ranks[m] = i;
-	    c = nproc_per_mic[m % nstruc_mic];
-	    m ++;
-	  }
-	  else{
-	    c--;
-	  }
-	}
-      }
-
-      /* 
-	 Initialize structure <coupling_t macmic>
-       */
-      macmic.type = COUP_1;
-      macmic.coup = malloc(sizeof(coupMac_1_t));
-      ((coupMac_1_t*)macmic.coup)->myMicWorker = remote_ranks[rank_mac];
+    // LOCAL_COMM creation
+    MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM);
+    ierr = MPI_Comm_size(*LOCAL_COMM, &nproc_local);
+    ierr = MPI_Comm_rank(*LOCAL_COMM, &rank_local);
+    if(*color == MACRO){
+      macmic->type = COUP_1;
+      macmic->coup = malloc(sizeof(coupMac_1_t));
+      ((coupMac_1_t*)macmic->coup)->mic_rank = mic_rank;
+    }else{
+      macmic->coup = malloc(sizeof(coupMic_1_t));
+      ((coupMic_1_t*)macmic->coup)->mac_rank = mac_rank;
+      ((coupMic_1_t*)macmic->coup)->im_leader = im_leader;
+    }
 
   }
 
@@ -276,7 +198,7 @@ int MicCommWaitStartSignal( MPI_Comm WORLD_COMM )
   int ierr, signal;
   MPI_Status status;
 
-  ierr = MPI_Recv(&signal, 1, MPI_INT, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+//  ierr = MPI_Recv(&signal, 1, MPI_INT, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
 
   return(signal == MPI_MICRO_START) ? 0 : 1;
 }
@@ -293,7 +215,7 @@ int MicCommRecvStrain( MPI_Comm WORLD_COMM )
   int ierr;
   MPI_Status status;
 
-  ierr = MPI_Recv(mac_eps, 6, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+//  ierr = MPI_Recv(mac_eps, 6, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
 
   return 0;
 }
@@ -310,7 +232,7 @@ int MicCommRecvGPnum( MPI_Comm WORLD_COMM )
   int ierr;
   MPI_Status status;
 
-  ierr = MPI_Recv(&mac_gp, 1, MPI_INT, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+//  ierr = MPI_Recv(&mac_gp, 1, MPI_INT, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
 
   return 0;
 }
@@ -328,7 +250,7 @@ int MicCommSendAveStressAndTanTensor( MPI_Comm WORLD_COMM )
   int ierr;
 
   if(rank_mic==0){
-    ierr = MPI_Ssend(mic_stress_ttensor, 6+81, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
+//    ierr = MPI_Ssend(mic_stress_ttensor, 6+81, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
   }
 
   return 0;
@@ -346,7 +268,7 @@ int MicCommSendAveStress( MPI_Comm WORLD_COMM )
   int ierr;
 
   if(rank_mic==0){
-    ierr = MPI_Ssend(mic_stress, 6, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
+//    ierr = MPI_Ssend(mic_stress, 6, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
   }
 
   return 0;
@@ -364,7 +286,7 @@ int MicCommSendAveTTensor( MPI_Comm WORLD_COMM )
   int ierr;
 
   if(rank_mic==0){
-    ierr = MPI_Ssend(mic_ttensor, 9, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
+//    ierr = MPI_Ssend(mic_ttensor, 9, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
   }
 
   return 0;

@@ -65,14 +65,14 @@ int main(int argc, char **argv)
   }
   
   /* 
-     Stablish a new local communicator and a set of 
-     intercommunicators with micro programs 
+     Stablish a new local communicator
   */
+  color = MACRO;
   macmic.type = COUP_NULL;
   ierr = MacMicParseScheme(input_n);
-  ierr = mac_comm_init();
+  ierr = MacMicColoring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
   
-  spu_parse_mesh(input_n);
+  ierr = spu_parse_mesh(input_n);
 
   /*
      Set PETSc communicator to MACRO_COMM

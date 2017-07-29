@@ -44,12 +44,6 @@ int main(int argc, char **argv)
 		EVENT_SOLVE_SYSTEM;
 #endif
 
-  WORLD_COMM = MPI_COMM_WORLD;
-
-  ierr = MPI_Init(&argc, &argv);
-  ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
-  ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
-
   if(argc>1){
     strcpy(input_n,argv[1]);
   }
@@ -65,21 +59,28 @@ int main(int argc, char **argv)
   }
 
   /* 
-     Stablish a new local communicator and a set of 
-     intercommunicators with micro programs 
+     Stablish a new local communicator
    */
+  WORLD_COMM = MPI_COMM_WORLD;
+
+  ierr = MPI_Init(&argc, &argv);
+  ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
+  ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
+
+  color = MICRO;
   macmic.type = COUP_NULL;
   ierr = MacMicParseScheme(input_n);
-  mic_comm_init();
+  ierr = MacMicColoring(WORLD_COMM, &color, &macmic, &MICRO_COMM); /* color can change */
 
-  spu_parse_mesh(input_n);
+  ierr = spu_parse_mesh(input_n);
 
   /*
      Set PETSc communicator to MICRO_COMM
    */
-
   PETSC_COMM_WORLD = MICRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+  
+
 
   FileOutputStructures = NULL;
   if(rank_mic==0) FileOutputStructures = fopen("micro_structures.dat","w");
