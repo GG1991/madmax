@@ -98,7 +98,7 @@ int mic_comm_init(void)
 
   color = MICRO;
 
-  if(scheme == MACRO_MICRO){
+  if(macmic.type == COUP_1){
 
     // fills the id_vec array (collective with macro code)
     id_vec = malloc(nproc_wor * sizeof(int));

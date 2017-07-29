@@ -76,7 +76,7 @@ int mac_comm_init(void)
 
   color = MACRO;
 
-  if(scheme == COUP_1){
+  if(macmic.type == COUP_1){
 
     // fills the id_vec array (collective with MICRO code)
     id_vec = malloc(nproc_wor * sizeof(int));

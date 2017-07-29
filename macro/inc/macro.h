@@ -9,13 +9,6 @@
    MACRO global variables 
 *****************************************************************************************************/
 
-MPI_Comm         MACRO_COMM;
-
-int              nproc_mac;         //  # of processes (macro_comm)
-int              rank_mac;          //  rank on macro comm
-int              *remote_ranks;     //  remote ranks if micro processes
-                                    //  to build the macmic_comm
-
 int              mymicro_rank_worker;
 
 int              nev;
