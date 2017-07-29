@@ -135,7 +135,14 @@ int mac_comm_init(void)
 	}
       }
     }
-    mymicro_rank_worker = remote_ranks[m];
+
+    /* 
+       Initialize structure <coupling_t macmic>
+    */
+    macmic.type = COUP_MACMIC_1;
+    macmic.coup = malloc(sizeof(coupMac_1_t));
+    ((coupMac_1_t*)macmic.coup)->myMicWorker = remote_ranks[rank_mac];
+
 
   }
   else{

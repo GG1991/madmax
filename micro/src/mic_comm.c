@@ -148,7 +148,7 @@ int mic_comm_init(void)
 
     /*
        these remote ranks correspond to
-       the remote micro leaders
+       the remote MACRO leaders
      */
     remote_ranks = malloc(nproc_mac_tot * sizeof(int));
     m = 0;
@@ -159,6 +159,14 @@ int mic_comm_init(void)
       }
     }
     printf("nproc_mac = %d m = %d\n",nproc_mac_tot,m);
+    
+    /* 
+       Initialize structure <coupling_t macmic>
+    */
+    macmic.type = COUP_MACMIC_1;
+    macmic.coup = malloc(sizeof(coupMic_1_t));
+    ((coupMic_1_t*)macmic.coup)->myMacLeader = remote_ranks[rank_mic];
+    ((coupMic_1_t*)macmic.coup)->imMicLeader = 0;
 
   }
   else if(scheme == MACRO_ALONE){

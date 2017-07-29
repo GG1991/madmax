@@ -35,26 +35,25 @@ typedef struct gauss_t_{
 
 gauss_t * gauss;
 
-#define  COMM_NULL        0
-#define  COMM_MACRO_MICRO 1
+#define  COUP_NULL        0
+#define  COUP_MACMIC_1    1
 
-typedef struct CoupMac_1_t_{
+typedef struct coupMac_1_t_{
 
-  int   my_micro_worker;
+  int   myMicWorker;
 
-}CoupMac_1_t;
+}coupMac_1_t;
 
-typedef struct CoupMic_1_t_{
+typedef struct coupMic_1_t_{
 
-  int   my_macro_leader;
-  int   im_the_micro_leader;
+  int   myMacLeader;
+  int   imMicLeader;
 
 }coupMic_1_t;
 
 typedef struct coupling_t_{
 
   int   type;
-  int   id;
   void  *coup;
 
 }coupling_t;
