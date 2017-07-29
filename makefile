@@ -31,15 +31,17 @@ else
 CFLAGS=-g -O0
 endif
 	
-DEPS = ${DEP_DIR}/sputnik.h        \
-       ${SPU_DEP_DIR}/list.h       \
-       ${SPU_DEP_DIR}/boundary.h   \
-       ${SPU_DEP_DIR}/fun.h        \
-       ${SPU_DEP_DIR}/macmic.h     \
-       ${SPU_DEP_DIR}/material.h   \
-       ${MAC_INC_DIR}/macro.h      \
-       ${MIC_INC_DIR}/micro.h 
 
+DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h    \
+	       ${DEP_DIR}/list.h       \
+	       ${DEP_DIR}/boundary.h   \
+	       ${DEP_DIR}/fun.h        \
+	       ${DEP_DIR}/material.h
+
+DEPS_MACMIC =  ${DEP_DIR}/macmic.h     \
+	       ${MAC_INC_DIR}/macro.h  \
+	       ${MIC_INC_DIR}/micro.h  \
+	       ${DEP_DIR}/sputnik.h
 
 DEP_DIRS= ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
 
@@ -94,31 +96,31 @@ all: ${MAC_DIR}/macro ${MIC_DIR}/micro
 
 ##############################
 # MACRO
-${MAC_DIR}/macro: ${MAC_OBJ} ${SPU_OBJ}
+${MAC_DIR}/macro: ${MAC_OBJ} ${SPU_OBJ} 
 	gcc -o ${MAC_DIR}/macro $^ ${PETSC_KSP_LIB} -lm ${LDFLAG}
 	@echo "MACRO great :) !" 
 
 ##############################
 # MICRO
-${MIC_DIR}/micro: ${MIC_OBJ} ${SPU_OBJ}
+${MIC_DIR}/micro: ${MIC_OBJ} ${SPU_OBJ} 
 	gcc -o ${MIC_DIR}/micro $^ ${PETSC_KSP_LIB} -lm ${LDFLAG}
 	@echo "MICRO great :) !" 
 
 ##############################
 # SPUTNIK OBJECTS (do not work)
-${SPU_OBJ_DIR}/%.o: ${SPU_SRC_DIR}/%.c ${DEPS} ${PARMETIS_HEA}
+${SPU_OBJ_DIR}/%.o: ${SPU_SRC_DIR}/%.c ${DEPS_SPUTNIK} ${PARMETIS_HEA}
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 
 	@echo ">>> "$@
 
 ##############################
 # MACRO OBJECTS
-${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c ${DEPS}
+${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c $(DEPS_MACMIC)
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	
 	@echo ">>> "$@
 
 ##############################
 # MICRO OBJECTS
-${MIC_OBJ_DIR}/%.o: ${MIC_SRC_DIR}/%.c ${DEPS}
+${MIC_OBJ_DIR}/%.o: ${MIC_SRC_DIR}/%.c ${DEPS} $(DEPS_MACMIC)
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	
 	@echo ">>> "$@
 

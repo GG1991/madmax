@@ -38,22 +38,28 @@ gauss_t * gauss;
 #define  COMM_NULL        0
 #define  COMM_MACRO_MICRO 1
 
-typedef struct comm_1_t_{
+typedef struct CoupMac_1_t_{
+
+  int   my_micro_worker;
+
+}CoupMac_1_t;
+
+typedef struct CoupMic_1_t_{
 
   int   my_macro_leader;
-  int   my_micro_worker;
   int   im_the_micro_leader;
 
-}comm_1_t;
+}coupMic_1_t;
 
-typedef struct communication_t_{
+typedef struct coupling_t_{
 
-  int  comm_type;
-  void *comm;
+  int   type;
+  int   id;
+  void  *coup;
 
-}communication_t;
+}coupling_t;
 
-communication_t comm_scheme;
+coupling_t macmic;
 
 /*
    Global Variables
