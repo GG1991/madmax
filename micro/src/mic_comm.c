@@ -163,7 +163,7 @@ int mic_comm_init(void)
     /* 
        Initialize structure <coupling_t macmic>
     */
-    macmic.type = COUP_MACMIC_1;
+    macmic.type = COUP_1;
     macmic.coup = malloc(sizeof(coupMic_1_t));
     ((coupMic_1_t*)macmic.coup)->myMacLeader = remote_ranks[rank_mic];
     ((coupMic_1_t*)macmic.coup)->imMicLeader = 0;

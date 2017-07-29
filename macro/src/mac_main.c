@@ -64,13 +64,13 @@ int main(int argc, char **argv)
     }
   }
   
-  spu_parse_scheme( input_n );
-
   /* 
      Stablish a new local communicator and a set of 
      intercommunicators with micro programs 
   */
-  mac_comm_init();
+  macmic.type = COUP_NULL;
+  ierr = MacMicParseScheme(input_n);
+  ierr = mac_comm_init();
   
   spu_parse_mesh(input_n);
 

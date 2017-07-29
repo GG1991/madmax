@@ -20,7 +20,7 @@
 
    ************************************************** 
 
-   MACRO_MICRO
+   COUP_1: One micro structure type only
 
    Note:
 
@@ -35,20 +35,14 @@
    |_...     |_...
    |_color 1 |_color 2
 
-   color 1 (( MACRO_R0 ))   (( MICRO_K1_R0 -> MICRO_K1_R1 -> MICRO_K1_R2 ))  color 2  
+   color 1 (( MACRO_R0 ))   (( MICRO_R0 -> MICRO_R1 -> MICRO_R2 ))  color 2  
 	                   
-                            (( MICRO_K2_R0 -> MICRO_K2_R1 ))                 color 3 
+
+   color 1 (( MACRO_R1 ))   (( MICRO_R0 -> MICRO_R1 -> MICRO_R2 ))  color 2  
 
 
-   color 1 (( MACRO_R1 ))   (( MICRO_K1_R0 -> MICRO_K1_R1 -> MICRO_K1_R2 ))  color 4  
+   color 1 (( MACRO_R2 ))   (( MICRO_R0 -> MICRO_R1 -> MICRO_R2 ))  color 2
 	                    
-                            (( MICRO_K2_R0 -> MICRO_K2_R1 ))                 color 5 
-
-
-   color 1 (( MACRO_R2 ))   (( MICRO_K1_R0 -> MICRO_K1_R1 -> MICRO_K1_R2 ))  color 6
-	                    
-                            (( MICRO_K2_R0 -> MICRO_K2_R1 ))                 color 7
-
 
    Author: Guido Giuntoli
    Date: 28-07-2017
@@ -82,9 +76,9 @@ int mac_comm_init(void)
 
   color = MACRO;
 
-  if(scheme == MACRO_MICRO){
+  if(scheme == COUP_1){
 
-    // fills the id_vec array (collective with micro code)
+    // fills the id_vec array (collective with MICRO code)
     id_vec = malloc(nproc_wor * sizeof(int));
     ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);CHKERRQ(ierr);
 
@@ -139,7 +133,7 @@ int mac_comm_init(void)
     /* 
        Initialize structure <coupling_t macmic>
     */
-    macmic.type = COUP_MACMIC_1;
+    macmic.type = COUP_1;
     macmic.coup = malloc(sizeof(coupMac_1_t));
     ((coupMac_1_t*)macmic.coup)->myMicWorker = remote_ranks[rank_mac];
 

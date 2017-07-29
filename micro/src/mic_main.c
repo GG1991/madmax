@@ -57,12 +57,19 @@ int main(int argc, char **argv)
     printf("mic_main.c:no input file has been given\n");
   }
 
-  spu_parse_scheme(input_n);
+  print_flag = false;
+  for(i=2;i<argc;i++){
+    if(strcmp(argv[i],"-p")==0){
+      print_flag = true;
+    }
+  }
 
   /* 
      Stablish a new local communicator and a set of 
      intercommunicators with micro programs 
    */
+  macmic.type = COUP_NULL;
+  ierr = MacMicParseScheme(input_n);
   mic_comm_init();
 
   spu_parse_mesh(input_n);

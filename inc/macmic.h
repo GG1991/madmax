@@ -35,8 +35,8 @@ typedef struct gauss_t_{
 
 gauss_t * gauss;
 
-#define  COUP_NULL        0
-#define  COUP_MACMIC_1    1
+#define  COUP_NULL  0
+#define  COUP_1     1
 
 typedef struct coupMac_1_t_{
 
@@ -81,5 +81,6 @@ double        *stress, *strain;     // Averange strain and stress on each elemen
 */
 
 int MacMicInitGaussStructure(int *eptr, int nelm);
+int MacMicParseScheme( char *input );
 
 #endif
