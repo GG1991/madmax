@@ -186,7 +186,7 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 
       if(!strcmp(data,"$EndMaterials")){
 	if(!flag_start_material)SETERRQ(PETSC_COMM_SELF,1,"$EndMaterials detected without $Materials above.");
-	PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", input, material_list.sizelist);
+//	PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", input, material_list.sizelist);
 	fclose(file);
 	return 0;
       }
@@ -285,7 +285,7 @@ int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
       if(!strcmp(data,"$EndPhysicalNames")){
 	CHECK_INPUT_ERROR(flag_start_physical);
 	CHECK_INPUT_ERROR(physical_list.sizelist == ntot);
-	PetscPrintf(*PROBLEM_COMM, "# of physical found in mesh : %d\n", physical_list.sizelist);
+//	PetscPrintf(*PROBLEM_COMM, "# of physical found in mesh : %d\n", physical_list.sizelist);
 	return 0;
       }
     }
@@ -460,13 +460,13 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 
     if(!strcmp(data,"$EndBoundary")){
       CHECK_INPUT_ERROR(flag_start_boundary);
-      PetscPrintf(*PROBLEM_COMM, "# of boundaries found in %s : %d\n", input, boundary_list.sizelist);
+//      PetscPrintf(*PROBLEM_COMM, "# of boundaries found in %s : %d\n", input, boundary_list.sizelist);
       return 0;
     }
     }
   }
   // any boundary condition found
-  printf("SpuParseBoundary: Any boundary found on input file\n");
+//  printf("SpuParseBoundary: Any boundary found on input file\n");
   return 1;
 }
 
@@ -558,7 +558,7 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
       }
     }
   }
-  PetscPrintf(*PROBLEM_COMM, "# of functions found in %s : %d\n", input, function_list.sizelist);
+//  PetscPrintf(*PROBLEM_COMM, "# of functions found in %s : %d\n", input, function_list.sizelist);
   return 0;
 }
 

@@ -70,7 +70,7 @@ int MicroAllocMatrixVector(MPI_Comm MICRO_COMM, int nlocal, int ntotal)
   if( Istart != StartIndexRank[rank_mic]*3 )
     SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
       
-  if(rank_mac<nproc_mic-1){
+  if(rank_mic<nproc_mic-1){
     if( Iend != StartIndexRank[rank_mic+1]*3 ){
       SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
     }

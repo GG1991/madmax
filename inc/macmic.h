@@ -69,10 +69,6 @@ coupling_t macmic;
 MPI_Comm     MICRO_COMM;
 MPI_Comm     MACRO_COMM;
 
-int          nproc_mac;         //  # of macro processes (WORLD_COMM)  
-int          nproc_mic;         //  # of micro processes (MICRO_COMM)
-int          rank_mic;          //  rank on macro comm
-int          rank_mac;          //  rank on macro comm
 int          *remote_ranks;     //  remote ranks if micro processes
 
 int          nev;
