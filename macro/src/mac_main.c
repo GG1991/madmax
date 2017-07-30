@@ -71,6 +71,8 @@ int main(int argc, char **argv)
   macmic.type = COUP_NULL;
   ierr = MacMicParseScheme(input_n);
   ierr = MacMicColoring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
+  ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
+  ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
   
   ierr = spu_parse_mesh(input_n);
 

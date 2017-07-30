@@ -4,8 +4,9 @@
 #break_mic=( 'mic_main.c:70' ) 
 #break_mac=( 'spu_mesh.c:136' ) 
 #break_mic=( 'spu_mesh.c:136' ) 
-break_mac=( 'macmic.c:143' ) 
-break_mic=( 'macmic.c:143' ) 
+#break_mac=( 'macmic.c:143' ) 
+#break_mic=( 'macmic.c:143' ) 
+break_mac=( 'mac_alloc.c:69' ) 
 #break_mac=( 'spu_assembly.c:123' ) 
 #break_mac=( 'spu_boundary.c:148' ) 
 

@@ -6,13 +6,13 @@
 #include "sputnik.h"
 #include "macro.h"
 
-int MacroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal)
+int MacroAllocMatrixVector(MPI_Comm MACRO_COMM, int nlocal, int ntotal)
 {
   /*
      Allocates memory for Mat A, Vec x, Vec dx, Vec b
 
      Input>
-     a) comm > MPI communicator
+     a) MACRO_COMM > MPI communicator
      b) nlocal > # of local componenets
      c) ntotal > # of total componenets
 
@@ -24,10 +24,10 @@ int MacroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal)
 
   int rank, nproc, ierr;
 
-  MPI_Comm_size(comm, &nproc);
-  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(MACRO_COMM, &nproc);
+  MPI_Comm_rank(MACRO_COMM, &rank);
 
-  ierr = MatCreate(comm,&A);CHKERRQ(ierr);
+  ierr = MatCreate(MACRO_COMM,&A);CHKERRQ(ierr);
   ierr = MatSetSizes(A,nlocal,nlocal,ntotal,ntotal);CHKERRQ(ierr);
   ierr = MatSetFromOptions(A);CHKERRQ(ierr);
   ierr = MatSeqAIJSetPreallocation(A,81,NULL);CHKERRQ(ierr);
@@ -54,7 +54,7 @@ int MacroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal)
 
   //  ierr = VecCreate(comm,x);CHKERRQ(ierr);
   //  ierr = VecSetSizes(x,NMyNod,NTotalNod);CHKERRQ(ierr);
-  ierr = VecCreateGhost(comm, NMyNod*3, NTotalNod*3, NMyGhost*3, ghostsIndex, &x); CHKERRQ(ierr);
+  ierr = VecCreateGhost(MACRO_COMM, NMyNod*3, NTotalNod*3, NMyGhost*3, ghostsIndex, &x); CHKERRQ(ierr);
   ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
   ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
 
@@ -67,20 +67,17 @@ int MacroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal)
    */
   int Istart, Iend;
   ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
-  if( Istart != StartIndexRank[rank_mac]*3 ){
-    printf("mac_main: error on indeces set for matrix and vector.\n");
-    return 1;
-  }
+  if( Istart != StartIndexRank[rank_mac]*3 )
+    SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
+      
   if(rank_mac<nproc_mac-1){
     if( Iend != StartIndexRank[rank_mac+1]*3 ){
-      printf("mac_main: error on indeces set for matrix and vector.\n");
-      return 1;
+      SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
     }
   }
   else{
     if( Iend != NTotalNod*3 ){
-      printf("mac_main: error on indeces set for matrix and vector.\n");
-      return 1;
+      SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
     }
   }
 

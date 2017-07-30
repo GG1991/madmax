@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# This script takes PETSc traces generated with 
+# -log_trace option and draws a tikz picture
+#
+#  Author : Guido Giuntoli
+#  Start date: 27-07-2017
+#
+
 
 n=$( ls -l | grep "macro_trace" | wc -l )
 ls -l | grep "macro_trace" | awk '{ print $NF }' > files.dat
