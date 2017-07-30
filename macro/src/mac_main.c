@@ -205,8 +205,8 @@ int main(int argc, char **argv)
      Allocate matrices & vectors
   */ 
   ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
-  PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");
-  MacroAllocMatrixVector( MACRO_COMM, NMyNod*3, NTotalNod*3);
+  ierr = PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");CHKERRQ(ierr);
+  ierr = MacroAllocMatrixVector( MACRO_COMM, NMyNod*3, NTotalNod*3);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
   /*

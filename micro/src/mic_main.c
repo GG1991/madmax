@@ -191,7 +191,7 @@ int main(int argc, char **argv)
      Allocate matrices & vectors
   */ 
   ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
-  MicroAllocMatrixVector( MICRO_COMM, NMyNod*3, NTotalNod*3);
+  ierr = MicroAllocMatrixVector( MICRO_COMM, NMyNod*3, NTotalNod*3);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
   /*
