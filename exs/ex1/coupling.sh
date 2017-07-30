@@ -1,16 +1,16 @@
 #!/bin/bash
 
-break_mac=( 'mac_main.c:72' ) 
-break_mic=( 'mic_main.c:72' ) 
+#break_mac=( 'mac_main.c:70' ) 
+#break_mic=( 'mic_main.c:70' ) 
 #break_mac=( 'spu_mesh.c:136' ) 
 #break_mic=( 'spu_mesh.c:136' ) 
-#break_mac=( 'mac_comm.c:101' ) 
-#break_mic=( 'mic_comm.c:105' ) 
+break_mac=( 'macmic.c:143' ) 
+break_mic=( 'macmic.c:143' ) 
 #break_mac=( 'spu_assembly.c:123' ) 
 #break_mac=( 'spu_boundary.c:148' ) 
 
-NM=1
-Nm=1
+NM=2
+Nm=2
 
 
 # BREAKPOINTS

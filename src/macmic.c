@@ -154,7 +154,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 
       // determine MICRO color 
       mic_count = c = 0;
-      for(i=0;i<rank_wor;i++){
+      for(i=0;i<=rank_wor;i++){
 	if(id_vec[i] == MICRO){
 	  if( mic_count == mic_nproc_group ){
 	    c ++; 
@@ -166,7 +166,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
       }
       *color += c;
 
-      im_leader = (mic_count == 0) ? 1:0;
+      im_leader = (mic_count == 0) ? 1 : 0;
 
       // determine MACRO leaders
       int  *mac_ranks = malloc(nproc_mac_tot * sizeof(int));
@@ -191,6 +191,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 
       // determine MICRO leaders
       int mac_pos = 0;
+      i = 0;
       while( i<rank_wor ){
 	if(id_vec[i] == MACRO){
 	  mac_pos ++;
