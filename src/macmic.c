@@ -157,10 +157,10 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
       c = -1;
       for(i=0;i<=rank_wor;i++){
 	if(id_vec[i] == MICRO){
+	  mic_pos++;
 	  if( mic_pos % mic_nproc_group == 0){
 	    c ++; 
 	  }
-	  mic_pos++;
 	}
       }
       *color += c;
