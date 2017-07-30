@@ -113,7 +113,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 
    */
 
-  int  i, ierr, c, mic_count;
+  int  i, ierr, c;
   int  nproc_wor, rank_wor;
   int  nmic_worlds;
   int  nproc_mac_tot = 0, nproc_mic_tot = 0, mic_nproc_group;
@@ -148,38 +148,42 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
     }
     mic_nproc_group = nproc_mic_tot / nproc_mac_tot;
 
-    int  im_leader;
+    int im_leader;
+    int mic_pos = -1;
 
     if(*color == MICRO){
 
       // determine MICRO color 
-      mic_count = c = 0;
+      c = -1;
       for(i=0;i<=rank_wor;i++){
 	if(id_vec[i] == MICRO){
-	  if( mic_count == mic_nproc_group ){
+	  if( mic_pos % mic_nproc_group == 0){
 	    c ++; 
-	    mic_count = 0;
 	  }
-	  else
-	    mic_count ++;
+	  mic_pos++;
 	}
       }
       *color += c;
 
-      im_leader = (mic_count == 0) ? 1 : 0;
+      im_leader = (mic_pos % mic_nproc_group == 0) ? 1 : 0;
 
       // determine MACRO leaders
-      int  *mac_ranks = malloc(nproc_mac_tot * sizeof(int));
-      i = c = 0;
+      int mac_rank;
+      i = 0;
+      c = -1;
       while( i<nproc_wor ){
 	if(id_vec[i] == MACRO){
-	  mac_ranks[c] = i; c++;
+	  c++;
+	}
+	if(c == mic_pos/mic_nproc_group){
+	  mac_rank = i; 
+	  break;
 	}
 	i++;
       }
 
       macmic->coup = malloc(sizeof(coupMic_1_t));
-      ((coupMic_1_t*)macmic->coup)->mac_rank = mac_ranks[*color-2];
+      ((coupMic_1_t*)macmic->coup)->mac_rank = mac_rank;
       ((coupMic_1_t*)macmic->coup)->im_leader = im_leader;
 
     } // in MICRO
@@ -200,15 +204,17 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
       }
 
       int mic_rank;
-      i = c = mic_count = 0;
+      i = 0;
+      c = 0;
+      mic_pos = 0;
       while( i<nproc_wor ){
 	if(id_vec[i] == MICRO){
 	  if(c == mac_pos){
 	    mic_rank = i;
 	    break;
 	  }
-	  if(mic_count % mic_nproc_group == 0) c++;
-	  mic_count ++;
+	  if(mic_pos % mic_nproc_group == 0) c++;
+	  mic_pos ++;
 	}
 
 	i++;
@@ -220,7 +226,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
     }
 
     // LOCAL_COMM creation
-    MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM);
+    ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM);CHKERRQ(ierr);
 
   }
   else{
