@@ -13,6 +13,9 @@ int              mymicro_rank_worker;
 
 int              nev;
 
+int              rank_mac;          //  rank on macro comm
+int              nproc_mac;         //  # of macro processes (WORLD_COMM)  
+
 
 /*****************************************************************************************************
    MACRO function definitions

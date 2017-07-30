@@ -29,6 +29,8 @@ double          mic_stress[6];
 double          mic_ttensor[9];
 double          *mic_stress_ttensor;
 
+int             rank_mic;          //  rank on macro comm
+int             nproc_mic;         //  # of micro processes (MICRO_COMM)
 
 /*****************************************************************************************************
    MICRO function definitions
