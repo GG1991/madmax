@@ -113,20 +113,21 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 
    */
 
-  int  i, ierr, c, m;
-  int  *id_vec = malloc(nproc_wor * sizeof(int));
+  int  i, ierr, c, mic_count;
   int  nproc_wor, rank_wor;
   int  nmic_worlds;
-  int  nproc_mac_tot, nproc_mic_tot, nproc_mic_aux;
+  int  nproc_mac_tot = 0, nproc_mic_tot = 0, mic_nproc_group;
   int  nproc_local, rank_local;
-  int  mac_rank, mic_rank, im_leader;
 
   ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
   ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
-  // fills the id_vec array (collective with MICRO code)
-  ierr = MPI_Allgather(&color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);CHKERRQ(ierr);
+  int  *id_vec = malloc(nproc_wor * sizeof(int));
 
+  // Allgather of the id_vec array 
+  ierr = MPI_Allgather(color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);CHKERRQ(ierr);
+
+  nproc_mic_tot = nproc_mac_tot = 0;
   for(i=0;i<nproc_wor;i++){
     if(id_vec[i] == MACRO){
       nproc_mac_tot++;
@@ -141,47 +142,91 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 
   if(macmic->type == COUP_1){
 
-    // determines nproc_mac_tot and nproc_mic_tot
-    nproc_mic_tot = nproc_mac_tot = 0;
     if(nproc_mic_tot % nproc_mac_tot != 0){
       printf("mod(nproc_mic_tot,nproc_mac_tot) = %d\n",nproc_mic_tot % nproc_mac_tot);
       return 1;
     }
-    nproc_mic_aux = nproc_mic_tot / nproc_mac_tot;
+    mic_nproc_group = nproc_mic_tot / nproc_mac_tot;
 
-    // calculate color for MICRO only 2-3-...-N
+    int  im_leader;
+
     if(*color == MICRO){
-      m = c = 0;
+
+      // determine MICRO color 
+      mic_count = c = 0;
       for(i=0;i<rank_wor;i++){
 	if(id_vec[i] == MICRO){
-	  if( m == nproc_mic_aux ){c ++;m = 0;}else{m ++;}
+	  if( mic_count == mic_nproc_group ){
+	    c ++; 
+	    mic_count = 0;
+	  }
+	  else
+	    mic_count ++;
 	}
       }
       *color += c;
-      if(m == 0){
-	im_leader = 1;
-	mac_rank = 1;
-      }else{
-	im_leader = 0;
-	mac_rank = -1;
+
+      im_leader = (mic_count == 0) ? 1:0;
+
+      // determine MACRO leaders
+      int  *mac_ranks = malloc(nproc_mac_tot * sizeof(int));
+      i = c = 0;
+      while( i<nproc_wor ){
+	if(id_vec[i] == MACRO){
+	  mac_ranks[c] = i; c++;
+	}
+	i++;
       }
+
+      macmic->coup = malloc(sizeof(coupMic_1_t));
+      ((coupMic_1_t*)macmic->coup)->mac_rank = mac_ranks[*color-2];
+      ((coupMic_1_t*)macmic->coup)->im_leader = im_leader;
+
+    } // in MICRO
+    else{
+
+      /*
+	 The color is only one here (MACRO)
+      */
+
+      // determine MICRO leaders
+      int mac_pos = 0;
+      while( i<rank_wor ){
+	if(id_vec[i] == MACRO){
+	  mac_pos ++;
+	}
+	i++;
+      }
+
+      int mic_rank;
+      i = c = mic_count = 0;
+      while( i<nproc_wor ){
+	if(id_vec[i] == MICRO){
+	  if(c == mac_pos){
+	    mic_rank = i;
+	    break;
+	  }
+	  if(mic_count % mic_nproc_group == 0) c++;
+	  mic_count ++;
+	}
+
+	i++;
+      }
+
+      macmic->coup = malloc(sizeof(coupMac_1_t));
+      ((coupMac_1_t*)macmic->coup)->mic_rank = mic_rank;
+
     }
 
     // LOCAL_COMM creation
     MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM);
-    ierr = MPI_Comm_size(*LOCAL_COMM, &nproc_local);
-    ierr = MPI_Comm_rank(*LOCAL_COMM, &rank_local);
-    if(*color == MACRO){
-      macmic->type = COUP_1;
-      macmic->coup = malloc(sizeof(coupMac_1_t));
-      ((coupMac_1_t*)macmic->coup)->mic_rank = mic_rank;
-    }else{
-      macmic->coup = malloc(sizeof(coupMic_1_t));
-      ((coupMic_1_t*)macmic->coup)->mac_rank = mac_rank;
-      ((coupMic_1_t*)macmic->coup)->im_leader = im_leader;
-    }
 
   }
+  else{
+    return 1;
+  }
+
+  free(id_vec);
 
   return 0;
 }
