@@ -16,6 +16,7 @@ static char help[] =
 "It has the capability of being couple with MICRO, a code for solving and RVE problem.n\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
+"-print [0 (no print) | 1 (print PETSc structures) | 2 (print VTK output)]\n"
 "-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
 
 
@@ -263,7 +264,7 @@ int main(int argc, char **argv)
     */
     ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
     ierr = SputnikSetDisplacementOnBoundary( t, &x);
-    if(print_flag){
+    if( flag_print == PRINT_PETSC ){
       ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
       ierr = VecView(x,viewer); CHKERRQ(ierr);
     }
@@ -285,7 +286,7 @@ int main(int argc, char **argv)
       ierr = PetscPrintf(MACRO_COMM, "Assembling Residual ");CHKERRQ(ierr);
       ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
       ierr = SputnikSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
-      if(print_flag){
+      if( flag_print == PRINT_PETSC ){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(b,viewer); CHKERRQ(ierr);
       }
@@ -301,7 +302,7 @@ int main(int argc, char **argv)
       ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
       ierr = AssemblyJacobianSmallDeformation(&A);
       ierr = SputnikSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
-      if(print_flag){
+      if( flag_print == PRINT_PETSC ){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
 	ierr = MatView(A,viewer); CHKERRQ(ierr);
       }
@@ -316,7 +317,7 @@ int main(int argc, char **argv)
       ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
       ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
       ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
-      if(print_flag){
+      if( flag_print == PRINT_PETSC ){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(dx,viewer); CHKERRQ(ierr);
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);

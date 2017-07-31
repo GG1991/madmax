@@ -93,6 +93,13 @@ int          scheme;                   // communication approach
 
 PetscBool    flag_coupling;
 int          flag_print_vtk;
+
+#define PRINT_NULL  -1
+#define PRINT_PETSC  1
+#define PRINT_VTK    2
+
+int          flag_print;
+
 // Matrices and vectors
 
 Mat           A;                    /* Jacobian Matrix          */
@@ -114,8 +121,8 @@ int MicCommWaitStartSignal( MPI_Comm WORLD_COMM );
 int MicCommRecvStrain( MPI_Comm WORLD_COMM, double strain[6] );
 int MicCommRecvGPnum( MPI_Comm WORLD_COMM );
 int MicCommSendAveStressAndTanTensor( MPI_Comm WORLD_COMM );
-int MicCommSendAveStress( MPI_Comm WORLD_COMM );
-int MicCommSendAveTTensor( MPI_Comm WORLD_COMM );
+int MicCommSendStress( MPI_Comm WORLD_COMM, double stress[6] );
+int MicCommSendTTensor( MPI_Comm WORLD_COMM );
 
 int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal );
 int MacCommSendStrain( MPI_Comm WORLD_COMM, double strain[6] );

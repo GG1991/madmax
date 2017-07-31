@@ -11,7 +11,14 @@
  */
 
 
-static char help[] = "Solves an RVE problem.\n\n";
+static char help[] = 
+"MICRO MULTISCALE CODE\n"
+"Solves the RVE problem inside a solid structure. \n"
+"It has the capability of being couple with MACRO.\n"
+"-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
+"-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
+"-print [0 (no print) | 1 (print PETSc structures) | 2 (print VTK output)]\n"
+"-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
 
 
 
@@ -22,7 +29,7 @@ static char help[] = "Solves an RVE problem.\n\n";
 int main(int argc, char **argv)
 {
 
-  int        i, ierr;
+  int        ierr;
   char       *myname = strdup("micro");
   PetscBool  set;
 
@@ -72,6 +79,8 @@ int main(int argc, char **argv)
   if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL, NULL, "-p", &print_flag, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) print_flag  = PETSC_FALSE;
+  ierr = PetscOptionsGetInt(NULL, NULL, "-print", &flag_print, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE) flag_print = PRINT_NULL;
 
   /* 
      Stablish a new local communicator
@@ -217,7 +226,7 @@ int main(int argc, char **argv)
   ierr = fem_inigau(); CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
-  double strain[6], ttensor[36];
+  double strain[6], stress[6], ttensor[36];
 
   if(flag_coupling){
     int signal = SIGNAL_NULL;
@@ -225,8 +234,18 @@ int main(int argc, char **argv)
       ierr = MicCommWaitSignal( WORLD_COMM, &signal );CHKERRQ(ierr);
       switch( signal ){
 	case SIGNAL_SEND_STRAIN:
-	  // esperamos que nos llegue el strain
+	  /*
+	     Wait for strain
+	  */
 	  MicCommRecvStrain( WORLD_COMM, strain );
+	  /*
+	     Performs the micro calculation
+	  */
+
+	  /*
+	     Send Stress
+	  */
+	  MicCommSendStress( WORLD_COMM, stress );
 	  break;
 	case SIGNAL_MICRO_END:
 	  break;
