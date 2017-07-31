@@ -88,8 +88,6 @@ int main(int argc, char **argv)
   ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
   ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
   
-//  ierr = spu_parse_mesh(input_n);
-
   ierr = PetscFinalize();CHKERRQ(ierr);
 
   /*
