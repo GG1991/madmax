@@ -5,6 +5,11 @@
 #include "sputnik.h"
 #include "macmic.h"  /* Routines inside sputinik that are common for <macro> and <micro> only */
 
+#define TESTCOMM_NULL   -1
+#define TESTCOMM_STRAIN  1
+
+int    flag_testcomm;
+
 /*****************************************************************************************************
    MACRO global variables 
 *****************************************************************************************************/
@@ -15,7 +20,6 @@ int              nev;
 
 int              rank_mac;          //  rank on macro comm
 int              nproc_mac;         //  # of macro processes (WORLD_COMM)  
-
 
 /*****************************************************************************************************
    MACRO function definitions
