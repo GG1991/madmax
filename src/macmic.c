@@ -3,8 +3,8 @@
  */
 
 #include "macmic.h"
-
-#define NBUF 64
+#include "micro.h"
+#include "macro.h"
 
 int MacMicInitGaussStructure(int *eptr, int nelm)
 {
@@ -59,20 +59,22 @@ int MacMicParseScheme( char *input )
     if(data){
       if(!strcmp(data,"$scheme")){
 
-	fgets(buf,NBUF,file);
-	ln ++;
-	data = strtok(buf," \n"); 
-	if(!data) return 1;
-	if(strcmp(data,"scheme")) return 1;
+	while(fgets(buf,NBUF,file) != NULL){
+	  ln ++;
+	  data = strtok(buf," \n"); 
+	  if(data){ 
+	    if(strcmp(data,"scheme")) return 1;
 
-	data = strtok(NULL," \n"); 
-	if(!data) return 1;
-	if(!strcmp(data,"COUP_1")){
-	  macmic.type = COUP_1;
-	  return 0;
-	}
-	else{
-	  return -1;
+	    data = strtok(NULL," \n"); if(!data) return 1;
+
+	    if(!strcmp(data,"COUP_1")){
+	      macmic.type = COUP_1;
+	      return 0;
+	    }
+	    else{
+	      return -1;
+	    }
+	  }
 	}
 
 	return -1; //no encontro $end_scheme
@@ -140,7 +142,13 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
     }
   }
 
-  if(macmic->type == COUP_1){
+  if(flag_coupling == PETSC_FALSE){
+
+    // LOCAL_COMM creation
+    ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM);CHKERRQ(ierr);
+
+  }
+  else if(macmic->type == COUP_1){
 
     if(nproc_mic_tot % nproc_mac_tot != 0){
       printf("mod(nproc_mic_tot,nproc_mac_tot) = %d\n",nproc_mic_tot % nproc_mac_tot);
@@ -247,12 +255,17 @@ int MicCommWaitStartSignal( MPI_Comm WORLD_COMM )
      The processes will wait here until they receive a signal
   */
 
-  int ierr, signal;
+  int ierr, signal = -1;
   MPI_Status status;
 
-//  ierr = MPI_Recv(&signal, 1, MPI_INT, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+  if(macmic.type == COUP_1){
+    ierr = MPI_Recv(&signal, 1, MPI_INT, ((coupMic_1_t*)macmic.coup)->mac_rank, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+  }
+  else{
+    return 1;
+  }
 
-  return(signal == MPI_MICRO_START) ? 0 : 1;
+  return(signal == MACMIC_START ) ? 0 : 1;
 }
 
 /****************************************************************************************************/
