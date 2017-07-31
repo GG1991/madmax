@@ -126,5 +126,6 @@ int MicCommSendTTensor( MPI_Comm WORLD_COMM );
 
 int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal );
 int MacCommSendStrain( MPI_Comm WORLD_COMM, double strain[6] );
+int MacCommRecvStress( MPI_Comm WORLD_COMM, double stress[6] );
 
 #endif

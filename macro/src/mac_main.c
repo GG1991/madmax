@@ -1,14 +1,14 @@
 /*
-*
-*   MACRO main function
-*
-*   Program for solving the displacement field inside a solid 
-*   structure representing the macrostructure
-*
-*   Author: Guido Giuntoli
-*
- */
 
+   MACRO main function
+
+   Program for solving the displacement field inside a solid 
+   structure representing the macrostructure
+
+   Author> Guido Giuntoli
+   Date> 28-07-2017
+
+ */
 
 static char help[] = 
 "MACRO MULTISCALE CODE\n"
@@ -19,10 +19,7 @@ static char help[] =
 "-print [0 (no print) | 1 (print PETSc structures) | 2 (print VTK output)]\n"
 "-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
 
-
-
 #include "macro.h"
-
 
 int main(int argc, char **argv)
 {
@@ -31,7 +28,6 @@ int main(int argc, char **argv)
   char       *myname = strdup("macro");
   PetscBool  set;
 
-  PetscLogEvent  CHECK_ERROR;    /* event number for error checking */
   PetscViewer    viewer;
 
 #if defined(PETSC_USE_LOG)
@@ -148,13 +144,6 @@ int main(int argc, char **argv)
   ierr = PetscLogStageRegister("Read Mesh Elements",&stages[0]);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("Linear System 1",&stages[1]);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("Linear System 2",&stages[2]);CHKERRQ(ierr);
-
-  /*
-     Register a user-defined event for profiling (error checking).
-  */
-  CHECK_ERROR = 0;
-  ierr = PetscLogEventRegister("Check Error",KSP_CLASSID,&CHECK_ERROR);CHKERRQ(ierr);
-
 
   /*
      read mesh
@@ -347,8 +336,10 @@ int main(int argc, char **argv)
   */
   if(flag_coupling && (flag_testcomm == TESTCOMM_STRAIN)){
     double strain[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
+    double stress[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     ierr = MacCommSendSignal( WORLD_COMM, SIGNAL_SEND_STRAIN);CHKERRQ(ierr);
     ierr = MacCommSendStrain( WORLD_COMM, strain);CHKERRQ(ierr);
+    ierr = MacCommRecvStress( WORLD_COMM, stress);CHKERRQ(ierr);
   }
   /*
      Stop signal to micro if it is coupled

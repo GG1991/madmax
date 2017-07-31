@@ -5,11 +5,10 @@
    Program for solving the microscopic problem 
    for multi-scale approach.
 
-   Author: Guido Giuntoli
-   Date: 28-07-2017
+   Author> Guido Giuntoli
+   Date> 28-07-2017
 
  */
-
 
 static char help[] = 
 "MICRO MULTISCALE CODE\n"
@@ -20,11 +19,7 @@ static char help[] =
 "-print [0 (no print) | 1 (print PETSc structures) | 2 (print VTK output)]\n"
 "-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
 
-
-
 #include "micro.h"
-
-
 
 int main(int argc, char **argv)
 {
@@ -33,7 +28,6 @@ int main(int argc, char **argv)
   char       *myname = strdup("micro");
   PetscBool  set;
 
-  PetscLogEvent  CHECK_ERROR;    /* event number for error checking */
   PetscViewer    viewer;
 
 #if defined(PETSC_USE_LOG)
@@ -126,7 +120,6 @@ int main(int argc, char **argv)
   ierr = PetscLogEventRegister("Assembly_Residual"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("Solve_Linear_System"   ,PETSC_VIEWER_CLASSID,&EVENT_SOLVE_SYSTEM);CHKERRQ(ierr);
 #endif
-
 
   /*
      Register various stages for profiling
@@ -237,15 +230,15 @@ int main(int argc, char **argv)
 	  /*
 	     Wait for strain
 	  */
-	  MicCommRecvStrain( WORLD_COMM, strain );
+	  ierr = MicCommRecvStrain( WORLD_COMM, strain );
 	  /*
 	     Performs the micro calculation
 	  */
-
+	  stress[0] = 1.0; stress[1] = 1.0; stress[2] = 1.0; stress[3] = -1.0; stress[4] = 1.0; stress[5] = 1.0;
 	  /*
 	     Send Stress
 	  */
-	  MicCommSendStress( WORLD_COMM, stress );
+	  ierr = MicCommSendStress( WORLD_COMM, stress );
 	  break;
 	case SIGNAL_MICRO_END:
 	  break;

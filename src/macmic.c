@@ -371,6 +371,23 @@ int MicCommSendStress( MPI_Comm WORLD_COMM, double stress[6] )
   return 0;
 }
 /****************************************************************************************************/
+int MacCommRecvStress( MPI_Comm WORLD_COMM, double stress[6] )
+{
+  /*
+     The processes will wait here until they receive the stress
+  */
+  int ierr, remote_rank;
+  MPI_Status status;
+  if(macmic.type == COUP_1){
+    remote_rank = ((coupMac_1_t*)macmic.coup)->mic_rank;
+    ierr = MPI_Recv(stress, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+  }
+  else{
+    return 1;
+  }
+  return 0;
+}
+/****************************************************************************************************/
 int MicCommSendTTensor( MPI_Comm WORLD_COMM )
 {
 

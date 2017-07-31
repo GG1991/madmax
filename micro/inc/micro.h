@@ -9,8 +9,6 @@
    MICRO global variables 
 *****************************************************************************************************/
 
-
-
 /*
    Internal Variables on Gauss Points are going to be saved on 
    this vector
@@ -20,14 +18,6 @@ double          *gauss_param_d;
 /*
    Variables Send by <macro>
 */
-
-int             MyMacroRankLeader;
-
-int             mac_gp;
-double          mac_eps[6];
-double          mic_stress[6];
-double          mic_ttensor[9];
-double          *mic_stress_ttensor;
 
 int             rank_mic;          //  rank on macro comm
 int             nproc_mic;         //  # of micro processes (MICRO_COMM)
