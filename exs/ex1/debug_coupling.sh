@@ -1,7 +1,7 @@
 #!/bin/bash
 
-break_mac=( 'mac_main.c:343' ) 
-break_mic=( 'mic_main.c:222' ) 
+break_mac=( 'mac_main.c:78' ) 
+break_mic=( 'mic_main.c:78' ) 
 #break_mac=( 'spu_mesh.c:136' ) 
 #break_mic=( 'spu_mesh.c:136' ) 
 #break_mac=( 'macmic.c:143' ) 
@@ -27,7 +27,13 @@ do
 done
 exopt_mic+="-ex 'r'"
 
-gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu -coupl 1"
+gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu"
+gdbcomm_mac+=" -mesh ../../meshes/cube_unif/cube.msh"
+gdbcomm_mac+=" -coupl 1"
 gdbcomm_mac+=" -testcomm 1"
-gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ex1.spu -coupl"
+
+gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ex1.spu"
+gdbcomm_mic+=" -mesh ../../meshes/cube_unif/cube.msh"
+gdbcomm_mic+=" -coupl 1"
+
 ./mpirun -np $NM xterm -e "$gdbcomm_mac" : -np $Nm xterm -e "$gdbcomm_mic"

@@ -75,6 +75,8 @@ int main(int argc, char **argv)
   if(set == PETSC_FALSE) print_flag  = PETSC_FALSE;
   ierr = PetscOptionsGetInt(NULL, NULL, "-print", &flag_print, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) flag_print = PRINT_NULL;
+  ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:mesh file not given on command line.");
 
   /* 
      Stablish a new local communicator
@@ -86,7 +88,7 @@ int main(int argc, char **argv)
   ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
   ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
 
-  ierr = spu_parse_mesh(input_n);
+//  ierr = spu_parse_mesh(input_n);
 
   ierr = PetscFinalize();CHKERRQ(ierr);
 

@@ -74,13 +74,9 @@ int main(int argc, char **argv)
   ierr = PetscOptionsGetBool(NULL, NULL, "-p", &print_flag, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) print_flag  = PETSC_FALSE;
   ierr = PetscOptionsGetInt(NULL, NULL, "-testcomm", &flag_testcomm, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE){ 
-    flag_testcomm  = TESTCOMM_NULL;
-  }
-  else if(flag_testcomm != TESTCOMM_STRAIN ||
-      flag_testcomm != TESTCOMM_STRAIN){
-    SETERRQ(PETSC_COMM_WORLD,1,"MACRO: invalid -testcomm value.");
-  }
+  if(set == PETSC_FALSE) flag_testcomm  = TESTCOMM_NULL;
+  ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:mesh file not given on command line.");
 
   /* 
      Stablish a new local communicator
@@ -92,7 +88,7 @@ int main(int argc, char **argv)
   ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
   ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
   
-  ierr = spu_parse_mesh(input_n);
+//  ierr = spu_parse_mesh(input_n);
 
   ierr = PetscFinalize();CHKERRQ(ierr);
 
