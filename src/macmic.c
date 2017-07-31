@@ -146,6 +146,10 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
     }
   }
 
+  if(flag_coupling == true && (nproc_mic_tot==0 || nproc_mac_tot==0))
+      SETERRQ(PETSC_COMM_WORLD,1,"SPUTNIK: Want to coupling executing ONLY ONE code.");
+
+
   if(flag_coupling == false){
 
     // LOCAL_COMM creation
