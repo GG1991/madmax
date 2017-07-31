@@ -1,5 +1,9 @@
 /*
    Common functions for <macro> & <micro> programs
+
+   Author: Guido Giuntoli
+   Date : 31-07-2017
+
  */
 
 #include "macmic.h"
@@ -142,7 +146,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
     }
   }
 
-  if(flag_coupling == PETSC_FALSE){
+  if(flag_coupling == false){
 
     // LOCAL_COMM creation
     ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM);CHKERRQ(ierr);
@@ -212,9 +216,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
       }
 
       int mic_rank;
-      i = 0;
-      c = 0;
-      mic_pos = 0;
+      i = 0; c = 0; mic_pos = 0;
       while( i<nproc_wor ){
 	if(id_vec[i] == MICRO){
 	  if(c == mac_pos){
@@ -224,7 +226,6 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 	  if(mic_pos % mic_nproc_group == 0) c++;
 	  mic_pos ++;
 	}
-
 	i++;
       }
 

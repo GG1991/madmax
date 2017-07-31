@@ -63,7 +63,7 @@ char         input_n[NBUF];            // Input file name
 
 MPI_Status   status;
 
-bool         print_flag;
+PetscBool    print_flag;
 
 
 

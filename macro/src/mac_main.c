@@ -44,12 +44,6 @@ int main(int argc, char **argv)
 		EVENT_SOLVE_SYSTEM;
 #endif
 
-  WORLD_COMM = MPI_COMM_WORLD;
-
-  ierr = MPI_Init(&argc, &argv);
-  ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
-  ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
-
   if(argc>1){
     strcpy(input_n,argv[1]);
   }
@@ -57,12 +51,39 @@ int main(int argc, char **argv)
     printf("mac_main.c:no input file has been given\n");
   }
 
-  print_flag = false;
-  for(i=2;i<argc;i++){
-    if(strcmp(argv[i],"-p")==0){
-      print_flag = true;
-    }
-  }
+  WORLD_COMM = MPI_COMM_WORLD;
+  ierr = MPI_Init(&argc, &argv);
+  ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
+  ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
+
+  /* 
+     We start PETSc before coloring here for using command line reading tools only
+     Then we finalize it
+  */
+  PETSC_COMM_WORLD = WORLD_COMM;
+  ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+
+  /*
+     Get command line arguments
+  */
+
+  ierr = PetscOptionsGetInt(NULL, NULL, "-p_vtk", &flag_print_vtk, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE) flag_print_vtk = FLAG_VTK_NONE;
+  ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(NULL, NULL, "-p", &print_flag, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE) print_flag  = PETSC_FALSE;
+
+//  print_flag = false;
+//  flag_coupling = false;
+//  for(i=2;i<argc;i++){
+//    if(strcmp(argv[i],"-p")==0){
+//      print_flag = true;
+//    }
+//    if(strcmp(argv[i],"-coupl")==0){
+//      flag_coupling = true;
+//    }
+//  }
   
   /* 
      Stablish a new local communicator
@@ -76,11 +97,15 @@ int main(int argc, char **argv)
   
   ierr = spu_parse_mesh(input_n);
 
+  ierr = PetscFinalize();CHKERRQ(ierr);
+
   /*
      Set PETSc communicator to MACRO_COMM
+     and start again
   */
   PETSC_COMM_WORLD = MACRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+
   PetscPrintf(MACRO_COMM,
       "--------------------------------------------------\n"
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
@@ -109,8 +134,8 @@ int main(int argc, char **argv)
   
   ierr = PetscOptionsGetInt(NULL, NULL, "-p_vtk", &flag_print_vtk, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) flag_print_vtk = FLAG_VTK_NONE;
-  ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
+//  ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
+//  if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
 
   if(flag_coupling){
     PetscPrintf(MACRO_COMM,
