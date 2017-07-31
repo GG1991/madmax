@@ -41,12 +41,6 @@ int main(int argc, char **args);
 
 // mac_comm.c
 int mic_comm_init(void);
-int MicCommWaitStartSignal( MPI_Comm WORLD_COMM );
-int MicCommRecvStrain( MPI_Comm WORLD_COMM );
-int MicCommRecvGPnum( MPI_Comm WORLD_COMM );
-int MicCommSendAveStressAndTanTensor( MPI_Comm WORLD_COMM );
-int MicCommSendAveStress( MPI_Comm WORLD_COMM );
-int MicCommSendAveTTensor( MPI_Comm WORLD_COMM );
 
 // mic_alloc.c
 int MicroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal);

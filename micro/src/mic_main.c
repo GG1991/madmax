@@ -218,7 +218,18 @@ int main(int argc, char **argv)
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
   if(flag_coupling){
-    ierr = MicCommWaitStartSignal( WORLD_COMM );CHKERRQ(ierr);
+    int signal = SIGNAL_NULL;
+    while(signal != SIGNAL_MICRO_END ){
+      ierr = MicCommWaitSignal( WORLD_COMM, &signal );CHKERRQ(ierr);
+      switch( signal ){
+	case SIGNAL_MICRO_CALC:
+	  break;
+	case SIGNAL_MICRO_END:
+	  break;
+	default:
+	  SETERRQ(MICRO_COMM,1,"MICRO:can no identify recv signal.");
+      }
+    }
   }
 
   if(!flag_coupling){

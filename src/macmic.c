@@ -270,9 +270,47 @@ int MicCommWaitStartSignal( MPI_Comm WORLD_COMM )
     return 1;
   }
 
-  return(signal == MACMIC_START ) ? 0 : 1;
+  return (signal == MACMIC_START ) ? 0 : 1;
 }
 
+/****************************************************************************************************/
+
+int MicCommWaitSignal( MPI_Comm WORLD_COMM, int *signal )
+{
+
+  /*
+     The processes will wait here until they receive the signal
+  */
+  int ierr;
+  MPI_Status status;
+  *signal = -1;
+  if(macmic.type == COUP_1){
+    ierr = MPI_Recv(signal, 1, MPI_INT, ((coupMic_1_t*)macmic.coup)->mac_rank, 0, WORLD_COMM, &status); 
+    CHKERRQ(ierr);
+  }
+  else{
+    return 1;
+  }
+  return 0;
+}
+/****************************************************************************************************/
+
+int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal )
+{
+
+  /*
+     The processes will wait here until they receive the signal
+  */
+  int ierr;
+  if(macmic.type == COUP_1){
+    ierr = MPI_Send(&signal, 1, MPI_INT, ((coupMac_1_t*)macmic.coup)->mic_rank, 0, WORLD_COMM); 
+    CHKERRQ(ierr);
+  }
+  else{
+    return 1;
+  }
+  return 0;
+}
 /****************************************************************************************************/
 
 int MicCommRecvStrain( MPI_Comm WORLD_COMM )

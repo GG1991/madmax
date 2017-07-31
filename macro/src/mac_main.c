@@ -330,6 +330,13 @@ int main(int argc, char **argv)
   }
 
   /*
+     Stop signal to micro if it is coupled
+  */
+  if(flag_coupling){
+    ierr = MacCommSendSignal( WORLD_COMM, SIGNAL_MICRO_END); CHKERRQ(ierr);
+  }
+
+  /*
      Free Memory and close things
   */
   if(rank_mac==0) fclose(FileOutputStructures); 
