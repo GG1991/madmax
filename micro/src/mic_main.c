@@ -219,6 +219,9 @@ int main(int argc, char **argv)
   ierr = fem_inigau(); CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
+  /*
+     micro main coupling loop
+   */
   double strain[6], stress[6], ttensor[36];
   LX = LY = LZ = 1.0;
 
@@ -235,7 +238,11 @@ int main(int argc, char **argv)
 	  /*
 	     Performs the micro calculation
 	  */
-	  ierr = MicroSetDisplacementOnBoundary( strain, LX, LY, LZ, &x );
+	  ierr = MicroSetDisplacementOnBoundary( 0, strain[0], LX, LY, LZ, &x );
+	  if( flag_print == PRINT_PETSC ){
+	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
+	    ierr = VecView(x,viewer); CHKERRQ(ierr);
+	  }
 	  stress[0] = 1.0; stress[1] = 1.0; stress[2] = 1.0; stress[3] = -1.0; stress[4] = 1.0; stress[5] = 1.0;
 	  /*
 	     Send Stress

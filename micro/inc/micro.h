@@ -32,12 +32,12 @@ int *index_z0_ux, *index_z0_uy, *index_z0_uz, nnods_z0;
 int *index_x1_ux, *index_x1_uy, *index_x1_uz, nnods_x1; 
 int *index_y1_ux, *index_y1_uy, *index_y1_uz, nnods_y1; 
 int *index_z1_ux, *index_z1_uy, *index_z1_uz, nnods_z1; 
-int *value_x0_ux, *value_x0_uy, *value_x0_uz;   
-int *value_y0_ux, *value_y0_uy, *value_y0_uz; 
-int *value_z0_ux, *value_z0_uy, *value_z0_uz; 
-int *value_x1_ux, *value_x1_uy, *value_x1_uz; 
-int *value_y1_ux, *value_y1_uy, *value_y1_uz; 
-int *value_z1_ux, *value_z1_uy, *value_z1_uz; 
+double *value_x0_ux, *value_x0_uy, *value_x0_uz;   
+double *value_y0_ux, *value_y0_uy, *value_y0_uz; 
+double *value_z0_ux, *value_z0_uy, *value_z0_uz; 
+double *value_x1_ux, *value_x1_uy, *value_x1_uz; 
+double *value_y1_ux, *value_y1_uy, *value_y1_uz; 
+double *value_z1_ux, *value_z1_uy, *value_z1_uz; 
 
 
 /*****************************************************************************************************
@@ -52,3 +52,6 @@ int mic_comm_init(void);
 
 // mic_alloc.c
 int MicroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal);
+
+// micboundary.c
+int MicroSetDisplacementOnBoundary( int dir, double strain_dir, double LX, double LY, double LZ, Vec *x );

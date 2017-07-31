@@ -149,7 +149,6 @@ int GmshIsAsurfaceElement(int code);
 
 // spu_boundary.c
 int SputnikSetDisplacementOnBoundary( double time, Vec *x );
-int MicroSetDisplacementOnBoundary( double strain[6], double LX, double LY, double LZ, Vec *x );
 int SputnikSetBoundaryOnJacobian( Mat *J );
 int SputnikSetBoundaryOnResidual( Vec *b );
 
