@@ -66,7 +66,6 @@ int main(int argc, char **argv)
   /*
      Get command line arguments
   */
-
   ierr = PetscOptionsGetInt(NULL, NULL, "-p_vtk", &flag_print_vtk, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) flag_print_vtk = FLAG_VTK_NONE;
   ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
@@ -95,13 +94,7 @@ int main(int argc, char **argv)
   PETSC_COMM_WORLD = MICRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
   
-  if(flag_coupling){
-    PetscPrintf(MICRO_COMM,
-	"--------------------------------------------------\n"
-	"  MICRO: COUPLING \n"
-	"--------------------------------------------------\n");
-  }
-  else{
+  if(!flag_coupling){
     PetscPrintf(MICRO_COMM,
 	"--------------------------------------------------\n"
 	"  MICRO: STANDALONE \n"
@@ -139,6 +132,8 @@ int main(int argc, char **argv)
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
+  if(!flag_coupling)
+    PetscPrintf(MICRO_COMM,"MACRO: Reading mesh elements\n");
   strcpy(mesh_f,"gmsh");
   read_mesh_elmv(&MICRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
@@ -148,6 +143,8 @@ int main(int argc, char **argv)
   /*
      partition the mesh
   */
+  if(!flag_coupling)
+    PetscPrintf(MICRO_COMM,"MICRO: Partitioning and distributing mesh\n");
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
   part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
@@ -155,6 +152,8 @@ int main(int argc, char **argv)
   /*
      Calculate <*ghosts> and <nghosts> 
   */
+  if(!flag_coupling)
+    PetscPrintf(MICRO_COMM,"MICRO: Calculating Ghost Nodes\n");
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
   calculate_ghosts(&MICRO_COMM, myname);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
@@ -162,6 +161,8 @@ int main(int argc, char **argv)
   /*
      Reenumerate Nodes
   */
+  if(!flag_coupling)
+    PetscPrintf(MICRO_COMM,"MICRO: Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
   reenumerate_PETSc(&MICRO_COMM);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
@@ -169,6 +170,8 @@ int main(int argc, char **argv)
   /*
      Coordinate Reading
   */
+  if(!flag_coupling)
+    PetscPrintf(MICRO_COMM,"MICRO: Reading Coordinates\n");
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
   read_mesh_coord(&MICRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
@@ -216,6 +219,13 @@ int main(int argc, char **argv)
 
   if(flag_coupling){
     ierr = MicCommWaitStartSignal( WORLD_COMM );CHKERRQ(ierr);
+  }
+
+  if(!flag_coupling){
+    PetscPrintf(MICRO_COMM,
+	"--------------------------------------------------\n"
+	"  MICRO: FINISH COMPLETE\n"
+	"--------------------------------------------------\n");
   }
 
   ierr = PetscFinalize();
