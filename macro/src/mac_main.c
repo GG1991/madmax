@@ -117,15 +117,6 @@ int main(int argc, char **argv)
   ierr = PetscLogEventRegister("Solve_Linear_System"   ,PETSC_VIEWER_CLASSID,&EVENT_SOLVE_SYSTEM);CHKERRQ(ierr);
 #endif
 
-  /*
-     Get command line arguments
-  */
-  
-  ierr = PetscOptionsGetInt(NULL, NULL, "-p_vtk", &flag_print_vtk, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) flag_print_vtk = FLAG_VTK_NONE;
-//  ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
-//  if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
-
   if(flag_coupling){
     PetscPrintf(MACRO_COMM,
 	"--------------------------------------------------\n"
