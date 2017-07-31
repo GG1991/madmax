@@ -74,17 +74,6 @@ int main(int argc, char **argv)
   ierr = PetscOptionsGetBool(NULL, NULL, "-p", &print_flag, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) print_flag  = PETSC_FALSE;
 
-//  print_flag = false;
-//  flag_coupling = false;
-//  for(i=2;i<argc;i++){
-//    if(strcmp(argv[i],"-p")==0){
-//      print_flag = true;
-//    }
-//    if(strcmp(argv[i],"-coupl")==0){
-//      flag_coupling = true;
-//    }
-//  }
-  
   /* 
      Stablish a new local communicator
   */
