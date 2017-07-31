@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#break_mac=( 'mac_main.c:70' ) 
-#break_mic=( 'mic_main.c:70' ) 
+break_mac=( 'mac_main.c:72' ) 
+break_mic=( 'mic_main.c:72' ) 
 #break_mac=( 'spu_mesh.c:136' ) 
 #break_mic=( 'spu_mesh.c:136' ) 
 #break_mac=( 'macmic.c:143' ) 
-#break_mic=( 'macmic.c:143' ) 
-break_mac=( 'mac_alloc.c:69' ) 
+#break_mic=( 'macmic.c:149' ) 
+#break_mac=( 'mac_alloc.c:69' ) 
 #break_mac=( 'spu_assembly.c:123' ) 
 #break_mac=( 'spu_boundary.c:148' ) 
 
@@ -61,7 +61,7 @@ if [ "$#" -eq 1 ];then
    eval  ./mpirun -np $NM "$exec_print_mac" : -np $Nm "$exec_print_mic"
   fi
 else
-   gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu"
-   gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ex1.spu"
+   gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu -coupl"
+   gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ex1.spu -coupl"
    ./mpirun -np $NM xterm -e "$gdbcomm_mac" : -np $Nm xterm -e "$gdbcomm_mic"
 fi
