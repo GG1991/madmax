@@ -10,9 +10,13 @@
  */
 
 
-static char help[] = "Solves the displacement field inside a solid structure. \
-		      It has the capability of being couple with MICRO, a code for solving and RVE problem.n\n"
-		      "-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
+static char help[] = 
+"MACRO MULTISCALE CODE\n"
+"Solves the displacement field inside a solid structure. \n"
+"It has the capability of being couple with MICRO, a code for solving and RVE problem.n\n"
+"-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
+"-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
+"-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
 
 
 
@@ -22,7 +26,7 @@ static char help[] = "Solves the displacement field inside a solid structure. \
 int main(int argc, char **argv)
 {
 
-  int        i, ierr;
+  int        ierr;
   char       *myname = strdup("macro");
   PetscBool  set;
 
@@ -72,6 +76,14 @@ int main(int argc, char **argv)
   if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL, NULL, "-p", &print_flag, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) print_flag  = PETSC_FALSE;
+  ierr = PetscOptionsGetInt(NULL, NULL, "-testcomm", &flag_testcomm, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE){ 
+    flag_testcomm  = TESTCOMM_NULL;
+  }
+  else if(flag_testcomm != TESTCOMM_STRAIN ||
+      flag_testcomm != TESTCOMM_STRAIN){
+    SETERRQ(PETSC_COMM_WORLD,1,"MACRO: invalid -testcomm value.");
+  }
 
   /* 
      Stablish a new local communicator
@@ -329,6 +341,14 @@ int main(int argc, char **argv)
     time_step ++;
   }
 
+  /*
+     Routine to send a calculating strain to micro and obtain the stress
+  */
+  if(flag_coupling && (flag_testcomm == TESTCOMM_STRAIN)){
+    double strain[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
+    ierr = MacCommSendSignal( WORLD_COMM, SIGNAL_SEND_STRAIN);CHKERRQ(ierr);
+    ierr = MacCommSendStrain( WORLD_COMM, strain);CHKERRQ(ierr);
+  }
   /*
      Stop signal to micro if it is coupled
   */

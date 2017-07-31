@@ -217,12 +217,16 @@ int main(int argc, char **argv)
   ierr = fem_inigau(); CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
+  double strain[6], ttensor[36];
+
   if(flag_coupling){
     int signal = SIGNAL_NULL;
     while(signal != SIGNAL_MICRO_END ){
       ierr = MicCommWaitSignal( WORLD_COMM, &signal );CHKERRQ(ierr);
       switch( signal ){
-	case SIGNAL_MICRO_CALC:
+	case SIGNAL_SEND_STRAIN:
+	  // esperamos que nos llegue el strain
+	  MicCommRecvStrain( WORLD_COMM, strain );
 	  break;
 	case SIGNAL_MICRO_END:
 	  break;

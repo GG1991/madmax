@@ -66,7 +66,6 @@ MPI_Status   status;
 PetscBool    print_flag;
 
 
-
 // Time measurement
 
 FILE         *time_fl;

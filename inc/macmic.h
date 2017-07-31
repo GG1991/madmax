@@ -24,9 +24,11 @@
 
 #define MACMIC_START  1
 #define MACMIC_END    2
+
 #define SIGNAL_NULL         -1
 #define SIGNAL_MICRO_CALC    3
 #define SIGNAL_MICRO_END     4
+#define SIGNAL_SEND_STRAIN   5
 
 /*
    This structure represents a Gauss points
@@ -109,12 +111,13 @@ int MacMicParseScheme( char *input );
 int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM);
 int MicCommWaitSignal( MPI_Comm WORLD_COMM, int *signal );
 int MicCommWaitStartSignal( MPI_Comm WORLD_COMM );
-int MicCommRecvStrain( MPI_Comm WORLD_COMM );
+int MicCommRecvStrain( MPI_Comm WORLD_COMM, double strain[6] );
 int MicCommRecvGPnum( MPI_Comm WORLD_COMM );
 int MicCommSendAveStressAndTanTensor( MPI_Comm WORLD_COMM );
 int MicCommSendAveStress( MPI_Comm WORLD_COMM );
 int MicCommSendAveTTensor( MPI_Comm WORLD_COMM );
 
 int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal );
+int MacCommSendStrain( MPI_Comm WORLD_COMM, double strain[6] );
 
 #endif

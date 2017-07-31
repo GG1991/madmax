@@ -281,10 +281,11 @@ int MicCommWaitSignal( MPI_Comm WORLD_COMM, int *signal )
   /*
      The processes will wait here until they receive the signal
   */
-  int ierr;
+  int ierr, remote_rank;
   MPI_Status status;
   *signal = -1;
   if(macmic.type == COUP_1){
+    remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
     ierr = MPI_Recv(signal, 1, MPI_INT, ((coupMic_1_t*)macmic.coup)->mac_rank, 0, WORLD_COMM, &status); 
     CHKERRQ(ierr);
   }
@@ -294,16 +295,15 @@ int MicCommWaitSignal( MPI_Comm WORLD_COMM, int *signal )
   return 0;
 }
 /****************************************************************************************************/
-
 int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal )
 {
-
   /*
      The processes will wait here until they receive the signal
   */
-  int ierr;
+  int ierr, remote_rank;
   if(macmic.type == COUP_1){
-    ierr = MPI_Send(&signal, 1, MPI_INT, ((coupMac_1_t*)macmic.coup)->mic_rank, 0, WORLD_COMM); 
+    remote_rank = ((coupMac_1_t*)macmic.coup)->mic_rank;
+    ierr = MPI_Ssend(&signal, 1, MPI_INT, remote_rank, 0, WORLD_COMM); 
     CHKERRQ(ierr);
   }
   else{
@@ -312,22 +312,39 @@ int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal )
   return 0;
 }
 /****************************************************************************************************/
-
-int MicCommRecvStrain( MPI_Comm WORLD_COMM )
+int MicCommRecvStrain( MPI_Comm WORLD_COMM, double strain[6] )
 {
-
   /*
      The processes will wait here until they receive a signal
   */
-
-  int ierr;
+  int ierr, remote_rank;
   MPI_Status status;
-
-//  ierr = MPI_Recv(mac_eps, 6, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
-
+  if(macmic.type == COUP_1){
+    remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
+    ierr = MPI_Recv(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+  }
+  else{
+    return 1;
+  }
   return 0;
 }
-
+/****************************************************************************************************/
+int MacCommSendStrain( MPI_Comm WORLD_COMM, double strain[6] )
+{
+  /*
+     The processes will wait here until they receive the signal
+  */
+  int ierr, remote_rank;
+  if(macmic.type == COUP_1){
+    remote_rank = ((coupMac_1_t*)macmic.coup)->mic_rank;
+    ierr = MPI_Ssend(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM); 
+    CHKERRQ(ierr);
+  }
+  else{
+    return 1;
+  }
+  return 0;
+}
 /****************************************************************************************************/
 
 int MicCommRecvGPnum( MPI_Comm WORLD_COMM )
