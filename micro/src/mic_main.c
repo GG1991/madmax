@@ -220,6 +220,7 @@ int main(int argc, char **argv)
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
   double strain[6], stress[6], ttensor[36];
+  LX = LY = LZ = 1.0;
 
   if(flag_coupling){
     int signal = SIGNAL_NULL;
@@ -234,6 +235,7 @@ int main(int argc, char **argv)
 	  /*
 	     Performs the micro calculation
 	  */
+	  ierr = MicroSetDisplacementOnBoundary( strain, LX, LY, LZ, &x );
 	  stress[0] = 1.0; stress[1] = 1.0; stress[2] = 1.0; stress[3] = -1.0; stress[4] = 1.0; stress[5] = 1.0;
 	  /*
 	     Send Stress
