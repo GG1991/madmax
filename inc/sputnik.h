@@ -112,7 +112,6 @@ int spu_parse_scheme( char *input );
 int spu_parse_mesh( char * input );
 int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input );
 int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n );
-int SetGmshIDOnMaterialsAndBoundaries(MPI_Comm PROBLEM_COMM);
 int CheckPhysicalID(void);
 int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input);
 int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input );
@@ -165,5 +164,6 @@ int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );
 material_t * GetMaterial(int GmshIDToSearch);
 int GetElemenDispls( int e, double *Displacement, double *ElemDispls );
 int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress);
+
 
 #endif

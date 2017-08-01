@@ -197,11 +197,11 @@ int main(int argc, char **argv)
   ierr = SpuParseMaterials( &MACRO_COMM, input_n ); CHKERRQ(ierr);            
   ierr = SpuParsePhysicalEntities( &MACRO_COMM, mesh_n ); CHKERRQ(ierr);
   ierr = SpuParseFunctions( &MACRO_COMM, input_n ); CHKERRQ(ierr); 
-  ierr = SpuParseBoundary(&MACRO_COMM, input_n ); CHKERRQ(ierr); 
+  ierr = MacroParseBoundary(&MACRO_COMM, input_n ); CHKERRQ(ierr); 
   ierr = SetGmshIDOnMaterialsAndBoundaries(MACRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
-  ierr = SpuReadBoundary(MACRO_COMM, mesh_n, mesh_f, &boundary_list, &boundary_list_aux);CHKERRQ(ierr);
-  ierr = MacroFillBoundary(MACRO_COMM, &boundary_list_aux, &boundary_list);
+  ierr = SpuReadBoundary(MACRO_COMM, MACRO, mesh_n, mesh_f);CHKERRQ(ierr);
+  ierr = MacroFillBoundary(MACRO_COMM);
   ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
 
   /*
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
        Setting Displacement on Dirichlet Indeces on <x>
     */
     ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-    ierr = SputnikSetDisplacementOnBoundary( t, &x);
+    ierr = MacroSetDisplacementOnBoundary( t, &x);
     if( flag_print == PRINT_PETSC ){
       ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
       ierr = VecView(x,viewer); CHKERRQ(ierr);
@@ -269,7 +269,7 @@ int main(int argc, char **argv)
       ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
       ierr = PetscPrintf(MACRO_COMM, "Assembling Residual ");CHKERRQ(ierr);
       ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
-      ierr = SputnikSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
+      ierr = MacroSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
       if( flag_print == PRINT_PETSC ){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(b,viewer); CHKERRQ(ierr);
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
       ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
       ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
       ierr = AssemblyJacobianSmallDeformation(&A);
-      ierr = SputnikSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
+      ierr = MacroSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
       if( flag_print == PRINT_PETSC ){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
 	ierr = MatView(A,viewer); CHKERRQ(ierr);

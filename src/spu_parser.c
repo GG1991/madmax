@@ -213,60 +213,6 @@ int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
   return 0;
 }
 /****************************************************************************************************/
-int SetGmshIDOnMaterialsAndBoundaries(MPI_Comm PROBLEM_COMM)
-{
-  /* 
-     For each material on <material_list> 
-     Searchs for the <GmshID> in the 
-     <physical_list>
-   */
-  node_list_t *pm, *pp;
-
-  pm = material_list.head;
-  while(pm){
-    pp = physical_list.head;
-    while(pp){
-      if( !strcmp( ((physical_t*)pp->data)->name, ((material_t*)pm->data)->name ) ){
-	((material_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
-	break;
-      }
-      pp = pp->next;
-    }
-
-    if(!pp){SETERRQ1(PETSC_COMM_SELF,1,"Material %s not found in Gmsh File.",((material_t*)pm->data)->name);}
-
-    ((physical_t*)pp->data)->FlagFound = 1;
-    pm = pm->next;
-  }
-
-  pm = boundary_list.head;
-  while(pm){
-    pp = physical_list.head;
-    while(pp){
-      if( !strcmp( ((physical_t*)pp->data)->name, ((boundary_t*)pm->data)->name ) ){
-	((boundary_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
-	break;
-      }
-      pp = pp->next;
-    }
-    if(!pp){ 
-      SETERRQ1(PETSC_COMM_SELF,1,"Boundary %s not found in Gmsh File.",((boundary_t*)pm->data)->name);
-    }
-    ((physical_t*)pp->data)->FlagFound = 1;
-    pm = pm->next;
-  }
-
-  /* Check Physical not found a print a warning */
-  pp = physical_list.head;
-  while(pp)
-  {
-    if( !((physical_t*)pp->data)->FlagFound ){PetscPrintf(PROBLEM_COMM,
-	"WARNING:Physical %s not found on input file.\n",((physical_t*)pp->data)->name);}
-    pp = pp->next;
-  }
-  return 0;
-}
-/****************************************************************************************************/
 int CheckPhysicalID(void)
 {
 
@@ -288,88 +234,6 @@ int CheckPhysicalID(void)
   }
 
   return 0;
-}
-/****************************************************************************************************/
-int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
-{
-  /*
-     Parse the boundary of the problem
-
-     Searchs for keywords>
-
-     $Boundary
-     <name1> <order> <kind> <fnumx> <fnumy> <fnumz>
-     <name2> <order> <kind> <fnumx> <fnumy> <fnumz>
-     ...
-     $EndBoundary
-   */
-
-  FILE   *file = fopen(input,"r"); if(!file)return 1;
-  char   buf[NBUF];
-  char   *data;
-  int    ln = 0;
-  int    flag_start_boundary = 0;
-
-  boundary_t boundary;
-  list_init(&boundary_list, sizeof(boundary_t), cmpfuncBou);
-
-  while(fgets(buf,NBUF,file) != NULL)
-  {
-
-    ln ++;
-    data = strtok(buf," \n");
-    if(data){ if(!strcmp(data,"$Boundary")){
-
-      flag_start_boundary=1;
-      while(fgets(buf,NBUF,file) != NULL)
-      {
-	ln ++;
-
-	// <name>
-	data = strtok(buf," \n"); CHECK_INPUT_ERROR(data);
-	if(!strcmp(data,"$EndBoundary")) break;
-	boundary.name = strdup(data);
-
-	// <order> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	boundary.order = atoi(data);
-
-	// <kind> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	boundary.kind = StrBin2Dec(data);
-	if(boundary.kind<0 || boundary.kind>7){SETERRQ(PETSC_COMM_SELF,1,"Bad <kind> code on boundary element.");}
-
-	// <nfz> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	boundary.nfz = atoi(data);
-
-	// <nfy> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	boundary.nfy = atoi(data);
-
-	// <nfx> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
-	boundary.nfx = atoi(data);
-
-	boundary.fx = GetFunctionPointer(&function_list,boundary.nfx);CHECK_INPUT_ERROR(boundary.fx);
-	boundary.fy = GetFunctionPointer(&function_list,boundary.nfy);CHECK_INPUT_ERROR(boundary.fy);
-	boundary.fz = GetFunctionPointer(&function_list,boundary.nfz);CHECK_INPUT_ERROR(boundary.fz);
-
-	// si llegamos hasta acá esta todo 0K lo insertamos en la lista 
-	list_insert_se(&boundary_list, &boundary);
-      }
-    } // inside $Boundary
-
-    if(!strcmp(data,"$EndBoundary")){
-      CHECK_INPUT_ERROR(flag_start_boundary);
-//      PetscPrintf(*PROBLEM_COMM, "# of boundaries found in %s : %d\n", input, boundary_list.sizelist);
-      return 0;
-    }
-    }
-  }
-  // any boundary condition found
-//  printf("SpuParseBoundary: Any boundary found on input file\n");
-  return 1;
 }
 /****************************************************************************************************/
 int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
@@ -451,11 +315,6 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
   }
 //  PetscPrintf(*PROBLEM_COMM, "# of functions found in %s : %d\n", input, function_list.sizelist);
   return 0;
-}
-/****************************************************************************************************/
-int cmpfuncBou (void * a, void * b)
-{
-  return ( ((boundary_t *)a)->order - ((boundary_t *)b)->order );
 }
 /****************************************************************************************************/
 int StrBin2Dec(char *str)
