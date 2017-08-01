@@ -16,11 +16,7 @@
 #ifndef SPUTNIK_H
 #define SPUTNIK_H
 
-#define MACRO         1     // MACRO IDs and colors
-#define MICRO         2     // MICRO IDs and colors
-
 #define NBUF               256   // Buffers length for read from a file
-
 
 // Execution schemes
 #define MACRO_MICRO         1   // Coupled execution
