@@ -35,4 +35,10 @@ int mac_comm_init(void);
 int MacroAllocMatrixVector(MPI_Comm PROBLEM_COMM, int nlocal, int ntotal);
 
 // mac_boundary.c
-int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list_aux, list_t *boundary_list);
+int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list);
+int MacroSetDisplacementOnBoundary( double time, Vec *x );
+int MacroSetBoundaryOnJacobian( Mat *J );
+int MacroSetBoundaryOnResidual( Vec *b );
+int MacroParseBoundary(MPI_Comm *PROBLEM_COMM, char *input );
+int cmpfunc_mac_bou (void * a, void * b);
+int SetGmshIDOnMaterialsAndBoundaries(MPI_Comm PROBLEM_COMM);

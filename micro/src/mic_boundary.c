@@ -16,33 +16,37 @@ int MicroCreateBoundary(list_t *boundary_list)
    */
 
   int i = 0;
-  list_init(boundary_list, sizeof(boundary_t), cmpfuncBou);
-  boundary_t boundary;
+  list_init(boundary_list, sizeof(boundary_t), NULL);
 
+  boundary_t boundary;
+  mic_boundary_t mic_boundary;
+
+  list_init(&boundary.Nods,sizeof(int), cmpfunc_for_list);
   while(i<9)
   {
     switch(i){
       case 0:
-	boundary.name = strdup("P000");break;
+	mic_boundary.name = strdup("P000");break;
       case 1:
-	boundary.name = strdup("P100");break;
+	mic_boundary.name = strdup("P100");break;
       case 2:
-	boundary.name = strdup("P010");break;
+	mic_boundary.name = strdup("P010");break;
       case 3:
-	boundary.name = strdup("X0")  ;break;
+	mic_boundary.name = strdup("X0")  ;break;
       case 4:
-	boundary.name = strdup("X1")  ;break;
+	mic_boundary.name = strdup("X1")  ;break;
       case 5:
-	boundary.name = strdup("Y0")  ;break;
+	mic_boundary.name = strdup("Y0")  ;break;
       case 6:
-	boundary.name = strdup("Y1")  ;break;
+	mic_boundary.name = strdup("Y1")  ;break;
       case 7:
-	boundary.name = strdup("Z0")  ;break;
+	mic_boundary.name = strdup("Z0")  ;break;
       case 8:
-	boundary.name = strdup("Z1")  ;break;
+	mic_boundary.name = strdup("Z1")  ;break;
       default:
 	break;
     }
+    memcpy(boundary.bvoid, (void *)&mic_boundary, sizeof(mic_boundary_t));
     list_insertlast(boundary_list, &boundary);
     i++;
   }
@@ -153,7 +157,7 @@ int MicroCheckPhysicalEntities( list_t *physical_list )
   return 0;
 }
 /****************************************************************************************************/
-int MicroCheckAndSetBoundary( list_t *boundary_list )
+int MicroCheckAndSetBoundary(list_t *boundary_list_aux, list_t *boundary_list)
 {
   /*
      Checks if "P000" "P100" "P010" "X0" "X1" "Y0" "Y1" "Z0" "Z1"
@@ -163,12 +167,12 @@ int MicroCheckAndSetBoundary( list_t *boundary_list )
   char *name;
   while(i<9)
   {
-    node_list_t * pn = boundary_list->head;
+    node_list_t *pn = boundary_list->head, *pn_aux = boundary_list_aux->head;
     flag_pn=0;
     while(pn && !flag_pn)
     {
-      name = ((boundary_t*)pn->data)->name;
-      nnods = ((boundary_t*)pn->data)->NNods;
+      name = ((mic_boundary_t*)pn->data)->name;
+      nnods = ((mic_boundary_t*)pn_aux->data)->NNods;
       switch(i){
 	case 0:
 	  if(!strcmp(name,"P000")){flag=flag|(1<<0);flag_pn=1;}break;
@@ -234,6 +238,7 @@ int MicroCheckAndSetBoundary( list_t *boundary_list )
 	  break;
       }
       pn=pn->next;
+      pn_aux=pn_aux->next;
     }
     i++;
   }
