@@ -32,5 +32,7 @@ int main(int argc, char **args);
 int mac_comm_init(void);
 
 // mac_alloc.c
-int MacroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal);
+int MacroAllocMatrixVector(MPI_Comm PROBLEM_COMM, int nlocal, int ntotal);
 
+// mac_boundary.c
+int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list_aux, list_t *boundary_list);

@@ -200,7 +200,8 @@ int main(int argc, char **argv)
   ierr = SpuParseBoundary(&MACRO_COMM, input_n ); CHKERRQ(ierr); 
   ierr = SetGmshIDOnMaterialsAndBoundaries(MACRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
-  ierr = SpuReadBoundary(MACRO_COMM, mesh_n, mesh_f, FileOutputStructures );CHKERRQ(ierr);
+  ierr = SpuReadBoundary(MACRO_COMM, mesh_n, mesh_f, &boundary_list, &boundary_list_aux);CHKERRQ(ierr);
+  ierr = MacroFillBoundary(MACRO_COMM, &boundary_list_aux, &boundary_list);
   ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
 
   /*
