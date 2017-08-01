@@ -57,6 +57,5 @@ typedef struct boundary_t_{
 }boundary_t;
 
 list_t boundary_list;      // it is used to store things particular for each problem
-list_t boundary_list_aux;  // it is used to store (boundary_aux_t > list of nodes only)
 
 #endif
