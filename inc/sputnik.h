@@ -16,6 +16,9 @@
 #ifndef SPUTNIK_H
 #define SPUTNIK_H
 
+#define MACRO         1     // MACRO IDs and colors
+#define MICRO         2     // MICRO IDs and colors
+
 #define NBUF               256   // Buffers length for read from a file
 
 
@@ -139,18 +142,12 @@ int is_in_vector(int val, int *vector, int size);
 int reenumerate_PETSc(MPI_Comm *comm);
 int search_position_linear(int *array, int size, int val, int *pos);
 int search_position_logn(int *array, int size, int val, int *pos);
-int SpuReadBoundary(MPI_Comm PROBLEM_COMM,char *mesh_n,char *mesh_f,list_t *bound_list,list_t *bound_list_aux );
-int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, list_t *bound_list,list_t *bound_list_aux);
+int SpuReadBoundary(MPI_Comm PROBLEM_COMM, int id, char *mesh_n,char *mesh_f);
+int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, int id, char *mesh_n);
 int cmpfunc (const void * a, const void * b);
 int cmpfunc_for_list (void * a, void * b);
-int cmpfuncBou (void * a, void * b);
 int GmshNodesPerElement(int code);
 int GmshIsAsurfaceElement(int code);
-
-// spu_boundary.c
-int SputnikSetDisplacementOnBoundary( double time, Vec *x );
-int SputnikSetBoundaryOnJacobian( Mat *J );
-int SputnikSetBoundaryOnResidual( Vec *b );
 
 // spu_vtk.c
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );
