@@ -7,6 +7,48 @@
 
 #include "micro.h"
 
+/****************************************************************************************************/
+int MicroCreateBoundary(list_t *boundary_list)
+{
+  /*
+     Creates the boundary list with names
+     P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1 
+   */
+
+  int i = 0;
+  list_init(boundary_list, sizeof(boundary_t), cmpfuncBou);
+  boundary_t boundary;
+
+  while(i<9)
+  {
+    switch(i){
+      case 0:
+	boundary.name = strdup("P000");break;
+      case 1:
+	boundary.name = strdup("P100");break;
+      case 2:
+	boundary.name = strdup("P010");break;
+      case 3:
+	boundary.name = strdup("X0")  ;break;
+      case 4:
+	boundary.name = strdup("X1")  ;break;
+      case 5:
+	boundary.name = strdup("Y0")  ;break;
+      case 6:
+	boundary.name = strdup("Y1")  ;break;
+      case 7:
+	boundary.name = strdup("Z0")  ;break;
+      case 8:
+	boundary.name = strdup("Z1")  ;break;
+      default:
+	break;
+    }
+    list_insert_se(boundary_list, &boundary);
+    i++;
+  }
+  return 1;
+}
+/****************************************************************************************************/
 int MicroSetDisplacementOnBoundary( int dir, double strain_dir, double LX, double LY, double LZ, Vec *x )
 {
   /*  

@@ -289,9 +289,7 @@ int CheckPhysicalID(void)
 
   return 0;
 }
-
 /****************************************************************************************************/
-
 int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 {
   /*
@@ -339,7 +337,7 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 	// <kind> 
 	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
 	boundary.kind = StrBin2Dec(data);
-	if(boundary.kind < 0 || boundary.kind > 7 ){SETERRQ(PETSC_COMM_SELF,1,"Bad <kind> code on boundary element.");}
+	if(boundary.kind<0 || boundary.kind>7){SETERRQ(PETSC_COMM_SELF,1,"Bad <kind> code on boundary element.");}
 
 	// <nfz> 
 	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
