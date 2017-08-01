@@ -38,6 +38,14 @@ typedef struct boundary_t_{
 
 }boundary_t;
 
+typedef struct AuxBoundary_t_{
+
+  int GmshID;
+  list_t Nods;
+
+}AuxBoundary_t;
+
 list_t boundary_list;
+list_t boundary_list_aux;
 
 #endif
