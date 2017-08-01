@@ -53,7 +53,8 @@ int mic_comm_init(void);
 // mic_alloc.c
 int MicroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal);
 
-// micboundary.c
+// mic_boundary.c
 int MicroSetDisplacementOnBoundary( int dir, double strain_dir, double LX, double LY, double LZ, Vec *x );
 int MicroCheckAndSetBoundary( list_t *boundary_list );
 int MicroCheckPhysicalEntities( list_t *physical_list );
+int MicroCreateBoundary(list_t *boundary_list);

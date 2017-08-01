@@ -191,10 +191,15 @@ int main(int argc, char **argv)
   ierr = SpuParseMaterials( &MICRO_COMM, input_n ); CHKERRQ(ierr);            
   ierr = SpuParsePhysicalEntities( &MICRO_COMM, mesh_n ); CHKERRQ(ierr);
   ierr = SpuParseFunctions( &MICRO_COMM, input_n ); CHKERRQ(ierr); 
-  ierr = SpuParseBoundary(&MICRO_COMM, input_n ); CHKERRQ(ierr); 
+
+  /*
+     Check if Physical Entities <P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1> exist in mesh
+     Creates the boundary_list with <P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1>
+  */
+  ierr = MicroCheckPhysicalEntities(&physical_list);CHKERRQ(ierr);
+  ierr = MicroCreateBoundary(&boundary_list);CHKERRQ(ierr);
   ierr = SetGmshIDOnMaterialsAndBoundaries(MICRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
-  ierr = SpuReadBoundary(MICRO_COMM, mesh_n, mesh_f, FileOutputStructures );CHKERRQ(ierr);
   ierr = SpuReadBoundary(MICRO_COMM, mesh_n, mesh_f, FileOutputStructures );CHKERRQ(ierr);
   ierr = MicroCheckAndSetBoundary( &boundary_list );CHKERRQ(ierr);
   ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
