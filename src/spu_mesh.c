@@ -451,7 +451,7 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
   }
 }
 /****************************************************************************************************/
-int SpuReadBoundary(MPI_Comm PROBLEM_COMM, int id, char *mesh_n, char *mesh_f)
+int SpuReadBoundary(MPI_Comm PROBLEM_COMM, char *mesh_n, char *mesh_f)
 {
 
   /*
@@ -459,7 +459,7 @@ int SpuReadBoundary(MPI_Comm PROBLEM_COMM, int id, char *mesh_n, char *mesh_f)
    */
 
   if(strcmp(mesh_f,"gmsh") == 0){
-    return SpuReadBoundaryGmsh(PROBLEM_COMM, id, mesh_n);
+    return SpuReadBoundaryGmsh(PROBLEM_COMM, mesh_n);
   }else{
     return 1;
   }
