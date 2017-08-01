@@ -190,7 +190,7 @@ int main(int argc, char **argv)
   spu_vtk_partition( vtkfile_n, &MACRO_COMM );
 
   /*
-     read materials and physical entities from input and mehs files
+     Read materials, physical entities, boundaries from input and mesh file
   */
   ierr = list_init(&physical_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
   ierr = list_init(&function_list, sizeof(physical_t), NULL); CHKERRQ(ierr);

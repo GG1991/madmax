@@ -184,7 +184,7 @@ int main(int argc, char **argv)
   spu_vtk_partition( vtkfile_n, &MICRO_COMM );
 
   /*
-     read materials and physical entities from input and mehs files
+     Read materials, physical entities, boundaries from input and mesh file
   */
   ierr = list_init(&physical_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
   ierr = list_init(&function_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
@@ -195,6 +195,8 @@ int main(int argc, char **argv)
   ierr = SetGmshIDOnMaterialsAndBoundaries(MICRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = SpuReadBoundary(MICRO_COMM, mesh_n, mesh_f, FileOutputStructures );CHKERRQ(ierr);
+  ierr = SpuReadBoundary(MICRO_COMM, mesh_n, mesh_f, FileOutputStructures );CHKERRQ(ierr);
+  ierr = MicroCheckAndSetBoundary( &boundary_list );CHKERRQ(ierr);
   ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
 
   /*

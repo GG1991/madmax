@@ -65,3 +65,92 @@ int MicroSetDisplacementOnBoundary( int dir, double strain_dir, double LX, doubl
   ierr = VecAssemblyEnd(*x);CHKERRQ(ierr);
   return 0;
 }
+/****************************************************************************************************/
+int MicroCheckAndSetBoundary( list_t *boundary_list )
+{
+  /*
+     Checks if "P000" "P100" "P010" "X0" "X1" "Y0" "Y1" "Z0" "Z1"
+     are define in the boundary_list
+  */
+  int i = 0, flag = 0, flag_pn = 0, nnods = 0;
+  char *name;
+  while(i<9)
+  {
+    node_list_t * pn = boundary_list->head;
+    flag_pn=0;
+    while(pn && !flag_pn)
+    {
+      name = ((boundary_t*)pn->data)->name;
+      nnods = ((boundary_t*)pn->data)->NNods;
+      switch(i){
+	case 0:
+	  if(!strcmp(name,"P000")){flag=flag|(1<<0);flag_pn=1;}break;
+	case 1:
+	  if(!strcmp(name,"P100")){flag=flag|(1<<1);flag_pn=1;}break;
+	case 2:
+	  if(!strcmp(name,"P010")){flag=flag|(1<<2);flag_pn=1;}break;
+	case 3:
+	  if(!strcmp(name,"X0")){
+	    flag=flag|(1<<3);
+	    index_x0_ux = malloc( nnods * sizeof(int)); value_x0_ux = malloc( nnods * sizeof(double));
+	    index_x0_uy = malloc( nnods * sizeof(int)); value_x0_uy = malloc( nnods * sizeof(double));
+	    index_x0_uz = malloc( nnods * sizeof(int)); value_x0_uz = malloc( nnods * sizeof(double));
+	    flag_pn=1;
+	  }
+	  break;
+	case 4:
+	  if(!strcmp(name,"X1")){
+	    flag=flag|(1<<4);
+	    index_x1_ux = malloc( nnods * sizeof(int)); value_x1_ux = malloc( nnods * sizeof(double));
+	    index_x1_uy = malloc( nnods * sizeof(int)); value_x1_uy = malloc( nnods * sizeof(double));
+	    index_x1_uz = malloc( nnods * sizeof(int)); value_x1_uz = malloc( nnods * sizeof(double));
+	    flag_pn=1;
+	  }
+	  break;
+	case 5:
+	  if(!strcmp(name,"Y0")){
+	    flag=flag|(1<<5);
+	    index_y0_ux = malloc( nnods * sizeof(int)); value_y0_ux = malloc( nnods * sizeof(double));
+	    index_y0_uy = malloc( nnods * sizeof(int)); value_y0_uy = malloc( nnods * sizeof(double));
+	    index_y0_uz = malloc( nnods * sizeof(int)); value_y0_uz = malloc( nnods * sizeof(double));
+	    flag_pn=1;
+	  }
+	  break;
+	case 6:
+	  if(!strcmp(name,"Y1")){
+	    flag=flag|(1<<6);
+	    index_y1_ux = malloc( nnods * sizeof(int)); value_y1_ux = malloc( nnods * sizeof(double));
+	    index_y1_uy = malloc( nnods * sizeof(int)); value_y1_uy = malloc( nnods * sizeof(double));
+	    index_y1_uz = malloc( nnods * sizeof(int)); value_y1_uz = malloc( nnods * sizeof(double));
+	    flag_pn=1;
+	  }
+	  break;
+	case 7:
+	  if(!strcmp(name,"Z0")){
+	    flag=flag|(1<<7);
+	    index_z0_ux = malloc( nnods * sizeof(int)); value_z0_ux = malloc( nnods * sizeof(double));
+	    index_z0_uy = malloc( nnods * sizeof(int)); value_z0_uy = malloc( nnods * sizeof(double));
+	    index_z0_uz = malloc( nnods * sizeof(int)); value_z0_uz = malloc( nnods * sizeof(double));
+	    flag_pn=1;
+	  }
+	  break;
+	case 8:
+	  if(!strcmp(name,"Z1")){
+	    flag=flag|(1<<8);
+	    index_z1_ux = malloc( nnods * sizeof(int)); value_z1_ux = malloc( nnods * sizeof(double));
+	    index_z1_uy = malloc( nnods * sizeof(int)); value_z1_uy = malloc( nnods * sizeof(double));
+	    index_z1_uz = malloc( nnods * sizeof(int)); value_z1_uz = malloc( nnods * sizeof(double));
+	    flag_pn=1;
+	  }
+	  break;
+	default:
+	  break;
+      }
+      pn=pn->next;
+    }
+    i++;
+  }
+  if(flag != 511)SETERRQ(MICRO_COMM,1, "MICRO:One entity not found P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1.");
+  return 0;
+}
+/****************************************************************************************************/

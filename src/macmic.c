@@ -30,9 +30,7 @@ int MacMicInitGaussStructure(int *eptr, int nelm)
 
   return 0;
 }
-
 /****************************************************************************************************/
-
 int MacMicParseScheme( char *input )
 {
 
