@@ -11,7 +11,6 @@
 
 typedef struct mac_boundary_t_{
 
-  char     *name;
   int      kind;
   int      order;
   int      nfx;
@@ -40,20 +39,20 @@ typedef struct mac_boundary_t_{
 
 typedef struct mic_boundary_t_{
 
-  char     *name;
-  int      GmshID;
+  void * voidv;
 
 }mic_boundary_t;
 
 /* 
    All we want to know about a generic boundary is its 
-   Gmsh Id and the nodes that it has
+   GmshId, name and the nodes that it has
 */
 typedef struct boundary_t_{
 
-  int GmshID;
-  list_t Nods;
-  void *bvoid;  //this can be <mac_boundary_t> or <mic_boundary_t>
+  char    *name;
+  int     GmshID;
+  list_t  Nods;
+  void    *bvoid;  //this can be <mac_boundary_t> or <mic_boundary_t>
 
 }boundary_t;
 
