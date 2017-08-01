@@ -150,6 +150,7 @@ int MacroParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
   mac_boundary_t mac_boundary;
   boundary_t boundary;
   list_init(&boundary_list, sizeof(boundary_t), cmpfunc_mac_bou);
+  list_init(&boundary.Nods, sizeof(int), cmpfunc_for_list);
 
   while(fgets(buf,NBUF,file) != NULL)
   {
