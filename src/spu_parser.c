@@ -14,105 +14,26 @@
      }}
 
 
-int spu_parse_mesh( char * input )
-{
-
-  /*
-   *   Parse the mesh name from input file
-   * 
-   *   returns: 0 success
-   *   -1 failed
-   *   1 not found 
-   *   
-   *   Searchs for keywords:
-   *   
-   *   $mesh
-   *   mesh <mesh_file>
-   *   $end_mesh
-   * 
-   */
-
-  FILE * file = fopen(input,"r");
-  char   buf[NBUF];
-  char * data;
-  int    ln;
-
-  if(!file){
-    return 1;
-  }
-
-  ln = 0;
-  while(fgets(buf,NBUF,file) != NULL)
-  {
-
-    ln ++;
-    data = strtok(buf," \n");
-    if(data){
-      if(!strcmp(data,"$mesh")){
-
-	if(fgets(buf,NBUF,file) == NULL){
-	  printf("mesh section incomplete at line %d\n",ln);
-	  printf("mesh keyword expected at line %d\n",ln);
-	  return -1;
-	}
-	ln ++;
-	data = strtok(buf," \n");
-	if(strcmp(data,"mesh")){
-	  printf("mesh keyword expected at line %d\n",ln);
-	  return -1;
-	}
-	data = strtok(NULL," \n");
-	strcpy(mesh_n,data);
-
-	if(fgets(buf,NBUF,file) == NULL){ 
-	  printf("mesh section incomplete at line %d\n",ln);
-	  printf("$end_mesh keyword expected at line %d\n",ln);
-	  return -1;
-	}
-	data = strtok(buf," \n");
-	if(!strcmp(data,"$end_mesh")){
-	  return 0;
-	}
-	return -1; //no se encontro $end_mesh
-
-      } // inside $mesh
-    }
-  }
-  return 1;
-}
-
-/****************************************************************************************************/
-
 int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 {
-
   /*
-   * Parse the materials of the problem
-   * 
-   *    returns: 0 success
-   *            -1 failed
-   *             1 not found 
-   *    
-   *    Searchs for keywords:
-   *    
-   *    $materials
-   *    <PhysicalName> <TYPEXX> <options>
-   *    IRON TYPE00 E=1.0e6 v=1.0e6
-   *    $end_materials
-   * 
+     Parse the materials of the problem
+
+     Searchs for keywords:
+
+     $materials
+     <PhysicalName> <TYPEXX> <options>
+     IRON TYPE00 E=1.0e6 v=1.0e6
+     $end_materials
    */
 
-  FILE   *file = fopen(input,"r");
+  FILE   *file = fopen(input,"r"); if(!file) return 1;
   char   buf[NBUF];
   char   *data;
   int    ln = 0;
   int    flag_start_material = 0;
 
   material_t material;
-
-  if(!file){
-    return 1;
-  }
 
   list_init(&material_list, sizeof(material_t), NULL); 
 
@@ -200,7 +121,6 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 
 int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
 {
-
   /* 
    * Info:   Reads the physical entities from the GMSH file
    *         and save them on <physical_list>
@@ -212,7 +132,6 @@ int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
    * list_t   physical_list : physical entities list
    *
    */
-
   FILE                 *fm;
 
   int                  i, ntot; 
@@ -293,67 +212,61 @@ int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n )
   }
   return 0;
 }
-
 /****************************************************************************************************/
-
 int SetGmshIDOnMaterialsAndBoundaries(MPI_Comm PROBLEM_COMM)
 {
-
-  /* For each material on <material_list> 
-   * Searchs for the <GmshID> in the 
-   * <physical_list>
+  /* 
+     For each material on <material_list> 
+     Searchs for the <GmshID> in the 
+     <physical_list>
    */
+  node_list_t *pm, *pp;
 
-   node_list_t *pm, *pp;
+  pm = material_list.head;
+  while(pm){
+    pp = physical_list.head;
+    while(pp){
+      if( !strcmp( ((physical_t*)pp->data)->name, ((material_t*)pm->data)->name ) ){
+	((material_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
+	break;
+      }
+      pp = pp->next;
+    }
 
-   pm = material_list.head;
-   while(pm){
-     pp = physical_list.head;
-     while(pp){
-       if( !strcmp( ((physical_t*)pp->data)->name, ((material_t*)pm->data)->name ) ){
-	 ((material_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
-	 break;
-       }
-       pp = pp->next;
-     }
+    if(!pp){SETERRQ1(PETSC_COMM_SELF,1,"Material %s not found in Gmsh File.",((material_t*)pm->data)->name);}
 
-     if(!pp){SETERRQ1(PETSC_COMM_SELF,1,"Material %s not found in Gmsh File.",((material_t*)pm->data)->name);}
+    ((physical_t*)pp->data)->FlagFound = 1;
+    pm = pm->next;
+  }
 
-     ((physical_t*)pp->data)->FlagFound = 1;
-     pm = pm->next;
-   }
+  pm = boundary_list.head;
+  while(pm){
+    pp = physical_list.head;
+    while(pp){
+      if( !strcmp( ((physical_t*)pp->data)->name, ((boundary_t*)pm->data)->name ) ){
+	((boundary_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
+	break;
+      }
+      pp = pp->next;
+    }
+    if(!pp){ 
+      SETERRQ1(PETSC_COMM_SELF,1,"Boundary %s not found in Gmsh File.",((boundary_t*)pm->data)->name);
+    }
+    ((physical_t*)pp->data)->FlagFound = 1;
+    pm = pm->next;
+  }
 
-   pm = boundary_list.head;
-   while(pm){
-     pp = physical_list.head;
-     while(pp){
-       if( !strcmp( ((physical_t*)pp->data)->name, ((boundary_t*)pm->data)->name ) ){
-	 ((boundary_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
-	 break;
-       }
-       pp = pp->next;
-     }
-     if(!pp){ 
-       SETERRQ1(PETSC_COMM_SELF,1,"Boundary %s not found in Gmsh File.",((boundary_t*)pm->data)->name);
-     }
-     ((physical_t*)pp->data)->FlagFound = 1;
-     pm = pm->next;
-   }
-
-   /* Check Physical not found a print a warning */
-   pp = physical_list.head;
-   while(pp)
-   {
-     if( !((physical_t*)pp->data)->FlagFound ){PetscPrintf(PROBLEM_COMM,
-       "WARNING:Physical %s not found on input file.\n",((physical_t*)pp->data)->name);}
-     pp = pp->next;
-   }
-
+  /* Check Physical not found a print a warning */
+  pp = physical_list.head;
+  while(pp)
+  {
+    if( !((physical_t*)pp->data)->FlagFound ){PetscPrintf(PROBLEM_COMM,
+	"WARNING:Physical %s not found on input file.\n",((physical_t*)pp->data)->name);}
+    pp = pp->next;
+  }
   return 0;
 }
-
 /****************************************************************************************************/
-
 int CheckPhysicalID(void)
 {
 
@@ -381,32 +294,23 @@ int CheckPhysicalID(void)
 
 int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 {
-
   /*
-   * Parse the boundary of the problem
-   * 
-   *    returns: 0 success
-   *             1 failed
-   *    
-   *    Searchs for keywords:
-   *    
-   *    $Boundary
-   *    <name1> <order> <kind> <fnumx> <fnumy> <fnumz>
-   *    <name2> <order> <kind> <fnumx> <fnumy> <fnumz>
-   *    ...
-   *    $EndBoundary
-   * 
+     Parse the boundary of the problem
+
+     Searchs for keywords>
+
+     $Boundary
+     <name1> <order> <kind> <fnumx> <fnumy> <fnumz>
+     <name2> <order> <kind> <fnumx> <fnumy> <fnumz>
+     ...
+     $EndBoundary
    */
 
-  FILE   *file = fopen(input,"r");
+  FILE   *file = fopen(input,"r"); if(!file)return 1;
   char   buf[NBUF];
   char   *data;
   int    ln = 0;
   int    flag_start_boundary = 0;
-
-  if(!file){
-    return 1;
-  }
 
   boundary_t boundary;
   list_init(&boundary_list, sizeof(boundary_t), cmpfuncBou);
@@ -469,39 +373,28 @@ int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 //  printf("SpuParseBoundary: Any boundary found on input file\n");
   return 1;
 }
-
 /****************************************************************************************************/
-
 int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
 {
-
   /*
-   * Parse the functions of the problem
-   * 
-   *    returns: 0 success
-   *             1 failed
-   *    
-   *    Searchs for keywords:
-   *    
-   *    $Function
-   *    <fnum> <inter> <n>
-   *    x1 y1
-   *    x2 y2
-   *    ...
-   *    xn yn
-   *    $EndFunction
-   * 
+     Parse the functions of the problem
+     
+     Searchs for keywords>
+
+     $Function
+     <fnum> <inter> <n>
+     x1 y1
+     x2 y2
+     ...
+     xn yn
+     $EndFunction
    */
 
-  FILE   *file = fopen(input,"r");
+  FILE   *file = fopen(input,"r"); if(!file) return 1;
   char   buf[NBUF];
   char   *data;
   int    ln = 0, n;
   int    flag_start_function = 0;
-
-  if(!file){
-    return 1;
-  }
 
   f1d_t f1d;
   list_init(&function_list, sizeof(f1d_t), NULL);
@@ -561,21 +454,16 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
 //  PetscPrintf(*PROBLEM_COMM, "# of functions found in %s : %d\n", input, function_list.sizelist);
   return 0;
 }
-
 /****************************************************************************************************/
-
 int cmpfuncBou (void * a, void * b)
 {
   return ( ((boundary_t *)a)->order - ((boundary_t *)b)->order );
 }
-
 /****************************************************************************************************/
-
 int StrBin2Dec(char *str)
 {
-
   /* Converts the string in "str" that suppose to have a continuue
-   * sequence of "0" and "1" to its decimal representation.
+     sequence of "0" and "1" to its decimal representation.
    */
 
   int i;
@@ -591,3 +479,71 @@ int StrBin2Dec(char *str)
   }
   return dec;
 }
+/****************************************************************************************************/
+int spu_parse_mesh( char * input )
+{
+
+  /*
+   *   Parse the mesh name from input file
+   * 
+   *   returns: 0 success
+   *   -1 failed
+   *   1 not found 
+   *   
+   *   Searchs for keywords:
+   *   
+   *   $mesh
+   *   mesh <mesh_file>
+   *   $end_mesh
+   * 
+   */
+
+  FILE * file = fopen(input,"r");
+  char   buf[NBUF];
+  char * data;
+  int    ln;
+
+  if(!file){
+    return 1;
+  }
+
+  ln = 0;
+  while(fgets(buf,NBUF,file) != NULL)
+  {
+
+    ln ++;
+    data = strtok(buf," \n");
+    if(data){
+      if(!strcmp(data,"$mesh")){
+
+	if(fgets(buf,NBUF,file) == NULL){
+	  printf("mesh section incomplete at line %d\n",ln);
+	  printf("mesh keyword expected at line %d\n",ln);
+	  return -1;
+	}
+	ln ++;
+	data = strtok(buf," \n");
+	if(strcmp(data,"mesh")){
+	  printf("mesh keyword expected at line %d\n",ln);
+	  return -1;
+	}
+	data = strtok(NULL," \n");
+	strcpy(mesh_n,data);
+
+	if(fgets(buf,NBUF,file) == NULL){ 
+	  printf("mesh section incomplete at line %d\n",ln);
+	  printf("$end_mesh keyword expected at line %d\n",ln);
+	  return -1;
+	}
+	data = strtok(buf," \n");
+	if(!strcmp(data,"$end_mesh")){
+	  return 0;
+	}
+	return -1; //no se encontro $end_mesh
+
+      } // inside $mesh
+    }
+  }
+  return 1;
+}
+/****************************************************************************************************/

@@ -717,8 +717,8 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
       if(!p){SETERRQ2(PROBLEM_COMM,1,
 	  "A boundary node (%d) seems now to not belong to this process (rank:%d)",NodeOrig,rank);}
 
-      NodeLocal  = p - MyNodOrig;        // Local numeracion
-      NodeGlobal = loc2petsc[NodeLocal]; // PETSc numeracion
+      NodeLocal  = p - MyNodOrig;        // Local numeration
+      NodeGlobal = loc2petsc[NodeLocal]; // PETSc numeration
 
       for(d=0;d<3;d++)
       {
