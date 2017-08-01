@@ -23,6 +23,7 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
      Terminamos de leer el archivo ahora quitamos 
      los repetidos en order decendente 
    */
+  int i, j, h, k;
   node_list_t  *nbb, *nba, *nnb, *nna;
 
   for(i=boundary_list->sizelist;i>0;i--){
@@ -118,8 +119,8 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
     list_clear(&(((boundary_t *)pBound->data)->Nods)); 
 
     /* completamos el <bvoid> */
-    ((boundary_t *)pBound->data)->bvoid = malloc(sizeof(mac_coundary_t));
-    memcpy(((boundary_t *)pBound->data)->bvoid, &mac_boundary, sizeof(mac_coundary_t)); 
+    ((boundary_t *)pBound->data)->bvoid = malloc(sizeof(mac_boundary_t));
+    memcpy(((boundary_t *)pBound->data)->bvoid, &mac_boundary, sizeof(mac_boundary_t)); 
 
     pBound = pBound->next;
   }
@@ -148,7 +149,7 @@ int MacroParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 
   mac_boundary_t mac_boundary;
   boundary_t boundary;
-  list_init(&boundary_list, sizeof(boundary_t), cmp_mac_bou);
+  list_init(&boundary_list, sizeof(boundary_t), cmpfunc_mac_bou);
 
   while(fgets(buf,NBUF,file) != NULL)
   {
@@ -166,7 +167,7 @@ int MacroParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 	  // <name>
 	  data = strtok(buf," \n"); 
 	  if(!strcmp(data,"$EndBoundary")) break;
-	  mac_boundary.name = strdup(data);
+	  boundary.name = strdup(data);
 
 	  // <order> 
 	  data = strtok(NULL," \n"); 
@@ -194,14 +195,14 @@ int MacroParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
 	  mac_boundary.fz = GetFunctionPointer(&function_list,mac_boundary.nfz);
 
 	  // si llegamos hasta acá esta todo 0K lo insertamos en la lista 
-	  boundary.bvoid = malloc(sizeof(mac_boundary_t);
+	  boundary.bvoid = malloc(sizeof(mac_boundary_t));
 	  memcpy(boundary.bvoid,&mac_boundary,sizeof(mac_boundary_t));
 	  list_insert_se(&boundary_list, &boundary);
 	}
       } // inside $Boundary
 
       if(!strcmp(data,"$EndBoundary")){
-	//      CHECK_INPUT_ERROR(flag_start_boundary);
+	CHKERRQ(!flag_start_boundary);
 	//      PetscPrintf(*PROBLEM_COMM, "# of boundaries found in %s : %d\n", input, boundary_list.sizelist);
 	return 0;
       }
@@ -231,9 +232,9 @@ int MacroSetDisplacementOnBoundary( double time, Vec *x )
    */
 
   int    i, d, numnodes, kind;
-  int    *pToDirIndeces, *pToNeuIndeces;
-  int    NDirIndeces, NNeuIndeces;
-  int    *pToIndeces;
+  int    *pToDirIndeces;// *pToNeuIndeces;
+  int    NDirIndeces;// NNeuIndeces;
+//  int    *pToIndeces;
   double *pToDirValues, *pToNeuValues;
   double ValueToSet;
   int    ierr;
@@ -254,8 +255,8 @@ int MacroSetDisplacementOnBoundary( double time, Vec *x )
     NNeuPerNode   = mac_boundary->NNeuPerNode;
     pToDirIndeces = mac_boundary->DirichletIndeces;
     NDirIndeces   = mac_boundary->NDirIndeces;
-    pToNeuIndeces = mac_boundary->NeumannIndeces;
-    NNeuIndeces   = mac_boundary->NNeuIndeces;
+//    pToNeuIndeces = mac_boundary->NeumannIndeces;
+//    NNeuIndeces   = mac_boundary->NNeuIndeces;
     kind          = mac_boundary->kind;
     pToDirValues  = mac_boundary->DirichletValues;
     pToNeuValues  = mac_boundary->NeumannValues;
@@ -312,7 +313,6 @@ int MacroSetBoundaryOnJacobian( Mat *J )
      on the rest of the row and column 
   */
 
-  int    i;
   int    *pToDirIndeces;
   int    NDirIndeces;
   int    ierr;
