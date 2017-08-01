@@ -48,7 +48,6 @@ DEP_DIRS= ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
 SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o     \
            $(SPU_OBJ_DIR)/spu_time.o     \
            $(SPU_OBJ_DIR)/spu_parser.o   \
-           $(SPU_OBJ_DIR)/spu_boundary.o \
            $(SPU_OBJ_DIR)/spu_vtk.o      \
            $(SPU_OBJ_DIR)/spu_assembly.o \
            $(SPU_OBJ_DIR)/macmic.o    
