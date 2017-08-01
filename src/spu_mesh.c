@@ -421,39 +421,27 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
 
   return 0;
 }
-
 /****************************************************************************************************/
-
 int CSR_give_pointer( int e, int *npe, int *eind, int *p)
 {
   /*
-   * returns the position "p" inside "eind" of element "e"
-   *
+     Returns the position "p" inside "eind" of element "e"
+    
    */
-
   int m;
   *p = 0;
   for(m=0;m<e;m++){
     *p += npe[m];
   }
-
   return 0;
 }
-
 /****************************************************************************************************/
-
 int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 {
 
   /*
-   *
-   *  Reads the mesh according to the format specified
-   *  and performs the partition if it is required
-   *
-   *  returns: 0 success
-   *  1 not found
-   *  -1 failed
-   *
+     Reads the mesh according to the format specified
+     and performs the partition if it is required
    */
 
   if(strcmp(mesh_f,"gmsh") == 0){
@@ -462,41 +450,36 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
     return 1;
   }
 }
-
 /****************************************************************************************************/
-
-int SpuReadBoundary(MPI_Comm PROBLEM_COMM, char *mesh_n, char *mesh_f, FILE *outfile)
+int SpuReadBoundary(MPI_Comm PROBLEM_COMM, char *mesh_n, char *mesh_f, list_t *bound_list, list_t *bound_list_aux)
 {
 
   /*
-   *  Read boundary nodes and completes the structure <boundary>
-   *
-   *  returns: 0 success
-   *  1 not found
-   *  -1 failed
-   *
+     Read boundary nodes and completes the structure <boundary>
    */
 
   if(strcmp(mesh_f,"gmsh") == 0){
-    return SpuReadBoundaryGmsh(PROBLEM_COMM, mesh_n, outfile);
+    return SpuReadBoundaryGmsh(PROBLEM_COMM, mesh_n, bound_list, bound_list_aux);
   }else{
     return 1;
   }
 }
-
 /****************************************************************************************************/
-
-int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
+int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, list_t *boundary_list, list_t *AuxBoundaryList)
 {
 
   /* 
-     Info >   Reads the nodes of the boundary and save them on <boundary_list>
+     Info >   Completes the <boundary_list_aux> list with the list of
+     nodes on the boundary that appears on <boundary_list>
+     With that list of nodes the user should take the desition of how
+     he is going to apply the boundary conditions
 
      Input> 
-     char      mesh_n     > file name with path
+     char      mesh_n         > file name with path
+     list_t    *boundary_list > list of boundaries to search in mesh file
 
      Output>
-     boundary_list->nodes > list that store <boundary_t> elements
+     list_t *AuxBoundaryList  > list with the nods (same length as <boundary_list>)
 
      1) We determine which elements that follow $Elements are surface elements
      we look if one of it nodes belongs to <MyNodOrig> if the answer is YES 
@@ -518,7 +501,6 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
   int    total;
   int    i, j, h, k, d, n; 
   int    ln;                // line counter
-  int    ierr;
   int    ntag;              // ntag to read gmsh element conectivities
   int    GmshIDToSearch; 
   int    NodeToSearch; 
@@ -529,38 +511,27 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
   char   buf[NBUF];   
   char   *data;
 
-  typedef struct AuxBoundary_t_{
-
-    int GmshID;
-    list_t Nods;
-
-  }AuxBoundary_t;
   AuxBoundary_t AuxBoundary;
 
-  list_t AuxBoundaryList;
-  list_init(&AuxBoundaryList,sizeof(AuxBoundary_t), NULL);
+  list_init(AuxBoundaryList,sizeof(AuxBoundary_t), NULL);
 
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
  
   node_list_t  *pBound, *pAuxBound;
-  pBound = boundary_list.head;
-  pAuxBound = AuxBoundaryList.head;
+  pBound = boundary_list->head;
+  pAuxBound = AuxBoundaryList->head;
   while(pBound){
     // asignamos el GmshID the cada boundary 
     AuxBoundary.GmshID = ((boundary_t*)pBound->data)->GmshID;
     // inicializamos la lista de nodos adentro de cada <PhysicalBound>
     list_init(&AuxBoundary.Nods,sizeof(int), cmpfunc_for_list);
     // insertamos en el mismo orden dentro de <AuxBoundarylist>
-    list_insertlast(&AuxBoundaryList,&AuxBoundary);
+    list_insertlast(AuxBoundaryList,&AuxBoundary);
     pBound=pBound->next;
   }
 
-  fm = fopen(mesh_n,"r");
-  if(!fm){
-    ierr = PetscPrintf(PROBLEM_COMM,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
-    return 1;
-  }
+  fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
   //
   // Ahora hay que completar la lista <Nods>
   //
@@ -599,7 +570,7 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
 	  GmshIDToSearch = atoi(data);
 
 	  // search in <AuxBoundaryList> the element with the same <GmshIDToSearch>
-	  pAuxBound = AuxBoundaryList.head;
+	  pAuxBound = AuxBoundaryList->head;
 	  while(pAuxBound){
 	    if( ((AuxBoundary_t *)pAuxBound->data)->GmshID == GmshIDToSearch ) break;
 	    pAuxBound = pAuxBound->next;
@@ -648,12 +619,12 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
    */
   node_list_t  *nbb, *nba, *nnb, *nna;
 
-  for(i=AuxBoundaryList.sizelist;i>0;i--){
-    nbb=AuxBoundaryList.head;
+  for(i=AuxBoundaryList->sizelist;i>0;i--){
+    nbb=AuxBoundaryList->head;
     for(j=0;j<i-1;j++){
       nbb=nbb->next;
     }
-    nba=AuxBoundaryList.head;
+    nba=AuxBoundaryList->head;
     for(j=0;j<i-1;j++){
       nna=((AuxBoundary_t*)nba->data)->Nods.head;
       for(h=0;h<((AuxBoundary_t*)nba->data)->Nods.sizelist;h++){
@@ -673,102 +644,30 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, FILE *outfile)
     }
   }
 
-  // ahora metemos los nodos de las listas en la estructura posta <boundary_list>
-  int NodeOrig, NodeLocal, NodeGlobal, numnodes, kind, NDirPerNode= -1, NNeuPerNode = -1;
-  int DirCount, NeuCount, *p;
 
-  pBound = boundary_list.head;
-  pAuxBound = AuxBoundaryList.head;
-  while(pBound)
-  {
-    /* 
-       asignamos el NNods, allocamos memory y guardamos los nods 
-       (ya van a estar ordenados y sin repetir)
-     */
-    numnodes = ((AuxBoundary_t *)pAuxBound->data)->Nods.sizelist;
-    kind     = ((boundary_t *)pBound->data)->kind;
-
-    if(kind==0)                  { NDirPerNode = 0; NNeuPerNode = 3;}
-    if(kind==1||kind==2||kind==4){ NDirPerNode = 1; NNeuPerNode = 2;}
-    if(kind==3||kind==5||kind==6){ NDirPerNode = 2; NNeuPerNode = 1;}
-    if(kind==7)                  { NDirPerNode = 3; NNeuPerNode = 0;}
-
-    ((boundary_t*)pBound->data)->NNods             = numnodes;
-    ((boundary_t*)pBound->data)->Nods              = malloc( numnodes * sizeof(int) );
-    ((boundary_t*)pBound->data)->indeces           = malloc( numnodes * 3 * sizeof(int) );
-    ((boundary_t*)pBound->data)->values            = malloc( numnodes * 3 * sizeof(double) );
-    ((boundary_t*)pBound->data)->NDirPerNode       = NDirPerNode;
-    ((boundary_t*)pBound->data)->NNeuPerNode       = NNeuPerNode;
-    ((boundary_t*)pBound->data)->NDirIndeces       = numnodes * NDirPerNode;
-    ((boundary_t*)pBound->data)->DirichletIndeces  = malloc( numnodes * NDirPerNode * sizeof(int) );
-    ((boundary_t*)pBound->data)->DirichletValues   = malloc( numnodes * NDirPerNode * sizeof(double) );
-    ((boundary_t*)pBound->data)->NNeuIndeces       = numnodes * NNeuPerNode;
-    ((boundary_t*)pBound->data)->NeumannIndeces    = malloc( numnodes * NNeuPerNode * sizeof(int) );
-    ((boundary_t*)pBound->data)->NeumannValues     = malloc( numnodes * NNeuPerNode * sizeof(double) );
-
-    n=0; DirCount = 0; NeuCount = 0;
-    while(n<numnodes)
-    {
-      /* we set the Original node numeration first */
-      NodeOrig = *(int*)(((AuxBoundary_t *)pAuxBound->data)->Nods.head->data); 
-      ((boundary_t*)pBound->data)->Nods[n] = NodeOrig;
-
-      p = bsearch(&NodeOrig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); 
-      if(!p){SETERRQ2(PROBLEM_COMM,1,
-	  "A boundary node (%d) seems now to not belong to this process (rank:%d)",NodeOrig,rank);}
-
-      NodeLocal  = p - MyNodOrig;        // Local numeration
-      NodeGlobal = loc2petsc[NodeLocal]; // PETSc numeration
-
-      for(d=0;d<3;d++)
-      {
-	if( (kind & (1<<d)) == (1<<d) ){
-	  /* Dirichlet */
-	  ((boundary_t*)pBound->data)->DirichletIndeces[DirCount] = NodeGlobal*3 + d; DirCount++;
-	}
-	else{
-	  /* Neumann */
-	  ((boundary_t*)pBound->data)->NeumannIndeces[NeuCount]   = NodeGlobal*3 + d; NeuCount++;
-	}
-      }
-
-      n++;
-      list_delfirst( &(((AuxBoundary_t *)pAuxBound->data)->Nods) ) ;
-    }
-
-    if(((AuxBoundary_t *)pAuxBound->data)->Nods.head)
-      SETERRQ(PROBLEM_COMM,1,"It's seems that there some more nodes in the list.");
-
-    list_clear(&(((AuxBoundary_t *)pAuxBound->data)->Nods));
-    pBound = pBound->next;	pAuxBound = pAuxBound->next;
-  }
-  list_clear(&AuxBoundaryList);
-
-  if(outfile!=NULL){
-    // queremos escribir algo
-    if(rank==0){
-      fprintf(outfile,"boundary_list\n");
-      pBound = boundary_list.head;
-      while(pBound){
-	fprintf(outfile,"name: %-8s NNod: %6d\n",
-	    ((boundary_t*)pBound->data)->name,((boundary_t*)pBound->data)->NNods);
-	for(i=0;i<((boundary_t*)pBound->data)->NNods;i++){
-	  fprintf(outfile,"%6d ", ((boundary_t*)pBound->data)->Nods[i]);
-	}
-	fprintf(outfile,"\n");
-	pBound=pBound->next;
-      }
-    }
-  }
+//  if(outfile!=NULL){
+//    // queremos escribir algo
+//    if(rank==0){
+//      fprintf(outfile,"boundary_list\n");
+//      pBound = boundary_list.head;
+//      while(pBound){
+//	fprintf(outfile,"name: %-8s NNod: %6d\n",
+//	    ((boundary_t*)pBound->data)->name,((boundary_t*)pBound->data)->NNods);
+//	for(i=0;i<((boundary_t*)pBound->data)->NNods;i++){
+//	  fprintf(outfile,"%6d ", ((boundary_t*)pBound->data)->Nods[i]);
+//	}
+//	fprintf(outfile,"\n");
+//	pBound=pBound->next;
+//      }
+//    }
+//  }
   //
   /**************************************************/
   return 0;   
 }
 /****************************************************************************************************/
-
 int GmshNodesPerElement(int code)
 {
-    
     switch(code){
 	case 1:  
 	    return 2; 
@@ -788,17 +687,12 @@ int GmshNodesPerElement(int code)
 	    return -1;
     }
 }
-
 /****************************************************************************************************/
-
 int GmshIsAsurfaceElement(int code)
 {
   return (code == 2 || code == 3 || code == 15) ? 1 : 0;
 }
-
-
 /****************************************************************************************************/
-
 int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
 {
 
