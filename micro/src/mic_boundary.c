@@ -43,10 +43,10 @@ int MicroCreateBoundary(list_t *boundary_list)
       default:
 	break;
     }
-    list_insert_se(boundary_list, &boundary);
+    list_insertlast(boundary_list, &boundary);
     i++;
   }
-  return 1;
+  return 0;
 }
 /****************************************************************************************************/
 int MicroSetDisplacementOnBoundary( int dir, double strain_dir, double LX, double LY, double LZ, Vec *x )
