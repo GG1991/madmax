@@ -14,39 +14,35 @@ int MicroCreateBoundary(list_t *boundary_list)
      Creates the boundary list with names
      P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1 
    */
-
   int i = 0;
-  list_init(boundary_list, sizeof(boundary_t), NULL);
-
   boundary_t boundary;
-  mic_boundary_t mic_boundary;
 
+  list_init(boundary_list, sizeof(boundary_t), NULL);
   list_init(&boundary.Nods,sizeof(int), cmpfunc_for_list);
   while(i<9)
   {
     switch(i){
       case 0:
-	mic_boundary.name = strdup("P000");break;
+	boundary.name = strdup("P000");break;
       case 1:
-	mic_boundary.name = strdup("P100");break;
+	boundary.name = strdup("P100");break;
       case 2:
-	mic_boundary.name = strdup("P010");break;
+	boundary.name = strdup("P010");break;
       case 3:
-	mic_boundary.name = strdup("X0")  ;break;
+	boundary.name = strdup("X0")  ;break;
       case 4:
-	mic_boundary.name = strdup("X1")  ;break;
+	boundary.name = strdup("X1")  ;break;
       case 5:
-	mic_boundary.name = strdup("Y0")  ;break;
+	boundary.name = strdup("Y0")  ;break;
       case 6:
-	mic_boundary.name = strdup("Y1")  ;break;
+	boundary.name = strdup("Y1")  ;break;
       case 7:
-	mic_boundary.name = strdup("Z0")  ;break;
+	boundary.name = strdup("Z0")  ;break;
       case 8:
-	mic_boundary.name = strdup("Z1")  ;break;
+	boundary.name = strdup("Z1")  ;break;
       default:
 	break;
     }
-    memcpy(boundary.bvoid, (void *)&mic_boundary, sizeof(mic_boundary_t));
     list_insertlast(boundary_list, &boundary);
     i++;
   }
