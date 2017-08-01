@@ -7,7 +7,7 @@
 
 #include "macro.h"
 
-int MacroFillBoundary(MPI_Comm PROBLEM_COMM)
+int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 {
   /* 
      Here we fill the <boundary_list> structure acording to our problem 
@@ -25,12 +25,12 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM)
    */
   node_list_t  *nbb, *nba, *nnb, *nna;
 
-  for(i=boundary_list.sizelist;i>0;i--){
-    nbb=boundary_list.head;
+  for(i=boundary_list->sizelist;i>0;i--){
+    nbb=boundary_list->head;
     for(j=0;j<i-1;j++){
       nbb=nbb->next;
     }
-    nba=boundary_list.head;
+    nba=boundary_list->head;
     for(j=0;j<i-1;j++){
       nna=((boundary_t*)nba->data)->Nods.head;
       for(h=0;h<((boundary_t*)nba->data)->Nods.sizelist;h++){
@@ -56,7 +56,7 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM)
 
   mac_boundary_t *mac_boundary;
 
-  node_list_t *pBound = boundary_list.head;
+  node_list_t *pBound = boundary_list->head;
   while(pBound)
   {
     /* 
