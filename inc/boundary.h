@@ -9,7 +9,7 @@
 #ifndef _BOUNDARYH_
 #define _BOUNDARYH_
 
-typedef struct boundary_t_{
+typedef struct mac_boundary_t_{
 
   char     *name;
   int      kind;
@@ -36,16 +36,28 @@ typedef struct boundary_t_{
   double   *DirichletValues; 
   double   *NeumannValues;
 
-}boundary_t;
+}mac_boundary_t;
 
-typedef struct AuxBoundary_t_{
+typedef struct mic_boundary_t_{
+
+  char     *name;
+  int      GmshID;
+
+}mic_boundary_t;
+
+/* 
+   All we want to know about a generic boundary is its 
+   Gmsh Id and the nodes that it has
+*/
+typedef struct boundary_t_{
 
   int GmshID;
   list_t Nods;
+  void *bvoid;  //this can be <mac_boundary_t> or <mic_boundary_t>
 
-}AuxBoundary_t;
+}boundary_t;
 
-list_t boundary_list;
-list_t boundary_list_aux;
+list_t boundary_list;      // it is used to store things particular for each problem
+list_t boundary_list_aux;  // it is used to store (boundary_aux_t > list of nodes only)
 
 #endif
