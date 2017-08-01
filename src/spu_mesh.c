@@ -451,7 +451,7 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
   }
 }
 /****************************************************************************************************/
-int SpuReadBoundary(MPI_Comm PROBLEM_COMM, char *mesh_n, char *mesh_f, list_t *bound_list, list_t *bound_list_aux)
+int SpuReadBoundary(MPI_Comm PROBLEM_COMM, int id, char *mesh_n, char *mesh_f)
 {
 
   /*
@@ -459,41 +459,38 @@ int SpuReadBoundary(MPI_Comm PROBLEM_COMM, char *mesh_n, char *mesh_f, list_t *b
    */
 
   if(strcmp(mesh_f,"gmsh") == 0){
-    return SpuReadBoundaryGmsh(PROBLEM_COMM, mesh_n, bound_list, bound_list_aux);
+    return SpuReadBoundaryGmsh(PROBLEM_COMM, id, mesh_n);
   }else{
     return 1;
   }
 }
 /****************************************************************************************************/
-int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, list_t *boundary_list, list_t *AuxBoundaryList)
+int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n)
 {
 
   /* 
-     Info >   Completes the <boundary_list_aux> list with the list of
-     nodes on the boundary that appears on <boundary_list>
-     With that list of nodes the user should take the desition of how
-     he is going to apply the boundary conditions
+     Completes the <boundary.Nods> list with the list of
+     nodes on the boundary that has <boundary.GmshID>
 
      Input> 
-     char      mesh_n         > file name with path
-     list_t    *boundary_list > list of boundaries to search in mesh file
+     char      mesh_n           > file name with path
+     list_t    boundary.GmshID  > list of boundaries to search in mesh file
 
-     Output>
-     list_t *AuxBoundaryList  > list with the nods (same length as <boundary_list>)
+     Output> 
+     list_t    boundary.Nods  > list of boundaries to search in mesh file
 
      1) We determine which elements that follow $Elements are surface elements
      we look if one of it nodes belongs to <MyNodOrig> if the answer is YES 
      we add in sort exclusive way to an auxiliary list called 
-     <AuxBoundaryList> that stores <AuxBoundary_t> structures. The node is 
+     <boundary_list_aux> that stores <boundary_aux_t> structures. The node is 
      added to the correspondent GmshID of that surface element. If NO we 
      continue with the others.
 
      2) For each element in the list we allocate memory (<NNods>) and copy on
-     the array <Nods> the values saved on the <AuxBoundaryList> for the 
+     the array <Nods> the values saved on the <boundary.Nods> for the 
      correspondent <GmshID>
 
      Note> No MPI communicator is need here
-
    */
 
   FILE   *fm;
@@ -506,30 +503,11 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, list_t *boundary_li
   int    NodeToSearch; 
   int    *pNodeFound; 
   int    NPE;
-  int    rank, nproc;
 
   char   buf[NBUF];   
   char   *data;
 
-  AuxBoundary_t AuxBoundary;
-
-  list_init(AuxBoundaryList,sizeof(AuxBoundary_t), NULL);
-
-  MPI_Comm_size(PROBLEM_COMM, &nproc);
-  MPI_Comm_rank(PROBLEM_COMM, &rank);
- 
-  node_list_t  *pBound, *pAuxBound;
-  pBound = boundary_list->head;
-  pAuxBound = AuxBoundaryList->head;
-  while(pBound){
-    // asignamos el GmshID the cada boundary 
-    AuxBoundary.GmshID = ((boundary_t*)pBound->data)->GmshID;
-    // inicializamos la lista de nodos adentro de cada <PhysicalBound>
-    list_init(&AuxBoundary.Nods,sizeof(int), cmpfunc_for_list);
-    // insertamos en el mismo orden dentro de <AuxBoundarylist>
-    list_insertlast(AuxBoundaryList,&AuxBoundary);
-    pBound=pBound->next;
-  }
+  node_list_t  *pBound;
 
   fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
   //
@@ -569,14 +547,14 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, list_t *boundary_li
 	  data = strtok(NULL," \n");
 	  GmshIDToSearch = atoi(data);
 
-	  // search in <AuxBoundaryList> the element with the same <GmshIDToSearch>
-	  pAuxBound = AuxBoundaryList->head;
-	  while(pAuxBound){
-	    if( ((AuxBoundary_t *)pAuxBound->data)->GmshID == GmshIDToSearch ) break;
-	    pAuxBound = pAuxBound->next;
+	  // search in <boundary_list> the element with the same <GmshIDToSearch>
+	  pBound = boundary_list.head;
+	  while(pBound){
+	    if( ((boundary_t *)pBound->data)->GmshID == GmshIDToSearch ) break;
+	    pBound = pBound->next;
 	  }
 
-	  if(pAuxBound){
+	  if(pBound){
 	    // salteamos los tags y nos vamos derecho para los nodos
 	    d = 1;
 	    while(d<ntag){
@@ -589,7 +567,7 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, list_t *boundary_li
 	      NodeToSearch = atoi(data);
 	      pNodeFound = bsearch( &NodeToSearch, MyNodOrig, NMyNod, sizeof(int), cmpfunc);
 	      if(pNodeFound){
-		list_insert_se( &(((AuxBoundary_t*)pAuxBound->data)->Nods), pNodeFound);
+		list_insert_se( &(((boundary_t*)pBound->data)->Nods), pNodeFound);
 	      }
 	      n++;
 	    }
@@ -611,39 +589,6 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n, list_t *boundary_li
     ln ++;
   }
   fclose(fm);
-
-  /* 
-     Terminamos de leer el archivo ahora quitamos los repetidos en order decendente 
-     TODO> Evaluar la performance de esto y ver si
-     hay algo mejor (seguro hay con quick search + arrays)
-   */
-  node_list_t  *nbb, *nba, *nnb, *nna;
-
-  for(i=AuxBoundaryList->sizelist;i>0;i--){
-    nbb=AuxBoundaryList->head;
-    for(j=0;j<i-1;j++){
-      nbb=nbb->next;
-    }
-    nba=AuxBoundaryList->head;
-    for(j=0;j<i-1;j++){
-      nna=((AuxBoundary_t*)nba->data)->Nods.head;
-      for(h=0;h<((AuxBoundary_t*)nba->data)->Nods.sizelist;h++){
-	nnb=((AuxBoundary_t*)nbb->data)->Nods.head;
-	for(k=0;k<((AuxBoundary_t*)nbb->data)->Nods.sizelist;k++){
-	  if(*(int*)nnb->data==*(int*)nna->data){
-	    if(list_del(&((AuxBoundary_t*)nbb->data)->Nods,nnb)){
-	      return 1;
-	    }
-	    break;
-	  }
-	  nnb=nnb->next;
-	}
-	nna=nna->next;
-      }
-      nba=nba->next;
-    }
-  }
-
 
 //  if(outfile!=NULL){
 //    // queremos escribir algo
