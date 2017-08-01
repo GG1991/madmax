@@ -119,8 +119,8 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
     list_clear(&(((boundary_t *)pBound->data)->Nods)); 
 
     /* completamos el <bvoid> */
-    ((boundary_t *)pBound->data)->bvoid = malloc(sizeof(mac_boundary_t));
-    memcpy(((boundary_t *)pBound->data)->bvoid, &mac_boundary, sizeof(mac_boundary_t)); 
+    //    ((boundary_t *)pBound->data)->bvoid = malloc(sizeof(mac_boundary_t));
+    //    memcpy(((boundary_t *)pBound->data)->bvoid, &mac_boundary, sizeof(mac_boundary_t)); 
 
     pBound = pBound->next;
   }

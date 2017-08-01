@@ -19,7 +19,6 @@ typedef struct mac_boundary_t_{
   f1d_t    *fx; 
   f1d_t    *fy;
   f1d_t    *fz;
-  int      GmshID;
   int      NNods;
   int      *Nods;
 
