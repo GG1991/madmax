@@ -153,7 +153,7 @@ int MicroCheckPhysicalEntities( list_t *physical_list )
   return 0;
 }
 /****************************************************************************************************/
-int MicroCheckAndSetBoundary(list_t *boundary_list_aux, list_t *boundary_list)
+int MicroCheckAndSetBoundary(list_t *boundary_list)
 {
   /*
      Checks if "P000" "P100" "P010" "X0" "X1" "Y0" "Y1" "Z0" "Z1"
@@ -163,12 +163,12 @@ int MicroCheckAndSetBoundary(list_t *boundary_list_aux, list_t *boundary_list)
   char *name;
   while(i<9)
   {
-    node_list_t *pn = boundary_list->head, *pn_aux = boundary_list_aux->head;
+    node_list_t *pn = boundary_list->head;
     flag_pn=0;
     while(pn && !flag_pn)
     {
-      name = ((mic_boundary_t*)pn->data)->name;
-      nnods = ((mic_boundary_t*)pn_aux->data)->NNods;
+      name = ((boundary_t*)pn->data)->name;
+      nnods = ((boundary_t*)pn->data)->Nods.sizelist;
       switch(i){
 	case 0:
 	  if(!strcmp(name,"P000")){flag=flag|(1<<0);flag_pn=1;}break;
@@ -234,7 +234,6 @@ int MicroCheckAndSetBoundary(list_t *boundary_list_aux, list_t *boundary_list)
 	  break;
       }
       pn=pn->next;
-      pn_aux=pn_aux->next;
     }
     i++;
   }
