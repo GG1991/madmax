@@ -201,7 +201,7 @@ int main(int argc, char **argv)
   ierr = SetGmshIDOnMaterialsAndBoundaries(MICRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = SpuReadBoundary(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
-  ierr = MicroCheckAndSetBoundary( &boundary_list );CHKERRQ(ierr);
+  ierr = MicroSetBoundary(MICRO_COMM, &boundary_list );CHKERRQ(ierr);
   ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
 
   /*

@@ -153,22 +153,29 @@ int MicroCheckPhysicalEntities( list_t *physical_list )
   return 0;
 }
 /****************************************************************************************************/
-int MicroCheckAndSetBoundary(list_t *boundary_list)
+int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 {
   /*
      Checks if "P000" "P100" "P010" "X0" "X1" "Y0" "Y1" "Z0" "Z1"
      are define in the boundary_list
   */
-  int i = 0, flag = 0, flag_pn = 0, nnods = 0;
+  int i = 0, n = -1, *p, flag = 0, flag_pn = 0, nnods = 0;
+  int node_petsc, node_orig, *px, *py, *pz;
   char *name;
+  int nproc, rank;
+
+  MPI_Comm_size(PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(PROBLEM_COMM, &rank);
+
+  node_list_t *pb, *pn;
   while(i<9)
   {
-    node_list_t *pn = boundary_list->head;
+    pb = boundary_list->head;
     flag_pn=0;
-    while(pn && !flag_pn)
+    while(pb && !flag_pn)
     {
-      name = ((boundary_t*)pn->data)->name;
-      nnods = ((boundary_t*)pn->data)->Nods.sizelist;
+      nnods = ((boundary_t*)pb->data)->Nods.sizelist;
+      name  = ((boundary_t*)pb->data)->name;
       switch(i){
 	case 0:
 	  if(!strcmp(name,"P000")){flag=flag|(1<<0);flag_pn=1;}break;
@@ -179,61 +186,92 @@ int MicroCheckAndSetBoundary(list_t *boundary_list)
 	case 3:
 	  if(!strcmp(name,"X0")){
 	    flag=flag|(1<<3);
-	    index_x0_ux = malloc( nnods * sizeof(int)); value_x0_ux = malloc( nnods * sizeof(double));
-	    index_x0_uy = malloc( nnods * sizeof(int)); value_x0_uy = malloc( nnods * sizeof(double));
-	    index_x0_uz = malloc( nnods * sizeof(int)); value_x0_uz = malloc( nnods * sizeof(double));
+	    nnods_x0 = nnods;
+	    index_x0_ux = malloc( nnods_x0 * sizeof(int)); value_x0_ux = malloc( nnods_x0 * sizeof(double));
+	    index_x0_uy = malloc( nnods_x0 * sizeof(int)); value_x0_uy = malloc( nnods_x0 * sizeof(double));
+	    index_x0_uz = malloc( nnods_x0 * sizeof(int)); value_x0_uz = malloc( nnods_x0 * sizeof(double));
+	    px = index_x0_ux; py = index_x0_uy; pz = index_x0_uz;
 	    flag_pn=1;
 	  }
 	  break;
 	case 4:
 	  if(!strcmp(name,"X1")){
 	    flag=flag|(1<<4);
-	    index_x1_ux = malloc( nnods * sizeof(int)); value_x1_ux = malloc( nnods * sizeof(double));
-	    index_x1_uy = malloc( nnods * sizeof(int)); value_x1_uy = malloc( nnods * sizeof(double));
-	    index_x1_uz = malloc( nnods * sizeof(int)); value_x1_uz = malloc( nnods * sizeof(double));
+	    nnods_x1 = nnods;
+	    index_x1_ux = malloc( nnods_x1 * sizeof(int)); value_x1_ux = malloc( nnods_x1 * sizeof(double));
+	    index_x1_uy = malloc( nnods_x1 * sizeof(int)); value_x1_uy = malloc( nnods_x1 * sizeof(double));
+	    index_x1_uz = malloc( nnods_x1 * sizeof(int)); value_x1_uz = malloc( nnods_x1 * sizeof(double));
+	    px = index_x1_ux; py = index_x1_uy; pz = index_x1_uz;
 	    flag_pn=1;
 	  }
 	  break;
 	case 5:
 	  if(!strcmp(name,"Y0")){
 	    flag=flag|(1<<5);
-	    index_y0_ux = malloc( nnods * sizeof(int)); value_y0_ux = malloc( nnods * sizeof(double));
-	    index_y0_uy = malloc( nnods * sizeof(int)); value_y0_uy = malloc( nnods * sizeof(double));
-	    index_y0_uz = malloc( nnods * sizeof(int)); value_y0_uz = malloc( nnods * sizeof(double));
+	    nnods_y0 = nnods;
+	    index_y0_ux = malloc( nnods_y0 * sizeof(int)); value_y0_ux = malloc( nnods_y0 * sizeof(double));
+	    index_y0_uy = malloc( nnods_y0 * sizeof(int)); value_y0_uy = malloc( nnods_y0 * sizeof(double));
+	    index_y0_uz = malloc( nnods_y0 * sizeof(int)); value_y0_uz = malloc( nnods_y0 * sizeof(double));
+	    px = index_y0_ux; py = index_y0_uy; pz = index_y0_uz;
 	    flag_pn=1;
 	  }
 	  break;
 	case 6:
 	  if(!strcmp(name,"Y1")){
 	    flag=flag|(1<<6);
-	    index_y1_ux = malloc( nnods * sizeof(int)); value_y1_ux = malloc( nnods * sizeof(double));
-	    index_y1_uy = malloc( nnods * sizeof(int)); value_y1_uy = malloc( nnods * sizeof(double));
-	    index_y1_uz = malloc( nnods * sizeof(int)); value_y1_uz = malloc( nnods * sizeof(double));
+	    nnods_y1 = nnods;
+	    index_y1_ux = malloc( nnods_y1 * sizeof(int)); value_y1_ux = malloc( nnods_y1 * sizeof(double));
+	    index_y1_uy = malloc( nnods_y1 * sizeof(int)); value_y1_uy = malloc( nnods_y1 * sizeof(double));
+	    index_y1_uz = malloc( nnods_y1 * sizeof(int)); value_y1_uz = malloc( nnods_y1 * sizeof(double));
+	    px = index_y1_ux; py = index_y1_uy; pz = index_y1_uz;
 	    flag_pn=1;
 	  }
 	  break;
 	case 7:
 	  if(!strcmp(name,"Z0")){
 	    flag=flag|(1<<7);
-	    index_z0_ux = malloc( nnods * sizeof(int)); value_z0_ux = malloc( nnods * sizeof(double));
-	    index_z0_uy = malloc( nnods * sizeof(int)); value_z0_uy = malloc( nnods * sizeof(double));
-	    index_z0_uz = malloc( nnods * sizeof(int)); value_z0_uz = malloc( nnods * sizeof(double));
+	    nnods_z0 = nnods;
+	    index_z0_ux = malloc( nnods_z0 * sizeof(int)); value_z0_ux = malloc( nnods_z0 * sizeof(double));
+	    index_z0_uy = malloc( nnods_z0 * sizeof(int)); value_z0_uy = malloc( nnods_z0 * sizeof(double));
+	    index_z0_uz = malloc( nnods_z0 * sizeof(int)); value_z0_uz = malloc( nnods_z0 * sizeof(double));
+	    px = index_z0_ux; py = index_z0_uy; pz = index_z0_uz;
 	    flag_pn=1;
 	  }
 	  break;
 	case 8:
 	  if(!strcmp(name,"Z1")){
 	    flag=flag|(1<<8);
-	    index_z1_ux = malloc( nnods * sizeof(int)); value_z1_ux = malloc( nnods * sizeof(double));
-	    index_z1_uy = malloc( nnods * sizeof(int)); value_z1_uy = malloc( nnods * sizeof(double));
-	    index_z1_uz = malloc( nnods * sizeof(int)); value_z1_uz = malloc( nnods * sizeof(double));
+	    nnods_z1 = nnods;
+	    index_z1_ux = malloc( nnods_z1 * sizeof(int)); value_z1_ux = malloc( nnods_z1 * sizeof(double));
+	    index_z1_uy = malloc( nnods_z1 * sizeof(int)); value_z1_uy = malloc( nnods_z1 * sizeof(double));
+	    index_z1_uz = malloc( nnods_z1 * sizeof(int)); value_z1_uz = malloc( nnods_z1 * sizeof(double));
+	    px = index_z1_ux; py = index_z1_uy; pz = index_z1_uz;
 	    flag_pn=1;
 	  }
 	  break;
 	default:
 	  break;
       }
-      pn=pn->next;
+
+      /*
+	 Fill index_xx_xx arrays
+      */
+      pn = ((boundary_t*)pn->data)->Nods.head; n = 0;
+      while(pn)
+      {
+	node_orig = *(int*)(pn->data); 
+	p = bsearch(&node_orig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); 
+	if(!p){SETERRQ2(PROBLEM_COMM,1,
+	    "A boundary node (%d) seems now to not belong to this process (rank:%d)",node_orig,rank);}
+	node_petsc  = loc2petsc[p - MyNodOrig];  // PETSc numeration
+
+	px[n] = node_petsc*3 + 0;
+	py[n] = node_petsc*3 + 1;
+	pz[n] = node_petsc*3 + 2;
+	pn=pn->next; n ++;
+      }
+
+      pb=pb->next;
     }
     i++;
   }

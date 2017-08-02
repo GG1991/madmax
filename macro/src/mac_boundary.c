@@ -74,16 +74,16 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
     if(kind==3||kind==5||kind==6){ ndir_pn = 2; nneu_pn = 1;}
     if(kind==7)                  { ndir_pn = 3; nneu_pn = 0;}
 
-    mac_boundary->nnod             = numnodes;
-    mac_boundary->nods              = malloc( numnodes * sizeof(int) );
-    mac_boundary->ndir_pn       = ndir_pn;
-    mac_boundary->nneu_pn       = nneu_pn;
-    mac_boundary->ndir       = numnodes * ndir_pn;
-    mac_boundary->dir_idx  = malloc( numnodes * ndir_pn * sizeof(int) );
-    mac_boundary->dir_val   = malloc( numnodes * ndir_pn * sizeof(double) );
-    mac_boundary->nneu       = numnodes * nneu_pn;
-    mac_boundary->neu_idx    = malloc( numnodes * nneu_pn * sizeof(int) );
-    mac_boundary->neu_val     = malloc( numnodes * nneu_pn * sizeof(double) );
+    mac_boundary->nnod     = numnodes;
+    mac_boundary->nods     = malloc(numnodes * sizeof(int));
+    mac_boundary->ndir_pn  = ndir_pn;
+    mac_boundary->nneu_pn  = nneu_pn;
+    mac_boundary->ndir     = numnodes*ndir_pn;
+    mac_boundary->nneu     = numnodes*nneu_pn;
+    mac_boundary->dir_idx  = malloc(numnodes * ndir_pn * sizeof(int));
+    mac_boundary->dir_val  = malloc(numnodes * ndir_pn * sizeof(double));
+    mac_boundary->neu_idx  = malloc(numnodes * nneu_pn * sizeof(int));
+    mac_boundary->neu_val  = malloc(numnodes * nneu_pn * sizeof(double));
 
     n=0; DirCount = 0; NeuCount = 0;
     while(n<numnodes)
