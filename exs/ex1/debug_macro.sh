@@ -17,4 +17,5 @@ done
 exopt_mac+="-ex 'r'"
 
 gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu -coupl"
+gdbcomm_mac+=" -mesh ../../meshes/cube_unif/cube.msh"
 ./mpirun -np $NM xterm -e "$gdbcomm_mac"
