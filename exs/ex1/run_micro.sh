@@ -2,7 +2,8 @@
 
 NM=4
 
-./mpirun -np $NM ../../micro/micro ex1.spu \
+./mpirun -np $NM ../../micro/micro         \
+    -input ex1.spu                         \
     -mesh ../../meshes/cube_unif/cube.msh  \
     -ksp_type cg                           \
     -ksp_rtol 1.0e-13                      \

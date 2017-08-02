@@ -45,13 +45,6 @@ int main(int argc, char **argv)
 		EVENT_SOLVE_SYSTEM;
 #endif
 
-  if(argc>1){
-    strcpy(input_n,argv[1]);
-  }
-  else{
-    printf("mic_main.c:no input file has been given\n");
-  }
-
   WORLD_COMM = MPI_COMM_WORLD;
   ierr = MPI_Init(&argc, &argv);
   ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
@@ -83,6 +76,8 @@ int main(int argc, char **argv)
   if(set == PETSC_TRUE) flag_print  = PRINT_ALL;
   ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:mesh file not given on command line.");
+  ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:input file not given.");
 
   /* 
      Stablish a new local communicator
