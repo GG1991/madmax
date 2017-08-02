@@ -13,26 +13,13 @@ typedef struct mac_boundary_t_{
 
   int      kind;
   int      order;
-  int      nfx;
-  int      nfy;
-  int      nfz;
-  f1d_t    *fx; 
-  f1d_t    *fy;
-  f1d_t    *fz;
-  int      NNods;
-  int      *Nods;
-
-  /* Staff to set boundary conditions */
-  int      NDirPerNode;
-  int      NNeuPerNode;
-  int      *indeces;
-  int      NDirIndeces;
-  int      *DirichletIndeces;
-  int      NNeuIndeces;
-  int      *NeumannIndeces;
-  double   *values;
-  double   *DirichletValues; 
-  double   *NeumannValues;
+  int      nfx, nfy, nfz;
+  f1d_t    *fx, *fy, *fz;
+  int      nnod, *nods;
+  int      ndir_pn, ndir, *dir_idx;
+  double   *dir_val;
+  int      nneu_pn, nneu, *neu_idx;
+  double   *neu_val;
 
 }mac_boundary_t;
 
