@@ -24,8 +24,9 @@ static char help[] =
 int main(int argc, char **argv)
 {
 
-  int        ierr;
-  char       *myname = strdup("micro");
+  int    ierr;
+  char   *myname = strdup("micro");
+  char   vtkfile_n[NBUF];
   PetscBool  set;
 
   PetscViewer    viewer;
@@ -60,20 +61,17 @@ int main(int argc, char **argv)
   /*
      Get command line arguments
   */
-  ierr = PetscOptionsGetInt(NULL, NULL, "-p_vtk", &flag_print_vtk, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) flag_print_vtk = FLAG_VTK_NONE;
-  ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
-
   flag_print = PETSC_FALSE;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print  = PRINT_PETSC;
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_disp",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print  = PRINT_VTKDISP;
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKDISP);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print  = PRINT_VTKPART;
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print  = PRINT_ALL;
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
+  ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
   ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:mesh file not given on command line.");
   ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
@@ -179,8 +177,7 @@ int main(int argc, char **argv)
   read_mesh_coord(&MICRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
-  if(flag_print == PRINT_VTKPART){
-    char  vtkfile_n[NBUF];
+  if(flag_print | (1<<PRINT_VTKPART)){
     sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mic);
     ierr = spu_vtk_partition( vtkfile_n, &MICRO_COMM );
   }
@@ -231,7 +228,7 @@ int main(int argc, char **argv)
   /*
      micro main coupling loop
    */
-  double strain[6], stress[6], ttensor[36];
+  double strain_bc[6], stress_ave[6], ttensor[36];
   LX = LY = LZ = 1.0;
 
   if(flag_coupling){
@@ -251,15 +248,15 @@ int main(int argc, char **argv)
 	     Performs the micro calculation
 	  */
 	  ierr = MicroSetDisplacementOnBoundary( 0, strain[0], LX, LY, LZ, &x );
-	  if( flag_print == PRINT_PETSC ){
+	  if( flag_print | (1<<PRINT_PETSC) ){
 	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	    ierr = VecView(x,viewer); CHKERRQ(ierr);
 	  }
-	  stress[0] = 1.0; stress[1] = 1.0; stress[2] = 1.0; stress[3] = -1.0; stress[4] = 1.0; stress[5] = 1.0;
+	  stress_ave[0] = 1.0; stress_ave[1] = 1.0; stress_ave[2] = 1.0; stress_ave[3] = -1.0; stress_ave[4] = 1.0; stress_ave[5] = 1.0;
 	  /*
 	     Send Stress
 	  */
-	  ierr = MicCommSendStress( WORLD_COMM, stress );
+	  ierr = MicCommSendStress( WORLD_COMM, stress_ave );
 	  break;
 	case SIGNAL_MICRO_END:
 	  break;
@@ -277,10 +274,10 @@ int main(int argc, char **argv)
     int    dir = 0;
     double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
 
-    strain[0] = 1.0; strain[1] = 1.0; strain[2] = 1.0; strain[3] = 1.0; strain[4] = 1.0; strain[5] = 1.0;
+    strain_bc[0] = 0.005; strain_bc[1] = 0.005; strain_bc[2] = 0.005; strain_bc[3] = 0.005; strain_bc[4] = 0.005; strain_bc[5] = 0.005;
     ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-    ierr = MicroSetDisplacementOnBoundary( 0, strain[0], LX, LY, LZ, &x );
-    if( flag_print == PRINT_PETSC ){
+    ierr = MicroSetDisplacementOnBoundary( 0, strain_bc[0], LX, LY, LZ, &x );
+    if( flag_print | (1<<PRINT_PETSC) ){
       ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
       ierr = VecView(x,viewer); CHKERRQ(ierr);
     }
@@ -296,7 +293,7 @@ int main(int argc, char **argv)
       ierr = PetscPrintf(MICRO_COMM, "Assembling Residual ");CHKERRQ(ierr);
       ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
       ierr = MicroSetBoundaryOnResidual(dir, &b); CHKERRQ(ierr);
-      if( flag_print == PRINT_PETSC ){
+      if( flag_print | (1<<PRINT_PETSC) ){
 	ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(b,viewer); CHKERRQ(ierr);
       }
@@ -312,7 +309,7 @@ int main(int argc, char **argv)
       ierr = PetscPrintf(MICRO_COMM, "Assembling Jacobian\n");
       ierr = AssemblyJacobianSmallDeformation(&A);
       ierr = MicroSetBoundaryOnJacobian(dir, &A); CHKERRQ(ierr);
-      if( flag_print == PRINT_PETSC ){
+      if( flag_print == (1<<PRINT_PETSC) ){
 	ierr = PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
 	ierr = MatView(A,viewer); CHKERRQ(ierr);
       }
@@ -327,7 +324,7 @@ int main(int argc, char **argv)
       ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
       ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
       ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
-      if( flag_print == PRINT_PETSC ){
+      if( flag_print == (1<<PRINT_PETSC) ){
 	ierr = PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(dx,viewer); CHKERRQ(ierr);
 	ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
@@ -337,6 +334,15 @@ int main(int argc, char **argv)
       ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
 
       nr_its ++;
+    }
+
+    if(flag_print | (1<<PRINT_VTKDISP)){ 
+      strain = malloc(nelm*6*sizeof(double));
+      stress = malloc(nelm*6*sizeof(double));
+      ierr = SpuCalcStressOnElement(&x, strain, stress);
+      sprintf(vtkfile_n,"%s_displ_%d.vtk",myname,rank_mic);
+      ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
+      free(stress); free(strain);
     }
 
   }

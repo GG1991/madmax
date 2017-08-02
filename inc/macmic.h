@@ -18,10 +18,6 @@
 #define MACRO         1     // MACRO IDs and colors
 #define MICRO         2     // MICRO IDs and colors
 
-#define FLAG_VTK_NONE 0
-#define FLAG_VTK_PART 1
-#define FLAG_VTK_DISP 2
-
 #define MACMIC_START  1
 #define MACMIC_END    2
 
@@ -92,7 +88,6 @@ int          nmic_worlds;              // number of micro worlds nproc_mic / npr
 int          scheme;                   // communication approach
 
 PetscBool    flag_coupling;
-int          flag_print_vtk;
 
 // Matrices and vectors
 

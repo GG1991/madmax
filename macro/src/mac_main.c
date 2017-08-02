@@ -63,13 +63,13 @@ int main(int argc, char **argv)
   */
   flag_print = PETSC_FALSE;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print  = PRINT_PETSC;
+  if(set == PETSC_TRUE) flag_print = PRINT_PETSC;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_disp",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print  = PRINT_VTKDISP;
+  if(set == PETSC_TRUE) flag_print = PRINT_VTKDISP;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print  = PRINT_VTKPART;
+  if(set == PETSC_TRUE) flag_print = PRINT_VTKPART;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print  = PRINT_ALL;
+  if(set == PETSC_TRUE) flag_print = PRINT_ALL;
 
   ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
@@ -315,7 +315,7 @@ int main(int argc, char **argv)
       nr_its ++;
     }
 
-    if(flag_print_vtk & FLAG_VTK_DISP){ 
+    if(flag_print == PRINT_VTKDISP){ 
       strain = malloc(nelm*6*sizeof(double));
       stress = malloc(nelm*6*sizeof(double));
       ierr = SpuCalcStressOnElement(&x, strain, stress);

@@ -59,6 +59,12 @@ int MicroSetDisplacementOnBoundary( int dir, double strain_dir, double LX, doubl
   switch(dir){
     case 0:
       /* CARA X0-UX y X1-UX e11 */
+//      PVAL[0] = 0.0; PVAL[1] = 0.0; PVAL[2] = 0.0;
+//      ierr = VecSetValues( *x, 3, P000, PVAL, INSERT_VALUES); CHKERRQ(ierr);
+//      PVAL[0] = strain_dir*LX; PVAL[1] = 0.0; PVAL[2] = 0.0;
+//      ierr = VecSetValues( *x, 3, P100, PVAL, INSERT_VALUES); CHKERRQ(ierr);
+//      PVAL[0] = 0.0; PVAL[1] = 0.0;
+//      ierr = VecSetValues( *x, 2, P010, PVAL, INSERT_VALUES); CHKERRQ(ierr);
       memset(value_x0_ux, 0.0, nnods_x0*sizeof(double));
       ierr = VecSetValues( *x, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
       for(i=0;i<nnods_x1;i++) value_x1_ux[i] = strain_dir*LX;
@@ -182,7 +188,7 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	case 1:
 	  if(!strcmp(name,"P100")){flag=flag|(1<<1); px = P100; flag_pn=2;} break;
 	case 2:
-	  if(!strcmp(name,"P010")){flag=flag|(1<<2); px = P010; flag_pn=2;} break;
+	  if(!strcmp(name,"P010")){flag=flag|(1<<2); px = P010; flag_pn=3;} break;
 	case 3:
 	  if(!strcmp(name,"X0")){
 	    flag=flag|(1<<3);
@@ -274,6 +280,10 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	  px[0] = node_petsc*3 + 0;
 	  px[1] = node_petsc*3 + 1;
 	  px[2] = node_petsc*3 + 2;
+	}
+	else if(flag_pn==3){
+	  px[0] = node_petsc*3 + 0;
+	  px[1] = node_petsc*3 + 2;
 	}
 	pn=pn->next; n ++;
       }

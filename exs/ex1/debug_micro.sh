@@ -2,12 +2,12 @@
 
 NM=1
 
-#break_mic=( 'mic_main.c:281' ) 
+break_mic=( 'mic_main.c:280' ) 
 #break_mic=( 'spu_mesh.c:136' ) 
 #break_mic=( 'micmic.c:143' ) 
 #break_mic=( 'mic_alloc.c:69' ) 
 #break_mic=( 'spu_assembly.c:123' ) 
-break_mic=( 'mic_boundary.c:373' ) 
+#break_mic=( 'mic_boundary.c:373' ) 
 
 # BREAKPOINTS
 for i in ${break_mic[@]}

@@ -62,11 +62,11 @@ char         input_n[NBUF];            // Input file name
 
 MPI_Status   status;
 
-#define PRINT_NULL     -1
-#define PRINT_PETSC     1
-#define PRINT_VTKDISP   2
-#define PRINT_VTKPART   3
-#define PRINT_ALL       4
+#define PRINT_NULL         0
+#define PRINT_PETSC        1
+#define PRINT_VTKDISP      2
+#define PRINT_VTKPART      3
+#define PRINT_ALL          4
 
 int          flag_print;
 
