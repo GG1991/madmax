@@ -233,6 +233,9 @@ int main(int argc, char **argv)
   LX = LY = LZ = 1.0;
 
   if(flag_coupling){
+    /*
+       Coupling
+     */
     int signal = SIGNAL_NULL;
     while(signal != SIGNAL_MICRO_END ){
       ierr = MicCommWaitSignal( WORLD_COMM, &signal );CHKERRQ(ierr);
@@ -262,6 +265,17 @@ int main(int argc, char **argv)
 	  SETERRQ(MICRO_COMM,1,"MICRO:can no identify recv signal.");
       }
     }
+  }
+  else{
+    /*
+       Standalone
+     */
+    ierr = MicroSetDisplacementOnBoundary( 0, strain[0], LX, LY, LZ, &x );
+    if( flag_print == PRINT_PETSC ){
+      ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
+      ierr = VecView(x,viewer); CHKERRQ(ierr);
+    }
+
   }
 
   if(!flag_coupling){
