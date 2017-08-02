@@ -94,12 +94,6 @@ int          scheme;                   // communication approach
 PetscBool    flag_coupling;
 int          flag_print_vtk;
 
-#define PRINT_NULL  -1
-#define PRINT_PETSC  1
-#define PRINT_VTK    2
-
-int          flag_print;
-
 // Matrices and vectors
 
 Mat           A;                    /* Jacobian Matrix          */
@@ -127,5 +121,7 @@ int MicCommSendTTensor( MPI_Comm WORLD_COMM );
 int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal );
 int MacCommSendStrain( MPI_Comm WORLD_COMM, double strain[6] );
 int MacCommRecvStress( MPI_Comm WORLD_COMM, double stress[6] );
+
+int SetGmshIDOnMaterialsAndBoundaries(MPI_Comm PROBLEM_COMM);
 
 #endif

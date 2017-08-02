@@ -71,10 +71,16 @@ int main(int argc, char **argv)
   if(set == PETSC_FALSE) flag_print_vtk = FLAG_VTK_NONE;
   ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(NULL, NULL, "-p", &print_flag, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) print_flag  = PETSC_FALSE;
-  ierr = PetscOptionsGetInt(NULL, NULL, "-print", &flag_print, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) flag_print = PRINT_NULL;
+
+  flag_print = PETSC_FALSE;
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print  = PRINT_PETSC;
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_disp",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print  = PRINT_VTKDISP;
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print  = PRINT_VTKPART;
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print  = PRINT_ALL;
   ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:mesh file not given on command line.");
 
@@ -178,10 +184,11 @@ int main(int argc, char **argv)
   read_mesh_coord(&MICRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
-  char  vtkfile_n[NBUF];
-
-  sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mic);
-  spu_vtk_partition( vtkfile_n, &MICRO_COMM );
+  if(flag_print == PRINT_VTKPART){
+    char  vtkfile_n[NBUF];
+    sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mic);
+    ierr = spu_vtk_partition( vtkfile_n, &MICRO_COMM );
+  }
 
   /*
      Read materials, physical entities, boundaries from input and mesh file
