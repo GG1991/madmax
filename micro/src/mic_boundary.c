@@ -178,11 +178,11 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
       name  = ((boundary_t*)pb->data)->name;
       switch(i){
 	case 0:
-	  if(!strcmp(name,"P000")){flag=flag|(1<<0);flag_pn=1;}break;
+	  if(!strcmp(name,"P000")){flag=flag|(1<<0);flag_pn=2;}break;
 	case 1:
-	  if(!strcmp(name,"P100")){flag=flag|(1<<1);flag_pn=1;}break;
+	  if(!strcmp(name,"P100")){flag=flag|(1<<1);flag_pn=2;}break;
 	case 2:
-	  if(!strcmp(name,"P010")){flag=flag|(1<<2);flag_pn=1;}break;
+	  if(!strcmp(name,"P010")){flag=flag|(1<<2);flag_pn=2;}break;
 	case 3:
 	  if(!strcmp(name,"X0")){
 	    flag=flag|(1<<3);
@@ -256,19 +256,21 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
       /*
 	 Fill index_xx_xx arrays
       */
-      pn = ((boundary_t*)pn->data)->Nods.head; n = 0;
-      while(pn)
-      {
-	node_orig = *(int*)(pn->data); 
-	p = bsearch(&node_orig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); 
-	if(!p){SETERRQ2(PROBLEM_COMM,1,
-	    "A boundary node (%d) seems now to not belong to this process (rank:%d)",node_orig,rank);}
-	node_petsc  = loc2petsc[p - MyNodOrig];  // PETSc numeration
+      if(flag_pn==1){
+	pn = ((boundary_t*)pb->data)->Nods.head; n = 0;
+	while(pn)
+	{
+	  node_orig = *(int*)(pn->data); 
+	  p = bsearch(&node_orig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); 
+	  if(!p){SETERRQ2(PROBLEM_COMM,1,
+	      "A boundary node (%d) seems now to not belong to this process (rank:%d)",node_orig,rank);}
+	  node_petsc  = loc2petsc[p - MyNodOrig];  // PETSc numeration
 
-	px[n] = node_petsc*3 + 0;
-	py[n] = node_petsc*3 + 1;
-	pz[n] = node_petsc*3 + 2;
-	pn=pn->next; n ++;
+	  px[n] = node_petsc*3 + 0;
+	  py[n] = node_petsc*3 + 1;
+	  pz[n] = node_petsc*3 + 2;
+	  pn=pn->next; n ++;
+	}
       }
 
       pb=pb->next;
