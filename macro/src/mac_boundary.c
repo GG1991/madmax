@@ -148,6 +148,27 @@ int MacroParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
   int    flag_start_boundary = 0;
 
   mac_boundary_t mac_boundary;
+  mac_boundary.kind             = -1;
+  mac_boundary.order            = -1;
+  mac_boundary.nfx              = -1;
+  mac_boundary.nfy              = -1;
+  mac_boundary.nfz              = -1;
+  mac_boundary.fx               = NULL;
+  mac_boundary.fy               = NULL;
+  mac_boundary.fz               = NULL;
+  mac_boundary.NNods            = -1;
+  mac_boundary.Nods             = NULL;
+  mac_boundary.NDirPerNode      = -1;
+  mac_boundary.NNeuPerNode      = -1;
+  mac_boundary.indeces          = NULL;
+  mac_boundary.NDirIndeces      = -1;
+  mac_boundary.DirichletIndeces = NULL;
+  mac_boundary.NNeuIndeces      = -1;
+  mac_boundary.NeumannIndeces   = NULL;
+  mac_boundary.values           = NULL;
+  mac_boundary.DirichletValues  = NULL;
+  mac_boundary.NeumannValues    = NULL;
+
   boundary_t boundary;
   list_init(&boundary_list, sizeof(boundary_t), cmpfunc_mac_bou);
   list_init(&boundary.Nods, sizeof(int), cmpfunc_for_list);
@@ -250,7 +271,7 @@ int MacroSetDisplacementOnBoundary( double time, Vec *x )
   pBound = boundary_list.head;
   while(pBound)
   {
-    mac_boundary  = (mac_boundary_t*)((boundary_t*)pBound->data)->bvoid;
+    mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
     numnodes      = mac_boundary->NNods;
     NDirPerNode   = mac_boundary->NDirPerNode;
     NNeuPerNode   = mac_boundary->NNeuPerNode;
@@ -323,7 +344,7 @@ int MacroSetBoundaryOnJacobian( Mat *J )
 
   pBound = boundary_list.head;
   while(pBound){
-    mac_boundary  = (mac_boundary_t*)((boundary_t*)pBound->data)->bvoid;
+    mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
     pToDirIndeces = mac_boundary->DirichletIndeces;
     NDirIndeces   = mac_boundary->NDirIndeces;
     ierr = MatZeroRowsColumns(*J, NDirIndeces, pToDirIndeces, 1.0, NULL, NULL); CHKERRQ(ierr);
@@ -347,13 +368,15 @@ int MacroSetBoundaryOnResidual( Vec *b )
   int    ierr;
 
   node_list_t *pBound;
+  mac_boundary_t *mac_boundary;
 
   pBound = boundary_list.head;
   while(pBound)
   {
-    pToDirIndeces = ((mac_boundary_t*)pBound->data)->DirichletIndeces;
-    pToDirValues  = ((mac_boundary_t*)pBound->data)->DirichletValues;
-    NDirIndeces   = ((mac_boundary_t*)pBound->data)->NDirIndeces;
+    mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
+    pToDirIndeces = mac_boundary->DirichletIndeces;
+    pToDirValues  = mac_boundary->DirichletValues;
+    NDirIndeces   = mac_boundary->NDirIndeces;
 
     memset(pToDirValues, 0.0, NDirIndeces*sizeof(double));
     ierr = VecSetValues( *b, NDirIndeces, pToDirIndeces, pToDirValues, INSERT_VALUES); CHKERRQ(ierr);
