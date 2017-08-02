@@ -38,6 +38,8 @@ double *value_z0_ux, *value_z0_uy, *value_z0_uz;
 double *value_x1_ux, *value_x1_uy, *value_x1_uz; 
 double *value_y1_ux, *value_y1_uy, *value_y1_uz; 
 double *value_z1_ux, *value_z1_uy, *value_z1_uz; 
+int P000[3], P100[3], P010[3];
+double PVAL[3];
 
 
 /*****************************************************************************************************
@@ -56,5 +58,7 @@ int MicroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal);
 // mic_boundary.c
 int MicroCreateBoundary(list_t *boundary_list);
 int MicroSetDisplacementOnBoundary( int dir, double strain_dir, double LX, double LY, double LZ, Vec *x );
+int MicroSetBoundaryOnJacobian(int dir, Mat *J);
+int MicroSetBoundaryOnResidual(int dir, Vec *b);
 int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list);
 int MicroCheckPhysicalEntities( list_t *physical_list );

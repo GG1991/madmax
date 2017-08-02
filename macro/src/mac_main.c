@@ -76,9 +76,9 @@ int main(int argc, char **argv)
   ierr = PetscOptionsGetInt(NULL, NULL, "-testcomm", &flag_testcomm, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) flag_testcomm  = TESTCOMM_NULL;
   ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:mesh file not given on command line.");
+  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MACRO:mesh file not given on command line.");
   ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:input file not given.");
+  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MACRO:input file not given.");
 
   /* 
      Stablish a new local communicator
