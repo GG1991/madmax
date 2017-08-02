@@ -1,6 +1,8 @@
 /*
- * Boundary Conditions Structures
- *
+   Boundary Conditions Structures
+  
+   Author > Guido Giuntoli
+   Date   > 02-08-2017
  */
 
 #include "list.h"

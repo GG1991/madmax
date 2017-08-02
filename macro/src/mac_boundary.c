@@ -52,7 +52,7 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   }
 
   // ahora metemos los nodos de las listas en la estructura posta <boundary_list>
-  int NodeOrig, NodeLocal, NodeGlobal, numnodes, kind, NDirPerNode= -1, NNeuPerNode = -1;
+  int NodeOrig, NodeLocal, NodeGlobal, numnodes, kind, ndir_pn= -1, nneu_pn = -1;
   int DirCount, NeuCount, *p, d, n;
 
   mac_boundary_t *mac_boundary;
@@ -61,7 +61,7 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   while(pBound)
   {
     /* 
-       asignamos el NNods, allocamos memory y guardamos los nods 
+       asignamos el nnod, allocamos memory y guardamos los nods 
        (ya van a estar ordenados y sin repetir)
      */
     numnodes = ((boundary_t *)pBound->data)->Nods.sizelist;
@@ -69,30 +69,28 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
     mac_boundary = ((boundary_t *)pBound->data)->bvoid;
     kind = mac_boundary->kind;
 
-    if(kind==0)                  { NDirPerNode = 0; NNeuPerNode = 3;}
-    if(kind==1||kind==2||kind==4){ NDirPerNode = 1; NNeuPerNode = 2;}
-    if(kind==3||kind==5||kind==6){ NDirPerNode = 2; NNeuPerNode = 1;}
-    if(kind==7)                  { NDirPerNode = 3; NNeuPerNode = 0;}
+    if(kind==0)                  { ndir_pn = 0; nneu_pn = 3;}
+    if(kind==1||kind==2||kind==4){ ndir_pn = 1; nneu_pn = 2;}
+    if(kind==3||kind==5||kind==6){ ndir_pn = 2; nneu_pn = 1;}
+    if(kind==7)                  { ndir_pn = 3; nneu_pn = 0;}
 
-    mac_boundary->NNods             = numnodes;
-    mac_boundary->Nods              = malloc( numnodes * sizeof(int) );
-    mac_boundary->indeces           = malloc( numnodes * 3 * sizeof(int) );
-    mac_boundary->values            = malloc( numnodes * 3 * sizeof(double) );
-    mac_boundary->NDirPerNode       = NDirPerNode;
-    mac_boundary->NNeuPerNode       = NNeuPerNode;
-    mac_boundary->NDirIndeces       = numnodes * NDirPerNode;
-    mac_boundary->DirichletIndeces  = malloc( numnodes * NDirPerNode * sizeof(int) );
-    mac_boundary->DirichletValues   = malloc( numnodes * NDirPerNode * sizeof(double) );
-    mac_boundary->NNeuIndeces       = numnodes * NNeuPerNode;
-    mac_boundary->NeumannIndeces    = malloc( numnodes * NNeuPerNode * sizeof(int) );
-    mac_boundary->NeumannValues     = malloc( numnodes * NNeuPerNode * sizeof(double) );
+    mac_boundary->nnod             = numnodes;
+    mac_boundary->nods              = malloc( numnodes * sizeof(int) );
+    mac_boundary->ndir_pn       = ndir_pn;
+    mac_boundary->nneu_pn       = nneu_pn;
+    mac_boundary->ndir       = numnodes * ndir_pn;
+    mac_boundary->dir_idx  = malloc( numnodes * ndir_pn * sizeof(int) );
+    mac_boundary->dir_val   = malloc( numnodes * ndir_pn * sizeof(double) );
+    mac_boundary->nneu       = numnodes * nneu_pn;
+    mac_boundary->neu_idx    = malloc( numnodes * nneu_pn * sizeof(int) );
+    mac_boundary->neu_val     = malloc( numnodes * nneu_pn * sizeof(double) );
 
     n=0; DirCount = 0; NeuCount = 0;
     while(n<numnodes)
     {
       /* we set the Original node numeration first */
       NodeOrig = *(int*)(((boundary_t*)pBound->data)->Nods.head->data); 
-      mac_boundary->Nods[n] = NodeOrig;
+      mac_boundary->nods[n] = NodeOrig;
 
       p = bsearch(&NodeOrig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); 
       if(!p){SETERRQ2(PROBLEM_COMM,1,
@@ -103,10 +101,10 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 
       for(d=0;d<3;d++){
 	if( (kind & (1<<d)) == (1<<d) ){ /* Dirichlet */
-	  mac_boundary->DirichletIndeces[DirCount] = NodeGlobal*3 + d; DirCount++;
+	  mac_boundary->dir_idx[DirCount] = NodeGlobal*3 + d; DirCount++;
 	}
 	else{ /* Neumann */
-	  mac_boundary->NeumannIndeces[NeuCount]   = NodeGlobal*3 + d; NeuCount++;
+	  mac_boundary->neu_idx[NeuCount]   = NodeGlobal*3 + d; NeuCount++;
 	}
       }
       n++;
@@ -148,26 +146,19 @@ int MacroParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
   int    flag_start_boundary = 0;
 
   mac_boundary_t mac_boundary;
-  mac_boundary.kind             = -1;
-  mac_boundary.order            = -1;
-  mac_boundary.nfx              = -1;
-  mac_boundary.nfy              = -1;
-  mac_boundary.nfz              = -1;
-  mac_boundary.fx               = NULL;
-  mac_boundary.fy               = NULL;
-  mac_boundary.fz               = NULL;
-  mac_boundary.NNods            = -1;
-  mac_boundary.Nods             = NULL;
-  mac_boundary.NDirPerNode      = -1;
-  mac_boundary.NNeuPerNode      = -1;
-  mac_boundary.indeces          = NULL;
-  mac_boundary.NDirIndeces      = -1;
-  mac_boundary.DirichletIndeces = NULL;
-  mac_boundary.NNeuIndeces      = -1;
-  mac_boundary.NeumannIndeces   = NULL;
-  mac_boundary.values           = NULL;
-  mac_boundary.DirichletValues  = NULL;
-  mac_boundary.NeumannValues    = NULL;
+
+  mac_boundary.kind    = -1;
+  mac_boundary.order   = -1;
+  mac_boundary.nfx     = mac_boundary.nfy = mac_boundary.nfz = -1;
+  mac_boundary.fx      = mac_boundary.fy  = mac_boundary.fz  = NULL;
+  mac_boundary.nnod    = -1;
+  mac_boundary.nods    = NULL;
+  mac_boundary.ndir    = mac_boundary.ndir_pn = -1;
+  mac_boundary.dir_idx = NULL;
+  mac_boundary.dir_val = NULL;
+  mac_boundary.nneu    = mac_boundary.nneu_pn = -1;
+  mac_boundary.neu_idx = NULL;
+  mac_boundary.neu_val = NULL;
 
   boundary_t boundary;
   list_init(&boundary_list, sizeof(boundary_t), cmpfunc_mac_bou);
@@ -253,16 +244,15 @@ int MacroSetDisplacementOnBoundary( double time, Vec *x )
 
    */
 
-  int    i, d, numnodes, kind;
-  int    *pToDirIndeces;// *pToNeuIndeces;
-  int    NDirIndeces;// NNeuIndeces;
-//  int    *pToIndeces;
-  double *pToDirValues, *pToNeuValues;
+  int    i, d, nnod, kind;
+  int    *dir_idx;
+  int    ndir;
+  double *dir_val, *neu_val;
   double ValueToSet;
   int    ierr;
   int    ofs_neu, ofs_dir;
-  int    NDirPerNode;
-  int    NNeuPerNode;
+  int    ndir_pn;
+  int    nneu_pn;
 
   node_list_t *pBound;
   f1d_t  *f1d_aux;
@@ -272,20 +262,17 @@ int MacroSetDisplacementOnBoundary( double time, Vec *x )
   while(pBound)
   {
     mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
-    numnodes      = mac_boundary->NNods;
-    NDirPerNode   = mac_boundary->NDirPerNode;
-    NNeuPerNode   = mac_boundary->NNeuPerNode;
-    pToDirIndeces = mac_boundary->DirichletIndeces;
-    NDirIndeces   = mac_boundary->NDirIndeces;
-//    pToNeuIndeces = mac_boundary->NeumannIndeces;
-//    NNeuIndeces   = mac_boundary->NNeuIndeces;
+    nnod          = mac_boundary->nnod;
+    ndir_pn       = mac_boundary->ndir_pn;
+    nneu_pn       = mac_boundary->nneu_pn;
+    dir_idx       = mac_boundary->dir_idx;
+    ndir          = mac_boundary->ndir;
     kind          = mac_boundary->kind;
-    pToDirValues  = mac_boundary->DirichletValues;
-    pToNeuValues  = mac_boundary->NeumannValues;
-    ofs_neu = ofs_dir = 0;
+    dir_val       = mac_boundary->dir_val;
+    neu_val       = mac_boundary->neu_val;
+    ofs_neu       = ofs_dir = 0;
 
-    for(d=0;d<3;d++)
-    {
+    for(d=0;d<3;d++){
       /* Barremos primero las dirección x -> y -> z */
       switch(d){
 	case 0:
@@ -304,12 +291,12 @@ int MacroSetDisplacementOnBoundary( double time, Vec *x )
 
       if( (kind & (1<<d)) == (1<<d) ){
 	/* es Dirichlet */
-	for(i=0;i<numnodes;i++){ pToDirValues[i*NDirPerNode + ofs_dir] = ValueToSet;}
+	for(i=0;i<nnod;i++){ dir_val[i*ndir_pn + ofs_dir] = ValueToSet;}
 	ofs_dir++;
       }
       else{
 	/* es Neumann */
-	for(i=0;i<numnodes;i++){ pToNeuValues[i*NNeuPerNode + ofs_neu] = ValueToSet;}
+	for(i=0;i<nnod;i++){ neu_val[i*nneu_pn + ofs_neu] = ValueToSet;}
 	ofs_neu++;
       }
       /* pToValues = [ valx valy valz valx valy valz ... valx valy valz ] */
@@ -319,7 +306,7 @@ int MacroSetDisplacementOnBoundary( double time, Vec *x )
 	Dirichlet Boundary condition set is set on <x> 
 	usamos VecSetValuesLocal aqui ya que vamos a modificar valores locales unicamente
      */
-    ierr = VecSetValues( *x, NDirIndeces, pToDirIndeces, pToDirValues, INSERT_VALUES); CHKERRQ(ierr);
+    ierr = VecSetValues( *x, ndir, dir_idx, dir_val, INSERT_VALUES); CHKERRQ(ierr);
     pBound = pBound->next;
   }
   /* communication between processes */
@@ -335,8 +322,8 @@ int MacroSetBoundaryOnJacobian( Mat *J )
      on the rest of the row and column 
   */
 
-  int    *pToDirIndeces;
-  int    NDirIndeces;
+  int    *dir_idx;
+  int    ndir;
   int    ierr;
 
   node_list_t *pBound;
@@ -345,9 +332,9 @@ int MacroSetBoundaryOnJacobian( Mat *J )
   pBound = boundary_list.head;
   while(pBound){
     mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
-    pToDirIndeces = mac_boundary->DirichletIndeces;
-    NDirIndeces   = mac_boundary->NDirIndeces;
-    ierr = MatZeroRowsColumns(*J, NDirIndeces, pToDirIndeces, 1.0, NULL, NULL); CHKERRQ(ierr);
+    dir_idx = mac_boundary->dir_idx;
+    ndir = mac_boundary->ndir;
+    ierr = MatZeroRowsColumns(*J, ndir, dir_idx, 1.0, NULL, NULL); CHKERRQ(ierr);
     pBound = pBound->next;
   }
 
@@ -362,24 +349,15 @@ int MacroSetBoundaryOnResidual( Vec *b )
   /* 
      Sets 0's on the Dirichlet indeces over the Residual <b>
   */
-
-  int    *pToDirIndeces, NDirIndeces;
-  double *pToDirValues;
   int    ierr;
-
   node_list_t *pBound;
   mac_boundary_t *mac_boundary;
 
   pBound = boundary_list.head;
-  while(pBound)
-  {
+  while(pBound){
     mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
-    pToDirIndeces = mac_boundary->DirichletIndeces;
-    pToDirValues  = mac_boundary->DirichletValues;
-    NDirIndeces   = mac_boundary->NDirIndeces;
-
-    memset(pToDirValues, 0.0, NDirIndeces*sizeof(double));
-    ierr = VecSetValues( *b, NDirIndeces, pToDirIndeces, pToDirValues, INSERT_VALUES); CHKERRQ(ierr);
+    memset(mac_boundary->dir_val, 0.0, mac_boundary->ndir*sizeof(double));
+    ierr = VecSetValues(*b,mac_boundary->ndir,mac_boundary->dir_idx,mac_boundary->dir_val,INSERT_VALUES);CHKERRQ(ierr);
     pBound = pBound->next;
   }
   /* communication between processes */
