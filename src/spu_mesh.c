@@ -1312,10 +1312,6 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   // calculamos la cantidad de puntos dentro de <AllMyNodOrig> que me pertenecen
 
-  if(rank==0){
-    printf("calculando NMyNod\n");
-  }
-
   int ismine, r, remoterank;
 
   if(nreptot_clean!=0){
@@ -1346,9 +1342,6 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "NMyGhost/NAllMyNod [%]", (NMyGhost*100.0)/NAllMyNod,	"NMyNod/NAllMyNod [%]", (NMyNod*100.0)/NAllMyNod); 
   }
 
-  if(rank==0){
-    printf("calculando MyNodOrig\n");
-  }
   MyNodOrig = malloc(NMyNod*sizeof(int));
   MyGhostOrig = malloc(NMyGhost*sizeof(int));
 

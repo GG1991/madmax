@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
   if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"MACRO: Reading mesh elements\n");
+    PetscPrintf(MICRO_COMM,"MICRO: Reading mesh elements\n");
   strcpy(mesh_f,"gmsh");
   read_mesh_elmv(&MICRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
@@ -276,6 +276,7 @@ int main(int argc, char **argv)
 
     strain_bc[0] = 0.005; strain_bc[1] = 0.005; strain_bc[2] = 0.005; strain_bc[3] = 0.005; strain_bc[4] = 0.005; strain_bc[5] = 0.005;
     ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
+    ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment on X faces e11=1 eij=0\n");CHKERRQ(ierr);
     ierr = MicroSetDisplacementOnBoundary( 0, strain_bc[0], LX, LY, LZ, &x );
     if( flag_print | (1<<PRINT_PETSC) ){
       ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
@@ -290,7 +291,7 @@ int main(int argc, char **argv)
 	 Assemblying Residual
        */
       ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM, "Assembling Residual ");CHKERRQ(ierr);
+      ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Residual ");CHKERRQ(ierr);
       ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
       ierr = MicroSetBoundaryOnResidual(dir, &b); CHKERRQ(ierr);
       if( flag_print | (1<<PRINT_PETSC) ){
@@ -306,7 +307,7 @@ int main(int argc, char **argv)
 	 Assemblying Jacobian
        */
       ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM, "Assembling Jacobian\n");
+      ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Jacobian\n");
       ierr = AssemblyJacobianSmallDeformation(&A);
       ierr = MicroSetBoundaryOnJacobian(dir, &A); CHKERRQ(ierr);
       if( flag_print == (1<<PRINT_PETSC) ){
@@ -318,7 +319,7 @@ int main(int argc, char **argv)
 	 Solving Problem
        */
       ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM, "Solving Linear System ");
+      ierr = PetscPrintf(MICRO_COMM,"MICRO: Solving Linear System ");
       ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
       ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
       ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
