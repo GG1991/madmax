@@ -106,6 +106,8 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   char *name;
   int nproc, rank;
 
+  P000_ismine = P100_ismine = P010_ismine = -1;
+
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
@@ -120,11 +122,11 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
       name  = ((boundary_t*)pb->data)->name;
       switch(i){
 	case 0:
-	  if(!strcmp(name,"P000")){flag=flag|(1<<0); px = P000; flag_pn=2;} break;
+	  if(!strcmp(name,"P000")){flag=flag|(1<<0); px = P000; P000_ismine=(nnods>0)?1:0; flag_pn=2;} break;
 	case 1:
-	  if(!strcmp(name,"P100")){flag=flag|(1<<1); px = P100; flag_pn=2;} break;
+	  if(!strcmp(name,"P100")){flag=flag|(1<<1); px = P100; P100_ismine=(nnods>0)?1:0; flag_pn=2;} break;
 	case 2:
-	  if(!strcmp(name,"P010")){flag=flag|(1<<2); px = P010; flag_pn=2;} break;
+	  if(!strcmp(name,"P010")){flag=flag|(1<<2); px = P010; P010_ismine=(nnods>0)?1:0; flag_pn=2;} break;
 	case 3:
 	  if(!strcmp(name,"X0")){
 	    flag=flag|(1<<3);
@@ -197,27 +199,29 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 
       /*
 	 Fill index_xx_xx arrays
-      */
-      pn = ((boundary_t*)pb->data)->Nods.head; n = 0;
-      while(pn)
-      {
-	node_orig = *(int*)(pn->data); 
-	p = bsearch(&node_orig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); 
-	if(!p){SETERRQ2(PROBLEM_COMM,1,
-	    "A boundary node (%d) seems now to not belong to this process (rank:%d)",node_orig,rank);}
-	node_petsc  = loc2petsc[p - MyNodOrig];  // PETSc numeration
+       */
+      if(flag_pn){
+	pn = ((boundary_t*)pb->data)->Nods.head; n = 0;
+	while(pn)
+	{
+	  node_orig = *(int*)(pn->data); 
+	  p = bsearch(&node_orig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); 
+	  if(!p){SETERRQ2(PROBLEM_COMM,1,
+	      "A boundary node (%d) seems now to not belong to this process (rank:%d)",node_orig,rank);}
+	  node_petsc  = loc2petsc[p - MyNodOrig];  // PETSc numeration
 
-	if(flag_pn==1){
-	  px[n] = node_petsc*3 + 0;
-	  py[n] = node_petsc*3 + 1;
-	  pz[n] = node_petsc*3 + 2;
+	  if(flag_pn==1){
+	    px[n] = node_petsc*3 + 0;
+	    py[n] = node_petsc*3 + 1;
+	    pz[n] = node_petsc*3 + 2;
+	  }
+	  else if(flag_pn==2){
+	    px[0] = node_petsc*3 + 0;
+	    px[1] = node_petsc*3 + 1;
+	    px[2] = node_petsc*3 + 2;
+	  }
+	  pn=pn->next; n ++;
 	}
-	else if(flag_pn==2){
-	  px[0] = node_petsc*3 + 0;
-	  px[1] = node_petsc*3 + 1;
-	  px[2] = node_petsc*3 + 2;
-	}
-	pn=pn->next; n ++;
       }
 
       pb=pb->next;
