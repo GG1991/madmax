@@ -169,6 +169,7 @@ int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );
 material_t * GetMaterial(int GmshIDToSearch);
 int GetElemenDispls( int e, double *Displacement, double *ElemDispls );
 int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress);
+int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6]);
 
 
 #endif

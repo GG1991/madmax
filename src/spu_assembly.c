@@ -1,11 +1,12 @@
 /*
- * Routines for matrix assembly
- *
+   Routines for matrix assembly
+
+   Author > Guido Giuntoli
+   Date   > 03-08-2017
+  
  */
 
 #include "sputnik.h"
-
-/****************************************************************************************************/
 
 int AssemblyJacobianSmallDeformation(Mat *J)
 {
@@ -80,12 +81,9 @@ int AssemblyJacobianSmallDeformation(Mat *J)
   return 0;
 
 }
-
 /****************************************************************************************************/
-
 int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 {
-
   /*
      Assembly the Residual for Small Deformation
      approach.
@@ -168,16 +166,12 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
   return 0;
 
 }
-
 /****************************************************************************************************/
-
 int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
 {
-
   /*    
 	Calculate averange Strain and Stress tensors on each element
    */
-
   int    i, k, e, gp, ngp, npe;
   int    ierr;
 
@@ -255,9 +249,109 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
 
   return 0;
 }
-
 /****************************************************************************************************/
+int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6])
+{
+  /*    
+	Calculate averange Strain and Stress tensors on each element
 
+        Input
+	<Vec x>  > distributed vector of displacements
+	Ouput
+	strain_ave[6] (same on every process)
+	stress_ave[6] (same on every process)
+
+   */
+  int    i, k, e, gp, ngp, npe;
+  int    ierr;
+  int    nproc, rank;
+
+  double ElemCoord[8][3];
+  double ShapeDerivs[8][3];
+  double DetJac;
+  double B[6][3*8], Sigma[6], Epsilon[6];
+  double DsDe[6][6];
+  double *wp = NULL;
+  double ElemDispls[8*3];
+  double *xvalues;
+  double vol = -1.0;
+  double stress_aux[6];
+  double strain_aux[6];
+
+  MPI_Comm_size(PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(PROBLEM_COMM, &rank);
+
+  Vec xlocal;
+
+  register double IntegralWeight;
+
+  /* 
+     Local representation of <x> with ghost padding
+  */
+  ierr = VecGhostUpdateBegin(*x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(*x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostGetLocalForm(*x,&xlocal); CHKERRQ(ierr);
+  ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr); CHKERRQ(ierr);
+
+  for(i=0;i<6;i++){
+    strain_aux[i] = stress_aux[i] = 0.0;
+  }
+  vol = 0.0;
+
+  for(e=0;e<nelm;e++){
+
+    npe = eptr[e+1]-eptr[e];
+    ngp = npe;
+
+    GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
+    GetWeight(npe, &wp);
+    GetElemenDispls( e, xvalues, ElemDispls );
+
+    // calculate <ElemResidue> by numerical integration
+
+    memset(Epsilon, 0.0, 6*sizeof(double));
+    memset(Sigma  , 0.0, 6*sizeof(double));
+
+    for(gp=0;gp<ngp;gp++){
+
+      GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      GetB( npe, ShapeDerivs, B );
+      GetDsDe( e, ElemDispls, DsDe );
+      IntegralWeight = DetJac*wp[gp];
+
+      for(i=0;i<6;i++){
+	for(k=0;k<npe*3;k++){
+	  Epsilon[i] += B[i][k]*ElemDispls[k];
+	}
+      }
+
+      for(i=0;i<6;i++){
+	for(k=0;k<6;k++){
+	  Sigma[i] += DsDe[i][k]*Epsilon[k];
+	}
+      }
+
+      for(i=0;i<6;i++){
+	stress_aux[i] += Sigma[i] * IntegralWeight;
+	strain_aux[i] += Epsilon[i] * IntegralWeight;
+      }
+
+      vol += IntegralWeight;
+    }
+
+  }
+  for(i=0;i<6;i++){
+    stress_aux[i] /= vol;
+    strain_aux[i] /= vol;
+  }
+  VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
+
+  ierr = MPI_Allreduce(stress_aux, stress_ave, 6, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Allreduce(strain_aux, strain_ave, 6, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
+
+  return 0;
+}
+/****************************************************************************************************/
 int GetElemenDispls( int e, double *Displacement, double *ElemDispls )
 {
 
@@ -273,9 +367,7 @@ int GetElemenDispls( int e, double *Displacement, double *ElemDispls )
   
   return 0;
 }
-
 /****************************************************************************************************/
-
 int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 {
 
@@ -313,12 +405,9 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
       break;
 
   }
-
   return 0;
 }
-
 /****************************************************************************************************/
-
 material_t * GetMaterial(int GmshIDToSearch)
 {
   
@@ -338,18 +427,14 @@ material_t * GetMaterial(int GmshIDToSearch)
   return (material_t*)pn->data;
 
 }
-
 /****************************************************************************************************/
-
 int GetWeight(int npe, double **wp)
 {
 
   *wp = FemGetPointer2Weight(npe, 3);
   return 0;
 }
-
 /****************************************************************************************************/
-
 int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
 {
 
@@ -384,11 +469,8 @@ int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
   }
 
   return 0;
-
 }
-
 /****************************************************************************************************/
-
 int GetShapeDerivs(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac)
 {
 
@@ -404,28 +486,23 @@ int GetShapeDerivs(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3],
   FemInvertJac3D( jac, ijac, DetJac);
   FemGiveShapeDerivs( ijac, npe, gp, ShapeDerivsMaster, ShapeDerivs);
 
-
-
   return 0;
 }
-
 /****************************************************************************************************/
-
 int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex)
 {
-
   /* 
-   * Gives the indeces to Gather fields and assembly on
-   * PETSc matrices and vectors
-   *
-   * Input:
-   *   LocalNod    :  array with local node numeration
-   *   n           : number of nodes of the element
-   *   local2PETSc : renumbering vetor to transform from local to PETSc
-   *
-   * Output:
-   *    PETScIndex : Array with PETSc numeration
-   *
+     Gives the indeces to Gather fields and assembly on
+     PETSc matrices and vectors
+
+     Input>
+     LocalNod    >  array with local node numeration
+     n           > number of nodes of the element
+     local2PETSc > renumbering vetor to transform from local to PETSc
+
+     Output>
+     PETScIndex > Array with PETSc numeration
+
    */
 
   int i, d;
@@ -437,14 +514,11 @@ int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex)
   }
   return 0;
 }
-
 /****************************************************************************************************/
-
 int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3])
 {
-
   /*
-   *  Returns the coordinates of the vertex of that element
+      Returns the coordinates of the vertex of that element
    */
 
   int i, d;
