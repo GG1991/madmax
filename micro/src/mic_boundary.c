@@ -248,6 +248,7 @@ int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b
 
   int ierr, i;
   int dir_idx[9];
+  int ndir;
   double zeros[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 
   switch(dir){
@@ -256,25 +257,27 @@ int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b
 	 CARA X0-UX y X1-UX e11 
 	 en P000 uy = uz = 0 en P010 uz = 0
       */
-      dir_idx[0]=P000[1];dir_idx[1]=P000[2];dir_idx[2]=P010[2];
+      ndir = 0;
+      if(P000_ismine){dir_idx[ndir++]=P000[1];dir_idx[ndir++]=P000[2];}
+      if(P010_ismine){dir_idx[ndir++]=P010[2];}
       if(flag&(1<<DISPLACE)){
-	ierr = VecSetValues( *x, 3, dir_idx, zeros, INSERT_VALUES); CHKERRQ(ierr); /* RB trans & rot */
+	ierr = VecSetValues( *x, ndir, dir_idx, zeros, INSERT_VALUES); CHKERRQ(ierr); /* RB trans & rot */
 	for(i=0;i<nnods_x0;i++) value_x0_ux[i] = 0.0;
 	for(i=0;i<nnods_x1;i++) value_x1_ux[i] = strain[0]*LX;
 	ierr = VecSetValues( *x, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *x, nnods_x1, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
       }
       if(flag&(1<<JACOBIAN)){
-	  ierr = MatZeroRowsColumns(*J, 3, dir_idx, 1.0, NULL, NULL); CHKERRQ(ierr);/* RB trans & rot */
-	  ierr = MatZeroRowsColumns(*J, nnods_x0, index_x0_ux, 1.0, NULL, NULL); CHKERRQ(ierr);
-	  ierr = MatZeroRowsColumns(*J, nnods_x1, index_x1_ux, 1.0, NULL, NULL); CHKERRQ(ierr);
+	ierr = MatZeroRowsColumns(*J, ndir, dir_idx, 1.0, NULL, NULL); CHKERRQ(ierr);/* RB trans & rot */
+	ierr = MatZeroRowsColumns(*J, nnods_x0, index_x0_ux, 1.0, NULL, NULL); CHKERRQ(ierr);
+	ierr = MatZeroRowsColumns(*J, nnods_x1, index_x1_ux, 1.0, NULL, NULL); CHKERRQ(ierr);
       }
       if(flag&(1<<RESIDUAL)){
-	ierr = VecSetValues( *b, 3, dir_idx, zeros, INSERT_VALUES); CHKERRQ(ierr); /* RB trans & rot */
-	memset(value_x0_ux, 0.0, nnods_x0*sizeof(double));
-	memset(value_x1_ux, 0.0, nnods_x0*sizeof(double));
+	ierr = VecSetValues( *b, ndir, dir_idx, zeros, INSERT_VALUES); CHKERRQ(ierr); /* RB trans & rot */
+	for(i=0;i<nnods_x0;i++) value_x0_ux[i] = 0.0;
+	for(i=0;i<nnods_x1;i++) value_x1_ux[i] = 0.0;
 	ierr = VecSetValues( *b, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
-	ierr = VecSetValues( *b, nnods_x0, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValues( *b, nnods_x1, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
       }
       break;
     case 1:

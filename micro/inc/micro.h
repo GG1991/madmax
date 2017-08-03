@@ -38,7 +38,7 @@ double *value_z0_ux, *value_z0_uy, *value_z0_uz;
 double *value_x1_ux, *value_x1_uy, *value_x1_uz; 
 double *value_y1_ux, *value_y1_uy, *value_y1_uz; 
 double *value_z1_ux, *value_z1_uy, *value_z1_uz; 
-int P000[3], P100[3], P010[3];
+int P000[3], P000_ismine, P100[3], P100_ismine, P010[3], P010_ismine;
 double PVAL[3];
 
 
