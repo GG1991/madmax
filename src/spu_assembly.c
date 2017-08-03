@@ -208,11 +208,12 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
 
     // calculate <ElemResidue> by numerical integration
 
-    memset(Epsilon, 0.0, 6*sizeof(double));
-    memset(Sigma  , 0.0, 6*sizeof(double));
     vol = 0.0;
 
     for(gp=0;gp<ngp;gp++){
+      
+      memset(Epsilon, 0.0, 6*sizeof(double));
+      memset(Sigma  , 0.0, 6*sizeof(double));
 
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
       GetB( npe, ShapeDerivs, B );
@@ -309,10 +310,10 @@ int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], d
 
     // calculate <ElemResidue> by numerical integration
 
-    memset(Epsilon, 0.0, 6*sizeof(double));
-    memset(Sigma  , 0.0, 6*sizeof(double));
-
     for(gp=0;gp<ngp;gp++){
+
+      memset(Epsilon, 0.0, 6*sizeof(double));
+      memset(Sigma  , 0.0, 6*sizeof(double));
 
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
       GetB( npe, ShapeDerivs, B );
