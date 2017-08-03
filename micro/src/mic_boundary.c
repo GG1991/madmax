@@ -1,13 +1,14 @@
 /*
-   Routines to impose Boundary condition on RVE cells
+
+   Routines to create boundary structures and to impose boundary condition on RVE cells
 
    Author > Guido Giuntoli
    Date > 31-07-2017
+
 */
 
 #include "micro.h"
 
-/****************************************************************************************************/
 int MicroCreateBoundary(list_t *boundary_list)
 {
   /*
@@ -46,71 +47,6 @@ int MicroCreateBoundary(list_t *boundary_list)
     list_insertlast(boundary_list, &boundary);
     i++;
   }
-  return 0;
-}
-/****************************************************************************************************/
-int MicroSetDisplacementOnBoundary( int dir, double strain_dir, double LX, double LY, double LZ, Vec *x )
-{
-  /*  
-      Dirichlet Boundary condition set is set on <x> 
-      usamos VecSetValuesLocal aqui ya que vamos a modificar valores locales unicamente
-   */
-  int ierr, i;
-  switch(dir){
-    case 0:
-      /* CARA X0-UX y X1-UX e11 */
-//      PVAL[0] = 0.0; PVAL[1] = 0.0; PVAL[2] = 0.0;
-//      ierr = VecSetValues( *x, 3, P000, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-//      PVAL[0] = strain_dir*LX; PVAL[1] = 0.0; PVAL[2] = 0.0;
-//      ierr = VecSetValues( *x, 3, P100, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-//      PVAL[0] = 0.0; PVAL[1] = 0.0;
-//      ierr = VecSetValues( *x, 2, P010, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      memset(value_x0_ux, 0.0, nnods_x0*sizeof(double));
-      ierr = VecSetValues( *x, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
-      for(i=0;i<nnods_x1;i++) value_x1_ux[i] = strain_dir*LX;
-      ierr = VecSetValues( *x, nnods_x1, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    case 1:
-      /* CARA Y0-UY y Y1-UY e22 */
-      memset(value_y0_uy, 0.0, nnods_y0*sizeof(double));
-      ierr = VecSetValues( *x, nnods_y0, index_y0_uy, value_y0_uy, INSERT_VALUES); CHKERRQ(ierr);
-      for(i=0;i<nnods_x1;i++) value_y1_uy[i] = strain_dir*LY;
-      ierr = VecSetValues( *x, nnods_y1, index_y1_uy, value_y1_uy, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    case 2:
-      /* CARA Z0-UZ y Z1-UZ e33 */
-      memset(value_z0_uy, 0.0, nnods_z0*sizeof(double));
-      ierr = VecSetValues( *x, nnods_z0, index_z0_uz, value_z0_uz, INSERT_VALUES); CHKERRQ(ierr);
-      for(i=0;i<nnods_x1;i++) value_z1_uz[i] = strain_dir*LZ;
-      ierr = VecSetValues( *x, nnods_z1, index_z1_uz, value_z1_uz, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    case 3:
-      /* CARA X0-UX y Z1-UX e12 */
-      memset(value_z0_uy, 0.0, nnods_z0*sizeof(double));
-      ierr = VecSetValues( *x, nnods_z0, index_z0_uz, value_z0_uz, INSERT_VALUES); CHKERRQ(ierr);
-      for(i=0;i<nnods_x1;i++) value_x1_ux[i] = strain_dir*LX;
-      ierr = VecSetValues( *x, nnods_z1, index_z1_uz, value_z1_uz, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    case 4:
-      /* CARA X0-UX y Z1-UX e12 */
-      memset(value_z0_uy, 0.0, nnods_z0*sizeof(double));
-      ierr = VecSetValues( *x, nnods_z0, index_z0_uz, value_z0_uz, INSERT_VALUES); CHKERRQ(ierr);
-      for(i=0;i<nnods_x1;i++) value_x1_ux[i] = strain_dir*LX;
-      ierr = VecSetValues( *x, nnods_z1, index_z1_uz, value_z1_uz, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    case 5:
-      /* CARA X0-UX y Z1-UX e12 */
-      memset(value_z0_uy, 0.0, nnods_z0*sizeof(double));
-      ierr = VecSetValues( *x, nnods_z0, index_z0_uz, value_z0_uz, INSERT_VALUES); CHKERRQ(ierr);
-      for(i=0;i<nnods_x1;i++) value_x1_ux[i] = strain_dir*LX;
-      ierr = VecSetValues( *x, nnods_z1, index_z1_uz, value_z1_uz, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    default:
-      break;
-  }
-  /* communication between processes */
-  ierr = VecAssemblyBegin(*x);CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(*x);CHKERRQ(ierr);
   return 0;
 }
 /****************************************************************************************************/
@@ -188,7 +124,7 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	case 1:
 	  if(!strcmp(name,"P100")){flag=flag|(1<<1); px = P100; flag_pn=2;} break;
 	case 2:
-	  if(!strcmp(name,"P010")){flag=flag|(1<<2); px = P010; flag_pn=3;} break;
+	  if(!strcmp(name,"P010")){flag=flag|(1<<2); px = P010; flag_pn=2;} break;
 	case 3:
 	  if(!strcmp(name,"X0")){
 	    flag=flag|(1<<3);
@@ -281,10 +217,6 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	  px[1] = node_petsc*3 + 1;
 	  px[2] = node_petsc*3 + 2;
 	}
-	else if(flag_pn==3){
-	  px[0] = node_petsc*3 + 0;
-	  px[1] = node_petsc*3 + 2;
-	}
 	pn=pn->next; n ++;
       }
 
@@ -296,23 +228,50 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   return 0;
 }
 /****************************************************************************************************/
-int MicroSetBoundaryOnJacobian(int dir, Mat *J)
+int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag)
 {
   /* 
-     Sets 1's on the diagonal corresponding to Dirichlet indeces and 0's
-     on the rest of the row and column 
+     Sets values of displacements on <x>
+     Sets 1's on the diagonal of the <J> and 0's on the rest of the row and column corresponding 
+     with Dirichlet indeces. 
+     Sets 0's on the Residual on rows corresponding to Dirichlet indeces. 
+     flag = SET_DISPLACE
+     flag = SET_JACOBIAN
+     flag = SET_RESIDUAL
+     flag = SET_JACRES
   */
+  if( !(flag|SET_DISPLACE) && !(flag|SET_RESIDUAL) && !(flag|SET_JACOBIAN) ) SETERRQ(MICRO_COMM,1, "Incorrect flag value");
 
-  int    ierr;
+  int ierr, i;
+  int dir_idx[9];
+  double zeros[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 
   switch(dir){
     case 0:
-      /* CARA X0-UX y X1-UX e11 */
-      ierr = MatZeroRowsColumns(*J, 3, P000, 1.0, NULL, NULL); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(*J, 3, P100, 1.0, NULL, NULL); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(*J, 3, P010, 1.0, NULL, NULL); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(*J, nnods_x0, index_x0_ux, 1.0, NULL, NULL); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(*J, nnods_x1, index_x1_ux, 1.0, NULL, NULL); CHKERRQ(ierr);
+      /* 
+	 CARA X0-UX y X1-UX e11 
+	 en P000 uy = uz = 0 en P010 uz = 0
+      */
+      dir_idx[0]=P000[1];dir_idx[1]=P000[2];dir_idx[2]=P010[2];
+      if(flag&(1<<DISPLACE)){
+	ierr = VecSetValues( *x, 3, dir_idx, zeros, INSERT_VALUES); CHKERRQ(ierr); /* RB trans & rot */
+	for(i=0;i<nnods_x0;i++) value_x0_ux[i] = 0.0;
+	for(i=0;i<nnods_x1;i++) value_x1_ux[i] = strain[0]*LX;
+	ierr = VecSetValues( *x, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValues( *x, nnods_x1, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
+      }
+      if(flag&(1<<JACOBIAN)){
+	  ierr = MatZeroRowsColumns(*J, 3, dir_idx, 1.0, NULL, NULL); CHKERRQ(ierr);/* RB trans & rot */
+	  ierr = MatZeroRowsColumns(*J, nnods_x0, index_x0_ux, 1.0, NULL, NULL); CHKERRQ(ierr);
+	  ierr = MatZeroRowsColumns(*J, nnods_x1, index_x1_ux, 1.0, NULL, NULL); CHKERRQ(ierr);
+      }
+      if(flag&(1<<RESIDUAL)){
+	ierr = VecSetValues( *b, 3, dir_idx, zeros, INSERT_VALUES); CHKERRQ(ierr); /* RB trans & rot */
+	memset(value_x0_ux, 0.0, nnods_x0*sizeof(double));
+	memset(value_x1_ux, 0.0, nnods_x0*sizeof(double));
+	ierr = VecSetValues( *b, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValues( *b, nnods_x0, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
+      }
       break;
     case 1:
       /* CARA Y0-UY y Y1-UY e22 */
@@ -359,90 +318,17 @@ int MicroSetBoundaryOnJacobian(int dir, Mat *J)
   }
 
   /* communication between processes */
-  ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  return 0;
-}
-/****************************************************************************************************/
-int MicroSetBoundaryOnResidual(int dir, Vec *b)
-{
-  /* 
-     Sets 0's on the Dirichlet indeces over the Residual <b>
-  */
-  int    ierr;
-  switch(dir){
-    case 0:
-      /* CARA X0-UX y X1-UX e11 */
-      memset(PVAL, 0.0, 3*sizeof(double));
-      ierr = VecSetValues( *b, 3, P000, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P100, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P010, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      memset(value_x0_ux, 0.0, nnods_x0*sizeof(double));
-      memset(value_x1_ux, 0.0, nnods_x0*sizeof(double));
-      ierr = VecSetValues( *b, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, nnods_x0, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    case 1:
-      /* CARA Y0-UY y Y1-UY e22 */
-      memset(PVAL, 0.0, 3*sizeof(double));
-      ierr = VecSetValues( *b, 3, P000, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P100, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P010, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      memset(value_x0_ux, 0.0, nnods_x0*sizeof(double));
-      memset(value_x1_ux, 0.0, nnods_x0*sizeof(double));
-      ierr = VecSetValues( *b, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, nnods_x0, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    case 2:
-      /* CARA Z0-UZ y Z1-UZ e33 */
-      memset(PVAL, 0.0, 3*sizeof(double));
-      ierr = VecSetValues( *b, 3, P000, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P100, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P010, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      memset(value_x0_ux, 0.0, nnods_x0*sizeof(double));
-      memset(value_x1_ux, 0.0, nnods_x0*sizeof(double));
-      ierr = VecSetValues( *b, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, nnods_x0, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    case 3:
-      /* CARA X0-UX y Z1-UX e12 */
-      memset(PVAL, 0.0, 3*sizeof(double));
-      ierr = VecSetValues( *b, 3, P000, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P100, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P010, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      memset(value_x0_ux, 0.0, nnods_x0*sizeof(double));
-      memset(value_x1_ux, 0.0, nnods_x0*sizeof(double));
-      ierr = VecSetValues( *b, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, nnods_x0, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    case 4:
-      /* CARA X0-UX y Z1-UX e12 */
-      memset(PVAL, 0.0, 3*sizeof(double));
-      ierr = VecSetValues( *b, 3, P000, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P100, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P010, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      memset(value_x0_ux, 0.0, nnods_x0*sizeof(double));
-      memset(value_x1_ux, 0.0, nnods_x0*sizeof(double));
-      ierr = VecSetValues( *b, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, nnods_x0, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    case 5:
-      /* CARA X0-UX y Z1-UX e12 */
-      memset(PVAL, 0.0, 3*sizeof(double));
-      ierr = VecSetValues( *b, 3, P000, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P100, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, 3, P010, PVAL, INSERT_VALUES); CHKERRQ(ierr);
-      memset(value_x0_ux, 0.0, nnods_x0*sizeof(double));
-      memset(value_x1_ux, 0.0, nnods_x0*sizeof(double));
-      ierr = VecSetValues( *b, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValues( *b, nnods_x0, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
-      break;
-    default:
-      break;
+  if(flag&(1<<DISPLACE)){
+    ierr = VecAssemblyBegin(*x);CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(*x);CHKERRQ(ierr);
   }
-  /* communication between processes */
-  ierr = VecAssemblyBegin(*b);CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(*b);CHKERRQ(ierr);
+  if(flag&(1<<JACOBIAN)){
+    ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  }
+  if(flag&(1<<RESIDUAL)){
+    ierr = VecAssemblyBegin(*b);CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(*b);CHKERRQ(ierr);
+  }
   return 0;
 }
-/****************************************************************************************************/

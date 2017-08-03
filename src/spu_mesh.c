@@ -496,7 +496,7 @@ int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n)
   FILE   *fm;
 
   int    total;
-  int    i, j, h, k, d, n; 
+  int    i, d, n; 
   int    ln;                // line counter
   int    ntag;              // ntag to read gmsh element conectivities
   int    GmshIDToSearch; 

@@ -57,8 +57,15 @@ int MicroAllocMatrixVector(MPI_Comm comm, int nlocal, int ntotal);
 
 // mic_boundary.c
 int MicroCreateBoundary(list_t *boundary_list);
-int MicroSetDisplacementOnBoundary( int dir, double strain_dir, double LX, double LY, double LZ, Vec *x );
-int MicroSetBoundaryOnJacobian(int dir, Mat *J);
-int MicroSetBoundaryOnResidual(int dir, Vec *b);
 int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list);
 int MicroCheckPhysicalEntities( list_t *physical_list );
+
+#define DISPLACE    0
+#define JACOBIAN    1
+#define RESIDUAL    2
+#define SET_DISPLACE    1
+#define SET_JACOBIAN    2
+#define SET_RESIDUAL    4
+#define SET_JACRES      6
+
+int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag);

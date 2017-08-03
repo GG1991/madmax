@@ -228,7 +228,7 @@ int main(int argc, char **argv)
   /*
      micro main coupling loop
    */
-  double strain_bc[6], stress_ave[6], ttensor[36];
+  double stress_ave[6], ttensor[36];
   LX = LY = LZ = 1.0;
 
   if(flag_coupling){
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
 	  /*
 	     Performs the micro calculation
 	  */
-	  ierr = MicroSetDisplacementOnBoundary( 0, strain[0], LX, LY, LZ, &x );
+	  ierr = MicroSetBoundaryDispJacRes(0, strain, &x, &A, &b, SET_DISPLACE);
 	  if( flag_print | (1<<PRINT_PETSC) ){
 	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	    ierr = VecView(x,viewer); CHKERRQ(ierr);
@@ -271,13 +271,12 @@ int main(int argc, char **argv)
        Performs 6 experiment
      */
     int    nr_its = -1, kspits = -1;
-    int    dir = 0;
     double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
+    double strain_bc[6] = {0.005,0.005,0.005,0.005,0.005,0.005};
 
-    strain_bc[0] = 0.005; strain_bc[1] = 0.005; strain_bc[2] = 0.005; strain_bc[3] = 0.005; strain_bc[4] = 0.005; strain_bc[5] = 0.005;
     ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
     ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment on X faces e11=1 eij=0\n");CHKERRQ(ierr);
-    ierr = MicroSetDisplacementOnBoundary( 0, strain_bc[0], LX, LY, LZ, &x );
+    ierr = MicroSetBoundaryDispJacRes(0, strain_bc, &x, &A, &b, SET_DISPLACE);
     if( flag_print | (1<<PRINT_PETSC) ){
       ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
       ierr = VecView(x,viewer); CHKERRQ(ierr);
@@ -293,7 +292,7 @@ int main(int argc, char **argv)
       ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
       ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Residual ");CHKERRQ(ierr);
       ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
-      ierr = MicroSetBoundaryOnResidual(dir, &b); CHKERRQ(ierr);
+      ierr = MicroSetBoundaryDispJacRes(0, strain_bc, &x, &A, &b, SET_RESIDUAL);
       if( flag_print | (1<<PRINT_PETSC) ){
 	ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(b,viewer); CHKERRQ(ierr);
@@ -309,7 +308,7 @@ int main(int argc, char **argv)
       ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
       ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Jacobian\n");
       ierr = AssemblyJacobianSmallDeformation(&A);
-      ierr = MicroSetBoundaryOnJacobian(dir, &A); CHKERRQ(ierr);
+      ierr = MicroSetBoundaryDispJacRes(0, strain_bc, &x, &A, &b, SET_JACOBIAN);
       if( flag_print == (1<<PRINT_PETSC) ){
 	ierr = PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
 	ierr = MatView(A,viewer); CHKERRQ(ierr);
