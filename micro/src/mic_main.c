@@ -274,7 +274,7 @@ int main(int argc, char **argv)
     double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
     double strain_bc[6] = {0.005,0.005,0.005,0.005,0.005,0.005};
 
-    for(i=0;i<4;i++){
+    for(i=0;i<6;i++){
 
       ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
       ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment on X faces e11=1 eij=0\n");CHKERRQ(ierr);
@@ -355,10 +355,20 @@ int main(int argc, char **argv)
 	strain = malloc(nelm*6*sizeof(double));
 	stress = malloc(nelm*6*sizeof(double));
 	ierr = SpuCalcStressOnElement(&x, strain, stress);
+	for(j=0;j<6;j++){
+	  ttensor[j*6+i] = stress[j] / strain[i];
+	}
 	sprintf(vtkfile_n,"%s_displ_exp%d_%d.vtk",myname,i,rank_mic);
 	ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
 	free(stress); free(strain);
       }
+    }
+    ierr = PetscPrintf(MICRO_COMM,"Constitutive Average Tensor\n");CHKERRQ(ierr);
+    for(i=0;i<6;i++){
+      for(j=0;j<6;j++){
+	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j]>1.0))?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
+      }
+      ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
     }
 
   }

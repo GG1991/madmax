@@ -169,18 +169,18 @@ int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *
   fprintf(vtkfl, "TENSORS Strain FLOAT\n");
 //  fprintf(vtkfl, "LOOKUP_TABLE default\n");
   for (e=0;e<nelm;e++){
-    fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+0],Strain[e*6+4],Strain[e*6+5]);
-    fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+4],Strain[e*6+1],Strain[e*6+3]);
-    fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+5],Strain[e*6+3],Strain[e*6+2]);
+    fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+0],Strain[e*6+3],Strain[e*6+5]);
+    fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+3],Strain[e*6+1],Strain[e*6+4]);
+    fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+5],Strain[e*6+4],Strain[e*6+2]);
     fprintf(vtkfl, "\n"); 
   }
 
   fprintf(vtkfl, "TENSORS Stress FLOAT\n");
 //  fprintf(vtkfl, "LOOKUP_TABLE default\n");
   for (e=0;e<nelm;e++){
-    fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+0],Stress[e*6+4],Stress[e*6+5]);
-    fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+4],Stress[e*6+1],Stress[e*6+3]);
-    fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+5],Stress[e*6+3],Stress[e*6+2]);
+    fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+0],Stress[e*6+3],Stress[e*6+5]);
+    fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+3],Stress[e*6+1],Stress[e*6+4]);
+    fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+5],Stress[e*6+4],Stress[e*6+2]);
     fprintf(vtkfl, "\n"); 
   }
 
