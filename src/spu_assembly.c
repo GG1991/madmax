@@ -67,7 +67,6 @@ int AssemblyJacobianSmallDeformation(Mat *J)
 	}
       }
 
-
     }
     ierr = MatSetValues(*J, npe*3, PETScIdx, npe*3, PETScIdx, ElemMatrix, ADD_VALUES);CHKERRQ(ierr);
 
@@ -76,7 +75,6 @@ int AssemblyJacobianSmallDeformation(Mat *J)
   /* communication between processes */
   ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
 
   return 0;
 

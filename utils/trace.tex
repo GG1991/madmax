@@ -78,16 +78,6 @@ background rectangle/.style={pattern=north west lines,pattern color=Blue},
 %
   \foreach \j in {1,2,...,32} 
   {
-%  \foreach \j/\colorj  [evaluate = \j as \ypp using int(5-\j+1)] in {1/NavyBlue, 2/Blue, 3/Gray!50, 4/Orange, 5/Maroon} 
-%  {
-%      %
-%      \draw[, draw=Black,fill=\colorj,line width=3pt] 
-%                                      (\Li-0.01*\Li, \j * \Hi+0.0*\Hi)                                              % <- posicion inicial 
-%                       rectangle (\Li-0.15*\Li, \j * \Hi+1.0*\Hi)                                              % <- ancho 
-%                      node[pos=.5,font={\Huge \boldmath},Black,] {$\Omega_{\ypp} $};   % <- label 
-%      %
-    %\foreach \i in {1,2,...,5} 
-%    \foreach \k  [ evaluate = \k as \i using \k*(1+0.02*rand) ] in {1,2,...,5}  
     \foreach \k  [ evaluate = \k as \i using \k*(1- 0.01 + 2 * 0.005 * rand) ] in {1,2,...,5}  
     {
       \filldraw[fill=ColorAA, draw=White] (\i * \Li+0.00*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
@@ -102,29 +92,13 @@ background rectangle/.style={pattern=north west lines,pattern color=Blue},
                                             rectangle (\i * \Li+0.75*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
       \filldraw[fill=ColorAE, draw=White] (\i * \Li+0.75*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
                                             rectangle (\i * \Li+0.90*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
-%    \begin{pgfonlayer}{background} 
       \filldraw[fill=ColorAF, draw=White] (\i * \Li+0.90*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
                                             rectangle (\i * \Li+0.95*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
       \filldraw[fill=ColorAF, draw=White] (\i * \Li+0.95*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
                                             rectangle (\i * \Li+0.99*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
-%    \end{pgfonlayer}
     } 
   }
-
-%%\draw[step=1cm,Gray,very thin] (-\dX,-\dY )        grid (8*\Xa + \dX,2*\Ya + \dY );
-%\draw[                                     ] (-\dX,-\dY) rectangle (1.0*\Li+\dX,1.0*\Hi+\dY);
-%%
-%\filldraw[fill=ColorAA, draw=Black] (0.00*\Li,0.0) rectangle (0.05*\Li,1.0*\Hi);
-%\filldraw[fill=ColorAB, draw=Black] (0.05*\Li,0.0) rectangle (0.60*\Li,1.0*\Hi);
-%\filldraw[fill=ColorAC, draw=Black] (0.60*\Li,0.0) rectangle (0.65*\Li,1.0*\Hi);
-%\filldraw[fill=ColorAD, draw=Black] (0.65*\Li,0.0) rectangle (0.80*\Li,1.0*\Hi);
-%\filldraw[fill=ColorAE, draw=Black] (0.80*\Li,0.0) rectangle (0.95*\Li,1.0*\Hi);
-%\filldraw[fill=ColorAF, draw=Black] (0.95*\Li,0.0) rectangle (1.00*\Li,1.0*\Hi);
-
-
-%\filldraw[pattern=north west lines, pattern color=ColorBA] (\Lj, 0*\Hj)  rectangle(\Li,\Hj);
 
 \end{tikzpicture} 
 
 \end{document} -
-
