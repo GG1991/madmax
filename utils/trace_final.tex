@@ -71,30 +71,7 @@
 show background rectangle, 
 background rectangle/.style={pattern=north west lines,pattern color=Blue},
 ] 
-%
-  \foreach \j in {1,2,...,42} 
-  {
-    \foreach \k  [ evaluate = \k as \i using \k*(1- 0.01 + 2 * 0.005 * rand) ] in {1,2,...,5}  
-    {
-      \filldraw[fill=ColorAA, draw=White] (\i * \Li+0.00*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
-                                            rectangle (\i * \Li+0.05*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
-      \filldraw[fill=ColorAA, draw=White] (\i * \Li+0.05*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
-                                            rectangle (\i * \Li+0.10*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
-      \filldraw[fill=ColorAB, draw=White] (\i * \Li+0.10*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
-                                            rectangle (\i * \Li+0.55*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
-      \filldraw[fill=ColorAC, draw=White] (\i * \Li+0.55*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
-                                            rectangle (\i * \Li+0.60*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
-      \filldraw[fill=ColorAD, draw=White] (\i * \Li+0.60*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
-                                            rectangle (\i * \Li+0.75*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
-      \filldraw[fill=ColorAE, draw=White] (\i * \Li+0.75*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
-                                            rectangle (\i * \Li+0.90*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
-      \filldraw[fill=ColorAF, draw=White] (\i * \Li+0.90*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
-                                            rectangle (\i * \Li+0.95*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
-      \filldraw[fill=ColorAF, draw=White] (\i * \Li+0.95*\Li, \j * \Hi+0.0*\Hi+0*\dY) 
-                                            rectangle (\i * \Li+0.99*\Li, \j * \Hi+1.0*\Hi- 0*\dY);
-    } 
-  }
-
+\filldraw[fill=ColorAA, draw=White] (0.0, 0.0) rectangle (1.0, 1.0);
 \end{tikzpicture} 
 
-\end{document} -
+\end{document} 
