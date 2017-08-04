@@ -274,7 +274,7 @@ int main(int argc, char **argv)
     double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
     double strain_bc[6] = {0.005,0.005,0.005,0.005,0.005,0.005};
 
-    for(i=0;i<3;i++){
+    for(i=0;i<4;i++){
 
       ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
       ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment on X faces e11=1 eij=0\n");CHKERRQ(ierr);

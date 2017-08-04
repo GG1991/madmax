@@ -177,8 +177,8 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
 
   double ElemCoord[8][3];
   double ShapeDerivs[8][3];
-  double DetJac;
-  double B[6][3*8], Sigma[6], Epsilon[6];
+  double det_jac;
+  double B[6][3*8], stress_gp[6], strain_gp[6], stress_ave[6], strain_ave[6];
   double DsDe[6][6];
   double *wp = NULL;
   double ElemDispls[8*3];
@@ -206,43 +206,42 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
     GetWeight(npe, &wp);
     GetElemenDispls( e, xvalues, ElemDispls );
 
-    // calculate <ElemResidue> by numerical integration
-
     vol = 0.0;
+    memset(strain_ave, 0.0, 6*sizeof(double));
+    memset(stress_ave  , 0.0, 6*sizeof(double));
 
     for(gp=0;gp<ngp;gp++){
       
-      memset(Epsilon, 0.0, 6*sizeof(double));
-      memset(Sigma  , 0.0, 6*sizeof(double));
+      memset(strain_gp, 0.0, 6*sizeof(double));
+      memset(stress_gp  , 0.0, 6*sizeof(double));
 
-      GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &det_jac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
-      IntegralWeight = DetJac*wp[gp];
+      IntegralWeight = det_jac*wp[gp];
 
       for(i=0;i<6;i++){
 	for(k=0;k<npe*3;k++){
-	  Epsilon[i] += B[i][k]*ElemDispls[k];
+	  strain_gp[i] += B[i][k]*ElemDispls[k];
 	}
       }
 
       for(i=0;i<6;i++){
 	for(k=0;k<6;k++){
-	  Sigma[i] += DsDe[i][k]*Epsilon[k];
+	  stress_gp[i] += DsDe[i][k]*strain_gp[k];
 	}
       }
 
       for(i=0;i<6;i++){
-	Sigma[i] *= IntegralWeight;
-	Epsilon[i] *= IntegralWeight;
+	stress_ave[i] += stress_gp[i] * IntegralWeight;
+	strain_ave[i] += strain_gp[i] * IntegralWeight;
       }
 
-      vol += DetJac*wp[gp];
-
+      vol += det_jac*wp[gp];
     }
     for(i=0;i<6;i++){
-      Strain[e*6+i] = Epsilon[i] / vol; 
-      Stress[e*6+i] = Sigma[i]   / vol;
+      Strain[e*6+i] = strain_ave[i] / vol; 
+      Stress[e*6+i] = stress_ave[i] / vol;
     }
 
   }
@@ -275,7 +274,7 @@ int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], d
   double *wp = NULL;
   double ElemDispls[8*3];
   double *xvalues;
-  double vol = -1.0;
+  double vol = -1.0, vol_tot = -1.0;
   double stress_aux[6];
   double strain_aux[6];
 
@@ -341,14 +340,16 @@ int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], d
     }
 
   }
-  for(i=0;i<6;i++){
-    stress_aux[i] /= vol;
-    strain_aux[i] /= vol;
-  }
   VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
 
   ierr = MPI_Allreduce(stress_aux, stress_ave, 6, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
   ierr = MPI_Allreduce(strain_aux, strain_ave, 6, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Allreduce(&vol, &vol_tot, 1, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
+
+  for(i=0;i<6;i++){
+    stress_aux[i] /= vol_tot;
+    strain_aux[i] /= vol_tot;
+  }
 
   return 0;
 }
