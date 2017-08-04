@@ -49,10 +49,32 @@ if [ -e "trace_half.tex" ]; then
    rm trace_half.tex
 fi
 
-echo "\filldraw[fill=ColorAA, draw=White] (0.0, 0.0) rectangle (1.0, 1.0);"> trace_half.tex
+width=0.1;
+sep=0.1;
+for ip in `seq 1 $n`; do
+ y_min=`echo "10-${ip}*${width}-${sep}"|bc -l`
+ y_max=`echo "10-${ip}*${width}-${sep}+${width}"|bc -l`
+ for j in `seq 1 $nevents`; do
+ 
+ k=`echo "2*${j}-1"|bc -l`
+ eval sed -n ${k}p times.dat > line.dat
+ start_num=$(awk -v pattern=${ip} '{print $pattern}' line.dat )
+
+ k=`echo "2*${j}"|bc -l`
+ eval sed -n ${k}p times.dat > line.dat
+ end_num=$(awk '{print $1}' line.dat )
+
+ echo $start_num $end_num
+ 
+ echo "\filldraw[fill=ColorAA, draw=White] \
+ (${start_num}, ${y_min}) rectangle (${end_num}, ${y_max});">> trace_half.tex
+ 
+ done
+done
+
 
 cat trace_head.tex >  trace_final.tex
 cat trace_half.tex >> trace_final.tex
 cat trace_tail.tex >> trace_final.tex
 
-pdflatex trace_final.tex
+#pdflatex trace_final.tex
