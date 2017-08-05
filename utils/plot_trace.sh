@@ -49,32 +49,34 @@ if [ -e "trace_half.tex" ]; then
    rm trace_half.tex
 fi
 
+scale_x=1000;
 width=0.1;
 sep=0.1;
-for ip in `seq 1 $n`; do
- y_min=`echo "10-${ip}*${width}-${sep}"|bc -l`
- y_max=`echo "10-${ip}*${width}-${sep}+${width}"|bc -l`
- for j in `seq 1 $nevents`; do
- 
- k=`echo "2*${j}-1"|bc -l`
- eval sed -n ${k}p times.dat > line.dat
- start_num=$(awk -v pattern=${ip} '{print $pattern}' line.dat )
 
- k=`echo "2*${j}"|bc -l`
- eval sed -n ${k}p times.dat > line.dat
- end_num=$(awk '{print $1}' line.dat )
-
- echo $start_num $end_num
- 
- echo "\filldraw[fill=ColorAA, draw=White] \
- (${start_num}, ${y_min}) rectangle (${end_num}, ${y_max});">> trace_half.tex
- 
- done
-done
-
+awk -v width_awk=$width -v sep_awk=$sep -v scale_x_awk=$scale_x ' 
+BEGIN{i=1}
+{
+  for(j=1;j<=NF;j++){
+    array[i,j]=$j;
+  }
+  i++;
+}
+END{
+  nproc = NF
+  for(j=1;j<=nproc;j++){
+    ymin = 10 -j * (width_awk+sep_awk) - width_awk ;
+    ymax = 10 -j * (width_awk+sep_awk);
+    for(i=1;i<=NR/2;i++){
+      printf "\\filldraw[fill=ColorAA, draw=White] (%e, %e) rectangle (%e,%e);\n"  \
+	,array[2*i-1,j]*scale_x_awk, ymin, array[2*i,j]*scale_x_awk,ymax
+    }
+    printf "\n"
+  }
+}' times.dat >> trace_half.tex
 
 cat trace_head.tex >  trace_final.tex
 cat trace_half.tex >> trace_final.tex
 cat trace_tail.tex >> trace_final.tex
 
 #pdflatex trace_final.tex
+
