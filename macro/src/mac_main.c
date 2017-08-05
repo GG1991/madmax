@@ -310,7 +310,7 @@ int main(int argc, char **argv)
 	ierr = VecView(x,viewer); CHKERRQ(ierr);
       }
       ierr = PetscPrintf(MACRO_COMM,"Iterations %D Norm %e reason %d\n",kspits, kspnorm, reason);CHKERRQ(ierr);
-      ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
+      ierr = PetscLogEventEnd(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
 
       nr_its ++;
     }

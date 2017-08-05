@@ -28,6 +28,9 @@ struct*
 *tmpi*
 *.swp*
 
+utils/
+meshes/
+
 *_trace.*
 mpitests/IS
 mpitests/matPreAlloc/matpre
