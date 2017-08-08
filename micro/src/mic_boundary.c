@@ -54,11 +54,12 @@ int micro_check_physical_entities( list_t *physical_list )
 {
   /*
      Checks if the physical entities defined on mesh file are
-     P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1 (at least)
+     (¿ NO ?) P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1 (at least)
+     X0 X1 Y0 Y1 Z0 Z1 (at least)
    */
   int i = 0, flag = 0, flag_pn = 0;
   char *name;
-  while(i<9)
+  while(i<6)
   {
     node_list_t * pn = physical_list->head;
     flag_pn=0;
@@ -67,23 +68,17 @@ int micro_check_physical_entities( list_t *physical_list )
       name = ((physical_t*)pn->data)->name;
       switch(i){
 	case 0:
-	  if(!strcmp(name,"P000")){flag=flag|(1<<0);flag_pn=1;}break;
-	case 1:
-	  if(!strcmp(name,"P100")){flag=flag|(1<<1);flag_pn=1;}break;
-	case 2:
-	  if(!strcmp(name,"P010")){flag=flag|(1<<2);flag_pn=1;}break;
-	case 3:
-	  if(!strcmp(name,"X0")  ){flag=flag|(1<<3);flag_pn=1;}break;
-	case 4:
-	  if(!strcmp(name,"X1")  ){flag=flag|(1<<4);flag_pn=1;}break;
-	case 5:
-	  if(!strcmp(name,"Y0")  ){flag=flag|(1<<5);flag_pn=1;}break;
-	case 6:
-	  if(!strcmp(name,"Y1")  ){flag=flag|(1<<6);flag_pn=1;}break;
-	case 7:
-	  if(!strcmp(name,"Z0")  ){flag=flag|(1<<7);flag_pn=1;}break;
-	case 8:
-	  if(!strcmp(name,"Z1")  ){flag=flag|(1<<8);flag_pn=1;}break;
+	  if(!strcmp(name,"X0")  ){flag=flag|(1<<0);flag_pn=1;}break;
+	case 1:                                   
+	  if(!strcmp(name,"X1")  ){flag=flag|(1<<1);flag_pn=1;}break;
+	case 2:                                   
+	  if(!strcmp(name,"Y0")  ){flag=flag|(1<<2);flag_pn=1;}break;
+	case 3:                                   
+	  if(!strcmp(name,"Y1")  ){flag=flag|(1<<3);flag_pn=1;}break;
+	case 4:                                   
+	  if(!strcmp(name,"Z0")  ){flag=flag|(1<<4);flag_pn=1;}break;
+	case 5:                                   
+	  if(!strcmp(name,"Z1")  ){flag=flag|(1<<5);flag_pn=1;}break;
 	default:
 	  break;
       }
@@ -91,7 +86,8 @@ int micro_check_physical_entities( list_t *physical_list )
     }
     i++;
   }
-  if(flag != 511)SETERRQ(MICRO_COMM,1, "MICRO:physical entity not found (P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1)");
+  if(flag!=63)SETERRQ(MICRO_COMM,1,"MICRO:physical entity not found (X0 X1 Y0 Y1 Z0 Z1)");
+  //if(flag != 511)SETERRQ(MICRO_COMM,1, "MICRO:physical entity not found (P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1)");
   return 0;
 }
 /****************************************************************************************************/

@@ -116,7 +116,6 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
   // any $Material found
   SETERRQ(PETSC_COMM_SELF,1,"$Materials section not found on input file."); 
 }
-
 /****************************************************************************************************/
 int CheckPhysicalID(void)
 {
