@@ -2,7 +2,7 @@
 
 NM=1
 
-#break_mic=( 'mic_main.c:354' ) 
+#break_mic=( 'mic_main.c:xx' ) 
 #break_mic=( 'spu_mesh.c:xx' ) 
 #break_mic=( 'micmic.c:xx' ) 
 #break_mic=( 'mic_alloc.c:xx' ) 
@@ -39,5 +39,19 @@ eval ./mpirun -np $NM valgrind --log-file=\"valgrind.out\" --leak-check=full ../
        -print_part
 }
 
+function barbero_debug {
+eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" --args ../../micro/micro   \
+    -input ex1.spu                            \
+    -mesh ../../meshes/barbero/MESH01/Mesh01  \
+    -mesh_alya                                \
+    -ksp_type cg                              \
+    -ksp_rtol 1.0e-13                         \
+    -options_left 0                           \
+    -print_disp                               \
+    -log_trace micro_trace                    \
+    -print_part
+}
+
 #ex_common
-#ex_valgrind
+#ex_valgri
+#barbero_debug

@@ -810,7 +810,6 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   int                  i, d, n; 
   int                  len;               // strlen(buf) for adding to offset
   int                  ln;                // line counter
-  int                  ierr;
   int                  ntag;              // ntag to read gmsh element conectivities
   int                  rank;
   int                  nproc;
@@ -1092,7 +1091,7 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   */
   strcpy(file_name,mesh_n);
   strcat(file_name,"_ELEMENTS.alya");
-  fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
   if(!fgets(buf,NBUF,fm)) SETERRQ1(PROBLEM_COMM,1,"error format at file %s trying to read ELEMENTS",file_name);
 
   for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
@@ -1103,7 +1102,8 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   for(i=0; i < nelm ; i++){
     fgets(buf,NBUF,fm); 
     data=strtok(buf," \n");
-    npe = eptr[i-1]-eptr[i];
+    data=strtok(NULL," \n");
+    npe = eptr[i+1]-eptr[i];
     for(d=0;d<npe;d++){
       if(!data)SETERRQ1(PROBLEM_COMM,1,"error format at file %s reading nodes",file_name);
       eind[n+d] = atoi(data); 

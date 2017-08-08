@@ -30,5 +30,21 @@ NM=2
     -print_part
 }
 
+function barbero_test_seq {
+NM=1
+
+./mpirun -np $NM ../../micro/micro            \
+    -input ex1.spu                            \
+    -mesh ../../meshes/barbero/MESH01/Mesh01  \
+    -mesh_alya                                \
+    -ksp_type cg                              \
+    -ksp_rtol 1.0e-13                         \
+    -options_left 0                           \
+    -print_disp                               \
+    -log_trace macro_trace                    \
+    -print_part
+}
+
 #nproc_1
 #nproc_2
+#barbero_test_seq
