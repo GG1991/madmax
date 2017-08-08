@@ -205,7 +205,7 @@ int main(int argc, char **argv)
   ierr = list_init(&physical_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
   ierr = list_init(&function_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
   ierr = SpuParseMaterials( &MACRO_COMM, input_n ); CHKERRQ(ierr);            
-  ierr = SpuParsePhysicalEntities( &MACRO_COMM, mesh_n ); CHKERRQ(ierr);
+  ierr = read_physical_entities(MACRO_COMM, mesh_n, mesh_f); CHKERRQ(ierr);
   ierr = SpuParseFunctions( &MACRO_COMM, input_n ); CHKERRQ(ierr); 
   ierr = MacroParseBoundary(&MACRO_COMM, input_n ); CHKERRQ(ierr); 
   ierr = SetGmshIDOnMaterialsAndBoundaries(MACRO_COMM); CHKERRQ(ierr); 

@@ -196,14 +196,14 @@ int main(int argc, char **argv)
   ierr = list_init(&physical_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
   ierr = list_init(&function_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
   ierr = SpuParseMaterials( &MICRO_COMM, input_n ); CHKERRQ(ierr);            
-  ierr = SpuParsePhysicalEntities( &MICRO_COMM, mesh_n ); CHKERRQ(ierr);
+  ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f); CHKERRQ(ierr);
   ierr = SpuParseFunctions( &MICRO_COMM, input_n ); CHKERRQ(ierr); 
 
   /*
      Check if Physical Entities <P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1> exist in mesh
      Creates the boundary_list with <P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1>
   */
-  ierr = MicroCheckPhysicalEntities(&physical_list);CHKERRQ(ierr);
+  ierr = micro_check_physical_entities(&physical_list);CHKERRQ(ierr);
   ierr = MicroCreateBoundary(&boundary_list);CHKERRQ(ierr);
   ierr = SetGmshIDOnMaterialsAndBoundaries(MICRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);

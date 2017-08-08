@@ -121,7 +121,6 @@ list_t physical_list;
 int spu_parse_scheme( char *input );
 int spu_parse_mesh( char * input );
 int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input );
-int SpuParsePhysicalEntities( MPI_Comm *PROBLEM_COMM, char *mesh_n );
 int CheckPhysicalID(void);
 int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input);
 int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input );
@@ -131,9 +130,15 @@ int StrBin2Dec(char *str);
 int read_mesh_elmv(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f);
 int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n);
 int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n);
+
 int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f);
 int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n);
 int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n);
+
+int read_physical_entities(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f);
+int read_physical_entities_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n);
+int read_physical_entities_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n);
+
 int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm);
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *PhysicalID,

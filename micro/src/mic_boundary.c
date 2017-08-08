@@ -50,7 +50,7 @@ int MicroCreateBoundary(list_t *boundary_list)
   return 0;
 }
 /****************************************************************************************************/
-int MicroCheckPhysicalEntities( list_t *physical_list )
+int micro_check_physical_entities( list_t *physical_list )
 {
   /*
      Checks if the physical entities defined on mesh file are
