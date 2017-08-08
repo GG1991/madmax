@@ -237,7 +237,7 @@ int main(int argc, char **argv)
      micro main coupling loop
    */
   double strain_ave[6], stress_ave[6], ttensor[36];
-  LX = LY = LZ = 1.0;
+  LX = LY = LZ = 6.0;
 
   if(flag_coupling){
     /*
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
     for(i=0;i<6;i++){
 
       ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment on X faces e11=1 eij=0\n");CHKERRQ(ierr);
+      ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment i=%d\n",i);CHKERRQ(ierr);
       ierr = MicroSetBoundaryDispJacRes(i, strain_bc, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
       if( flag_print | (1<<PRINT_PETSC) ){
 	ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
@@ -347,34 +347,38 @@ int main(int argc, char **argv)
       }
 
       /*
-	 Calculate the average stress and strain
+	 Calculate the average stress, strain and constitutive tensor
       */
       ierr = SpuAveStressAndStrain(MICRO_COMM, &x, strain_ave, stress_ave);CHKERRQ(ierr);
       ierr = PetscPrintf(MICRO_COMM,"strain_ave = ");CHKERRQ(ierr);
       for(j=0;j<6;j++){
 	ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);CHKERRQ(ierr);
       }
-      ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");CHKERRQ(ierr);
+      ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+      ierr = PetscPrintf(MICRO_COMM,"stress_ave = ");CHKERRQ(ierr);
       for(j=0;j<6;j++){
 	ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);CHKERRQ(ierr);
+      }
+      ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+      for(j=0;j<6;j++){
+	ttensor[j*6+i] = stress_ave[j] / strain_ave[i];
       }
 
       if(flag_print | (1<<PRINT_VTKDISP)){ 
 	strain = malloc(nelm*6*sizeof(double));
 	stress = malloc(nelm*6*sizeof(double));
 	ierr = SpuCalcStressOnElement(&x, strain, stress);
-	for(j=0;j<6;j++){
-	  ttensor[j*6+i] = stress[j] / strain[i];
-	}
 	sprintf(vtkfile_n,"%s_displ_exp%d_%d.vtk",myname,i,rank_mic);
 	ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
 	free(stress); free(strain);
       }
+      ierr = PetscPrintf(MICRO_COMM,"NR its : %d\n",nr_its);CHKERRQ(ierr);
+
     }
     ierr = PetscPrintf(MICRO_COMM,"Constitutive Average Tensor\n");CHKERRQ(ierr);
     for(i=0;i<6;i++){
       for(j=0;j<6;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j]>1.0))?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
+	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j])>1.0)?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
       }
       ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
     }
