@@ -436,7 +436,7 @@ int CSR_give_pointer( int e, int *npe, int *eind, int *p)
   return 0;
 }
 /****************************************************************************************************/
-int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
+int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, int mesh_f)
 {
 
   /*
@@ -444,28 +444,36 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
      and performs the partition if it is required
    */
 
-  if(strcmp(mesh_f,"gmsh") == 0){
+  if(mesh_f == FORMAT_GMSH){
     return read_mesh_elmv_CSR_GMSH(comm, myname, mesh_n);
-  }else{
+  }
+  else if(mesh_f == FORMAT_ALYA){
+    return 1;
+  }
+  else{
     return 1;
   }
 }
 /****************************************************************************************************/
-int SpuReadBoundary(MPI_Comm PROBLEM_COMM, char *mesh_n, char *mesh_f)
+int read_boundary(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f)
 {
 
   /*
      Read boundary nodes and completes the structure <boundary>
    */
 
-  if(strcmp(mesh_f,"gmsh") == 0){
-    return SpuReadBoundaryGmsh(PROBLEM_COMM, mesh_n);
-  }else{
+  if(mesh_f == FORMAT_GMSH){
+    return read_boundary_gmsh(PROBLEM_COMM, mesh_n);
+  }
+  else if(mesh_f == FORMAT_ALYA){
+    return 1;
+  }
+  else{
     return 1;
   }
 }
 /****************************************************************************************************/
-int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n)
+int read_boundary_gmsh(MPI_Comm PROBLEM_COMM, char *mesh_n)
 {
 
   /* 
@@ -638,28 +646,22 @@ int GmshIsAsurfaceElement(int code)
   return (code == 2 || code == 3 || code == 15) ? 1 : 0;
 }
 /****************************************************************************************************/
-int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f)
+int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, int mesh_f)
 {
-
   /*
-   *
-   *  Reads the mesh coordinate according to the format specified
-   *
-   *  returns: 0 success
-   *  1 not found
-   *  -1 failed
-   *
+     Reads the mesh coordinate according to the format specified
    */
-
-  if(strcmp(mesh_f,"gmsh") == 0){
+  if(mesh_f == FORMAT_GMSH){
     return read_mesh_coord_GMSH(comm, myname, mesh_n);
-  }else{
+  }
+  else if(mesh_f == FORMAT_ALYA){
+    return 1;
+  }
+  else{
     return 1;
   }
 }
-
 /****************************************************************************************************/
-
 int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 {
 

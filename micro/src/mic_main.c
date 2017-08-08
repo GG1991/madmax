@@ -70,8 +70,17 @@ int main(int argc, char **argv)
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
+
   ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
+
+  mesh_f = FORMAT_NULL;
+  ierr = PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
+  ierr = PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
+  if(mesh_f == FORMAT_NULL)SETERRQ(MICRO_COMM,1,"MICRO:mesh format not given on command line.");
+
   ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:mesh file not given on command line.");
   ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
@@ -135,7 +144,6 @@ int main(int argc, char **argv)
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"MICRO: Reading mesh elements\n");
-  strcpy(mesh_f,"gmsh");
   read_mesh_elmv(&MICRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
 
@@ -199,7 +207,7 @@ int main(int argc, char **argv)
   ierr = MicroCreateBoundary(&boundary_list);CHKERRQ(ierr);
   ierr = SetGmshIDOnMaterialsAndBoundaries(MICRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
-  ierr = SpuReadBoundary(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
+  ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = MicroSetBoundary(MICRO_COMM, &boundary_list );CHKERRQ(ierr);
   ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
 

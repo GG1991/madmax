@@ -70,6 +70,12 @@ MPI_Status   status;
 
 int          flag_print;
 
+#define FORMAT_NULL        0
+#define FORMAT_GMSH        1
+#define FORMAT_ALYA        2
+
+int          mesh_f;               // Mesh format number
+
 // Time measurement
 
 FILE         *time_fl;
@@ -80,7 +86,6 @@ double       *time_vec;
 // Structures to save de mesh on CSR format 
 
 char          mesh_n[NBUF];            // Mesh file name
-char          mesh_f[4];               // Mesh format name
 
 int           *part;
 int           *elmdist;                // number of elements inside each procesor
@@ -123,9 +128,9 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input );
 int StrBin2Dec(char *str);
 
 // spu_mesh.c
-int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);
+int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, int mesh_f);
 int read_mesh_elmv_CSR_GMSH(MPI_Comm *comm, char *myname, char *mesh_n);
-int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, char *mesh_f);
+int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, int mesh_f);
 int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n);
 int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm);
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
@@ -142,8 +147,8 @@ int is_in_vector(int val, int *vector, int size);
 int reenumerate_PETSc(MPI_Comm *comm);
 int search_position_linear(int *array, int size, int val, int *pos);
 int search_position_logn(int *array, int size, int val, int *pos);
-int SpuReadBoundary(MPI_Comm PROBLEM_COMM, char *mesh_n,char *mesh_f);
-int SpuReadBoundaryGmsh(MPI_Comm PROBLEM_COMM, char *mesh_n);
+int read_boundary(MPI_Comm PROBLEM_COMM, char *mesh_n,int mesh_f);
+int read_boundary_gmsh(MPI_Comm PROBLEM_COMM, char *mesh_n);
 int cmpfunc (const void * a, const void * b);
 int cmpfunc_for_list (void * a, void * b);
 int GmshNodesPerElement(int code);

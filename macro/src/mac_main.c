@@ -61,7 +61,7 @@ int main(int argc, char **argv)
   /*
      Get command line arguments
   */
-  flag_print = PETSC_FALSE;
+  flag_print = PRINT_NULL;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = PRINT_PETSC;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_disp",&set);CHKERRQ(ierr);
@@ -75,10 +75,19 @@ int main(int argc, char **argv)
   if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
   ierr = PetscOptionsGetInt(NULL, NULL, "-testcomm", &flag_testcomm, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) flag_testcomm  = TESTCOMM_NULL;
+
+  mesh_f = FORMAT_NULL;
+  ierr = PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
+  ierr = PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
+  if(mesh_f == FORMAT_NULL)SETERRQ(MACRO_COMM,1,"MACRO:mesh format not given on command line.");
+
   ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MACRO:mesh file not given on command line.");
+  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"MACRO:mesh file not given on command line.");
+
   ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MACRO:input file not given.");
+  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"MACRO:input file not given.");
 
   /* 
      Stablish a new local communicator
@@ -148,7 +157,6 @@ int main(int argc, char **argv)
 
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
   PetscPrintf(MACRO_COMM,"MACRO: Reading mesh elements\n");
-  strcpy(mesh_f,"gmsh");
   read_mesh_elmv(&MACRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
 
@@ -202,7 +210,7 @@ int main(int argc, char **argv)
   ierr = MacroParseBoundary(&MACRO_COMM, input_n ); CHKERRQ(ierr); 
   ierr = SetGmshIDOnMaterialsAndBoundaries(MACRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
-  ierr = SpuReadBoundary(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
+  ierr = read_boundary(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = MacroFillBoundary(MACRO_COMM, &boundary_list);
   ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
 
