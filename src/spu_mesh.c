@@ -803,7 +803,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   FILE               * fm;
   unsigned long int    offset;
 
-  int                  nelm, nelm_tot;
+  int                  nelm_tot;
   int                  npe;
   int                  total;
   int                  resto;
@@ -1000,7 +1000,7 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   FILE                 *fm;
   char                 file_name[NBUF];
 
-  int                  nelm, nelm_tot;
+  int                  nelm_tot;
   int                  npe;
   int                  resto;
   int                  i, d, n; 
