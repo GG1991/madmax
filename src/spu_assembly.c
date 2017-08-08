@@ -437,7 +437,16 @@ int GetWeight(int npe, double **wp)
 /****************************************************************************************************/
 int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
 {
+  /*
+  e = Bu    e=[exx eyy ezz exy eyz exz]
 
+  e=[
+  exx exy exz
+  eyx eyy eyz
+  ezx ezy ezz
+  ]
+
+  */
   int i;
 
   for(i=0;i<npe;i++){
