@@ -2,6 +2,9 @@
 
    SPUTNIK mesh treatment functions
 
+   Author> Guido Giuntoli
+   Date>   08-08-2017
+
  */
 
 #include "sputnik.h"
@@ -11,19 +14,17 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 {
 
   /*
-   * Performes the mesh partition mesh saved on the mesh structures.
-   *
-   * a) First it builds the dual graph (nodes are elements)  of the 
-   *    original (nodes are nodes)
-   * 
-   * b) Do the partition 
-   *
-   * c) distribute the graph to processes
-   *
-   * Note:
-   *
-   * -> int *elmdist, int *eptr, int *eind, int *part are globals
-   * 
+     Performes the mesh partition mesh saved on the mesh structures.
+
+     a) First it builds the dual graph (nodes are elements)  of the 
+     original (nodes are nodes)
+
+     b) Do the partition 
+
+     c) distribute the graph to processes
+
+     Note>
+     -> int *elmdist, int *eptr, int *eind, int *part are globals
    */
 
   int        rank, nproc, i,j, ierr;
@@ -436,22 +437,6 @@ int CSR_give_pointer( int e, int *npe, int *eind, int *p)
   return 0;
 }
 /****************************************************************************************************/
-int read_mesh_elmv(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f)
-{
-  /*
-     Reads elements of the mesh according to the format specified
-   */
-  if(mesh_f == FORMAT_GMSH){
-    return read_mesh_elmv_CSR_GMSH(PROBLEM_COMM, myname, mesh_n);
-  }
-  else if(mesh_f == FORMAT_ALYA){
-    return read_mesh_elmv_CSR_ALYA(PROBLEM_COMM, myname, mesh_n);
-  }
-  else{
-    return 1;
-  }
-}
-/****************************************************************************************************/
 int read_boundary(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f)
 {
   /*
@@ -641,23 +626,23 @@ int GmshIsAsurfaceElement(int code)
   return (code == 2 || code == 3 || code == 15) ? 1 : 0;
 }
 /****************************************************************************************************/
-int read_mesh_coord(MPI_Comm * comm, char *myname, char *mesh_n, int mesh_f)
+int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f)
 {
   /*
      Reads the mesh coordinate according to the format specified
    */
   if(mesh_f == FORMAT_GMSH){
-    return read_mesh_coord_GMSH(comm, myname, mesh_n);
+    return read_mesh_coord_GMSH(PROBLEM_COMM, myname, mesh_n);
   }
   else if(mesh_f == FORMAT_ALYA){
-    return 1;
+    return read_mesh_coord_ALYA(PROBLEM_COMM, myname, mesh_n);
   }
   else{
     return 1;
   }
 }
 /****************************************************************************************************/
-int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
+int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
 {
 
   /* 
@@ -681,14 +666,10 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
   char                 buf[NBUF];   
   char                 *data;
 
-  MPI_Comm_size(*comm, &nproc);
-  MPI_Comm_rank(*comm, &rank);
+  MPI_Comm_size(PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(PROBLEM_COMM, &rank);
 
-  fm = fopen(mesh_n,"r");
-  if(!fm){
-    printf("file not found : %s\n",mesh_n);
-    return 1;
-  }
+  fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
 
   coord = malloc( NAllMyNod*3 * sizeof(double));
 
@@ -758,7 +739,95 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
     printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
     return 1;
   }
+  fclose(fm);
   return 0;
+}
+/****************************************************************************************************/
+int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
+{
+
+  /* 
+     Info>   Reads the coordinates of the mesh
+
+     Input> 
+     char   * mesh_n   > file name with path
+     MPI_Comm comm     > the communicator of these processes
+
+     Output>
+     int  * coord      > nodes' coordinates
+
+   */
+
+  FILE  *fm;
+
+  int   i, c, d; 
+  int   rank, nproc;
+
+  char  buf[NBUF], file_name[NBUF], *data;
+
+  MPI_Comm_size(PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(PROBLEM_COMM, &rank);
+
+  coord = malloc( NAllMyNod*3 * sizeof(double));
+
+  strcpy(file_name,mesh_n);
+  strcat(file_name,"_COORDINATES.alya");
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+
+  /*
+     leemos todos los nodos en <MyNodOrig>
+  */
+  if(!fgets(buf,NBUF,fm))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name);
+  i = c = 0;
+  while( c < NMyNod ){
+    while( i< MyNodOrig[c] ){
+      if(!fgets(buf,NBUF,fm))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name);
+      i++;
+    }
+    data=strtok(buf," \n");
+    for( d=0;d<3;d++){
+      data=strtok(NULL," \n");
+      coord[c*3 + d] = atof(data);
+    }
+    c++;
+  }
+
+  /*
+     leemos todos los nodos en <MyGhostOrig>
+  */
+  rewind(fm);
+  if(!fgets(buf,NBUF,fm))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name);
+  i = c = 0;
+  while( c < NMyGhost ){
+    while( i<MyGhostOrig[c] ){
+      if(!fgets(buf,NBUF,fm))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name);
+      i++;
+    }
+    data=strtok(buf," \n");
+    for( d=0;d<3;d++){
+      data=strtok(NULL," \n");
+      coord[ (NMyNod + c)*3 + d] = atof(data);
+    }
+    c++;
+  }
+  fclose(fm);
+  return 0;
+}
+/****************************************************************************************************/
+int read_mesh_elmv(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f)
+{
+  /*
+     Reads elements of the mesh according to the format specified
+   */
+  if(mesh_f == FORMAT_GMSH){
+    return read_mesh_elmv_CSR_GMSH(PROBLEM_COMM, myname, mesh_n);
+  }
+  else if(mesh_f == FORMAT_ALYA){
+    return read_mesh_elmv_CSR_ALYA(PROBLEM_COMM, myname, mesh_n);
+  }
+  else{
+    return 1;
+  }
 }
 /****************************************************************************************************/
 int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)

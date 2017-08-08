@@ -191,7 +191,7 @@ int main(int argc, char **argv)
   */
   PetscPrintf(MACRO_COMM,"MACRO: Reading Coordinates\n");
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
-  read_mesh_coord(&MACRO_COMM, myname, mesh_n, mesh_f);
+  read_mesh_coord(MACRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
   if(flag_print == PRINT_VTKPART){
