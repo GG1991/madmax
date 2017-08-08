@@ -436,19 +436,16 @@ int CSR_give_pointer( int e, int *npe, int *eind, int *p)
   return 0;
 }
 /****************************************************************************************************/
-int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, int mesh_f)
+int read_mesh_elmv(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f)
 {
-
   /*
-     Reads the mesh according to the format specified
-     and performs the partition if it is required
+     Reads elements of the mesh according to the format specified
    */
-
   if(mesh_f == FORMAT_GMSH){
-    return read_mesh_elmv_CSR_GMSH(comm, myname, mesh_n);
+    return read_mesh_elmv_CSR_GMSH(PROBLEM_COMM, myname, mesh_n);
   }
   else if(mesh_f == FORMAT_ALYA){
-    return 1;
+    return read_mesh_elmv_CSR_ALYA(PROBLEM_COMM, myname, mesh_n);
   }
   else{
     return 1;
@@ -457,11 +454,9 @@ int read_mesh_elmv(MPI_Comm * comm, char *myname, char *mesh_n, int mesh_f)
 /****************************************************************************************************/
 int read_boundary(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f)
 {
-
   /*
      Read boundary nodes and completes the structure <boundary>
    */
-
   if(mesh_f == FORMAT_GMSH){
     return read_boundary_gmsh(PROBLEM_COMM, mesh_n);
   }
@@ -666,15 +661,15 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
 {
 
   /* 
-   * Info:   Reads the coordinates of the mesh
-   *
-   * Input: 
-   * char   * mesh_n   : file name with path
-   * MPI_Comm comm     : the communicator of these processes
-   * 
-   * Output:
-   * int  * coord      : nodes' coordinates
-   *
+     Info>   Reads the coordinates of the mesh
+
+     Input> 
+     char   * mesh_n   > file name with path
+     MPI_Comm comm     > the communicator of these processes
+
+     Output>
+     int  * coord      > nodes' coordinates
+
    */
 
   FILE                 *fm;
@@ -765,48 +760,44 @@ int read_mesh_coord_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
   }
   return 0;
 }
-
 /****************************************************************************************************/
-
-int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
+int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
 {
-
   /* 
-   *
-   * Info:   Reads the elements with the nodes conectivities and saves on 
-   *         "elmdist[]", "eptr[]" and "eind[]" in CSR format (same names
-   *         that parmetis)
-   *
-   * Input: 
-   * char   * mesh_n   : file name with path
-   * MPI_Comm comm     : the communicator of these processes
-   * 
-   * Output:
-   * int  * elmdist  : number of elements for each process             (MAH)
-   * int  * eptr     : array of indeces for "eind" (CSR format)        (MAH)
-   * int  * eind     : element conectivities with nodes (CSR format)   (MAH)
-   *
-   *
-   * 1) first counts the total number of volumetric element on the mesh nelm_tot
-   *
-   * 2) calculates nelm = nelm_tot/nproc (elements assigned to this process)
-   *    calculates the vector elmdist in order to know how many elems will be for each process 
-   *
-   * 3) read the mesh again, each process reads its own group of elements and see
-   *    element types determines "npe" and fills "eptr[nelm+1]"
-   *    finally alloc memory for "eind[eptr[nelm]]"
-   *
-   * 4) reads the mesh again and fill "eind[]"
-   *
-   * Notes:
-   *
-   * a) rank and nproc are going to be respect to the communicator "comm"
-   *
-   * b) all processes do fopen and fread up to their corresponding position
-   *    in the file
-   *
-   * c) int *elmdist, int *eptr, int *eind, int *part are globals
-   *
+     Info>   Reads the elements with the nodes conectivities and saves on 
+     "elmdist[]", "eptr[]" and "eind[]" in CSR format (same names
+     that parmetis)
+
+     Input> 
+     char   * mesh_n   > file name with path
+     MPI_Comm comm     > the communicator of these processes
+
+     Output>
+     int  * elmdist  > number of elements for each process             (MAH)
+     int  * eptr     > array of indeces for "eind" (CSR format)        (MAH)
+     int  * eind     > element conectivities with nodes (CSR format)   (MAH)
+
+
+     1) first counts the total number of volumetric element on the mesh nelm_tot
+
+     2) calculates nelm = nelm_tot/nproc (elements assigned to this process)
+     calculates the vector elmdist in order to know how many elems will be for each process 
+
+     3) read the mesh again, each process reads its own group of elements and see
+     element types determines "npe" and fills "eptr[nelm+1]"
+     finally alloc memory for "eind[eptr[nelm]]"
+
+     4) reads the mesh again and fill "eind[]"
+
+     Notes>
+
+     a) rank and nproc are going to be respect to the communicator "comm"
+
+     b) all processes do fopen and fread up to their corresponding position
+     in the file
+
+     c) int *elmdist, int *eptr, int *eind, int *part are globals
+
    */
 
   FILE               * fm;
@@ -827,14 +818,10 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
   char                 buf[NBUF];   
   char               * data;
 
-  MPI_Comm_size(*comm, &nproc);
-  MPI_Comm_rank(*comm, &rank);
+  MPI_Comm_size(PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(PROBLEM_COMM, &rank);
 
-  fm = fopen(mesh_n,"r");
-  if(!fm){
-    ierr = PetscPrintf(*comm,"file not found : %s\n",mesh_n);CHKERRQ(ierr);
-    return 1;
-  }
+  fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
 
   /**************************************************/
   //  count the total number of volumetric elements 
@@ -916,6 +903,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
   nelm = elmdist[rank+1] - elmdist[rank];
   eptr = malloc( (nelm + 1) * sizeof(int));
   PhysicalID = malloc( nelm * sizeof(int));
+  part = malloc(nelm * sizeof(int));
   //
   /**************************************************/
 
@@ -1001,30 +989,173 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm * comm, char *myname, char *mesh_n)
     }
     n += npe;
   }
-  nelm = elmdist[rank+1] - elmdist[rank];
-  part = malloc(nelm * sizeof(int));
   //
   /**************************************************/
 
   return 0;   
 }
-
 /****************************************************************************************************/
-
-int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *n_notrep)
+int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
 {
 
+  FILE                 *fm;
+  char                 file_name[NBUF];
+
+  int                  nelm, nelm_tot;
+  int                  npe;
+  int                  resto;
+  int                  i, d, n; 
+  int                  rank;
+  int                  nproc;
+
+  char                 buf[NBUF];   
+  char               * data;
+
+  MPI_Comm_size(PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(PROBLEM_COMM, &rank);
+
+  /**************************************************/
   /*
-   * Deletes the values that are repeated in input and 
-   * write the new vector on output
-   *  
-   * "n" is the size of "input"
-   * "n_notrep" is the size of "output"
-   *
-   * n >= n_notrep
-   *
-   * Note: use quick sort algorithm (n log n)
-   *
+     first open <mesh_n>_SIZES.alya and read nelm_tot
+  */
+  strcpy(file_name,mesh_n);
+  strcat(file_name,"_SIZES.alya");
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  while(fgets(buf,NBUF,fm)!=NULL){
+    data=strtok(buf," \n");
+    if(!strcmp(data,"ELEMENTS=")){
+      data=strtok(NULL," \n");
+      nelm_tot = atoi(data);
+      break;
+    }
+  }
+  fclose(fm);
+
+  elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
+  resto = nelm_tot % nproc;
+  elmdist[0] = 0;
+  for(i=1; i < nproc + 1; i++){
+    elmdist[i] = i * nelm_tot / nproc;
+    if(resto>0){
+      elmdist[i] += 1;
+      resto --;
+    }
+  }
+
+  nelm = elmdist[rank+1] - elmdist[rank];
+  eptr = malloc( (nelm + 1) * sizeof(int));
+  PhysicalID = malloc( nelm * sizeof(int));
+  part = malloc(nelm * sizeof(int));
+  //
+  /**************************************************/
+
+  /**************************************************/
+  /*
+     we read the <mesh_n>_TYPES.alya 
+     to count number of nodes 
+     per element and fill "eptr"
+     with this vector we can alloc memory for "eind"
+   */    
+  strcpy(file_name,mesh_n);
+  strcat(file_name,"_TYPES.alya");
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  if(fgets(buf,NBUF,fm) == NULL) return 1;
+
+  for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
+    fgets(buf,NBUF,fm); 
+  }
+
+  eptr[0] = 0;
+  for(i=1; i<nelm+1; i++){
+    fgets(buf,NBUF,fm); 
+    data=strtok(buf," \n");
+    data=strtok(NULL," \n");
+    npe = -1;
+    switch(atoi(data)){
+      case 37:
+	npe = 8;
+	break;
+      default:
+	SETERRQ1(PROBLEM_COMM,1,"element type %d not recognized",atoi(data));
+    }
+    if(npe<0)SETERRQ(PROBLEM_COMM,1,"npe could not be determine");
+    eptr[i] = eptr[i-1] + npe; 
+  }
+  fclose(fm);
+  eind = malloc( eptr[nelm] * sizeof(int));
+  //
+  /**************************************************/
+
+  /**************************************************/
+  /*
+     Read nodes from <mesh_n>_ELEMENTS.alya 
+  */
+  strcpy(file_name,mesh_n);
+  strcat(file_name,"_ELEMENTS.alya");
+  fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  if(!fgets(buf,NBUF,fm)) SETERRQ1(PROBLEM_COMM,1,"error format at file %s trying to read ELEMENTS",file_name);
+
+  for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
+    fgets(buf,NBUF,fm); 
+  }
+
+  n = 0;
+  for(i=0; i < nelm ; i++){
+    fgets(buf,NBUF,fm); 
+    data=strtok(buf," \n");
+    npe = eptr[i-1]-eptr[i];
+    for(d=0;d<npe;d++){
+      if(!data)SETERRQ1(PROBLEM_COMM,1,"error format at file %s reading nodes",file_name);
+      eind[n+d] = atoi(data); 
+      data=strtok(NULL," \n");
+    }
+    n += npe;
+  }
+  fclose(fm);
+  //
+  /**************************************************/
+
+  /**************************************************/
+  /*
+     Read Physical IDs from <mesh_n>_MATERIALS.alya
+  */
+  strcpy(file_name,mesh_n);
+  strcat(file_name,"_MATERIALS.alya");
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+
+  if(!fgets(buf,NBUF,fm)) SETERRQ1(PROBLEM_COMM,1,"error format in %s trying to read ELEMENTS",file_name);
+
+  for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
+    if(!fgets(buf,NBUF,fm)) SETERRQ1(PROBLEM_COMM,1,"error format in %s trying to read ELEMENTS",file_name);
+  }
+
+  for(i=0; i < nelm ; i++){
+    if(!fgets(buf,NBUF,fm)) SETERRQ1(PROBLEM_COMM,1,"error format at file %s trying to read ELEMENTS",file_name);
+    data = strtok(buf," \n");
+    data = strtok(NULL," \n");
+    if(!data)SETERRQ1(PROBLEM_COMM,1,"error format in %s trying to read PhysicalID",file_name);
+    PhysicalID[i] = atoi(data);
+  }
+  fclose(fm);
+  //
+  /**************************************************/
+
+  return 0;   
+}
+/****************************************************************************************************/
+int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *n_notrep)
+{
+  /*
+     Deletes the values that are repeated in input and 
+     write the new vector on output
+
+     "n" is the size of "input"
+     "n_notrep" is the size of "output"
+
+     n >= n_notrep
+
+     Note> use quick sort algorithm (n log n)
+
    */
 
   int   i, c, swi, val_o;

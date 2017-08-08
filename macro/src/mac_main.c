@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
   PetscPrintf(MACRO_COMM,"MACRO: Reading mesh elements\n");
-  read_mesh_elmv(&MACRO_COMM, myname, mesh_n, mesh_f);
+  read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
