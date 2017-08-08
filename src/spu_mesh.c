@@ -855,6 +855,29 @@ int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
+  /**************************************************/
+  /*
+     first open <mesh_n>_SIZES.alya and read nelm_tot
+  */
+  strcpy(file_name,mesh_n);
+  strcat(file_name,"_SIZES.alya");
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  while(fgets(buf,NBUF,fm)!=NULL){
+    data=strtok(buf," \n");
+    if(!strcmp(data,"NODAL_POINTS=")){
+      data=strtok(NULL," \n");
+      NTotalNod = atoi(data);
+      break;
+    }
+  }
+  fclose(fm);
+  //
+  /**************************************************/
+
+  /**************************************************/
+  /*
+     first open <mesh_n>_SIZES.alya and read nelm_tot
+  */
   coord = malloc( NAllMyNod*3 * sizeof(double));
 
   strcpy(file_name,mesh_n);

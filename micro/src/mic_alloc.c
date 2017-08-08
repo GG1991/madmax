@@ -30,8 +30,8 @@ int MicroAllocMatrixVector(MPI_Comm MICRO_COMM, int nlocal, int ntotal)
   ierr = MatCreate(MICRO_COMM,&A);CHKERRQ(ierr);
   ierr = MatSetSizes(A,nlocal,nlocal,ntotal,ntotal);CHKERRQ(ierr);
   ierr = MatSetFromOptions(A);CHKERRQ(ierr);
-  ierr = MatSeqAIJSetPreallocation(A,81,NULL);CHKERRQ(ierr);
-  ierr = MatMPIAIJSetPreallocation(A,81,NULL,81,NULL);CHKERRQ(ierr);
+  ierr = MatSeqAIJSetPreallocation(A,117,NULL);CHKERRQ(ierr);
+  ierr = MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);CHKERRQ(ierr);
 
   /*
      Create parallel vectors.

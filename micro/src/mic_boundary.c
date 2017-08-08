@@ -9,7 +9,7 @@
 
 #include "micro.h"
 
-int micro_init_boundary(list_t *boundary_list)
+int micro_init_boundary_list(list_t *boundary_list)
 {
   /*
      Creates the boundary list with names
@@ -86,7 +86,7 @@ int micro_check_physical_entities( list_t *physical_list )
   return 0;
 }
 /****************************************************************************************************/
-int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
+int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 {
   /*
      Checks if "P000" "P100" "P010" "X0" "X1" "Y0" "Y1" "Z0" "Z1"
@@ -103,8 +103,8 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
   node_list_t *pb, *pn;
-  while(i<9)
-  {
+  while(i<6){
+
     pb = boundary_list->head;
     flag_pn=0;
     while(pb && !flag_pn)
@@ -112,15 +112,15 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
       nnods = ((boundary_t*)pb->data)->Nods.sizelist;
       name  = ((boundary_t*)pb->data)->name;
       switch(i){
+//	case 0:
+//	  if(!strcmp(name,"P000")){flag=flag|(1<<0); px = P000; P000_ismine=(nnods>0)?1:0; flag_pn=2;} break;
+//	case 1:
+//	  if(!strcmp(name,"P100")){flag=flag|(1<<1); px = P100; P100_ismine=(nnods>0)?1:0; flag_pn=2;} break;
+//	case 2:
+//	  if(!strcmp(name,"P010")){flag=flag|(1<<2); px = P010; P010_ismine=(nnods>0)?1:0; flag_pn=2;} break;
 	case 0:
-	  if(!strcmp(name,"P000")){flag=flag|(1<<0); px = P000; P000_ismine=(nnods>0)?1:0; flag_pn=2;} break;
-	case 1:
-	  if(!strcmp(name,"P100")){flag=flag|(1<<1); px = P100; P100_ismine=(nnods>0)?1:0; flag_pn=2;} break;
-	case 2:
-	  if(!strcmp(name,"P010")){flag=flag|(1<<2); px = P010; P010_ismine=(nnods>0)?1:0; flag_pn=2;} break;
-	case 3:
 	  if(!strcmp(name,"X0")){
-	    flag=flag|(1<<3);
+	    flag=flag|(1<<0);
 	    nnods_x0 = nnods;
 	    index_x0_ux = malloc( nnods_x0 * sizeof(int)); value_x0_ux = malloc( nnods_x0 * sizeof(double));
 	    index_x0_uy = malloc( nnods_x0 * sizeof(int)); value_x0_uy = malloc( nnods_x0 * sizeof(double));
@@ -129,9 +129,9 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	    flag_pn=1;
 	  }
 	  break;
-	case 4:
+	case 1:
 	  if(!strcmp(name,"X1")){
-	    flag=flag|(1<<4);
+	    flag=flag|(1<<1);
 	    nnods_x1 = nnods;
 	    index_x1_ux = malloc( nnods_x1 * sizeof(int)); value_x1_ux = malloc( nnods_x1 * sizeof(double));
 	    index_x1_uy = malloc( nnods_x1 * sizeof(int)); value_x1_uy = malloc( nnods_x1 * sizeof(double));
@@ -140,9 +140,9 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	    flag_pn=1;
 	  }
 	  break;
-	case 5:
+	case 2:
 	  if(!strcmp(name,"Y0")){
-	    flag=flag|(1<<5);
+	    flag=flag|(1<<2);
 	    nnods_y0 = nnods;
 	    index_y0_ux = malloc( nnods_y0 * sizeof(int)); value_y0_ux = malloc( nnods_y0 * sizeof(double));
 	    index_y0_uy = malloc( nnods_y0 * sizeof(int)); value_y0_uy = malloc( nnods_y0 * sizeof(double));
@@ -151,9 +151,9 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	    flag_pn=1;
 	  }
 	  break;
-	case 6:
+	case 3:
 	  if(!strcmp(name,"Y1")){
-	    flag=flag|(1<<6);
+	    flag=flag|(1<<3);
 	    nnods_y1 = nnods;
 	    index_y1_ux = malloc( nnods_y1 * sizeof(int)); value_y1_ux = malloc( nnods_y1 * sizeof(double));
 	    index_y1_uy = malloc( nnods_y1 * sizeof(int)); value_y1_uy = malloc( nnods_y1 * sizeof(double));
@@ -162,9 +162,9 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	    flag_pn=1;
 	  }
 	  break;
-	case 7:
+	case 4:
 	  if(!strcmp(name,"Z0")){
-	    flag=flag|(1<<7);
+	    flag=flag|(1<<4);
 	    nnods_z0 = nnods;
 	    index_z0_ux = malloc( nnods_z0 * sizeof(int)); value_z0_ux = malloc( nnods_z0 * sizeof(double));
 	    index_z0_uy = malloc( nnods_z0 * sizeof(int)); value_z0_uy = malloc( nnods_z0 * sizeof(double));
@@ -173,9 +173,9 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	    flag_pn=1;
 	  }
 	  break;
-	case 8:
+	case 5:
 	  if(!strcmp(name,"Z1")){
-	    flag=flag|(1<<8);
+	    flag=flag|(1<<5);
 	    nnods_z1 = nnods;
 	    index_z1_ux = malloc( nnods_z1 * sizeof(int)); value_z1_ux = malloc( nnods_z1 * sizeof(double));
 	    index_z1_uy = malloc( nnods_z1 * sizeof(int)); value_z1_uy = malloc( nnods_z1 * sizeof(double));
@@ -219,7 +219,8 @@ int MicroSetBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
     }
     i++;
   }
-  if(flag != 511)SETERRQ(MICRO_COMM,1, "MICRO:One entity not found P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1.");
+  if(flag != 63)SETERRQ(MICRO_COMM,1, "MICRO:One entity not found P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1.");
+//  if(flag != 511)SETERRQ(MICRO_COMM,1, "MICRO:One entity not found P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1.");
   return 0;
 }
 /****************************************************************************************************/
