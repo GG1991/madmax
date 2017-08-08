@@ -171,15 +171,16 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
     eind = malloc(eind_size_new_tot * sizeof(int));
     PhysicalID = malloc(npe_size_new_tot * sizeof(int));
 
-    /* performe the MPI_Alltoall operation for calculating "npe" & "eind"
-     *
-     * for "npe"
-     * sdispls = npe_swi_size
-     * rdispls = npe_size_new
-     *
-     * for "eind"
-     * sdispls = eind_swi_size
-     * rdispls = eind_size_new
+    /* 
+       performe the MPI_Alltoall operation for calculating "npe" & "eind"
+
+       for "npe"
+       sdispls = npe_swi_size
+       rdispls = npe_size_new
+
+       for "eind"
+       sdispls = eind_swi_size
+       rdispls = eind_size_new
      */
 
     int *sdispls, *rdispls;
@@ -282,27 +283,24 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 
   return 0;
 }
-
 /****************************************************************************************************/
-
 int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
 {
-
   /*
-   *  swaps a vector
-   *  example:
-   *
-   * swap       = [ 0 1 0 0 1 2 2 ]
-   * vector     = [ 0 1 2 3 4 5 6 ]
-   * n = 7
-   *
-   * new_vector = [ 0 2 3 1 4 5 6 ] 
-   * cut        = [ 3 2 2 ]
-   *
-   * Notes:
-   *
-   * -> if new_vector = NULL the result is saved on vector
-   * -> swap should have values in [0,n)
+     swaps a vector
+     example>
+
+     swap       = [ 0 1 0 0 1 2 2 ]
+     vector     = [ 0 1 2 3 4 5 6 ]
+     n = 7
+
+     new_vector = [ 0 2 3 1 4 5 6 ] 
+     cut        = [ 3 2 2 ]
+
+     Notes>
+
+     -> if new_vector = NULL the result is saved on vector
+     -> swap should have values in [0,n)
    */
 
   int *aux_vector;
@@ -338,37 +336,34 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
 
   return 0;
 }
-
 /****************************************************************************************************/
-
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *PhysicalID,
     int *npe_swi, int *eind_swi, int *PhysicalID_swi,
     int *cuts_npe, int *cuts_eind )
 {
-
   /*
-   * swaps a vectors in SCR format 
-   *
-   * example:
-   *
-   * swap        = [ 0 2 1 0 ] (swap will be generally the "part" array)
-   * npe         = [ 3 2 3 1 ]             
-   * PhysicalID  = [ 0 0 1 2 ]             
-   * eind        = [ 3 2 0 | 1 2 | 1 0 1 |3 ]
-   * | 
-   * (swap operation with swap_vectors_CSR)
-   * |
-   * npe_swi     = [ 3 1 3 2 ]
-   * PhysicalID  = [ 0 2 1 0 ]
-   * eind_swi    = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]
-   *
-   * Notes:
-   *
-   * -> <n> is the length of <npe>
-   * -> <eptr> is used to identify quickly the <eind> values to be swapped
-   * -> results are saved on <eind_swi> and <npe_swi> (memory is duplicated)
-   * -> swap should have values in [0,nproc)
+     swaps a vectors in SCR format 
+    
+     example>
+    
+     swap        = [ 0 2 1 0 ] (swap will be generally the "part" array)
+     npe         = [ 3 2 3 1 ]             
+     PhysicalID  = [ 0 0 1 2 ]             
+     eind        = [ 3 2 0 | 1 2 | 1 0 1 |3 ]
+     | 
+     (swap operation with swap_vectors_CSR)
+     |
+     npe_swi     = [ 3 1 3 2 ]
+     PhysicalID  = [ 0 2 1 0 ]
+     eind_swi    = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]
+    
+     Notes>
+    
+     -> <n> is the length of <npe>
+     -> <eptr> is used to identify quickly the <eind> values to be swapped
+     -> results are saved on <eind_swi> and <npe_swi> (memory is duplicated)
+     -> swap should have values in [0,nproc)
    */
 
   int e, p, i, j, lp, pi;
@@ -443,17 +438,17 @@ int read_boundary(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f)
      Read boundary nodes and completes the structure <boundary>
    */
   if(mesh_f == FORMAT_GMSH){
-    return read_boundary_gmsh(PROBLEM_COMM, mesh_n);
+    return read_boundary_GMSH(PROBLEM_COMM, mesh_n);
   }
   else if(mesh_f == FORMAT_ALYA){
-    return 1;
+    return read_boundary_ALYA(PROBLEM_COMM, mesh_n);
   }
   else{
     return 1;
   }
 }
 /****************************************************************************************************/
-int read_boundary_gmsh(MPI_Comm PROBLEM_COMM, char *mesh_n)
+int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 {
 
   /* 
@@ -594,6 +589,98 @@ int read_boundary_gmsh(MPI_Comm PROBLEM_COMM, char *mesh_n)
 //      }
 //    }
 //  }
+  //
+  /**************************************************/
+  return 0;   
+}
+/****************************************************************************************************/
+int read_boundary_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
+{
+
+  FILE   *fm_sizes, *fm_bound, *fm_onbound;
+
+  int    i=0, bound_tot=-1, id_to_search=-1, node=-1, *pnod=NULL; 
+
+  char   buf[NBUF], file_name_sizes[NBUF], file_name_bound[NBUF], file_name_onbound[NBUF], *data;
+
+  node_list_t  *pBound;
+
+  /**************************************************/
+  /*
+     first open <mesh_n>_SIZES.alya and read nelm_tot
+  */
+  strcpy(file_name_sizes,mesh_n);
+  strcat(file_name_sizes,"_SIZES.alya");
+  fm_sizes = fopen(file_name_sizes,"r"); if(!fm_sizes)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name_sizes);
+  while(fgets(buf,NBUF,fm_sizes)!=NULL){
+    data=strtok(buf," \n");
+    if(!strcmp(data,"BOUNDARIES=")){
+      data=strtok(NULL," \n");
+      bound_tot = atoi(data);
+      break;
+    }
+  }
+  fclose(fm_sizes);
+  //
+  /**************************************************/
+
+  /**************************************************/
+  /*
+     open <mesh_n>_BOUNDARY.alya & <mesh_n>_ON_BOUNDARY.alya
+     at the same time to know for each element the id
+  */
+  strcpy(file_name_bound,mesh_n);
+  strcat(file_name_bound,"_BOUNDARIES.alya");
+  fm_bound = fopen(file_name_bound,"r");if(!fm_bound)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name_bound);
+
+  strcpy(file_name_onbound,mesh_n);
+  strcat(file_name_onbound,"_ON_BOUNDARIES.alya");
+  fm_onbound = fopen(file_name_onbound,"r");if(!fm_onbound)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name_onbound);
+
+  if(!fgets(buf,NBUF,fm_bound))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name_bound);
+  if(!fgets(buf,NBUF,fm_onbound))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name_onbound);
+
+  while(i<bound_tot){
+
+    /*
+       read the id to search and search the element that corresponds to it 
+       in the boundary_list
+    */
+    if(!fgets(buf,NBUF,fm_onbound))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name_onbound);
+    data=strtok(buf," \n");
+    data=strtok(NULL," \n");
+    id_to_search = atoi(data);
+    pBound = boundary_list.head;
+    while(pBound){
+      if( ((boundary_t *)pBound->data)->GmshID == id_to_search ) break;
+      pBound = pBound->next;
+    }
+
+    /*
+       read the nodes
+    */
+    if(!fgets(buf,NBUF,fm_bound))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name_bound);
+
+    if(pBound){
+      data=strtok(buf," \n");
+      data=strtok(NULL," \n");
+      while(data){
+	node = atoi(data);
+	pnod = bsearch( &node, MyNodOrig, NMyNod, sizeof(int), cmpfunc);
+	if(pnod){
+	  list_insert_se( &(((boundary_t*)pBound->data)->Nods), pnod);
+	}
+	data = strtok(NULL," \n");
+      }
+    }
+    else{
+      /* Warning a physical entity specified on Gmsh file will not have boundary condition */
+    }
+
+    i++;
+  } 
+  fclose(fm_bound);
+  fclose(fm_onbound);
   //
   /**************************************************/
   return 0;   

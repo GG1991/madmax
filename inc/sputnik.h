@@ -139,6 +139,10 @@ int read_physical_entities(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f);
 int read_physical_entities_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n);
 int read_physical_entities_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n);
 
+int read_boundary(MPI_Comm PROBLEM_COMM, char *mesh_n,int mesh_f);
+int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n);
+int read_boundary_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n);
+
 int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm);
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *PhysicalID,
@@ -154,8 +158,6 @@ int is_in_vector(int val, int *vector, int size);
 int reenumerate_PETSc(MPI_Comm *comm);
 int search_position_linear(int *array, int size, int val, int *pos);
 int search_position_logn(int *array, int size, int val, int *pos);
-int read_boundary(MPI_Comm PROBLEM_COMM, char *mesh_n,int mesh_f);
-int read_boundary_gmsh(MPI_Comm PROBLEM_COMM, char *mesh_n);
 int cmpfunc (const void * a, const void * b);
 int cmpfunc_for_list (void * a, void * b);
 int GmshNodesPerElement(int code);
