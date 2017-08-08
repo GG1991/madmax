@@ -1449,22 +1449,18 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
 
   return 0;
 }
-
 /****************************************************************************************************/
-
 int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep)
 {
-
   /*
-   * Returns a vector "output" with all the repetitions on "input"
-   *  
-   * "n" is the size of "input"
-   * "nrep" is the size of "output"
-   *
-   * n >= nrep
-   *
-   * Note: use quick sort algorithm (n log n)
-   *
+     Returns a vector "output" with all the repetitions on "input"
+      
+     "n" is the size of "input"
+     "nrep" is the size of "output"
+    
+     n >= nrep
+    
+     Note: use quick sort algorithm (n log n)
    */
 
   int   i, c, swi, val_o;
@@ -1522,25 +1518,21 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
 
   return 0;
 }
-
 /****************************************************************************************************/
-
 int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps)
 {
-
   /*
-   * fills the "reps" array with nodes that repeated in both "array1" & "array2"
-   *
-   * Input : 
-   * array1 = [ 1 2 3 4 5 6 7 ]  n1 = 7
-   * array2 = [ 5 6 7 8 9 ]      n2 = 5
-   *
-   * Output : 
-   * reps   = [ 5 6 7 ]          nreps = 3
-   *
-   *
-   * Note: both arrays should be sorted in the same other
-   *
+     fills the "reps" array with nodes that repeated in both "array1" & "array2"
+
+     Input > 
+     array1 = [ 1 2 3 4 5 6 7 ]  n1 = 7
+     array2 = [ 5 6 7 8 9 ]      n2 = 5
+
+     Output > 
+     reps   = [ 5 6 7 ]          nreps = 3
+
+
+     Note> both arrays should be sorted in the same other
    */
 
   int i, j, c;
@@ -1581,21 +1573,18 @@ int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *arra
 
   return 0;
 }
-
 /****************************************************************************************************/
-
 int calculate_ghosts(MPI_Comm * comm, char *myname)
 {
-
   /*
-   * This function determines which nodes of <*AllMyNodOrig> are <*MyGhostOrig>
-   *
-   * strategy: 
-   *
-   * 1) Allgather operation sending <NAllMyNod>
-   *
-   * 2) all processes sends to all (using Isend) the array <AllMyNodOrig> 
-   *
+     This function determines which nodes of <*AllMyNodOrig> are <*MyGhostOrig>
+
+     strategy 
+
+     1) Allgather operation sending <NAllMyNod>
+
+     2) all processes sends to all (using Isend) the array <AllMyNodOrig> 
+
    */
 
   int   i, j, c, g, rank, nproc;
@@ -1773,19 +1762,17 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   return 0;
 }
-
 /****************************************************************************************************/
-
 int reenumerate_PETSc(MPI_Comm *comm)
 {
   /* 
-   * This routine :
-   *
-   * a) reestablish the numeration of <eind> array to a local numeration
-   *
-   * b) creates and fills array <loc2petsc> of size <NMyNod> + <NMyGhost>
-   *    in each local position <n> is stored the global position in PETSc matrix 
-   * 
+     This routine
+
+     a) reestablish the numeration of <eind> array to a local numeration
+
+     b) creates and fills array <loc2petsc> of size <NMyNod> + <NMyGhost>
+     in each local position <n> is stored the global position in PETSc matrix 
+
    */
 
   int   rank, nproc;
@@ -1887,9 +1874,7 @@ int reenumerate_PETSc(MPI_Comm *comm)
   free(request);
   return 0;
 }
-
 /****************************************************************************************************/
-
 int search_position_linear(int *array, int size, int val, int *pos)
 {
   /* Returns: 
@@ -1916,17 +1901,15 @@ int search_position_linear(int *array, int size, int val, int *pos)
 
   return 0;
 }
-
 /****************************************************************************************************/
-
 int search_position_logn(int *array, int size, int val, int *pos)
 {
-  /* Returns: 
-   * a) the position <pos> of <val> inside <array> (size <size>)
-   * b) <pos> = -1 if <val> does not exist 
-   *
-   * Note: the array should be sorted
-   *
+  /* 
+     Returns> 
+     a) the position <pos> of <val> inside <array> (size <size>)
+     b) <pos> = -1 if <val> does not exist 
+
+     Note> the array should be sorted
    */
 
   int  left = 0, right = size-1, middle;
@@ -1948,33 +1931,26 @@ int search_position_logn(int *array, int size, int val, int *pos)
   *pos = -1;
   return 0;
 }
-
 /****************************************************************************************************/
-
 int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, int *remoterank )
 {
 
-  /*  Function for determine the ownership of a repeated 
-   *  node on different processors. 
-   *
-   *  Input 
-   *
-   *  repeated: list of nodes that each process have in common with me
-   *  nrep    : number of elements in each <repeated> element
-   *  node    : node numeration in order to know if this process owns it
-   * 
-   *  Returns:
-   *
-   *   1 if the node is mine
-   *   0 if not
-   *  -1 if error
-   *
-   *  Notes:
-   *  -> all process should return the same if <node> is the same
-   *  -> the selection criteria calculates rankp = node % nproc as root
-   *     if the rankp in repeated contains <node> in <rankp> position 
-   *     then this is the ownership of it. If <rankp> = <rank> at any 
-   *     part of the search then this node is of this process.
+  /*  
+      Function for determine the ownership of a repeated 
+      node on different processors. 
+
+      Input 
+
+      repeated > list of nodes that each process have in common with me
+      nrep     > number of elements in each <repeated> element
+      node     > node numeration in order to know if this process owns it
+
+      Notes>
+      -> all process should return the same if <node> is the same
+      -> the selection criteria calculates rankp = node % nproc as root
+      if the rankp in repeated contains <node> in <rankp> position 
+      then this is the ownership of it. If <rankp> = <rank> at any 
+      part of the search then this node is of this process.
    */
 
   int nproc, rank;
