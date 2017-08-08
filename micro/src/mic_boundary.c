@@ -9,38 +9,33 @@
 
 #include "micro.h"
 
-int MicroCreateBoundary(list_t *boundary_list)
+int micro_init_boundary(list_t *boundary_list)
 {
   /*
      Creates the boundary list with names
-     P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1 
+     (¿ NO ?) P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1 (at least)
+     X0 X1 Y0 Y1 Z0 Z1 (at least)
    */
   int i = 0;
   boundary_t boundary;
 
   list_init(boundary_list, sizeof(boundary_t), NULL);
   list_init(&boundary.Nods,sizeof(int), cmpfunc_for_list);
-  while(i<9)
+  while(i<6)
   {
     switch(i){
       case 0:
-	boundary.name = strdup("P000");break;
+	boundary.name = strdup("X0");break;
       case 1:
-	boundary.name = strdup("P100");break;
+	boundary.name = strdup("X1");break;
       case 2:
-	boundary.name = strdup("P010");break;
+	boundary.name = strdup("Y0");break;
       case 3:
-	boundary.name = strdup("X0")  ;break;
+	boundary.name = strdup("Y1");break;
       case 4:
-	boundary.name = strdup("X1")  ;break;
+	boundary.name = strdup("Z0");break;
       case 5:
-	boundary.name = strdup("Y0")  ;break;
-      case 6:
-	boundary.name = strdup("Y1")  ;break;
-      case 7:
-	boundary.name = strdup("Z0")  ;break;
-      case 8:
-	boundary.name = strdup("Z1")  ;break;
+	boundary.name = strdup("Z1");break;
       default:
 	break;
     }

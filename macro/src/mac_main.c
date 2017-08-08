@@ -208,7 +208,7 @@ int main(int argc, char **argv)
   ierr = read_physical_entities(MACRO_COMM, mesh_n, mesh_f); CHKERRQ(ierr);
   ierr = SpuParseFunctions( &MACRO_COMM, input_n ); CHKERRQ(ierr); 
   ierr = MacroParseBoundary(&MACRO_COMM, input_n ); CHKERRQ(ierr); 
-  ierr = SetGmshIDOnMaterialsAndBoundaries(MACRO_COMM); CHKERRQ(ierr); 
+  ierr = set_id_on_material_and_boundary(MACRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = read_boundary(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = MacroFillBoundary(MACRO_COMM, &boundary_list);

@@ -160,6 +160,7 @@ int cmpfunc (const void * a, const void * b);
 int cmpfunc_for_list (void * a, void * b);
 int GmshNodesPerElement(int code);
 int GmshIsAsurfaceElement(int code);
+int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM);
 
 // spu_vtk.c
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );

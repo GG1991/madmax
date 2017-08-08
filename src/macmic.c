@@ -87,9 +87,7 @@ int MacMicParseScheme( char *input )
   }
   return 1;
 }
-
 /****************************************************************************************************/
-
 int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM)
 {
 
@@ -248,7 +246,6 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 
   return 0;
 }
-
 /****************************************************************************************************/
 int MicCommWaitSignal( MPI_Comm WORLD_COMM, int *signal )
 {
@@ -399,59 +396,5 @@ int MicCommSendTTensor( MPI_Comm WORLD_COMM )
 //    ierr = MPI_Ssend(mic_ttensor, 9, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
   }
 
-  return 0;
-}
-/****************************************************************************************************/
-int SetGmshIDOnMaterialsAndBoundaries(MPI_Comm PROBLEM_COMM)
-{
-  /* 
-     For each material on <material_list> 
-     Searchs for the <GmshID> in the 
-     <physical_list>
-   */
-  node_list_t *pm, *pp;
-
-  pm = material_list.head;
-  while(pm){
-    pp = physical_list.head;
-    while(pp){
-      if( !strcmp( ((physical_t*)pp->data)->name, ((material_t*)pm->data)->name ) ){
-	((material_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
-	break;
-      }
-      pp = pp->next;
-    }
-
-    if(!pp){SETERRQ1(PETSC_COMM_SELF,1,"Material %s not found in Gmsh File.",((material_t*)pm->data)->name);}
-
-    ((physical_t*)pp->data)->FlagFound = 1;
-    pm = pm->next;
-  }
-
-  pm = boundary_list.head;
-  while(pm){
-    pp = physical_list.head;
-    while(pp){
-      if( !strcmp( ((physical_t*)pp->data)->name, ((boundary_t*)pm->data)->name ) ){
-	((boundary_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
-	break;
-      }
-      pp = pp->next;
-    }
-    if(!pp){ 
-      SETERRQ1(PETSC_COMM_SELF,1,"Boundary %s not found in Gmsh File.",((boundary_t*)pm->data)->name);
-    }
-    ((physical_t*)pp->data)->FlagFound = 1;
-    pm = pm->next;
-  }
-
-  /* Check Physical not found a print a warning */
-  pp = physical_list.head;
-  while(pp)
-  {
-    if( !((physical_t*)pp->data)->FlagFound ){PetscPrintf(PROBLEM_COMM,
-	"WARNING:Physical %s not found on input file.\n",((physical_t*)pp->data)->name);}
-    pp = pp->next;
-  }
   return 0;
 }

@@ -2015,21 +2015,13 @@ int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, i
 
   return -1;	
 }
-
 /****************************************************************************************************/
-
 int is_in_vector(int val, int *vector, int size)
 {
-
-  /*  val     : value to search  
-   *  vector 
-   *  size    : # of components of vector
-   * 
-   *  Returns:
-   *  1 if val is in vector
-   *  0 if val is not in vector
-   * -1 if error
-   *
+  /*  
+      val     > value to search  
+      vector 
+      size    > # of components of vector
    */
   int j = 0;
   while(j<size){
@@ -2048,16 +2040,66 @@ int is_in_vector(int val, int *vector, int size)
 
   return -1;
 }
-
 /****************************************************************************************************/
+int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM)
+{
+  /* 
+     For each material on <material_list> 
+     Searchs for the <GmshID> in the 
+     <physical_list>
+   */
+  node_list_t *pm, *pp;
 
+  pm = material_list.head;
+  while(pm){
+    pp = physical_list.head;
+    while(pp){
+      if( !strcmp( ((physical_t*)pp->data)->name, ((material_t*)pm->data)->name ) ){
+	((material_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
+	break;
+      }
+      pp = pp->next;
+    }
+
+    if(!pp){SETERRQ1(PETSC_COMM_SELF,1,"Material %s not found on material_list.",((material_t*)pm->data)->name);}
+
+    ((physical_t*)pp->data)->FlagFound = 1;
+    pm = pm->next;
+  }
+
+  pm = boundary_list.head;
+  while(pm){
+    pp = physical_list.head;
+    while(pp){
+      if( !strcmp( ((physical_t*)pp->data)->name, ((boundary_t*)pm->data)->name ) ){
+	((boundary_t*)pm->data)->GmshID = ((physical_t*)pp->data)->GmshID;
+	break;
+      }
+      pp = pp->next;
+    }
+    if(!pp){ 
+      SETERRQ1(PETSC_COMM_SELF,1,"Boundary %s not found in Gmsh File.",((boundary_t*)pm->data)->name);
+    }
+    ((physical_t*)pp->data)->FlagFound = 1;
+    pm = pm->next;
+  }
+
+  /* Check Physical not found a print a warning */
+  pp = physical_list.head;
+  while(pp)
+  {
+    if( !((physical_t*)pp->data)->FlagFound ){PetscPrintf(PROBLEM_COMM,
+	"WARNING:Physical %s not found on boundary_list.\n",((physical_t*)pp->data)->name);}
+    pp = pp->next;
+  }
+  return 0;
+}
+/****************************************************************************************************/
 int cmpfunc (const void * a, const void * b)
 {
   return ( *(int*)a - *(int*)b );
 }
-
 /****************************************************************************************************/
-
 int cmpfunc_for_list (void * a, void * b)
 {
   return ( *(int*)a - *(int*)b );

@@ -117,6 +117,5 @@ int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal );
 int MacCommSendStrain( MPI_Comm WORLD_COMM, double strain[6] );
 int MacCommRecvStress( MPI_Comm WORLD_COMM, double stress[6] );
 
-int SetGmshIDOnMaterialsAndBoundaries(MPI_Comm PROBLEM_COMM);
 
 #endif
