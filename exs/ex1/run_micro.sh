@@ -1,12 +1,13 @@
 #!/bin/bash
 
 
-function nproc_1 {
+function cube_seq {
 NM=1
 
 ./mpirun -np $NM ../../micro/micro         \
     -input ex1.spu                         \
     -mesh ../../meshes/cube_unif/cube.msh  \
+    -mesh_gmsh                             \
     -ksp_type cg                           \
     -ksp_rtol 1.0e-13                      \
     -pc_type  lu                           \
@@ -16,12 +17,13 @@ NM=1
 }
 
 
-function nproc_2 {
-NM=2
+function cube_par {
+NM=4
 
 ./mpirun -np $NM ../../micro/micro         \
     -input ex1.spu                         \
     -mesh ../../meshes/cube_unif/cube.msh  \
+    -mesh_gmsh                             \
     -ksp_type cg                           \
     -ksp_rtol 1.0e-13                      \
     -options_left 0                        \
@@ -62,7 +64,7 @@ NM=4
     -print_part
 }
 
-#nproc_1
-#nproc_2
+#cube_seq
+#cube_par
 #barbero_test_seq
 #barbero_test_par

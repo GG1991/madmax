@@ -982,8 +982,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   FILE               * fm;
   unsigned long int    offset;
 
-  int                  nelm_tot;
-  int                  npe;
+  int                  nelm_tot=-1, npe=-1;
   int                  total;
   int                  resto;
   int                  i, d, n; 
@@ -1179,8 +1178,7 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   FILE                 *fm;
   char                 file_name[NBUF];
 
-  int                  nelm_tot;
-  int                  npe;
+  int                  nelm_tot=-1, npe=-1;
   int                  resto;
   int                  i, d, n; 
   int                  rank;
@@ -2147,9 +2145,9 @@ int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM)
       pp = pp->next;
     }
 
-    if(!pp){SETERRQ1(PETSC_COMM_SELF,1,"Material %s not found on material_list.",((material_t*)pm->data)->name);}
-
-    ((physical_t*)pp->data)->FlagFound = 1;
+    if(pp!=NULL){
+      ((physical_t*)pp->data)->FlagFound = 1;
+    }
     pm = pm->next;
   }
 
@@ -2193,7 +2191,7 @@ int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z)
 
   if(n==0) return 0;
 
-  int i;
+  int i=0;
   x[0] = coord[i*3+0]; x[1] = coord[i*3+0];
   y[0] = coord[i*3+1]; y[1] = coord[i*3+1];
   z[0] = coord[i*3+2]; z[1] = coord[i*3+2];
