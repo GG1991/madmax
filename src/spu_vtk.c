@@ -245,7 +245,7 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name)
   char file_name[NBUF];
   int  i, d;
 
-  sprintf(file_name,"%s_%d.ptu",name,rank);
+  sprintf(file_name,"%s_%d.vtu",name,rank);
   fm = fopen(file_name,"w"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s could not be opened",file_name);
 
   fprintf(fm, 

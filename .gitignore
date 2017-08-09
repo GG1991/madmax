@@ -10,7 +10,7 @@
 *.toc
 *.aux
 *.jpg
-*.ptu
+*.vtu
 *.pvtu
 
 null
