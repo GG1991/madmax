@@ -5,6 +5,7 @@ $end_scheme
 
 $Materials
 IRON TYPE00  E=1.0e7 v=0.25
+IRON2 TYPE00  E=1.0e8 v=0.25
 #PLAS TYPE00 E=1.0e6 v=0.3
 $EndMaterials
 

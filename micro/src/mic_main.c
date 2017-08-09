@@ -376,13 +376,14 @@ int main(int argc, char **argv)
       ierr = PetscPrintf(MICRO_COMM,"NR its : %d\n",nr_its);CHKERRQ(ierr);
 
     }
-    ierr = PetscPrintf(MICRO_COMM,"Constitutive Average Tensor\n");CHKERRQ(ierr);
+    ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");CHKERRQ(ierr);
     for(i=0;i<6;i++){
       for(j=0;j<6;j++){
 	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j])>1.0)?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
       }
       ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
     }
+    ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
 
   }
 

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 
+#08-08-2017
 function cube_seq {
 NM=1
 
@@ -17,6 +18,7 @@ NM=1
 }
 
 
+#08-08-2017
 function cube_par {
 NM=4
 
@@ -28,10 +30,11 @@ NM=4
     -ksp_rtol 1.0e-13                      \
     -options_left 0                        \
     -print_disp                            \
-    -log_trace macro_trace                 \
+    -log_trace micro_trace                 \
     -print_part
 }
 
+#08-08-2017
 function barbero_test_seq {
 NM=1
 
@@ -44,10 +47,11 @@ NM=1
     -pc_type  lu                              \
     -options_left 0                           \
     -print_disp                               \
-    -log_trace macro_trace                    \
+    -log_trace micro_trace                    \
     -print_part
 }
 
+#08-08-2017
 function barbero_test_par {
 NM=4
 
@@ -60,7 +64,74 @@ NM=4
     -ksp_atol 1.0e-19                         \
     -options_left 0                           \
     -print_disp                               \
-    -log_trace macro_trace                    \
+    -log_trace micro_trace                    \
+    -print_part
+}
+
+#09-08-2017
+function cube_cube_hole_seq {
+NM=1
+
+./mpirun -np $NM ../../micro/micro                  \
+    -input ex1.spu                                  \
+    -mesh ../../meshes/cube_hole/cube_cube_hole.msh \
+    -mesh_gmsh                                      \
+    -ksp_type cg                                    \
+    -ksp_rtol 1.0e-13                               \
+    -ksp_atol 1.0e-19                               \
+    -pc_type  lu                                    \
+    -options_left 0                                 \
+    -print_disp                                     \
+    -log_trace micro_trace                          \
+    -print_part
+}
+
+#09-08-2017
+function cube_cube_hole_par {
+NM=4
+
+./mpirun -np $NM ../../micro/micro                  \
+    -input ex1.spu                                  \
+    -mesh ../../meshes/cube_hole/cube_cube_hole.msh \
+    -mesh_gmsh                                      \
+    -ksp_type cg                                    \
+    -ksp_rtol 1.0e-13                               \
+    -ksp_atol 1.0e-19                               \
+    -options_left 0                                 \
+    -print_disp                                     \
+    -log_trace micro_trace                          \
+    -print_part
+}
+
+#09-08-2017
+function cube_cube_hole_fill_seq {
+NM=1
+
+./mpirun -np $NM ../../micro/micro                       \
+    -input ex1.spu                                       \
+    -mesh ../../meshes/cube_hole/cube_cube_hole_fill.msh \
+    -mesh_gmsh                                           \
+    -pc_type  lu                                         \
+    -options_left 0                                      \
+    -print_disp                                          \
+    -log_trace micro_trace                               \
+    -print_part
+}
+
+#09-08-2017
+function cube_cube_hole_fill_par {
+NM=4
+
+./mpirun -np $NM ../../micro/micro                       \
+    -input ex1.spu                                       \
+    -mesh ../../meshes/cube_hole/cube_cube_hole_fill.msh \
+    -mesh_gmsh                                           \
+    -ksp_type cg                                         \
+    -ksp_rtol 1.0e-13                                    \
+    -ksp_atol 1.0e-19                                    \
+    -options_left 0                                      \
+    -print_disp                                          \
+    -log_trace micro_trace                               \
     -print_part
 }
 
@@ -68,3 +139,7 @@ NM=4
 #cube_par
 #barbero_test_seq
 #barbero_test_par
+#cube_cube_hole_seq
+#cube_cube_hole_par
+#cube_cube_hole_fill_seq
+cube_cube_hole_fill_par
