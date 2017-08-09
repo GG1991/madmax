@@ -97,6 +97,7 @@ NM=4
     -ksp_type cg                                    \
     -ksp_rtol 1.0e-13                               \
     -ksp_atol 1.0e-19                               \
+    -pc_type jacobi                                 \
     -options_left 0                                 \
     -print_disp                                     \
     -log_trace micro_trace                          \
@@ -129,6 +130,7 @@ NM=4
     -ksp_type cg                                         \
     -ksp_rtol 1.0e-13                                    \
     -ksp_atol 1.0e-19                                    \
+    -pc_type bjacobi                                 \
     -options_left 0                                      \
     -print_disp                                          \
     -log_trace micro_trace                               \

@@ -265,11 +265,26 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name)
   fprintf(fm,"</DataArray>\n");
   fprintf(fm,"<Points>\n");
   fprintf(fm,"<Cells>\n");
+
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">");
+  for (i=0;i<nelm;i++){
+    for (d=0;d<(eptr[i+1] - eptr[i]);d++){
+      fprintf(fm,"%d ",eind[eptr[i] + d]);
+    }
+    fprintf(fm,"\n");
+  }
   fprintf(fm,"</DataArray>\n");
+
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"offsets\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+  for (i=0;i<nelm+1;i++){
+    fprintf(fm,"%d\n",eptr[i+1] - eptr[i]);
+  }
   fprintf(fm,"</DataArray>\n");
+
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+  for (i=0;i<nelm;i++){
+    fprintf(fm, "%d\n",vtkcode(3,eptr[i+1] - eptr[i]));  
+  }
   fprintf(fm,"</DataArray>\n");
   fprintf(fm,"<Cells>\n");
   fprintf(fm,"<CellData Scalars=\"Material\">\n");
