@@ -475,16 +475,16 @@ int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b
 	ierr = MatZeroRowsColumns(*J, nnods_z1, index_z1_ux, 1.0, NULL, NULL); CHKERRQ(ierr);
       }
       if(flag&(1<<RESIDUAL)){
-	for(i=0;i<nnods_x0;i++) value_x0_ux[i] = 0.0;
-	for(i=0;i<nnods_x1;i++) value_x1_ux[i] = 0.0;
+	for(i=0;i<nnods_x0;i++) value_x0_uz[i] = 0.0;
+	for(i=0;i<nnods_x1;i++) value_x1_uz[i] = 0.0;
 	ierr = VecSetValues( *b, nnods_x0, index_x0_uz, value_x0_uz, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *b, nnods_x1, index_x1_uz, value_x1_uz, INSERT_VALUES); CHKERRQ(ierr);
 	for(i=0;i<nnods_y0;i++) value_y0_uy[i] = 0.0;
 	for(i=0;i<nnods_y1;i++) value_y1_uy[i] = 0.0;
 	ierr = VecSetValues( *b, nnods_y0, index_y0_uy, value_y0_uy, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *b, nnods_y1, index_y1_uy, value_y1_uy, INSERT_VALUES); CHKERRQ(ierr);
-	for(i=0;i<nnods_z0;i++) value_z0_uz[i] = 0.0;
-	for(i=0;i<nnods_z1;i++) value_z1_uz[i] = 0.0;
+	for(i=0;i<nnods_z0;i++) value_z0_ux[i] = 0.0;
+	for(i=0;i<nnods_z1;i++) value_z1_ux[i] = 0.0;
 	ierr = VecSetValues( *b, nnods_z0, index_z0_ux, value_z0_ux, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *b, nnods_z1, index_z1_ux, value_z1_ux, INSERT_VALUES); CHKERRQ(ierr);
       }
