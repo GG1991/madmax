@@ -1,0 +1,27 @@
+lc=1.5;
+lx=0.5;
+ly=0.5;
+lz=0.5;
+r = 0.4;
+Nx_cen = 10;
+Nx_bor = 10;
+Ny_cen = 10;
+Ny_bor = 10;
+N_cir  = 10;
+Nz = 4;
+sin45=0.707106781;
+
+Point(1) = {-lx   ,-ly   ,-lc,0.1};
+Point(2) = {+lx   ,-ly   ,-lc,0.1};
+Point(3) = {+lx-sin45*r  ,+ly-sin45*r ,-lc,0.1};
+Point(4) = {+lx   , ly-r   ,-lc,0.1};
+Point(5) = {+lx   , ly   ,-lc,0.1};
+Circle(1) = {3, 5, 4};
+Line(2) = {4, 2};
+Line(3) = {2, 1};
+Line(4) = {1, 3};
+Line Loop(5) = {4, 1, 2, 3};
+Plane Surface(6) = {5};
+Transfinite Line {4, 1, 2, 3} = 10 Using Progression 1;
+Transfinite Surface {6};
+Recombine Surface {6};
