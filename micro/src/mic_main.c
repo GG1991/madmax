@@ -237,7 +237,8 @@ int main(int argc, char **argv)
      micro main coupling loop
    */
   double strain_ave[6], stress_ave[6], ttensor[36];
-  LX = LY = LZ = 6.0;
+  ierr = get_bbox_limit_lengths(MICRO_COMM,coord,NMyNod,&LX,&LY,&LZ);CHKERRQ(ierr);
+  ierr = PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);CHKERRQ(ierr);
 
   if(flag_coupling){
     /*

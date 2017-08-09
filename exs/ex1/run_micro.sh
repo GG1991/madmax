@@ -39,6 +39,23 @@ NM=1
     -mesh_alya                                \
     -ksp_type cg                              \
     -ksp_rtol 1.0e-13                         \
+    -pc_type  lu                              \
+    -options_left 0                           \
+    -print_disp                               \
+    -log_trace macro_trace                    \
+    -print_part
+}
+
+function barbero_test_par {
+NM=4
+
+./mpirun -np $NM ../../micro/micro            \
+    -input ex1.spu                            \
+    -mesh ../../meshes/barbero/MESH01/Mesh01  \
+    -mesh_alya                                \
+    -ksp_type cg                              \
+    -ksp_rtol 1.0e-13                         \
+    -ksp_atol 1.0e-19                         \
     -options_left 0                           \
     -print_disp                               \
     -log_trace macro_trace                    \
@@ -48,3 +65,4 @@ NM=1
 #nproc_1
 #nproc_2
 #barbero_test_seq
+#barbero_test_par
