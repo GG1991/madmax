@@ -232,7 +232,7 @@ int write_pvtu(MPI_Comm PROBLEM_COMM, char *name)
   return 0;
 }
 /****************************************************************************************************/
-int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress)
+int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress)
 {
   int  rank, nproc; 
 
@@ -264,11 +264,10 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name, Vec *x, doub
 	"<PDataArray type=\"Int32\" Name=\"offsets\"      NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"UInt8\" Name=\"types\"        NumberOfComponents=\"1\"/>\n"
 	"</PCells>\n" 
-//	"<PCellData Scalars=\"part\" Tensors=\"Strain\" Tensors=\"Stress\">"
-	"<PCellData Scalars=\"part\" Tensors=\"strain\">\n"
+	"<PCellData>\n"
 	"<PDataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\"/>\n"
-//	"<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\"/>\n"
+	"<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\"/>\n"
 	"</PCellData>\n"); 
     for(i=0;i<nproc;i++){
       sprintf(file_name,"%s_%d",name,i);
@@ -325,8 +324,8 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name, Vec *x, doub
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"</Cells>\n");
-//  fprintf(fm,"<CellData Scalars=\"part\" Tensors=\"strain\" Tensors=\"stress\">\n");
-  fprintf(fm,"<CellData Scalars=\"part\"> Tensors=\"strain\"\n");
+
+  fprintf(fm,"<CellData>\n");
   /*
      <part>
    */
@@ -351,16 +350,16 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name, Vec *x, doub
   fprintf(fm,"</DataArray>\n");
 
   /*
-     <strain>
+     <stress>
    */
-//  fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\" format=\"ascii\">\n");
-//  for (i=0;i<nelm;i++){
-//    fprintf(fm, "%lf %lf %lf ", stress[i*6+0],stress[i*6+3],stress[i*6+5]);
-//    fprintf(fm, "%lf %lf %lf ", stress[i*6+3],stress[i*6+1],stress[i*6+4]);
-//    fprintf(fm, "%lf %lf %lf ", stress[i*6+5],stress[i*6+4],stress[i*6+2]);
-//  }
-//  fprintf(fm,"\n");
-//  fprintf(fm,"</DataArray>\n");
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\" format=\"ascii\">\n");
+  for (i=0;i<nelm;i++){
+    fprintf(fm, "%lf %lf %lf ", stress[i*6+0],stress[i*6+3],stress[i*6+5]);
+    fprintf(fm, "%lf %lf %lf ", stress[i*6+3],stress[i*6+1],stress[i*6+4]);
+    fprintf(fm, "%lf %lf %lf ", stress[i*6+5],stress[i*6+4],stress[i*6+2]);
+  }
+  fprintf(fm,"\n");
+  fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,
       "</CellData>\n"
