@@ -265,9 +265,9 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name, Vec *x, doub
 	"<PDataArray type=\"UInt8\" Name=\"types\"        NumberOfComponents=\"1\"/>\n"
 	"</PCells>\n" 
 //	"<PCellData Scalars=\"part\" Tensors=\"Strain\" Tensors=\"Stress\">"
-	"<PCellData Scalars=\"part\" >\n"
+	"<PCellData Scalars=\"part\" Tensors=\"strain\">\n"
 	"<PDataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\"/>\n"
-//	"<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\"/>\n"
+	"<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\"/>\n"
 //	"<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\"/>\n"
 	"</PCellData>\n"); 
     for(i=0;i<nproc;i++){
@@ -326,7 +326,7 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name, Vec *x, doub
 
   fprintf(fm,"</Cells>\n");
 //  fprintf(fm,"<CellData Scalars=\"part\" Tensors=\"strain\" Tensors=\"stress\">\n");
-  fprintf(fm,"<CellData Scalars=\"part\">\n");
+  fprintf(fm,"<CellData Scalars=\"part\"> Tensors=\"strain\"\n");
   /*
      <part>
    */
@@ -341,14 +341,14 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name, Vec *x, doub
      <strain>
    */
 
-//  fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\" format=\"ascii\">\n");
-//  for (i=0;i<nelm;i++){
-//    fprintf(fm, "%lf %lf %lf ", strain[i*6+0],strain[i*6+3],strain[i*6+5]);
-//    fprintf(fm, "%lf %lf %lf ", strain[i*6+3],strain[i*6+1],strain[i*6+4]);
-//    fprintf(fm, "%lf %lf %lf ", strain[i*6+5],strain[i*6+4],strain[i*6+2]);
-//  }
-//  fprintf(fm,"\n");
-//  fprintf(fm,"</DataArray>\n");
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\" format=\"ascii\">\n");
+  for (i=0;i<nelm;i++){
+    fprintf(fm, "%lf %lf %lf ", strain[i*6+0],strain[i*6+3],strain[i*6+5]);
+    fprintf(fm, "%lf %lf %lf ", strain[i*6+3],strain[i*6+1],strain[i*6+4]);
+    fprintf(fm, "%lf %lf %lf ", strain[i*6+5],strain[i*6+4],strain[i*6+2]);
+  }
+  fprintf(fm,"\n");
+  fprintf(fm,"</DataArray>\n");
 
   /*
      <strain>
