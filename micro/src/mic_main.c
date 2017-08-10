@@ -377,11 +377,11 @@ int main(int argc, char **argv)
 	  sprintf(vtkfile_n,"%s_displ_exp%d_%d.vtk",myname,i,rank_mic);
 	  ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
 	}
-	free(stress); free(strain);
 	if(flag_print & (1<<PRINT_VTU)){ 
 	  sprintf(vtkfile_n,"%s_displ_exp%d",myname,i);
 	  ierr = write_vtu(MICRO_COMM, vtkfile_n, &x, strain, stress);CHKERRQ(ierr);
 	}
+	free(stress); free(strain);
       }
       ierr = PetscPrintf(MICRO_COMM,"NR its : %d\n",nr_its);CHKERRQ(ierr);
 

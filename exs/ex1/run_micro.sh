@@ -13,8 +13,7 @@ NM=1
     -ksp_rtol 1.0e-13                      \
     -pc_type  lu                           \
     -options_left 0                        \
-    -print_disp                            \
-    -print_part
+    -print_vtu
 }
 
 
@@ -29,9 +28,8 @@ NM=4
     -ksp_type cg                           \
     -ksp_rtol 1.0e-13                      \
     -options_left 0                        \
-    -print_disp                            \
     -log_trace micro_trace                 \
-    -print_part
+    -print_vtu
 }
 
 #08-08-2017
@@ -46,9 +44,8 @@ NM=1
     -ksp_rtol 1.0e-13                         \
     -pc_type  lu                              \
     -options_left 0                           \
-    -print_disp                               \
     -log_trace micro_trace                    \
-    -print_part
+    -print_vtu
 }
 
 #08-08-2017
@@ -63,9 +60,8 @@ NM=4
     -ksp_rtol 1.0e-13                         \
     -ksp_atol 1.0e-19                         \
     -options_left 0                           \
-    -print_disp                               \
     -log_trace micro_trace                    \
-    -print_part
+    -print_vtu
 }
 
 #09-08-2017
@@ -83,7 +79,7 @@ NM=1
     -options_left 0                                 \
     -print_disp                                     \
     -log_trace micro_trace                          \
-    -print_part
+    -print_vtu
 }
 
 #09-08-2017
@@ -99,9 +95,8 @@ NM=4
     -ksp_atol 1.0e-19                               \
     -pc_type jacobi                                 \
     -options_left 0                                 \
-    -print_disp                                     \
     -log_trace micro_trace                          \
-    -print_part
+    -print_vtu
 }
 
 #09-08-2017
@@ -116,7 +111,7 @@ NM=1
     -options_left 0                                      \
     -print_disp                                          \
     -log_trace micro_trace                               \
-    -print_part
+    -print_vtu
 }
 
 #09-08-2017
@@ -132,7 +127,8 @@ NM=4
     -ksp_atol 1.0e-19                                    \
     -pc_type bjacobi                                     \
     -options_left 0                                      \
-    -log_trace micro_trace
+    -log_trace micro_trace                               \
+    -print_vtu
 }
 
 #cube_seq

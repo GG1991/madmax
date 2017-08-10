@@ -211,6 +211,9 @@ int write_pvtu(MPI_Comm PROBLEM_COMM, char *name)
 	"<PPoints>\n"
 	"<PDataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\"/>\n"
 	"</PPoints>\n"
+	"<PointData> Vectors=\"displ\"\n"
+	"<PDataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" />"
+	"</PointData>\n"
 	"<PCells>\n"
 	"<PDataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"Int32\" Name=\"offsets\"      NumberOfComponents=\"1\"/>\n"
@@ -234,7 +237,7 @@ int write_pvtu(MPI_Comm PROBLEM_COMM, char *name)
 /****************************************************************************************************/
 int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress)
 {
-  int  rank, nproc; 
+  int  rank, nproc, ierr; 
 
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
@@ -242,6 +245,8 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
   FILE *fm;
   char file_name[NBUF];
   int  i, d;
+  Vec  xlocal;
+  double *xvalues;
  
   /* 
      rank 0 writes the .pvtu file first
@@ -264,6 +269,10 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
 	"<PDataArray type=\"Int32\" Name=\"offsets\"      NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"UInt8\" Name=\"types\"        NumberOfComponents=\"1\"/>\n"
 	"</PCells>\n" 
+	"<PPointData Vectors=\"displ\">\n"
+//	"<PointData>\n"
+	"<PDataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" />\n"
+	"</PPointData>\n"
 	"<PCellData>\n"
 	"<PDataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\"/>\n"
@@ -324,6 +333,26 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"</Cells>\n");
+  
+  /*
+     <displ>
+   */
+  ierr = VecGhostUpdateBegin(*x,INSERT_VALUES,SCATTER_FORWARD);
+  ierr = VecGhostUpdateEnd(*x,INSERT_VALUES,SCATTER_FORWARD);
+  ierr = VecGhostGetLocalForm(*x,&xlocal);
+  fprintf(fm,"<PointData Vectors=\"displ\">\n");
+//  fprintf(fm,"<PointData>\n");
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
+  ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
+  for (i=0;i<NAllMyNod;i++){
+    for (d=0;d<3;d++){
+      fprintf(fm, "%lf ", xvalues[i*3+d]);
+    }
+    fprintf(fm,"\n");
+  }
+  VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
+  fprintf(fm,"</DataArray>\n");
+  fprintf(fm,"</PointData>\n");
 
   fprintf(fm,"<CellData>\n");
   /*
