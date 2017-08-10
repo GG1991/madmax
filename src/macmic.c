@@ -47,7 +47,7 @@ int MacMicParseScheme( char *input )
   FILE * file = fopen(input,"r");
   char   buf[NBUF];
   char * data;
-  int    ln, i;
+  int    ln;
 
 
   if(!file) return 1;
@@ -90,9 +90,7 @@ int MacMicParseScheme( char *input )
 /****************************************************************************************************/
 int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM)
 {
-
   /* 
-
      Creates the new communicators "MACRO_COMM" & "MICRO_COMM" 
 
      Are defined:
@@ -117,9 +115,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 
   int  i, ierr, c;
   int  nproc_wor, rank_wor;
-  int  nmic_worlds;
   int  nproc_mac_tot = 0, nproc_mic_tot = 0, mic_nproc_group;
-  int  nproc_local, rank_local;
 
   ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
   ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
@@ -180,7 +176,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
       im_leader = (mic_pos % mic_nproc_group == 0) ? 1 : 0;
 
       // determine MACRO leaders
-      int mac_rank;
+      int mac_rank = -1;
       i = 0;
       c = -1;
       while( i<nproc_wor ){
@@ -193,6 +189,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 	}
 	i++;
       }
+      if(mac_rank < 0) return 1;
 
       macmic->coup = malloc(sizeof(coupMic_1_t));
       ((coupMic_1_t*)macmic->coup)->mac_rank = mac_rank;
@@ -215,7 +212,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 	i++;
       }
 
-      int mic_rank;
+      int mic_rank = -1;
       i = 0; c = 0; mic_pos = 0;
       while( i<nproc_wor ){
 	if(id_vec[i] == MICRO){
@@ -228,6 +225,7 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
 	}
 	i++;
       }
+      if(mic_rank < 0) return 1;
 
       macmic->coup = malloc(sizeof(coupMac_1_t));
       ((coupMac_1_t*)macmic->coup)->mic_rank = mic_rank;
