@@ -105,7 +105,7 @@ NM=4
 }
 
 #09-08-2017
-function cube_cube_hole_fill_seq {
+function cube_chole_fill_seq {
 NM=1
 
 ./mpirun -np $NM ../../micro/micro                       \
@@ -120,7 +120,7 @@ NM=1
 }
 
 #09-08-2017
-function cube_cube_hole_fill_par {
+function cube_chole_fill_par {
 NM=4
 
 ./mpirun -np $NM ../../micro/micro                       \
@@ -130,11 +130,9 @@ NM=4
     -ksp_type cg                                         \
     -ksp_rtol 1.0e-13                                    \
     -ksp_atol 1.0e-19                                    \
-    -pc_type bjacobi                                 \
+    -pc_type bjacobi                                     \
     -options_left 0                                      \
-    -print_disp                                          \
-    -log_trace micro_trace                               \
-    -print_part
+    -log_trace micro_trace
 }
 
 #cube_seq
@@ -143,5 +141,5 @@ NM=4
 #barbero_test_par
 #cube_cube_hole_seq
 #cube_cube_hole_par
-#cube_cube_hole_fill_seq
-cube_cube_hole_fill_par
+#cube_chole_fill_seq
+#cube_chole_fill_par
