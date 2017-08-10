@@ -94,7 +94,7 @@ int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *
 
   int     rank, nproc; 
   int     count, d, n, e;
-  double  index, value, *xvalues;
+  double  *xvalues;
   int     ierr;
 
   Vec xlocal;
@@ -232,10 +232,8 @@ int write_pvtu(MPI_Comm PROBLEM_COMM, char *name)
   return 0;
 }
 /****************************************************************************************************/
-int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name)
+int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress)
 {
-  /*
-  */
   int  rank, nproc; 
 
   MPI_Comm_size(PROBLEM_COMM, &nproc);
@@ -244,6 +242,44 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name)
   FILE *fm;
   char file_name[NBUF];
   int  i, d;
+ 
+  /* 
+     rank 0 writes the .pvtu file first
+   */
+  if(!rank){
+
+
+    strcpy(file_name,name);
+    strcat(file_name,".pvtu");
+    fm = fopen(file_name,"w"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s could not be opened",file_name);
+
+    fprintf(fm, "<?xml version=\"1.0\"?>\n"
+	"<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
+	"<PUnstructuredGrid GhostLevel=\"0\">\n"
+	"<PPoints>\n"
+	"<PDataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\"/>\n"
+	"</PPoints>\n"
+	"<PCells>\n"
+	"<PDataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\"/>\n"
+	"<PDataArray type=\"Int32\" Name=\"offsets\"      NumberOfComponents=\"1\"/>\n"
+	"<PDataArray type=\"UInt8\" Name=\"types\"        NumberOfComponents=\"1\"/>\n"
+	"</PCells>\n" 
+//	"<PCellData Scalars=\"part\" Tensors=\"Strain\" Tensors=\"Stress\">"
+	"<PCellData Scalars=\"part\" >\n"
+	"<PDataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\"/>\n"
+//	"<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\"/>\n"
+//	"<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\"/>\n"
+	"</PCellData>\n"); 
+    for(i=0;i<nproc;i++){
+      sprintf(file_name,"%s_%d",name,i);
+      fprintf(fm,	"<Piece Source=\"%s.vtu\"/>\n",file_name);
+    }
+    fprintf(fm,	"</PUnstructuredGrid>\n" 
+      "</VTKFile>\n"
+      );
+
+    fclose(fm);
+  }
 
   sprintf(file_name,"%s_%d.vtu",name,rank);
   fm = fopen(file_name,"w"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s could not be opened",file_name);
@@ -252,10 +288,9 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name)
       "<?xml version=\"1.0\"?>\n"
       "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
       "<UnstructuredGrid>\n");
-  fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n",NAllMyNod, nelm );
+  fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", NAllMyNod, nelm);
   fprintf(fm,"<Points>\n");
-  fprintf(fm, 
-      "<DataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+  fprintf(fm,"<DataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
   for(i=0;i<NAllMyNod;i++){
     for(d=0;d<3;d++){
       fprintf(fm,"%e ",coord[i*3+d]);
@@ -263,10 +298,10 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name)
     fprintf(fm,"\n ");
   }
   fprintf(fm,"</DataArray>\n");
-  fprintf(fm,"<Points>\n");
+  fprintf(fm,"</Points>\n");
   fprintf(fm,"<Cells>\n");
 
-  fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">");
+  fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for (i=0;i<nelm;i++){
     for (d=0;d<(eptr[i+1] - eptr[i]);d++){
       fprintf(fm,"%d ",eind[eptr[i] + d]);
@@ -276,21 +311,57 @@ int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name)
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"offsets\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for (i=0;i<nelm+1;i++){
-    fprintf(fm,"%d\n",eptr[i+1] - eptr[i]);
+  for (i=1;i<nelm+1;i++){
+    fprintf(fm,"%d ",eptr[i]);
   }
+  fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for (i=0;i<nelm;i++){
-    fprintf(fm, "%d\n",vtkcode(3,eptr[i+1] - eptr[i]));  
+    fprintf(fm, "%d ",vtkcode(3,eptr[i+1] - eptr[i]));  
   }
+  fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
-  fprintf(fm,"<Cells>\n");
-  fprintf(fm,"<CellData Scalars=\"Material\">\n");
-  fprintf(fm,"<DataArray type=\"Int32\" Name=\"Stress\" NumberOfComponents=\"1\" format=\"ascii\">\n");
 
+  fprintf(fm,"</Cells>\n");
+//  fprintf(fm,"<CellData Scalars=\"part\" Tensors=\"strain\" Tensors=\"stress\">\n");
+  fprintf(fm,"<CellData Scalars=\"part\">\n");
+  /*
+     <part>
+   */
+  fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+  for (i=0;i<nelm;i++){
+    fprintf(fm,"%d ",rank);  
+  }
+  fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
+
+  /*
+     <strain>
+   */
+
+//  fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\" format=\"ascii\">\n");
+//  for (i=0;i<nelm;i++){
+//    fprintf(fm, "%lf %lf %lf ", strain[i*6+0],strain[i*6+3],strain[i*6+5]);
+//    fprintf(fm, "%lf %lf %lf ", strain[i*6+3],strain[i*6+1],strain[i*6+4]);
+//    fprintf(fm, "%lf %lf %lf ", strain[i*6+5],strain[i*6+4],strain[i*6+2]);
+//  }
+//  fprintf(fm,"\n");
+//  fprintf(fm,"</DataArray>\n");
+
+  /*
+     <strain>
+   */
+//  fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\" format=\"ascii\">\n");
+//  for (i=0;i<nelm;i++){
+//    fprintf(fm, "%lf %lf %lf ", stress[i*6+0],stress[i*6+3],stress[i*6+5]);
+//    fprintf(fm, "%lf %lf %lf ", stress[i*6+3],stress[i*6+1],stress[i*6+4]);
+//    fprintf(fm, "%lf %lf %lf ", stress[i*6+5],stress[i*6+4],stress[i*6+2]);
+//  }
+//  fprintf(fm,"\n");
+//  fprintf(fm,"</DataArray>\n");
+
   fprintf(fm,
       "</CellData>\n"
       "</Piece>\n"

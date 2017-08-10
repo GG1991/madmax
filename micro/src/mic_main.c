@@ -373,8 +373,7 @@ int main(int argc, char **argv)
 	ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
 	free(stress); free(strain);
 	sprintf(vtkfile_n,"%s_displ_exp%d",myname,i);
-	ierr = write_pvtu(MICRO_COMM, vtkfile_n);CHKERRQ(ierr);
-	ierr = write_vtu_disp_stress_strain(MICRO_COMM, vtkfile_n);CHKERRQ(ierr);
+	ierr = write_vtu_disp_stress_strain(MICRO_COMM, vtkfile_n, &x, strain, stress);CHKERRQ(ierr);
       }
       ierr = PetscPrintf(MICRO_COMM,"NR its : %d\n",nr_its);CHKERRQ(ierr);
 
