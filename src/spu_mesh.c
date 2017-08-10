@@ -233,7 +233,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
     free(eind_swi);
     free(npe_swi);
 
-    if(flag_print == PRINT_ALL){
+    if(flag_print & (1<<PRINT_ALL)){
       printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
 
       printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
@@ -1066,7 +1066,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
     }
   }
 
-  if(flag_print == PRINT_ALL){
+  if(flag_print & (1<<PRINT_ALL)){
     printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nelm_tot", nelm_tot);
     printf("%-6s r%2d %-20s : ", myname, rank, "<elmdist>");
     for(i=0; i < nproc + 1; i++){
@@ -1529,7 +1529,7 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
     }
   }
   (*output) = malloc( (*n_notrep) * sizeof(int));
-  if(flag_print == PRINT_ALL){
+  if(flag_print & (1<<PRINT_ALL)){
     printf("%-6s r%2d %-20s : %8d\n", myname, rank, "total elements", n);
     printf("%-6s r%2d %-20s : %8d\n", myname, rank, "unique elements" , *n_notrep);
   }
@@ -1600,7 +1600,7 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
     val_o = aux[i];
   }
   (*output) = malloc( (*nrep) * sizeof(int));
-  if(flag_print == PRINT_ALL){
+  if(flag_print & (1<<PRINT_ALL)){
     printf("%-6s r%2d %-20s : %8d\n", myname, rank, "n", n);
     printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nrep" , *nrep);
   }
@@ -1731,7 +1731,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     }
   }
 
-  if(flag_print == PRINT_ALL){
+  if(flag_print & (1<<PRINT_ALL)){
     if(rank==0){
       printf("%-6s r%2d %-20s :", myname, rank, "nrep");
       for(i=0;i<nproc;i++){
@@ -1762,7 +1762,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
 
   clean_vector_qsort(comm, myname, nreptot, rep_array, &rep_array_clean, &nreptot_clean);
-  if(flag_print == PRINT_ALL){
+  if(flag_print & (1<<PRINT_ALL)){
     printf("%-6s r%2d %-20s : %8f\n", myname, rank, "nreptot [%]", (nreptot_clean*100.0)/NAllMyNod ); 
   }
 
@@ -1796,7 +1796,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
 
   
-  if(flag_print == PRINT_ALL){
+  if(flag_print & (1<<PRINT_ALL)){
     printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "NMyGhost/NAllMyNod [%]", (NMyGhost*100.0)/NAllMyNod,	"NMyNod/NAllMyNod [%]", (NMyNod*100.0)/NAllMyNod); 
   }
 
@@ -1843,7 +1843,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   free(repeated);
 
   // >>>>> PRINT
-  if(flag_print == PRINT_ALL){
+  if(flag_print & (1<<PRINT_ALL)){
     printf("%-6s r%2d %-20s : %8d   %-20s : %8d\n", myname, rank, "NAllMyNod", NAllMyNod, "NMyNod", NMyNod);
     printf("%-6s r%2d %-20s : ", myname, rank, "AllMyNodOrig");
     for(i=0;i<NAllMyNod;i++){

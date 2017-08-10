@@ -16,6 +16,8 @@ static char help[] =
 "It has the capability of being couple with MACRO.\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
+"-print_vtk\n"
+"-print_vtu\n"
 "-print [0 (no print) | 1 (print PETSc structures) | 2 (print VTK output)]\n"
 "-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
 
@@ -61,13 +63,15 @@ int main(int argc, char **argv)
   /*
      Get command line arguments
   */
-  flag_print = PETSC_FALSE;
+  flag_print = 0;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_disp",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKDISP);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTK);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
 
@@ -185,7 +189,7 @@ int main(int argc, char **argv)
   read_mesh_coord(MICRO_COMM, myname, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
-  if(flag_print | (1<<PRINT_VTKPART)){
+  if(flag_print & (1<<PRINT_VTKPART)){
     sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mic);
     ierr = spu_vtk_partition( vtkfile_n, &MICRO_COMM );
   }
@@ -288,7 +292,7 @@ int main(int argc, char **argv)
       ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
       ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment i=%d\n",i);CHKERRQ(ierr);
       ierr = MicroSetBoundaryDispJacRes(i, strain_bc, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
-      if( flag_print | (1<<PRINT_PETSC) ){
+      if( flag_print & (1<<PRINT_PETSC) ){
 	ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(x,viewer); CHKERRQ(ierr);
       }
@@ -304,7 +308,7 @@ int main(int argc, char **argv)
 	ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Residual ");CHKERRQ(ierr);
 	ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
 	ierr = MicroSetBoundaryDispJacRes(i, strain_bc, &x, &A, &b, SET_RESIDUAL);
-	if( flag_print | (1<<PRINT_PETSC) ){
+	if( flag_print & (1<<PRINT_PETSC) ){
 	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
 	  ierr = VecView(b,viewer); CHKERRQ(ierr);
 	}
@@ -320,7 +324,7 @@ int main(int argc, char **argv)
 	ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Jacobian\n");
 	ierr = AssemblyJacobianSmallDeformation(&A);
 	ierr = MicroSetBoundaryDispJacRes(i, strain_bc, &x, &A, &b, SET_JACOBIAN);CHKERRQ(ierr);
-	if( flag_print == (1<<PRINT_PETSC) ){
+	if( flag_print & (1<<PRINT_PETSC) ){
 	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
 	  ierr = MatView(A,viewer); CHKERRQ(ierr);
 	}
@@ -335,7 +339,7 @@ int main(int argc, char **argv)
 	ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
 	ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
 	ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
-	if( flag_print == (1<<PRINT_PETSC) ){
+	if( flag_print & (1<<PRINT_PETSC) ){
 	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
 	  ierr = VecView(dx,viewer); CHKERRQ(ierr);
 	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
@@ -365,15 +369,19 @@ int main(int argc, char **argv)
 	ttensor[j*6+i] = stress_ave[j] / strain_ave[i];
       }
 
-      if(flag_print | (1<<PRINT_VTKDISP)){ 
+      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){ 
 	strain = malloc(nelm*6*sizeof(double));
 	stress = malloc(nelm*6*sizeof(double));
 	ierr = SpuCalcStressOnElement(&x, strain, stress);
-	sprintf(vtkfile_n,"%s_displ_exp%d_%d.vtk",myname,i,rank_mic);
-	ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
+	if(flag_print & (1<<PRINT_VTK)){ 
+	  sprintf(vtkfile_n,"%s_displ_exp%d_%d.vtk",myname,i,rank_mic);
+	  ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
+	}
 	free(stress); free(strain);
-	sprintf(vtkfile_n,"%s_displ_exp%d",myname,i);
-	ierr = write_vtu_disp_stress_strain(MICRO_COMM, vtkfile_n, &x, strain, stress);CHKERRQ(ierr);
+	if(flag_print & (1<<PRINT_VTU)){ 
+	  sprintf(vtkfile_n,"%s_displ_exp%d",myname,i);
+	  ierr = write_vtu(MICRO_COMM, vtkfile_n, &x, strain, stress);CHKERRQ(ierr);
+	}
       }
       ierr = PetscPrintf(MICRO_COMM,"NR its : %d\n",nr_its);CHKERRQ(ierr);
 

@@ -61,11 +61,11 @@ int main(int argc, char **argv)
   /*
      Get command line arguments
   */
-  flag_print = PRINT_NULL;
+  flag_print = 0;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = PRINT_PETSC;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_disp",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = PRINT_VTKDISP;
+  if(set == PETSC_TRUE) flag_print = PRINT_VTK;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = PRINT_VTKPART;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
@@ -258,7 +258,7 @@ int main(int argc, char **argv)
     */
     ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
     ierr = MacroSetDisplacementOnBoundary( t, &x);
-    if( flag_print == PRINT_PETSC ){
+    if( flag_print & (1<<PRINT_PETSC) ){
       ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
       ierr = VecView(x,viewer); CHKERRQ(ierr);
     }
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
       ierr = PetscPrintf(MACRO_COMM, "Assembling Residual ");CHKERRQ(ierr);
       ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
       ierr = MacroSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
-      if( flag_print == PRINT_PETSC ){
+      if( flag_print & (1<<PRINT_PETSC) ){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(b,viewer); CHKERRQ(ierr);
       }
@@ -296,7 +296,7 @@ int main(int argc, char **argv)
       ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
       ierr = AssemblyJacobianSmallDeformation(&A);
       ierr = MacroSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
-      if( flag_print == PRINT_PETSC ){
+      if( flag_print & (1<<PRINT_PETSC) ){
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
 	ierr = MatView(A,viewer); CHKERRQ(ierr);
       }
@@ -323,7 +323,7 @@ int main(int argc, char **argv)
       nr_its ++;
     }
 
-    if(flag_print == PRINT_VTKDISP){ 
+    if(flag_print == PRINT_VTK){ 
       strain = malloc(nelm*6*sizeof(double));
       stress = malloc(nelm*6*sizeof(double));
       ierr = SpuCalcStressOnElement(&x, strain, stress);

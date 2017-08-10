@@ -62,11 +62,11 @@ char         input_n[NBUF];            // Input file name
 
 MPI_Status   status;
 
-#define PRINT_NULL         0
-#define PRINT_PETSC        1
-#define PRINT_VTKDISP      2
-#define PRINT_VTKPART      3
-#define PRINT_ALL          4
+#define PRINT_PETSC        0
+#define PRINT_VTK          1
+#define PRINT_VTU          2
+#define PRINT_VTKPART      4
+#define PRINT_ALL          8
 
 int          flag_print;
 
@@ -171,7 +171,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );
 int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strain, double *Stress);
 int vtkcode(int dim,int npe);
 int write_pvtu(MPI_Comm PROBLEM_COMM, char *name);
-int write_vtu_disp_stress_strain(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress);
+int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress);
 
 // spu_time.c
 int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);
