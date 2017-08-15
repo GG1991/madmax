@@ -131,6 +131,23 @@ NM=4
     -print_vtu
 }
 
+#15-08-2017
+function cube_basic {
+NM=4
+
+./mpirun -np $NM ../../micro/micro                       \
+    -input ex1.spu                                       \
+    -mesh ../../meshes/cube_hole/cube_basic.msh \
+    -mesh_gmsh                                           \
+    -ksp_type cg                                         \
+    -ksp_rtol 1.0e-13                                    \
+    -ksp_atol 1.0e-19                                    \
+    -pc_type bjacobi                                     \
+    -options_left 0                                      \
+    -log_trace micro_trace                               \
+    -print_vtu
+}
+
 #cube_seq
 #cube_par
 #barbero_test_seq
@@ -139,3 +156,4 @@ NM=4
 #cube_cube_hole_par
 #cube_chole_fill_seq
 #cube_chole_fill_par
+#cube_basic

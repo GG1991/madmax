@@ -9,9 +9,9 @@ lx=1.5;
 ly=1.5;
 lz=0.5;
 r = 0.4;
-Nc = 10;
-Nx = 10;
-Nz = 4;
+Nc = 2;
+Nx = 2;
+Nz = 1;
 sin45=0.707106781;
 
 Point(1) = {0.0           ,0.0          ,0.0,0.1};
@@ -55,3 +55,14 @@ vol[]=Extrude {0, 0, 1} {
   Layers{Nz};
   Recombine;
 };
+
+//
+// Physical Entities
+//
+Physical Volume("IRON") = {3, 4, 2, 1, 5, 6, 8, 7};
+Physical Surface("X0") = {128, 84};
+Physical Surface("X1") = {216, 172};
+Physical Surface("Y0") = {62, 150};
+Physical Surface("Y1") = {106, 194};
+Physical Surface("Z0") = {12, 17, 7, 6, 22, 27, 37, 32};
+Physical Surface("Z1") = {107, 129, 85, 63, 151, 173, 217, 195};
