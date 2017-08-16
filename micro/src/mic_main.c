@@ -177,7 +177,7 @@ int main(int argc, char **argv)
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"MICRO: Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-  reenumerate_PETSc(&MICRO_COMM);
+  ierr = reenumerate_PETSc(&MICRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"MICRO: Reading Coordinates\n");
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
-  read_mesh_coord(MICRO_COMM, myname, mesh_n, mesh_f);
+  ierr = read_mesh_coord(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
   if(flag_print & (1<<PRINT_VTKPART)){

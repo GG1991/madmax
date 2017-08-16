@@ -131,9 +131,9 @@ int read_mesh_elmv(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f
 int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n);
 int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n);
 
-int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f);
-int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n);
-int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n);
+int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f);
+int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n);
+int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n);
 
 int read_physical_entities(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f);
 int read_physical_entities_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n);

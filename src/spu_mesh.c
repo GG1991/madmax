@@ -713,23 +713,23 @@ int GmshIsAsurfaceElement(int code)
   return (code == 2 || code == 3 || code == 15) ? 1 : 0;
 }
 /****************************************************************************************************/
-int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f)
+int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f)
 {
   /*
      Reads the mesh coordinate according to the format specified
    */
   if(mesh_f == FORMAT_GMSH){
-    return read_mesh_coord_GMSH(PROBLEM_COMM, myname, mesh_n);
+    return read_mesh_coord_GMSH(PROBLEM_COMM, mesh_n);
   }
   else if(mesh_f == FORMAT_ALYA){
-    return read_mesh_coord_ALYA(PROBLEM_COMM, myname, mesh_n);
+    return read_mesh_coord_ALYA(PROBLEM_COMM, mesh_n);
   }
   else{
     return 1;
   }
 }
 /****************************************************************************************************/
-int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
+int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 {
 
   /* 
@@ -830,7 +830,7 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   return 0;
 }
 /****************************************************************************************************/
-int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
+int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
 {
 
   /* 
@@ -1921,14 +1921,14 @@ int reenumerate_PETSc(MPI_Comm *comm)
     loc2petsc[i] = StartIndexRank[rank] + i;
   }
 
-  /*************************************************** 
-   * And now ghosts nodes:
-   *
-   *    each process sends <MyNodOrig> 
-   *    and each process receives that vector
-   *    and search if any ghost is inside.
-   *    With that information completes <GhostRank>
-   *    and then using that completes finally <loc2petsc>
+  /*
+    And now ghosts nodes>
+   
+    each process sends <MyNodOrig> 
+    and each process receives that vector
+    and search if any ghost is inside.
+    With that information completes <GhostRank>
+    and then using that completes finally <loc2petsc>
    */
 
   MPI_Request  *request;
@@ -1971,10 +1971,11 @@ int reenumerate_PETSc(MPI_Comm *comm)
 /****************************************************************************************************/
 int search_position_linear(int *array, int size, int val, int *pos)
 {
-  /* Returns: 
-   * a) the position <pos> of <val> inside <array> (size <size>)
-   * b) <pos> = -1 if <val> does not exist 
-   *
+  /* 
+     Returns> 
+     a) the position <pos> of <val> inside <array> (size <size>)
+     b) <pos> = -1 if <val> does not exist 
+    
    */
 
   int   i=0;

@@ -175,7 +175,7 @@ int main(int argc, char **argv)
   */
   PetscPrintf(MACRO_COMM,"MACRO: Calculating Ghost Nodes\n");
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
-  calculate_ghosts(&MACRO_COMM, myname);
+  ierr = calculate_ghosts(&MACRO_COMM, myname);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
   */
   PetscPrintf(MACRO_COMM,"MACRO: Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-  reenumerate_PETSc(&MACRO_COMM);
+  ierr = reenumerate_PETSc(&MACRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -191,7 +191,7 @@ int main(int argc, char **argv)
   */
   PetscPrintf(MACRO_COMM,"MACRO: Reading Coordinates\n");
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
-  read_mesh_coord(MACRO_COMM, myname, mesh_n, mesh_f);
+  ierr = read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
   if(flag_print == PRINT_VTKPART){
