@@ -183,7 +183,7 @@ int main(int argc, char **argv)
   */
   PetscPrintf(MACRO_COMM,"MACRO: Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-  ierr = reenumerate_PETSc(&MACRO_COMM);CHKERRQ(ierr);
+  ierr = reenumerate_PETSc(MACRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
   /*

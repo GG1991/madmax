@@ -177,7 +177,7 @@ int main(int argc, char **argv)
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"MICRO: Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-  ierr = reenumerate_PETSc(&MICRO_COMM);CHKERRQ(ierr);
+  ierr = reenumerate_PETSc(MICRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
   /*

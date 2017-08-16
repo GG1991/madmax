@@ -1857,7 +1857,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   return 0;
 }
 /****************************************************************************************************/
-int reenumerate_PETSc(MPI_Comm *comm)
+int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 {
   /* 
      This routine
@@ -1874,12 +1874,12 @@ int reenumerate_PETSc(MPI_Comm *comm)
   int   *PeerMyNodOrig;    // buffer to receive MyNodOrig from the other processes
   int   *PeerNMyNod;   // buffers' sizes with NMyNodOrig from every process
 
-  MPI_Comm_rank(*comm, &rank);
-  MPI_Comm_size(*comm, &nproc);
+  MPI_Comm_rank(PROBLEM_COMM, &rank);
+  MPI_Comm_size(PROBLEM_COMM, &nproc);
 
   PeerNMyNod = malloc( nproc * sizeof(int));
   StartIndexRank = malloc( nproc * sizeof(int));
-  ierr = MPI_Allgather(&NMyNod, 1, MPI_INT, PeerNMyNod, 1, MPI_INT, *comm);
+  ierr = MPI_Allgather(&NMyNod, 1, MPI_INT, PeerNMyNod, 1, MPI_INT, PROBLEM_COMM);
   if(ierr){
     return 1;
   }
@@ -1907,8 +1907,7 @@ int reenumerate_PETSc(MPI_Comm *comm)
 	eind[i] = NMyNod + p - ghost;
       }
       else{
-	printf("reenumerate_PETSc: value %d not found on <MyNodOrig> neither <ghost>\n",eind[i]);
-	return 1;
+	SETERRQ1(PROBLEM_COMM,1,"value %d not found on <MyNodOrig> neither <ghost>\n",eind[i]);
       }
     }
   }
@@ -1940,14 +1939,14 @@ int reenumerate_PETSc(MPI_Comm *comm)
 
   for(i=0;i<nproc;i++){
     if(i!=rank){
-      ierr = MPI_Isend(MyNodOrig, NMyNod, MPI_INT, i, 0, *comm, &request[i]);
+      ierr = MPI_Isend(MyNodOrig, NMyNod, MPI_INT, i, 0, PROBLEM_COMM, &request[i]);
     }
   }
   for(i=0;i<nproc;i++){
     // receive from all peer ranks "i"
     if(i!=rank){
       PeerMyNodOrig = malloc(PeerNMyNod[i]*sizeof(int));
-      ierr = MPI_Recv(PeerMyNodOrig, PeerNMyNod[i], MPI_INT, i, 0, *comm, &status);
+      ierr = MPI_Recv(PeerMyNodOrig, PeerNMyNod[i], MPI_INT, i, 0, PROBLEM_COMM, &status);
       for(j=0;j<nghost;j++){
 	// search this ghost node on <PeerMyNodOrig>
 	p = bsearch(&ghost[j], PeerMyNodOrig, PeerNMyNod[i], sizeof(int), cmpfunc);
