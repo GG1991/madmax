@@ -149,7 +149,7 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
     int *npe_swi, int *eind_swi, int *PhysicalID_swi,
     int *cuts_npe, int *cuts_eind );
 int CSR_give_pointer( int e, int *npe, int *eind, int *p);
-int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *not_rep);
+int clean_vector_qsort(int n, int *input, int **output, int *not_rep);
 int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep);
 int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps);
 int calculate_ghosts(MPI_Comm * comm, char *myname);
