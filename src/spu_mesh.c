@@ -279,7 +279,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
   /*
      We delete repeated nodes and save the <NAllMyNod> values on <AllMyNodOrig> in order
   */
-  clean_vector_qsort(comm, myname, eptr[nelm], eind, &AllMyNodOrig, &NAllMyNod);
+  clean_vector_qsort(eptr[nelm], eind, &AllMyNodOrig, &NAllMyNod);
 
   return 0;
 }
@@ -1479,7 +1479,7 @@ int read_physical_entities_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
   return 0;
 }
 /****************************************************************************************************/
-int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *n_notrep)
+int clean_vector_qsort(int n, int *input, int **output, int *n_notrep)
 {
   /*
      Deletes the values that are repeated in input and 
@@ -1494,18 +1494,9 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
 
    */
 
-  int   i, c, swi, val_o;
-  int   *aux;
-  int   rank;
+  int  i, c, swi, val_o, *aux = NULL;
 
-  (*n_notrep) = 0;
-
-  if(n==0){
-    // no hay nada que ordenar ni limpiar
-    return 0;
-  }
-
-  MPI_Comm_rank(*comm, &rank);
+  if(n==0) return 0;
 
   // we copy eind inside aux
   aux = malloc(n*sizeof(int));
@@ -1514,7 +1505,7 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
   qsort(aux, n, sizeof(int), cmpfunc);
 
   val_o = aux[0];
-  (*n_notrep) ++;
+  c = 1;
   for(i=1;i<n;i++){
     swi = 1;
     if(aux[i] == val_o){
@@ -1525,19 +1516,14 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
       swi = 1;
     }
     if(swi==1){
-      (*n_notrep) ++;
+      c++;
     }
   }
-  (*output) = malloc( (*n_notrep) * sizeof(int));
-  if(flag_print & (1<<PRINT_ALL)){
-    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "total elements", n);
-    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "unique elements" , *n_notrep);
-  }
+  (*output) = malloc(c*sizeof(int));
 
-  c = 0;
   val_o = aux[0];
-  (*output)[c] = aux[0];
-  c ++;
+  (*output)[0] = aux[0];
+  c = 1;
   for(i=1;i<n;i++){
     swi = 1;
     if(aux[i] == val_o){
@@ -1552,8 +1538,8 @@ int clean_vector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **o
       c ++;
     }
   }
-
   free(aux);
+  *n_notrep = c;
 
   return 0;
 }
@@ -1742,9 +1728,8 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
 
   // condensamos en 1 vector todo lo que hay en repeated
-  int *rep_array, nreptot, *rep_array_clean, nreptot_clean;
+  int *rep_array = NULL, nreptot = 0, *rep_array_clean = NULL, nreptot_clean = 0;
 
-  nreptot = 0;
   for(i=0;i<nproc;i++){
     if(i!=rank){
       nreptot += nrep[i];
@@ -1761,7 +1746,8 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     }
   }
 
-  clean_vector_qsort(comm, myname, nreptot, rep_array, &rep_array_clean, &nreptot_clean);
+  ierr = clean_vector_qsort(nreptot, rep_array, &rep_array_clean, &nreptot_clean);CHKERRQ(ierr);
+
   if(flag_print & (1<<PRINT_ALL)){
     printf("%-6s r%2d %-20s : %8f\n", myname, rank, "nreptot [%]", (nreptot_clean*100.0)/NAllMyNod ); 
   }

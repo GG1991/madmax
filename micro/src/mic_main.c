@@ -159,7 +159,7 @@ int main(int argc, char **argv)
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"MICRO: Partitioning and distributing mesh\n");
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
-  part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );
+  ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"MICRO: Calculating Ghost Nodes\n");
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
-  calculate_ghosts(&MICRO_COMM, myname);
+  ierr = calculate_ghosts(&MICRO_COMM, myname);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
   /*
