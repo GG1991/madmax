@@ -807,11 +807,11 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   }
   fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
   //
-  // leemos todos los nodos en <MyGhostOrig>
+  // leemos todos los nodos en <ghost>
   //
   i = c = 0;
-  while( c < NMyGhost ){
-    while( i<MyGhostOrig[c] ){
+  while( c < nghost ){
+    while( i<ghost[c] ){
       fgets(buf,NBUF,fm); 
       i++;
     }
@@ -903,13 +903,13 @@ int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   }
 
   /*
-     leemos todos los nodos en <MyGhostOrig>
+     leemos todos los nodos en <ghost>
   */
   rewind(fm);
   if(!fgets(buf,NBUF,fm))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name);
   i = c = 0;
-  while( c < NMyGhost ){
-    while( i<MyGhostOrig[c] ){
+  while( c < nghost ){
+    while( i<ghost[c] ){
       if(!fgets(buf,NBUF,fm))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name);
       i++;
     }
@@ -1671,7 +1671,7 @@ int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *arra
 int calculate_ghosts(MPI_Comm * comm, char *myname)
 {
   /*
-     This function determines which nodes of <*AllMyNodOrig> are <*MyGhostOrig>
+     This function determines which nodes of <*AllMyNodOrig> are <*ghost>
 
      strategy 
 
@@ -1693,7 +1693,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   MPI_Comm_size(*comm, &nproc);
 
   mysize     = NAllMyNod;
-  NMyGhost    = 0;
+  nghost    = 0;
   peer_sizes = NULL;
 
   peer_sizes = malloc(nproc*sizeof(int));
@@ -1759,7 +1759,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   int ismine, r, remoterank;
 
   if(nreptot_clean!=0){
-    NMyNod = NMyGhost = r = 0;
+    NMyNod = nghost = r = 0;
     for(i=0;i<NAllMyNod;i++){
       if(AllMyNodOrig[i] == rep_array_clean[r]){
 	ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
@@ -1768,7 +1768,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 	  NMyNod ++;
 	}
 	else{
-	  NMyGhost ++;
+	  nghost ++;
 	}
       }
       else{
@@ -1778,16 +1778,16 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
   else{
     NMyNod = NAllMyNod;
-    NMyGhost = 0;
+    nghost = 0;
   }
 
   
   if(flag_print & (1<<PRINT_ALL)){
-    printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "NMyGhost/NAllMyNod [%]", (NMyGhost*100.0)/NAllMyNod,	"NMyNod/NAllMyNod [%]", (NMyNod*100.0)/NAllMyNod); 
+    printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "nghost/NAllMyNod [%]", (nghost*100.0)/NAllMyNod,	"NMyNod/NAllMyNod [%]", (NMyNod*100.0)/NAllMyNod); 
   }
 
   MyNodOrig = malloc(NMyNod*sizeof(int));
-  MyGhostOrig = malloc(NMyGhost*sizeof(int));
+  ghost = malloc(nghost*sizeof(int));
 
   c = r = g = 0;
   if(nreptot_clean!=0){
@@ -1801,7 +1801,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 	  c ++;
 	}
 	else{
-	  MyGhostOrig[g] = AllMyNodOrig[i];
+	  ghost[g] = AllMyNodOrig[i];
 	  g ++;
 	}
       }
@@ -1846,9 +1846,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
       printf("%3d ",MyNodOrig[i]);
     }
     printf("\n");
-    printf("%-6s r%2d %-20s : ", myname, rank, "MyGhostOrig");
-    for(i=0;i<NMyGhost;i++){
-      printf("%3d ",MyGhostOrig[i]);
+    printf("%-6s r%2d %-20s : ", myname, rank, "ghost");
+    for(i=0;i<nghost;i++){
+      printf("%3d ",ghost[i]);
     }
     printf("\n");
   }
@@ -1864,7 +1864,7 @@ int reenumerate_PETSc(MPI_Comm *comm)
 
      a) reestablish the numeration of <eind> array to a local numeration
 
-     b) creates and fills array <loc2petsc> of size <NMyNod> + <NMyGhost>
+     b) creates and fills array <loc2petsc> of size <NMyNod> + <nghost>
      in each local position <n> is stored the global position in PETSc matrix 
 
    */
@@ -1902,18 +1902,18 @@ int reenumerate_PETSc(MPI_Comm *comm)
     }
     else{
       // is a ghost node
-      p = bsearch(&eind[i], MyGhostOrig, NMyGhost, sizeof(int), cmpfunc);
+      p = bsearch(&eind[i], ghost, nghost, sizeof(int), cmpfunc);
       if(p != NULL){
-	eind[i] = NMyNod + p - MyGhostOrig;
+	eind[i] = NMyNod + p - ghost;
       }
       else{
-	printf("reenumerate_PETSc: value %d not found on <MyNodOrig> neither <MyGhostOrig>\n",eind[i]);
+	printf("reenumerate_PETSc: value %d not found on <MyNodOrig> neither <ghost>\n",eind[i]);
 	return 1;
       }
     }
   }
 
-  loc2petsc = malloc( (NMyNod + NMyGhost) * sizeof(int));
+  loc2petsc = malloc( (NMyNod + nghost) * sizeof(int));
 
   //**************************************************
   // empezamos con los locales
@@ -1936,7 +1936,7 @@ int reenumerate_PETSc(MPI_Comm *comm)
   int   *MyGhostGlobalIndex;
 
   request    = malloc(nproc*sizeof(MPI_Request));
-  MyGhostGlobalIndex = malloc(NMyGhost*sizeof(int));
+  MyGhostGlobalIndex = malloc(nghost*sizeof(int));
 
   for(i=0;i<nproc;i++){
     if(i!=rank){
@@ -1948,9 +1948,9 @@ int reenumerate_PETSc(MPI_Comm *comm)
     if(i!=rank){
       PeerMyNodOrig = malloc(PeerNMyNod[i]*sizeof(int));
       ierr = MPI_Recv(PeerMyNodOrig, PeerNMyNod[i], MPI_INT, i, 0, *comm, &status);
-      for(j=0;j<NMyGhost;j++){
+      for(j=0;j<nghost;j++){
 	// search this ghost node on <PeerMyNodOrig>
-	p = bsearch(&MyGhostOrig[j], PeerMyNodOrig, PeerNMyNod[i], sizeof(int), cmpfunc);
+	p = bsearch(&ghost[j], PeerMyNodOrig, PeerNMyNod[i], sizeof(int), cmpfunc);
 	if(p!=NULL){
 	  MyGhostGlobalIndex[j] = StartIndexRank[i] + p - PeerMyNodOrig;
 	}
@@ -1959,7 +1959,7 @@ int reenumerate_PETSc(MPI_Comm *comm)
     }
   }
 
-  for(i=0;i<NMyGhost;i++){
+  for(i=0;i<nghost;i++){
     loc2petsc[NMyNod + i] =  MyGhostGlobalIndex[i];
   }
 

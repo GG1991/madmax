@@ -44,9 +44,9 @@ int MacroAllocMatrixVector(MPI_Comm MACRO_COMM, int nlocal, int ntotal)
      and VecCreate() are used with the same communicator.
    */
   int i, d, *ghostsIndex;
-  ghostsIndex = malloc(NMyGhost*3* sizeof(int));
+  ghostsIndex = malloc(nghost*3* sizeof(int));
 
-  for(i=0;i<NMyGhost;i++){
+  for(i=0;i<nghost;i++){
     for(d=0;d<3;d++){
       ghostsIndex[i*3+d] = loc2petsc[NMyNod + i]*3+d;
     }
@@ -54,7 +54,7 @@ int MacroAllocMatrixVector(MPI_Comm MACRO_COMM, int nlocal, int ntotal)
 
   //  ierr = VecCreate(comm,x);CHKERRQ(ierr);
   //  ierr = VecSetSizes(x,NMyNod,NTotalNod);CHKERRQ(ierr);
-  ierr = VecCreateGhost(MACRO_COMM, NMyNod*3, NTotalNod*3, NMyGhost*3, ghostsIndex, &x); CHKERRQ(ierr);
+  ierr = VecCreateGhost(MACRO_COMM, NMyNod*3, NTotalNod*3, nghost*3, ghostsIndex, &x); CHKERRQ(ierr);
   ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
   ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
 

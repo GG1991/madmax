@@ -97,16 +97,16 @@ int           *PhysicalID;             // element property number
 
 int           *StartIndexRank;
 int           *AllMyNodOrig;           // Original (gmsh) numbers of my nodes + my ghosts
-int           NAllMyNod;               // <NMyNod> + <NMyGhost>
+int           NAllMyNod;               // <NMyNod> + <nghost>
 int           *MyNodOrig;              // Original (gmsh) numbers of my nodes
 int           NMyNod;                  // Number of my nodes 
-int           *MyGhostOrig;            // Original (gmsh) numbers of my ghosts nodes
-int           NMyGhost;                // Number of my ghost nodes
+int           *ghost;                  // Original numbers of my ghosts nodes
+int           nghost;                  // Number of my ghost nodes
 int           NTotalNod;               // Number of total nodes in the mesh
 
 double        *coord;                  // nodes' coordinates
 
-int           *loc2petsc;              // array of size <NMyNod>+<NMyGhost>
+int           *loc2petsc;              // array of size <NMyNod>+<nghost>
                                        // returns the position in PETSc matrix & vectors
 
 // List of different utilities
