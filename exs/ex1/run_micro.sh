@@ -150,7 +150,22 @@ NM=4
 
 # 16-08-2017
 # Cube with cilindrical fiber in the middle
-function cube_fiber {
+function cube_fiber_seq {
+NM=1
+
+./mpirun -np $NM ../../micro/micro                       \
+    -input ex1.spu                                       \
+    -mesh ../../meshes/cube_fiber/cube_fiber.msh \
+    -mesh_gmsh                                           \
+    -pc_type  lu                                         \
+    -options_left 0                                      \
+    -log_trace micro_trace                               \
+    -print_vtu
+}
+
+# 16-08-2017
+# Cube with cilindrical fiber in the middle
+function cube_fiber_par {
 NM=4
 
 ./mpirun -np $NM ../../micro/micro                       \
@@ -174,5 +189,5 @@ NM=4
 #cube_cube_hole_par
 #cube_chole_fill_seq
 #cube_chole_fill_par
-#cube_basic
-#cube_fiber
+#cube_fiber_seq
+#cube_fiber_par
