@@ -1872,9 +1872,7 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
   /* 
      This routine
 
-     a) reestablish the numeration of <eind> array to a local numeration
-
-     b) creates and fills array <loc2petsc> of size <NMyNod> + <nghost>
+     a) creates and fills array <loc2petsc> of size <NMyNod> + <nghost>
      in each local position <n> is stored the global position in PETSc matrix 
 
    */
@@ -1889,10 +1887,7 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 
   PeerNMyNod = malloc( nproc * sizeof(int));
   StartIndexRank = malloc( nproc * sizeof(int));
-  ierr = MPI_Allgather(&NMyNod, 1, MPI_INT, PeerNMyNod, 1, MPI_INT, PROBLEM_COMM);
-  if(ierr){
-    return 1;
-  }
+  ierr = MPI_Allgather(&NMyNod, 1, MPI_INT, PeerNMyNod, 1, MPI_INT, PROBLEM_COMM);CHKERRQ(ierr);
 
   StartIndexRank[0] = 0;
   i = 1;
@@ -1916,8 +1911,6 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 	eind[i] = NMyNod + p - ghost;
       }
       else{
-//	printf("value %d not found on <MyNodOrig> neither <ghost>\n",eind[i]);
-//	return 1;
 	SETERRQ1(PROBLEM_COMM,1,"value %d not found on <MyNodOrig> neither <ghost>\n",eind[i]);
       }
     }
@@ -1963,6 +1956,9 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 	p = bsearch(&ghost[j], PeerMyNodOrig, PeerNMyNod[i], sizeof(int), cmpfunc);
 	if(p!=NULL){
 	  MyGhostGlobalIndex[j] = StartIndexRank[i] + p - PeerMyNodOrig;
+	}
+	else{
+	  SETERRQ1(PROBLEM_COMM,1,"value %d not found on <ghost>\n",ghost[i]);
 	}
       }
       free(PeerMyNodOrig);
