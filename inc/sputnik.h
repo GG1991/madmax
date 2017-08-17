@@ -96,17 +96,17 @@ int           *eind;                   // list of nodes for elem "i" is between
 int           *PhysicalID;             // element property number
 
 int           *StartIndexRank;
-int           *AllMyNodOrig;           // Original (gmsh) numbers of my nodes + my ghosts
-int           NAllMyNod;               // <NMyNod> + <nghost>
-int           *MyNodOrig;              // Original (gmsh) numbers of my nodes
-int           NMyNod;                  // Number of my nodes 
+int           *allnods;                // all nodes including mynods and ghost
+int           nallnods;                // <nmynods> + <nghost>
+int           *mynods;                 // Original (gmsh) numbers of my nodes
+int           nmynods;                 // Number of <mynods> 
 int           *ghost;                  // Original numbers of my ghosts nodes
 int           nghost;                  // Number of my ghost nodes
 int           NTotalNod;               // Number of total nodes in the mesh
 
 double        *coord;                  // nodes' coordinates
 
-int           *loc2petsc;              // array of size <NMyNod>+<nghost>
+int           *loc2petsc;              // array of size <nmynods>+<nghost>
                                        // returns the position in PETSc matrix & vectors
 
 // List of different utilities

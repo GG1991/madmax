@@ -219,7 +219,7 @@ int main(int argc, char **argv)
   */ 
   ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
   ierr = PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");CHKERRQ(ierr);
-  ierr = MacroAllocMatrixVector( MACRO_COMM, NMyNod*3, NTotalNod*3);CHKERRQ(ierr);
+  ierr = MacroAllocMatrixVector( MACRO_COMM, nmynods*3, NTotalNod*3);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
   /*

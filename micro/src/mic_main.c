@@ -219,7 +219,7 @@ int main(int argc, char **argv)
      Allocate matrices & vectors
   */ 
   ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
-  ierr = MicroAllocMatrixVector( MICRO_COMM, NMyNod*3, NTotalNod*3);CHKERRQ(ierr);
+  ierr = MicroAllocMatrixVector( MICRO_COMM, nmynods*3, NTotalNod*3);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -241,7 +241,7 @@ int main(int argc, char **argv)
      micro main coupling loop
    */
   double strain_ave[6], stress_ave[6], ttensor[36];
-  ierr = get_bbox_limit_lengths(MICRO_COMM,coord,NMyNod,&LX,&LY,&LZ);CHKERRQ(ierr);
+  ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);CHKERRQ(ierr);
   ierr = PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);CHKERRQ(ierr);
 
   if(flag_coupling){

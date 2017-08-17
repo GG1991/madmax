@@ -92,11 +92,11 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
       NodeOrig = *(int*)(((boundary_t*)pBound->data)->Nods.head->data); 
       mac_boundary->nods[n] = NodeOrig;
 
-      p = bsearch(&NodeOrig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); 
+      p = bsearch(&NodeOrig, mynods, nmynods, sizeof(int), cmpfunc); 
       if(!p){SETERRQ2(PROBLEM_COMM,1,
 	  "A boundary node (%d) seems now to not belong to this process (rank:%d)",NodeOrig,rank);}
 
-      NodeLocal  = p - MyNodOrig;        // Local numeration
+      NodeLocal  = p - mynods;        // Local numeration
       NodeGlobal = loc2petsc[NodeLocal]; // PETSc numeration
 
       for(d=0;d<3;d++){

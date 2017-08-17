@@ -49,13 +49,13 @@ int MacroAllocMatrixVector(MPI_Comm MACRO_COMM, int nlocal, int ntotal)
 
   for(i=0;i<nghost;i++){
     for(d=0;d<3;d++){
-      ghostsIndex[i*3+d] = loc2petsc[NMyNod + i]*3+d;
+      ghostsIndex[i*3+d] = loc2petsc[nmynods + i]*3+d;
     }
   }
 
   //  ierr = VecCreate(comm,x);CHKERRQ(ierr);
-  //  ierr = VecSetSizes(x,NMyNod,NTotalNod);CHKERRQ(ierr);
-  ierr = VecCreateGhost(MACRO_COMM, NMyNod*3, NTotalNod*3, nghost*3, ghostsIndex, &x); CHKERRQ(ierr);
+  //  ierr = VecSetSizes(x,nmynods,NTotalNod);CHKERRQ(ierr);
+  ierr = VecCreateGhost(MACRO_COMM, nmynods*3, NTotalNod*3, nghost*3, ghostsIndex, &x); CHKERRQ(ierr);
   ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
   ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
 

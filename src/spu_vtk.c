@@ -40,9 +40,9 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
   fprintf(vtkfl, "SPUTNIK\n");
   fprintf(vtkfl, "ASCII\n");
   fprintf(vtkfl, "DATASET UNSTRUCTURED_GRID\n");
-  fprintf(vtkfl, "POINTS %d double\n", NAllMyNod);
+  fprintf(vtkfl, "POINTS %d double\n", nallnods);
 
-  for (n=0;n<NAllMyNod;n++){
+  for (n=0;n<nallnods;n++){
     for(d=0;d<3;d++){
       fprintf(vtkfl, "%lf ", coord[n*3 + d]);
     }
@@ -102,7 +102,7 @@ int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
-//  xvalues = malloc(NAllMyNod*3*sizeof(double));
+//  xvalues = malloc(nallnods*3*sizeof(double));
 
   ierr = VecGhostUpdateBegin(*Displa,INSERT_VALUES,SCATTER_FORWARD);
   ierr = VecGhostUpdateEnd(*Displa,INSERT_VALUES,SCATTER_FORWARD);
@@ -120,9 +120,9 @@ int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *
   fprintf(vtkfl, "SPUTNIK\n");
   fprintf(vtkfl, "ASCII\n");
   fprintf(vtkfl, "DATASET UNSTRUCTURED_GRID\n");
-  fprintf(vtkfl, "POINTS %d double\n", NAllMyNod);
+  fprintf(vtkfl, "POINTS %d double\n", nallnods);
 
-  for (n=0;n<NAllMyNod;n++){
+  for (n=0;n<nallnods;n++){
     for(d=0;d<3;d++){
       fprintf(vtkfl, "%lf ", coord[n*3 + d]);
     }
@@ -147,12 +147,12 @@ int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *
     fprintf(vtkfl, "%d\n",vtkcode(3,eptr[e+1] - eptr[e]));  
   }
 
-  fprintf(vtkfl, "POINT_DATA %i\n",NAllMyNod);
+  fprintf(vtkfl, "POINT_DATA %i\n",nallnods);
 
   fprintf(vtkfl, "VECTORS Displa FLOAT\n");
 //  fprintf(vtkfl, "LOOKUP_TABLE default\n");
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
-  for (n=0;n<NAllMyNod;n++){
+  for (n=0;n<nallnods;n++){
     for (d=0;d<3;d++){
       fprintf(vtkfl, "%lf ", xvalues[n*3+d]);
     }
@@ -296,10 +296,10 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
       "<?xml version=\"1.0\"?>\n"
       "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
       "<UnstructuredGrid>\n");
-  fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", NAllMyNod, nelm);
+  fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", nallnods, nelm);
   fprintf(fm,"<Points>\n");
   fprintf(fm,"<DataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-  for(i=0;i<NAllMyNod;i++){
+  for(i=0;i<nallnods;i++){
     for(d=0;d<3;d++){
       fprintf(fm,"%e ",coord[i*3+d]);
     }
@@ -344,7 +344,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
 //  fprintf(fm,"<PointData>\n");
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
-  for (i=0;i<NAllMyNod;i++){
+  for (i=0;i<nallnods;i++){
     for (d=0;d<3;d++){
       fprintf(fm, "%lf ", xvalues[i*3+d]);
     }

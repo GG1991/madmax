@@ -196,10 +196,10 @@ int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	while(pn)
 	{
 	  node_orig = *(int*)(pn->data); 
-	  p = bsearch(&node_orig, MyNodOrig, NMyNod, sizeof(int), cmpfunc); 
+	  p = bsearch(&node_orig, mynods, nmynods, sizeof(int), cmpfunc); 
 	  if(!p){SETERRQ2(PROBLEM_COMM,1,
 	      "A boundary node (%d) seems now to not belong to this process (rank:%d)",node_orig,rank);}
-	  node_petsc  = loc2petsc[p - MyNodOrig];  // PETSc numeration
+	  node_petsc  = loc2petsc[p - mynods];  // PETSc numeration
 
 	  if(flag_pn==1){
 	    px[n] = node_petsc*3 + 0;
