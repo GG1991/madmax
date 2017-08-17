@@ -1911,7 +1911,7 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 	eind[i] = NMyNod + p - ghost;
       }
       else{
-	SETERRQ1(PROBLEM_COMM,1,"value %d not found on <MyNodOrig> neither <ghost>\n",eind[i]);
+	SETERRQ1(PROBLEM_COMM,1,"value %d not found on <MyNodOrig> neither <ghost>",eind[i]);
       }
     }
   }
@@ -1940,6 +1940,9 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 
   request    = malloc(nproc*sizeof(MPI_Request));
   MyGhostGlobalIndex = malloc(nghost*sizeof(int));
+  for(i=0;i<nghost;i++){
+    MyGhostGlobalIndex[i] = -1;
+  }
 
   for(i=0;i<nproc;i++){
     if(i!=rank){
@@ -1957,11 +1960,15 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 	if(p!=NULL){
 	  MyGhostGlobalIndex[j] = StartIndexRank[i] + p - PeerMyNodOrig;
 	}
-	else{
-	  SETERRQ1(PROBLEM_COMM,1,"value %d not found on <ghost>\n",ghost[i]);
-	}
       }
       free(PeerMyNodOrig);
+    }
+  }
+
+  // check if all the ghost where found remotely
+  for(i=0;i<nghost;i++){
+    if(MyGhostGlobalIndex[i] == -1){
+      SETERRQ1(PROBLEM_COMM,1,"<ghost> value %d not found remotely",ghost[i]);
     }
   }
 
