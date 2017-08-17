@@ -91,25 +91,26 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 	&ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
 	options, &edgecut, part, comm );
 
+
     /* 
-     * Graph distribution
-     *
-     * First we create an array "npe" that follows
-     * the same function as eptr but is a global 
-     * reference 
-     *
-     * eptr = [ 0 3 5 8 9 ]
-     * npe  = [ 3 2 3 1 ]    (npe[i] = eptr[i+1] - eptr[i])
-     *
-     * Then vectors are switched acording to "part"
-     * we create npe_swi, eind_swi, npe_swi_size
-     *
-     * We do MPI_Alltoall of : "npe_swi_size"  ->  "npe_size_new"
-     *                         "eind_swi_size" ->  "eind_size_new"
-     *
-     * we free and reallocate memory for : "npe" using "npe_size" 
-     *                                     "eind" using "eind_size" 
-     *
+       Graph distribution
+
+       First we create an array "npe" that follows
+       the same function as eptr but is a global 
+       reference 
+
+       eptr = [ 0 3 5 8 9 ]
+       npe  = [ 3 2 3 1 ]    (npe[i] = eptr[i+1] - eptr[i])
+
+       Then vectors are switched acording to "part"
+       we create npe_swi, eind_swi, npe_swi_size
+
+       We do MPI_Alltoall of : "npe_swi_size"  ->  "npe_size_new"
+       "eind_swi_size" ->  "eind_size_new"
+
+       we free and reallocate memory for : "npe" using "npe_size" 
+       "eind" using "eind_size" 
+
      */
 
     int *eind_swi, *eind_swi_size, *eind_size_new;
@@ -141,15 +142,8 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
     int npe_size_new_tot;
     int eind_size_new_tot;
 
-    ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, *comm);
-    if(ierr){
-      return 1;
-    }
-
-    ierr = MPI_Alltoall(eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *comm);
-    if(ierr){
-      return 1;
-    }
+    ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, *comm);CHKERRQ(ierr);
+    ierr = MPI_Alltoall(eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *comm);CHKERRQ(ierr);
 
     npe_size_new_tot = 0;
     for(i=0;i<nproc;i++){
@@ -202,10 +196,10 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
     }
 
     ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
-	npe, npe_size_new, rdispls, MPI_INT, *comm);
+	npe, npe_size_new, rdispls, MPI_INT, *comm);CHKERRQ(ierr);
 
     ierr = MPI_Alltoallv(PhysicalID_swi, npe_swi_size, sdispls, MPI_INT, 
-	PhysicalID, npe_size_new, rdispls, MPI_INT, *comm);
+	PhysicalID, npe_size_new, rdispls, MPI_INT, *comm);CHKERRQ(ierr);
 
     // rebuild "eptr"
     eptr[0] = 0;
@@ -229,9 +223,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 
     ierr = MPI_Alltoallv(eind_swi, eind_swi_size, sdispls, MPI_INT, 
 	eind, eind_size_new, rdispls, MPI_INT, *comm);
-
-    free(eind_swi);
-    free(npe_swi);
 
     if(flag_print & (1<<PRINT_ALL)){
       printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
@@ -268,12 +259,20 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
       }
       printf("\n");
     }
+    free(eind_swi);
+    free(npe_swi);
+    free(npe_swi_size);
+    free(npe_size_new);
+    free(eind_swi_size);
+    free(eind_size_new);
+    free(sdispls);
+    free(rdispls);
 
   }
   else{
-
     return 1;
   }
+  free(ubvec);
   free(tpwgts);
 
   /*
@@ -368,9 +367,8 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
 
   int e, p, i, j, lp, pi;
 
-  if(n==0){
-    return 0;
-  }
+  if(n==0) return 0;
+
   if(!npe || !eind || !PhysicalID ||
       !eind_swi || !npe_swi || !PhysicalID_swi || 
       !cuts_npe || !cuts_eind){
@@ -1131,7 +1129,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   //
   fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
   n = 0;
-  for(i=0; i < nelm ; i++){
+  for(i=0; i<nelm; i++){
     fgets(buf,NBUF,fm); 
     data=strtok(buf," \n");
     data=strtok(NULL," \n");
@@ -1156,11 +1154,13 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
     d = 1;
     while(d<ntag){
       data = strtok(NULL," \n");
+      if(!data) return 1;
       d++;
     }
     d = 0;
     while(d<npe){
       data = strtok(NULL," \n");
+      if(!data) return 1;
       eind[n+d] = atoi(data); 
       d++;
     }
@@ -1761,14 +1761,19 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   if(nreptot_clean!=0){
     NMyNod = nghost = r = 0;
     for(i=0;i<NAllMyNod;i++){
-      if(AllMyNodOrig[i] == rep_array_clean[r]){
-	ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
-	r++;
-	if(ismine){
-	  NMyNod ++;
+      if(r<nreptot_clean){
+	if(AllMyNodOrig[i] == rep_array_clean[r]){
+	  ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
+	  r++;
+	  if(ismine){
+	    NMyNod ++;
+	  }
+	  else{
+	    nghost ++;
+	  }
 	}
 	else{
-	  nghost ++;
+	  NMyNod ++;
 	}
       }
       else{
@@ -1793,20 +1798,25 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   if(nreptot_clean!=0){
     for(i=0;i<NAllMyNod;i++){
       // podria ser un nodo que le pertenece a otro proceso
-      if(AllMyNodOrig[i] == rep_array_clean[r]){
-	ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
-	r++;
-	if(ismine){
+      if(r<nreptot_clean){
+	if(AllMyNodOrig[i] == rep_array_clean[r]){
+	  ismine = ownership_selec_rule( comm, repeated, nrep, AllMyNodOrig[i], &remoterank);
+	  r++;
+	  if(ismine){
+	    MyNodOrig[c] = AllMyNodOrig[i];
+	    c ++;
+	  }
+	  else{
+	    ghost[g] = AllMyNodOrig[i];
+	    g ++;
+	  }
+	}
+	else{
+	  // no está en la lista de repetidos
 	  MyNodOrig[c] = AllMyNodOrig[i];
 	  c ++;
 	}
-	else{
-	  ghost[g] = AllMyNodOrig[i];
-	  g ++;
-	}
-      }
-      else{
-	// no está en la lista de repetidos
+      }else{
 	MyNodOrig[c] = AllMyNodOrig[i];
 	c ++;
       }
@@ -1891,7 +1901,6 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
     i++;
   }
 
-
   //**************************************************
   //  reenumeramos <eind>
   for(i=0;i<eptr[nelm];i++){
@@ -1907,6 +1916,8 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 	eind[i] = NMyNod + p - ghost;
       }
       else{
+//	printf("value %d not found on <MyNodOrig> neither <ghost>\n",eind[i]);
+//	return 1;
 	SETERRQ1(PROBLEM_COMM,1,"value %d not found on <MyNodOrig> neither <ghost>\n",eind[i]);
       }
     }
