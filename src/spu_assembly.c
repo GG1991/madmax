@@ -29,7 +29,7 @@ int AssemblyJacobianSmallDeformation(Mat *J)
   double *wp = NULL;
   double ElemDispls[8*3];
 
-  register double IntegralWeight;
+  register double wp_eff;
 
   ierr = MatZeroEntries(*J);CHKERRQ(ierr);
 
@@ -58,11 +58,11 @@ int AssemblyJacobianSmallDeformation(Mat *J)
 	}
       }
 
-      IntegralWeight = DetJac * wp[gp];
+      wp_eff = DetJac * wp[gp];
       for(i=0;i<npe*3;i++){
 	for(j=0;j<npe*3;j++){
 	  for(k=0;k<6;k++){
-	    ElemMatrix[i*npe*3+j] += B[k][i]*Baux[k][j] * IntegralWeight;
+	    ElemMatrix[i*npe*3+j] += B[k][i]*Baux[k][j] * wp_eff;
 	  }
 	}
       }
@@ -103,7 +103,7 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 
   Vec xlocal;
 
-  register double IntegralWeight;
+  register double wp_eff;
 
   /* 
      Local representation of <x> with ghost padding
@@ -146,10 +146,10 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 	}
       }
 
-      IntegralWeight = DetJac * wp[gp];
+      wp_eff = DetJac * wp[gp];
       for(i=0;i<npe*3;i++){
 	for(k=0;k<6;k++){
-	  ElemResidual[i] += B[k][i]*Sigma[k] * IntegralWeight;
+	  ElemResidual[i] += B[k][i]*Sigma[k] * wp_eff;
 	}
       }
 
@@ -185,7 +185,7 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
 
   Vec xlocal;
 
-  register double IntegralWeight;
+  register double wp_eff;
 
   /* 
      Local representation of <x> with ghost padding
@@ -216,7 +216,7 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &det_jac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
-      IntegralWeight = det_jac*wp[gp];
+      wp_eff = det_jac*wp[gp];
 
       for(i=0;i<6;i++){
 	for(k=0;k<npe*3;k++){
@@ -231,8 +231,8 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
       }
 
       for(i=0;i<6;i++){
-	stress_ave[i] += stress_gp[i] * IntegralWeight;
-	strain_ave[i] += strain_gp[i] * IntegralWeight;
+	stress_ave[i] += stress_gp[i] * wp_eff;
+	strain_ave[i] += strain_gp[i] * wp_eff;
       }
 
       vol += det_jac*wp[gp];
@@ -267,7 +267,7 @@ int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], d
   double ElemCoord[8][3];
   double ShapeDerivs[8][3];
   double DetJac;
-  double B[6][3*8], Sigma[6], Epsilon[6];
+  double B[6][3*8], stress_gp[6], strain_gp[6];
   double DsDe[6][6];
   double *wp = NULL;
   double ElemDispls[8*3];
@@ -281,7 +281,7 @@ int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], d
 
   Vec xlocal;
 
-  register double IntegralWeight;
+  register double wp_eff;
 
   /* 
      Local representation of <x> with ghost padding
@@ -309,32 +309,32 @@ int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], d
 
     for(gp=0;gp<ngp;gp++){
 
-      memset(Epsilon, 0.0, 6*sizeof(double));
-      memset(Sigma  , 0.0, 6*sizeof(double));
+      memset(strain_gp, 0.0, 6*sizeof(double));
+      memset(stress_gp  , 0.0, 6*sizeof(double));
 
       GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
-      IntegralWeight = DetJac*wp[gp];
+      wp_eff = DetJac*wp[gp];
 
       for(i=0;i<6;i++){
 	for(k=0;k<npe*3;k++){
-	  Epsilon[i] += B[i][k]*ElemDispls[k];
+	  strain_gp[i] += B[i][k]*ElemDispls[k];
 	}
       }
 
       for(i=0;i<6;i++){
 	for(k=0;k<6;k++){
-	  Sigma[i] += DsDe[i][k]*Epsilon[k];
+	  stress_gp[i] += DsDe[i][k]*strain_gp[k];
 	}
       }
 
       for(i=0;i<6;i++){
-	stress_aux[i] += Sigma[i] * IntegralWeight;
-	strain_aux[i] += Epsilon[i] * IntegralWeight;
+	stress_aux[i] += stress_gp[i] * wp_eff;
+	strain_aux[i] += strain_gp[i] * wp_eff;
       }
 
-      vol += IntegralWeight;
+      vol += wp_eff;
     }
 
   }
@@ -345,8 +345,8 @@ int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], d
   ierr = MPI_Allreduce(&vol, &vol_tot, 1, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
 
   for(i=0;i<6;i++){
-    stress_aux[i] /= vol_tot;
-    strain_aux[i] /= vol_tot;
+    stress_ave[i] /= vol_tot;
+    strain_ave[i] /= vol_tot;
   }
 
   return 0;

@@ -7,12 +7,12 @@ Geometry.CopyMeshingMethod = 1;
 lc=1.5;
 lx=1.5;
 ly=1.5;
-lz=0.5;
+lz=3.0;
 r = 0.4;
-Nc = 2;
-Nx = 2;
-Nr = 2;
-Nz = 1;
+Nc = 5;
+Nx = 5;
+Nr = 5;
+Nz = 3;
 sin45=0.707106781;
 
 Point(1) = {0.0           ,0.0          ,0.0,0.1};
@@ -78,7 +78,7 @@ sym_3[]=Symmetry {-1, 0, 0, lx} {
 //
 // Volume Extrusion
 //
-vol[]=Extrude {0, 0, 1} {
+vol[]=Extrude {0, 0, lz} {
   Surface{surf_m,surf_f,sym_1[0],sym_1[1],sym_2[0],sym_2[1],sym_2[2],sym_2[3]
     ,sym_3[0],sym_3[1],sym_3[2],sym_3[3],sym_3[4],sym_3[5],sym_3[6],sym_3[7]
   };
