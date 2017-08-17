@@ -138,32 +138,27 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 	npe_swi_size, eind_swi_size );
 
 
-    // free & reallocate memory for "npe" & "eind"
-    int npe_size_new_tot;
-    int eind_size_new_tot;
-
     ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, *comm);CHKERRQ(ierr);
     ierr = MPI_Alltoall(eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *comm);CHKERRQ(ierr);
 
-    npe_size_new_tot = 0;
+    // free & reallocate memory for "npe" & "eind"
+    int npe_size_new_tot = 0, eind_size_new_tot = 0;
+
     for(i=0;i<nproc;i++){
       npe_size_new_tot += npe_size_new[i];
-    }
-
-    eind_size_new_tot = 0;
-    for(i=0;i<nproc;i++){
       eind_size_new_tot += eind_size_new[i];
     }
+    nelm = npe_size_new_tot;
 
     free(npe);
     free(eptr);
     free(eind);
     free(PhysicalID);
 
-    npe  = malloc(npe_size_new_tot*sizeof(int));
-    eptr = malloc((npe_size_new_tot+1)*sizeof(int));
+    npe  = malloc(nelm*sizeof(int));
+    eptr = malloc((nelm+1)*sizeof(int));
     eind = malloc(eind_size_new_tot * sizeof(int));
-    PhysicalID = malloc(npe_size_new_tot * sizeof(int));
+    PhysicalID = malloc(nelm * sizeof(int));
 
     /* 
        performe the MPI_Alltoall operation for calculating "npe" & "eind"
@@ -206,7 +201,6 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
     for(i=0;i<npe_size_new_tot;i++){
       eptr[i+1] = eptr[i] + npe[i];
     }
-    nelm = npe_size_new_tot;
 
     for(i=0;i<nproc;i++){
       sdispls[i] = 0;
@@ -267,7 +261,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
     free(eind_size_new);
     free(sdispls);
     free(rdispls);
-
+    free(PhysicalID_swi);
   }
   else{
     return 1;
@@ -278,6 +272,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
   /*
      We delete repeated nodes and save the <NAllMyNod> values on <AllMyNodOrig> in order
   */
+  AllMyNodOrig = NULL;
   clean_vector_qsort(eptr[nelm], eind, &AllMyNodOrig, &NAllMyNod);
 
   return 0;
@@ -1497,10 +1492,13 @@ int clean_vector_qsort(int n, int *input, int **output, int *n_notrep)
   int  i, c, swi, val_o, *aux = NULL;
 
   if(n==0) return 0;
+  if(*output) return 1;
 
   // we copy eind inside aux
   aux = malloc(n*sizeof(int));
-  memcpy(aux, input, n*sizeof(int));
+  for(i=0;i<n;i++){
+    aux[i] = input[i];
+  }
 
   qsort(aux, n, sizeof(int), cmpfunc);
 
@@ -1837,6 +1835,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     }
   }
   free(repeated);
+  free(nrep);
+  free(request);
+  free(peer_sizes);
 
   // >>>>> PRINT
   if(flag_print & (1<<PRINT_ALL)){
@@ -1879,7 +1880,7 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 
   int   rank, nproc;
   int   i, j, *p, ierr; 
-  int   *PeerMyNodOrig;    // buffer to receive MyNodOrig from the other processes
+  int   *PeerMyNodOrig;// buffer to receive MyNodOrig from the other processes
   int   *PeerNMyNod;   // buffers' sizes with NMyNodOrig from every process
 
   MPI_Comm_rank(PROBLEM_COMM, &rank);
