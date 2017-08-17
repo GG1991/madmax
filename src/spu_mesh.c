@@ -132,10 +132,10 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
     npe_size_new   = malloc(nproc*sizeof(int)); 
 
     // swap "npe" and "eind"
-    swap_vectors_SCR( part, nproc, nelm, 
+    ierr = swap_vectors_SCR( part, nproc, nelm, 
 	npe, eptr, eind, PhysicalID,
 	npe_swi, eind_swi, PhysicalID_swi,
-	npe_swi_size, eind_swi_size );
+	npe_swi_size, eind_swi_size );CHKERRQ(ierr);
 
 
     ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, *comm);CHKERRQ(ierr);
@@ -198,7 +198,7 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 
     // rebuild "eptr"
     eptr[0] = 0;
-    for(i=0;i<npe_size_new_tot;i++){
+    for(i=0;i<nelm;i++){
       eptr[i+1] = eptr[i] + npe[i];
     }
 
@@ -334,7 +334,7 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *PhysicalID,
     int *npe_swi, int *eind_swi, int *PhysicalID_swi,
-    int *cuts_npe, int *cuts_eind )
+    int *npe_size, int *eind_size )
 {
   /*
      swaps a vectors in SCR format 
@@ -345,9 +345,9 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
      npe         = [ 3 2 3 1 ]             
      PhysicalID  = [ 0 0 1 2 ]             
      eind        = [ 3 2 0 | 1 2 | 1 0 1 |3 ]
-     | 
-     (swap operation with swap_vectors_CSR)
-     |
+       
+     swap operation with swap_vectors_CSR 
+      
      npe_swi     = [ 3 1 3 2 ]
      PhysicalID  = [ 0 2 1 0 ]
      eind_swi    = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]
@@ -360,20 +360,20 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
      -> swap should have values in [0,nproc)
    */
 
-  int e, p, i, j, lp, pi;
+  int e, p, i, j, lp, pi, c;
 
   if(n==0) return 0;
 
   if(!npe || !eind || !PhysicalID ||
       !eind_swi || !npe_swi || !PhysicalID_swi || 
-      !cuts_npe || !cuts_eind){
+      !npe_size || !eind_size){
     return 1;
   }
 
   j = pi = lp = 0;
   for(p=0;p<nproc;p++){
 
-    cuts_npe[p] = 0;
+    npe_size[p] = 0;
     for(e=0;e<n;e++){
 
       if(swap[e] == p){
@@ -391,20 +391,17 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
 	  eind_swi[lp] = eind[ pi + i ];
 	  lp ++;
 	}
-	cuts_npe[p] ++;
+	npe_size[p] ++;
       }
     }
   }
 
+  c = 0;
   for(i=0;i<nproc;i++){
-    cuts_eind[i] = 0;
-    for(j=0;j<cuts_npe[i];j++){
-      if(i==0){
-	cuts_eind[i] += npe_swi[j];
-      }
-      else{
-	cuts_eind[i] += npe_swi[cuts_npe[i-1] + j];
-      }
+    eind_size[i] = 0;
+    for(j=0;j<npe_size[i];j++){
+      eind_size[i] += npe_swi[c];
+      c++;
     }
   }
 

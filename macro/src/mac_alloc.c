@@ -32,6 +32,7 @@ int MacroAllocMatrixVector(MPI_Comm MACRO_COMM, int nlocal, int ntotal)
   ierr = MatSetFromOptions(A);CHKERRQ(ierr);
   ierr = MatSeqAIJSetPreallocation(A,117,NULL);CHKERRQ(ierr);
   ierr = MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);CHKERRQ(ierr);
+  ierr = MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
   /*
      Create parallel vectors.
