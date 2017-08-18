@@ -372,11 +372,11 @@ int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b
       */
       if(flag&(1<<DISPLACE)){
 	for(i=0;i<nnods_x0;i++) value_x0_uy[i] = 0.0;
-	for(i=0;i<nnods_x1;i++) value_x1_uy[i] = strain[3]*LX;
+	for(i=0;i<nnods_x1;i++) value_x1_uy[i] = strain[3]*LX/2;
 	ierr = VecSetValues( *x, nnods_x0, index_x0_uy, value_x0_uy, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *x, nnods_x1, index_x1_uy, value_x1_uy, INSERT_VALUES); CHKERRQ(ierr);
 	for(i=0;i<nnods_y0;i++) value_y0_ux[i] = 0.0;
-	for(i=0;i<nnods_y1;i++) value_y1_ux[i] = strain[3]*LY;
+	for(i=0;i<nnods_y1;i++) value_y1_ux[i] = strain[3]*LY/2;
 	ierr = VecSetValues( *x, nnods_y0, index_y0_ux, value_y0_ux, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *x, nnods_y1, index_y1_ux, value_y1_ux, INSERT_VALUES); CHKERRQ(ierr);
 	for(i=0;i<nnods_z0;i++) value_z0_uz[i] = 0.0;
@@ -417,11 +417,11 @@ int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b
 	ierr = VecSetValues( *x, nnods_x0, index_x0_ux, value_x0_ux, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *x, nnods_x1, index_x1_ux, value_x1_ux, INSERT_VALUES); CHKERRQ(ierr);
 	for(i=0;i<nnods_y0;i++) value_y0_uz[i] = 0.0;
-	for(i=0;i<nnods_y1;i++) value_y1_uz[i] = strain[4]*LY;
+	for(i=0;i<nnods_y1;i++) value_y1_uz[i] = strain[4]*LY/2;
 	ierr = VecSetValues( *x, nnods_y0, index_y0_uz, value_y0_uz, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *x, nnods_y1, index_y1_uz, value_y1_uz, INSERT_VALUES); CHKERRQ(ierr);
 	for(i=0;i<nnods_z0;i++) value_z0_uy[i] = 0.0;
-	for(i=0;i<nnods_z1;i++) value_z1_uy[i] = strain[4]*LZ;
+	for(i=0;i<nnods_z1;i++) value_z1_uy[i] = strain[4]*LZ/2;
 	ierr = VecSetValues( *x, nnods_z0, index_z0_uy, value_z0_uy, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *x, nnods_z1, index_z1_uy, value_z1_uy, INSERT_VALUES); CHKERRQ(ierr);
       }
@@ -454,7 +454,7 @@ int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b
       */
       if(flag&(1<<DISPLACE)){
 	for(i=0;i<nnods_x0;i++) value_x0_uz[i] = 0.0;
-	for(i=0;i<nnods_x1;i++) value_x1_uz[i] = strain[5]*LX;
+	for(i=0;i<nnods_x1;i++) value_x1_uz[i] = strain[5]*LX/2;
 	ierr = VecSetValues( *x, nnods_x0, index_x0_uz, value_x0_uz, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *x, nnods_x1, index_x1_uz, value_x1_uz, INSERT_VALUES); CHKERRQ(ierr);
 	for(i=0;i<nnods_y0;i++) value_y0_uy[i] = 0.0;
@@ -462,7 +462,7 @@ int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b
 	ierr = VecSetValues( *x, nnods_y0, index_y0_uy, value_y0_uy, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *x, nnods_y1, index_y1_uy, value_y1_uy, INSERT_VALUES); CHKERRQ(ierr);
 	for(i=0;i<nnods_z0;i++) value_z0_ux[i] = 0.0;
-	for(i=0;i<nnods_z1;i++) value_z1_ux[i] = strain[5]*LZ;
+	for(i=0;i<nnods_z1;i++) value_z1_ux[i] = strain[5]*LZ/2;
 	ierr = VecSetValues( *x, nnods_z0, index_z0_ux, value_z0_ux, INSERT_VALUES); CHKERRQ(ierr);
 	ierr = VecSetValues( *x, nnods_z1, index_z1_ux, value_z1_ux, INSERT_VALUES); CHKERRQ(ierr);
       }
