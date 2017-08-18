@@ -56,8 +56,9 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o      \
            ${MAC_OBJ_DIR}/mac_alloc.o     \
            ${MAC_OBJ_DIR}/mac_boundary.o       
 
-MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o      \
-           ${MIC_OBJ_DIR}/mic_alloc.o     \
+MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o       \
+           ${MIC_OBJ_DIR}/mic_alloc.o      \
+           ${MIC_OBJ_DIR}/mic_homogenize.o \
            ${MIC_OBJ_DIR}/mic_boundary.o       
 
 EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o  \

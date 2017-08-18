@@ -166,18 +166,33 @@ NM=1
 # 16-08-2017
 # Cube with cilindrical fiber in the middle
 function cube_fiber_par {
-NM=4
 
-./mpirun -np $NM ../../micro/micro                       \
-    -input ex1.spu                                       \
+  NM=4
+
+    ./mpirun -np $NM ../../micro/micro           \
+    -input ex1.spu                               \
     -mesh ../../meshes/cube_fiber/cube_fiber.msh \
-    -mesh_gmsh                                           \
-    -ksp_type cg                                         \
-    -ksp_rtol 1.0e-13                                    \
-    -ksp_atol 1.0e-19                                    \
-    -pc_type bjacobi                                     \
-    -options_left 0                                      \
-    -log_trace micro_trace                               \
+    -mesh_gmsh                                   \
+    -ksp_type cg                                 \
+    -ksp_rtol 1.0e-13                            \
+    -ksp_atol 1.0e-19                            \
+    -pc_type bjacobi                             \
+    -options_left 0                              \
+    -log_trace micro_trace                       \
+    -homo_taylor                                 \
+    -print_vtu
+
+    ./mpirun -np $NM ../../micro/micro           \
+    -input ex1.spu                               \
+    -mesh ../../meshes/cube_fiber/cube_fiber.msh \
+    -mesh_gmsh                                   \
+    -ksp_type cg                                 \
+    -ksp_rtol 1.0e-13                            \
+    -ksp_atol 1.0e-19                            \
+    -pc_type bjacobi                             \
+    -options_left 0                              \
+    -log_trace micro_trace                       \
+    -homo_linear                                 \
     -print_vtu
 }
 

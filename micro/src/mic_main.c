@@ -19,6 +19,7 @@ static char help[] =
 "-print_vtk\n"
 "-print_vtu\n"
 "-print [0 (no print) | 1 (print PETSc structures) | 2 (print VTK output)]\n"
+"[-homo_taylor -homo_linear]\n"
 "-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
 
 #include "micro.h"
@@ -61,7 +62,7 @@ int main(int argc, char **argv)
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
   /*
-     Get command line arguments
+     Printing Options
   */
   flag_print = 0;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
@@ -74,21 +75,33 @@ int main(int argc, char **argv)
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
-
+  /*
+     Coupling Options
+  */
   ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
-
+  /*
+     Mesh and Input Options
+  */
   mesh_f = FORMAT_NULL;
   ierr = PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
   ierr = PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
   if(mesh_f == FORMAT_NULL)SETERRQ(MICRO_COMM,1,"MICRO:mesh format not given on command line.");
-
   ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:mesh file not given on command line.");
   ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:input file not given.");
+  /*
+     Homogenization Options
+  */
+  homo_type=0;
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) homo_type=HOMO_TAYLOR;
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) homo_type=HOMO_LINEAR;
+  if(homo_type==0)SETERRQ(MICRO_COMM,1,"No homogenization option specified");
 
   /* 
      Stablish a new local communicator
@@ -241,6 +254,9 @@ int main(int argc, char **argv)
      micro main coupling loop
    */
   double strain_ave[6], stress_ave[6], ttensor[36];
+  int    nr_its = -1, kspits = -1, i, j;
+  double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
+
   ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);CHKERRQ(ierr);
   ierr = PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);CHKERRQ(ierr);
 
@@ -280,120 +296,154 @@ int main(int argc, char **argv)
   }
   else{
     /*
-       Standalone
-       Performs 6 experiment
+       Standalone MICRO execution
      */
-    int    nr_its = -1, kspits = -1, i, j;
-    double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
     double strain_bc[6] = {0.005,0.005,0.005,0.005,0.005,0.005};
 
-    for(i=0;i<6;i++){
+    if(homo_type==HOMO_TAYLOR){
+      /*
+	 Taylor Homogenization Method - Performs 6 experiment
+       */
+      for(i=0;i<6;i++){
 
-      ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment i=%d\n",i);CHKERRQ(ierr);
-      ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
-      if( flag_print & (1<<PRINT_PETSC) ){
-	ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-	ierr = VecView(x,viewer); CHKERRQ(ierr);
+	memset(strain_bc,0.0,6*sizeof(double));
+	strain_bc[i] = 0.005;
+
+	ierr = micro_homogenize_taylor(MICRO_COMM, strain_bc, strain_ave, stress_ave);CHKERRQ(ierr);
+
+	ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");CHKERRQ(ierr);
+	for(j=0;j<6;j++)
+	  ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);CHKERRQ(ierr);
+
+	ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");CHKERRQ(ierr);
+	for(j=0;j<6;j++)
+	  ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);CHKERRQ(ierr);
+
+	ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+	for(j=0;j<6;j++)
+	  ttensor[j*6+i] = stress_ave[j] / strain_ave[i];
       }
-      ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
+      ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");CHKERRQ(ierr);
+      for(i=0;i<6;i++){
+	for(j=0;j<6;j++){
+	  ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j])>1.0)?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
+	}ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+      }ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+    }
+    else if(homo_type==HOMO_LINEAR){
 
-      nr_its = 0; norm = 2*NormTol;
-      while( nr_its < NRMaxIts && norm > NormTol )
-      {
-	/*
-	   Assemblying Residual
-	 */
-	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Residual ");CHKERRQ(ierr);
-	ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
-	ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_RESIDUAL);
+      /*
+	 Linear Homogenization Method - Performs 6 experiment
+       */
+
+      for(i=0;i<6;i++){
+
+	ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
+	ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment i=%d\n",i);CHKERRQ(ierr);
+	ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
 	if( flag_print & (1<<PRINT_PETSC) ){
-	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
-	  ierr = VecView(b,viewer); CHKERRQ(ierr);
-	}
-	ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-	ierr = PetscPrintf(MICRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
-	ierr = VecScale(b,-1.0); CHKERRQ(ierr);
-	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-	if( !(norm > NormTol) )break;
-	/*
-	   Assemblying Jacobian
-	 */
-	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Jacobian\n");
-	ierr = AssemblyJacobianSmallDeformation(&A);
-	ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_JACOBIAN);CHKERRQ(ierr);
-	if( flag_print & (1<<PRINT_PETSC) ){
-	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
-	  ierr = MatView(A,viewer); CHKERRQ(ierr);
-	}
-	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-	/*
-	   Solving Problem
-	 */
-	ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MICRO_COMM,"MICRO: Solving Linear System ");
-	ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
-	ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
-	ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
-	ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
-	ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
-	if( flag_print & (1<<PRINT_PETSC) ){
-	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
-	  ierr = VecView(dx,viewer); CHKERRQ(ierr);
 	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	  ierr = VecView(x,viewer); CHKERRQ(ierr);
 	}
-	ierr = PetscPrintf(MICRO_COMM,"Iterations %D Norm %e reason %d\n",kspits, kspnorm, reason);CHKERRQ(ierr);
-	ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
+	ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
 
-	nr_its ++;
-      }
+	nr_its = 0; norm = 2*NormTol;
+	while( nr_its < NRMaxIts && norm > NormTol )
+	{
+	  /*
+	     Assemblying Residual
+	   */
+	  ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+	  ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Residual ");CHKERRQ(ierr);
+	  ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
+	  ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_RESIDUAL);
+	  if( flag_print & (1<<PRINT_PETSC) ){
+	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
+	    ierr = VecView(b,viewer); CHKERRQ(ierr);
+	  }
+	  ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
+	  ierr = PetscPrintf(MICRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
+	  ierr = VecScale(b,-1.0); CHKERRQ(ierr);
+	  ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+	  if( !(norm > NormTol) )break;
+	  /*
+	     Assemblying Jacobian
+	   */
+	  ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
+	  ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Jacobian\n");
+	  ierr = AssemblyJacobianSmallDeformation(&A);
+	  ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_JACOBIAN);CHKERRQ(ierr);
+	  if( flag_print & (1<<PRINT_PETSC) ){
+	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
+	    ierr = MatView(A,viewer); CHKERRQ(ierr);
+	  }
+	  ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
+	  /*
+	     Solving Problem
+	   */
+	  ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
+	  ierr = PetscPrintf(MICRO_COMM,"MICRO: Solving Linear System ");
+	  ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
+	  ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
+	  ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
+	  ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
+	  ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
+	  if( flag_print & (1<<PRINT_PETSC) ){
+	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
+	    ierr = VecView(dx,viewer); CHKERRQ(ierr);
+	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
+	    ierr = VecView(x,viewer); CHKERRQ(ierr);
+	  }
+	  ierr = PetscPrintf(MICRO_COMM,"Iterations %D Norm %e reason %d\n",kspits, kspnorm, reason);CHKERRQ(ierr);
+	  ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
 
-      /*
-	 Calculate the average stress, strain and constitutive tensor
-      */
-      ierr = SpuAveStressAndStrain(MICRO_COMM, &x, strain_ave, stress_ave);CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM,"strain_ave = ");CHKERRQ(ierr);
-      for(j=0;j<6;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);CHKERRQ(ierr);
-      }
-      ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM,"stress_ave = ");CHKERRQ(ierr);
-      for(j=0;j<6;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);CHKERRQ(ierr);
-      }
-      ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
-      for(j=0;j<6;j++){
-	ttensor[j*6+i] = stress_ave[j] / strain_ave[i];
-      }
-
-      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){ 
-	strain = malloc(nelm*6*sizeof(double));
-	stress = malloc(nelm*6*sizeof(double));
-	ierr = SpuCalcStressOnElement(&x, strain, stress);
-	if(flag_print & (1<<PRINT_VTK)){ 
-	  sprintf(vtkfile_n,"%s_displ_exp%d_%d.vtk",myname,i,rank_mic);
-	  ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
+	  nr_its ++;
 	}
-	if(flag_print & (1<<PRINT_VTU)){ 
-	  sprintf(vtkfile_n,"%s_displ_exp%d",myname,i);
-	  ierr = write_vtu(MICRO_COMM, vtkfile_n, &x, strain, stress);CHKERRQ(ierr);
-	}
-	free(stress); free(strain);
-      }
-      ierr = PetscPrintf(MICRO_COMM,"NR its : %d\n",nr_its);CHKERRQ(ierr);
 
-    }
-    ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");CHKERRQ(ierr);
-    for(i=0;i<6;i++){
-      for(j=0;j<6;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j])>1.0)?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
+	/*
+	   Calculate the average stress, strain and constitutive tensor
+	 */
+	ierr = SpuAveStressAndStrain(MICRO_COMM, &x, strain_ave, stress_ave);CHKERRQ(ierr);
+	ierr = PetscPrintf(MICRO_COMM,"strain_ave = ");CHKERRQ(ierr);
+	for(j=0;j<6;j++){
+	  ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);CHKERRQ(ierr);
+	}
+	ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+	ierr = PetscPrintf(MICRO_COMM,"stress_ave = ");CHKERRQ(ierr);
+	for(j=0;j<6;j++){
+	  ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);CHKERRQ(ierr);
+	}
+	ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+	for(j=0;j<6;j++){
+	  ttensor[j*6+i] = stress_ave[j] / strain_ave[i];
+	}
+
+	if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){ 
+	  strain = malloc(nelm*6*sizeof(double));
+	  stress = malloc(nelm*6*sizeof(double));
+	  ierr = SpuCalcStressOnElement(&x, strain, stress);
+	  if(flag_print & (1<<PRINT_VTK)){ 
+	    sprintf(vtkfile_n,"%s_displ_exp%d_%d.vtk",myname,i,rank_mic);
+	    ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
+	  }
+	  if(flag_print & (1<<PRINT_VTU)){ 
+	    sprintf(vtkfile_n,"%s_displ_exp%d",myname,i);
+	    ierr = write_vtu(MICRO_COMM, vtkfile_n, &x, strain, stress);CHKERRQ(ierr);
+	  }
+	  free(stress); free(strain);
+	}
+	ierr = PetscPrintf(MICRO_COMM,"NR its : %d\n",nr_its);CHKERRQ(ierr);
+
+      }
+      ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");CHKERRQ(ierr);
+      for(i=0;i<6;i++){
+	for(j=0;j<6;j++){
+	  ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j])>1.0)?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
+	}
+	ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
       }
       ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
     }
-    ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
 
   }
 

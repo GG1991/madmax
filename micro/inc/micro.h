@@ -41,6 +41,15 @@ double *value_z1_ux, *value_z1_uy, *value_z1_uz;
 int P000[3], P000_ismine, P100[3], P100_ismine, P010[3], P010_ismine;
 double PVAL[3];
 
+/*
+   Homogenization Variables
+*/
+
+#define HOMO_TAYLOR  1
+#define HOMO_LINEAR  2
+
+int homo_type;
+
 
 /*****************************************************************************************************
    MICRO function definitions
@@ -69,3 +78,4 @@ int micro_check_physical_entities( list_t *physical_list );
 #define SET_JACRES      6
 
 int micro_apply_bc(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag);
+int micro_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
