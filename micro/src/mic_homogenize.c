@@ -13,13 +13,13 @@ int micro_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double 
 
   int    i, k, e, gp, ngp, npe, ierr;
 
-  double ElemCoord[8][3];
-  double ShapeDerivs[8][3];
-  double DetJac;
+  double coor_elm[8][3];
+  double dsh[8][3];
+  double detj;
   double stress_gp[6];
   double DsDe[6][6];
   double *wp = NULL;
-  double ElemDispls[8*3];
+  double disp_elm[8*3];
   double vol = -1.0, vol_tot = -1.0;
   double stress_aux[6], strain_aux[6];
   register double wp_eff;
@@ -33,7 +33,7 @@ int micro_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double 
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
 
-    GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
+    GetElemCoord(&eind[eptr[e]], npe, coor_elm);
     GetWeight(npe, &wp);
 
     // calculate <ElemResidue> by numerical integration
@@ -42,9 +42,9 @@ int micro_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double 
 
       memset(stress_gp,0.0,6*sizeof(double));
 
-      GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
-      GetDsDe( e, ElemDispls, DsDe );
-      wp_eff = DetJac*wp[gp];
+      GetShapeDerivs(gp, npe, coor_elm, dsh, &detj);
+      GetDsDe( e, disp_elm, DsDe );
+      wp_eff = detj*wp[gp];
 
       for(i=0;i<6;i++){
 	for(k=0;k<6;k++){
