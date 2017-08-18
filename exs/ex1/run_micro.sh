@@ -132,12 +132,12 @@ NM=4
 }
 
 #15-08-2017
-function cube_basic {
+function cube_basic_par {
 NM=4
 
 ./mpirun -np $NM ../../micro/micro                       \
     -input ex1.spu                                       \
-    -mesh ../../meshes/cube_hole/cube_basic.msh \
+    -mesh ../../meshes/cube_hole/cube_basic.msh          \
     -mesh_gmsh                                           \
     -ksp_type cg                                         \
     -ksp_rtol 1.0e-13                                    \
@@ -189,5 +189,6 @@ NM=4
 #cube_cube_hole_par
 #cube_chole_fill_seq
 #cube_chole_fill_par
+#cube_basic_par
 #cube_fiber_seq
 #cube_fiber_par

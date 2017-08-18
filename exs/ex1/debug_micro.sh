@@ -1,17 +1,18 @@
 #!/bin/bash
 
 
-break_mic=( 'mic_main.c:171' ) 
-#break_mic=( 'spu_mesh.c:1759' ) 
+#break_mic=( 'mic_main.c:xx' ) 
+#break_mic=( 'spu_mesh.c:xx' ) 
 #break_mic=( 'micmic.c:xx' ) 
 #break_mic=( 'mic_alloc.c:xx' ) 
 #break_mic=( 'spu_assembly.c:xx' ) 
 #break_mic=( 'mic_boundary.c:xx' ) 
 
 # BREAKPOINTS
+exopt_mic=''
 for i in ${break_mic[@]}
 do
-  exopt_mic="$exopt_mac -ex 'break $i' "
+  exopt_mic+="$exopt_mac -ex 'break $i' "
 done
 exopt_mic+="-ex 'r'"
 
@@ -72,6 +73,7 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" --args ../../micro/micro   \
 # 16-08-2017
 # Cube with cilindrical fiber in the middle
 function cube_fiber_par_valgrind {
+
 NM=4
 
 eval ./mpirun -np $NM valgrind --log-file=\"valgrind.out\" --leak-check=full ../../micro/micro   \
