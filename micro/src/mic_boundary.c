@@ -224,7 +224,7 @@ int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   return 0;
 }
 /****************************************************************************************************/
-int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag)
+int micro_apply_bc(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag)
 {
   /* 
      Sets values of displacements on <x>

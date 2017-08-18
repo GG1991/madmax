@@ -260,7 +260,7 @@ int main(int argc, char **argv)
 	  /*
 	     Performs the micro calculation
 	  */
-	  ierr = MicroSetBoundaryDispJacRes(0, strain, &x, &A, &b, SET_DISPLACE);
+	  ierr = micro_apply_bc(0, strain, &x, &A, &b, SET_DISPLACE);
 	  if( flag_print | (1<<PRINT_PETSC) ){
 	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	    ierr = VecView(x,viewer); CHKERRQ(ierr);
@@ -291,7 +291,7 @@ int main(int argc, char **argv)
 
       ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
       ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment i=%d\n",i);CHKERRQ(ierr);
-      ierr = MicroSetBoundaryDispJacRes(i, strain_bc, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
+      ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
       if( flag_print & (1<<PRINT_PETSC) ){
 	ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(x,viewer); CHKERRQ(ierr);
@@ -307,7 +307,7 @@ int main(int argc, char **argv)
 	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
 	ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Residual ");CHKERRQ(ierr);
 	ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
-	ierr = MicroSetBoundaryDispJacRes(i, strain_bc, &x, &A, &b, SET_RESIDUAL);
+	ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_RESIDUAL);
 	if( flag_print & (1<<PRINT_PETSC) ){
 	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
 	  ierr = VecView(b,viewer); CHKERRQ(ierr);
@@ -323,7 +323,7 @@ int main(int argc, char **argv)
 	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
 	ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Jacobian\n");
 	ierr = AssemblyJacobianSmallDeformation(&A);
-	ierr = MicroSetBoundaryDispJacRes(i, strain_bc, &x, &A, &b, SET_JACOBIAN);CHKERRQ(ierr);
+	ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_JACOBIAN);CHKERRQ(ierr);
 	if( flag_print & (1<<PRINT_PETSC) ){
 	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
 	  ierr = MatView(A,viewer); CHKERRQ(ierr);

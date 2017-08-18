@@ -68,4 +68,4 @@ int micro_check_physical_entities( list_t *physical_list );
 #define SET_RESIDUAL    4
 #define SET_JACRES      6
 
-int MicroSetBoundaryDispJacRes(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag);
+int micro_apply_bc(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag);
