@@ -120,7 +120,7 @@ list_t physical_list;
 // spu_parser.c (common rutines for parser inputs files from MACRO and MICRO)
 int spu_parse_scheme( char *input );
 int spu_parse_mesh( char * input );
-int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input );
+int parse_material(MPI_Comm PROBLEM_COMM, char *input);
 int CheckPhysicalID(void);
 int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input);
 int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input );
