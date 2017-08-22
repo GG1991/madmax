@@ -119,7 +119,6 @@ list_t physical_list;
 
 // spu_parser.c (common rutines for parser inputs files from MACRO and MICRO)
 int spu_parse_scheme( char *input );
-int spu_parse_mesh( char * input );
 int parse_material(MPI_Comm PROBLEM_COMM, char *input);
 int CheckPhysicalID(void);
 int parse_function(MPI_Comm PROBLEM_COMM, char *input);
@@ -180,7 +179,7 @@ int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex);
 int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3]);
 int AssemblyJacobianSmallDeformation(Mat *J);
 int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue);
-int GetShapeDerivs(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);
+int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);
 int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] );
 int GetWeight(int npe, double **wp);
 int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );

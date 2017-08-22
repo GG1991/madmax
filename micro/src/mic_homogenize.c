@@ -42,7 +42,7 @@ int micro_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double 
 
       memset(stress_gp,0.0,6*sizeof(double));
 
-      GetShapeDerivs(gp, npe, coor_elm, dsh, &detj);
+      get_dsh(gp, npe, coor_elm, dsh, &detj);
       GetDsDe( e, disp_elm, DsDe );
       wp_eff = detj*wp[gp];
 

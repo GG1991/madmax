@@ -45,7 +45,7 @@ int AssemblyJacobianSmallDeformation(Mat *J)
     memset(ElemMatrix, 0.0, (npe*3*npe*3)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
-      GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
 
@@ -130,7 +130,7 @@ int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
 
       memset(Epsilon, 0.0, 6*sizeof(double));
       memset(Sigma  , 0.0, 6*sizeof(double));
-      GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
 
@@ -213,7 +213,7 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
       memset(strain_gp, 0.0, 6*sizeof(double));
       memset(stress_gp  , 0.0, 6*sizeof(double));
 
-      GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &det_jac);
+      get_dsh(gp, npe, ElemCoord, ShapeDerivs, &det_jac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
       wp_eff = det_jac*wp[gp];
@@ -312,7 +312,7 @@ int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], d
       memset(strain_gp, 0.0, 6*sizeof(double));
       memset(stress_gp  , 0.0, 6*sizeof(double));
 
-      GetShapeDerivs(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
       wp_eff = DetJac*wp[gp];
@@ -480,7 +480,7 @@ int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
   return 0;
 }
 /****************************************************************************************************/
-int GetShapeDerivs(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac)
+int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac)
 {
 
   double ***ShapeDerivsMaster;
