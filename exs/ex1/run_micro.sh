@@ -196,6 +196,24 @@ function cube_fiber_par {
     -print_vtu
 }
 
+function struct_fiber_par {
+
+  NM=4
+
+    ./mpirun -np $NM ../../micro/micro           \
+    -input ex1.spu                               \
+    -mesh ../../meshes/cube_fiber/struct_fiber.msh \
+    -mesh_gmsh                                   \
+    -ksp_type cg                                 \
+    -ksp_rtol 1.0e-13                            \
+    -ksp_atol 1.0e-19                            \
+    -pc_type bjacobi                             \
+    -options_left 0                              \
+    -log_trace micro_trace                       \
+    -homo_linear                                 \
+    -print_vtu
+}
+
 #cube_seq
 #cube_par
 #barbero_test_seq
@@ -207,3 +225,4 @@ function cube_fiber_par {
 #cube_basic_par
 #cube_fiber_seq
 #cube_fiber_par
+#struct_fiber_par
