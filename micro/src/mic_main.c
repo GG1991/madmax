@@ -16,11 +16,12 @@ static char help[] =
 "It has the capability of being couple with MACRO.\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
+"-print_petsc\n"
 "-print_vtk\n"
+"-print_part\n"
 "-print_vtu\n"
-"-print [0 (no print) | 1 (print PETSc structures) | 2 (print VTK output)]\n"
-"[-homo_taylor -homo_linear]\n"
-"-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
+"-print_all\n"
+"[-homo_taylor -homo_linear]\n";
 
 #include "micro.h"
 

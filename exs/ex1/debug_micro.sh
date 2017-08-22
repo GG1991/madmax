@@ -5,7 +5,7 @@
 #break_mic=( 'spu_mesh.c:xx' ) 
 #break_mic=( 'micmic.c:xx' ) 
 #break_mic=( 'mic_alloc.c:xx' ) 
-#break_mic=( 'spu_assembly.c:xx' ) 
+break_mic=( 'spu_assembly.c:50' ) 
 #break_mic=( 'mic_boundary.c:xx' ) 
 
 # BREAKPOINTS
@@ -104,6 +104,7 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro   \
   -pc_type bjacobi                                                       \
   -options_left 0                                                        \
   -log_trace micro_trace                                                 \
+  -homo_linear  \
   -print_vtu
 }
 
