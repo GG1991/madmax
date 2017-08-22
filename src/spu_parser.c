@@ -14,24 +14,23 @@
      }}
 
 
-int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
+int parse_material(MPI_Comm PROBLEM_COMM, char * input )
 {
   /*
      Parse the materials of the problem
 
-     Searchs for keywords:
+     Example:
 
      $materials
      <PhysicalName> <TYPEXX> <options>
-     IRON TYPE00 E=1.0e6 v=1.0e6
+     IRON  TYPE00 E=1.0e6 v=1.0e6
+     MICRO TYPE01 E=1.0e6 v=1.0e6
      $end_materials
    */
 
   FILE   *file = fopen(input,"r"); if(!file) return 1;
-  char   buf[NBUF];
-  char   *data;
-  int    ln = 0;
-  int    flag_start_material = 0;
+  char   buf[NBUF], *data;
+  int    ln = 0, flag_start_material = 0;
 
   material_t material;
 
@@ -52,7 +51,7 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 
 	  // <name>
 	  data = strtok(buf," \n"); 
-	  if(!data) SETERRQ(PETSC_COMM_SELF,1,"SpuParseMaterials: <name> expected.");
+	  if(!data) SETERRQ(PROBLEM_COMM,1,"SpuParseMaterials: <name> expected.");
 
 	  if(data[0]!='#'){
 
@@ -62,7 +61,7 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 
 	    // <type> & <options>
 	    data = strtok(NULL," \n");
-	    if(!data) SETERRQ(PETSC_COMM_SELF,1,"SpuParseMaterials: <type> expected.");
+	    if(!data) SETERRQ(PROBLEM_COMM,1,"SpuParseMaterials: <type> expected.");
 
 	    if(!strcmp(data,"TYPE00")){
 
@@ -71,19 +70,15 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 	      material.type = malloc(sizeof(type_00));
 
 	      // módulo de young
-	      data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
-	      if(strncmp(data,"E=",2)){
-		printf("SpuParseMaterials: <E=<value>> expected\n");
-		return 1;
-	      }
+	      data = strtok(NULL," \n");
+	      if(!data)SETERRQ1(PROBLEM_COMM,1,"bad format on %s",input);
+	      if(strncmp(data,"E=",2))SETERRQ(PROBLEM_COMM,1,"<E=<value>> expected");
 	      ((type_00*)material.type)->young = atof(&data[2]);
 
 	      // módulo de poisson
-	      data = strtok(NULL," \n");CHECK_INPUT_ERROR(data);
-	      if(strncmp(data,"v=",2)){
-		printf("SpuParseMaterials: <v=<value>> expected\n");
-		return 1;
-	      }
+	      data = strtok(NULL," \n");
+	      if(!data)SETERRQ1(PROBLEM_COMM,1,"bad format on %s",input);
+	      if(strncmp(data,"v=",2))SETERRQ(PROBLEM_COMM,1,"<v=<value>> expected");
 	      ((type_00*)material.type)->poisson = atof(&data[2]);
 
 	      // calculamos parametros derivados
@@ -93,28 +88,34 @@ int SpuParseMaterials(MPI_Comm *PROBLEM_COMM, char * input )
 	      ((type_00*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
 	      ((type_00*)material.type)->mu = E/(2*(1+v));
 
-	      // lo insertamos en la lista 
-	      list_insertlast(&material_list, &material);
+	    }
+	    else if(!strcmp(data,"MICRO00")){
+
+	      material.typeID = MICRO00;
+	      material.GmshID = -1;
+	      material.type = NULL;
+	      
 	    }
 	    else{
-	      printf("SpuParseMaterials: %s unknown.\n", data);
-	      return 1;
+	      SETERRQ1(PROBLEM_COMM,1,"material type %s not valid.",data);
 	    }
+	    // lo insertamos en la lista 
+	    list_insertlast(&material_list, &material);
 
 	  }
 	}
       } // inside $Materials
 
       if(!strcmp(data,"$EndMaterials")){
-	if(!flag_start_material)SETERRQ(PETSC_COMM_SELF,1,"$EndMaterials detected without $Materials above.");
-//	PetscPrintf(*PROBLEM_COMM, "# of materials found in %s : %d\n", input, material_list.sizelist);
+	if(!flag_start_material)
+	  SETERRQ(PROBLEM_COMM,1,"$EndMaterials detected without $Materials above.");
 	fclose(file);
 	return 0;
       }
     } // data != NULL
   }
   // any $Material found
-  SETERRQ(PETSC_COMM_SELF,1,"$Materials section not found on input file."); 
+  SETERRQ(PROBLEM_COMM,1,"$Materials section not found on input file."); 
 }
 /****************************************************************************************************/
 int CheckPhysicalID(void)

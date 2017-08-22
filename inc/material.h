@@ -1,15 +1,17 @@
 /*
- * Materials definition types
- *
- * material_t material;
- * lambda = ((type_00*)material.type)->lambda
- *
+   Materials definition types
+  
+   material_t material;
+   lambda = ((type_00*)material.type)->lambda
+  
  */
 
 #include "list.h"
 
-#define TYPE00   0
-#define TYPE01   0
+#define TYPE00    0
+#define TYPE01    1
+
+#define MICRO00   2
 
 #ifndef _MATERIALH_
 #define _MATERIALH_
@@ -24,8 +26,7 @@ typedef struct material_t_{
 }material_t;
 
 /*
- * Linear Elastic Material
- *
+   Linear Elastic Material
  */
 typedef struct _type_00{
 
