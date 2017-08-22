@@ -16,8 +16,11 @@ static char help[] =
 "It has the capability of being couple with MICRO, a code for solving and RVE problem.n\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
-"-print [0 (no print) | 1 (print PETSc structures) | 2 (print VTK output)]\n"
-"-p_vtk [0 (no print vtk) | 1 (print partition) | 2 (print displacement,strain & stress)]\n";
+"-print_petsc\n"
+"-print_vtk\n"
+"-print_part\n"
+"-print_vtu\n"
+"-print_all\n";
 
 #include "macro.h"
 
@@ -59,18 +62,22 @@ int main(int argc, char **argv)
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
   /*
-     Get command line arguments
+     Printing Options
   */
   flag_print = 0;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = PRINT_PETSC;
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_disp",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = PRINT_VTK;
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTK);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = PRINT_VTKPART;
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = PRINT_ALL;
-
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
+  /*
+     Coupling Options
+  */
   ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
   ierr = PetscOptionsGetInt(NULL, NULL, "-testcomm", &flag_testcomm, &set); CHKERRQ(ierr); 
@@ -81,13 +88,13 @@ int main(int argc, char **argv)
   if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
   ierr = PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
-  if(mesh_f == FORMAT_NULL)SETERRQ(MACRO_COMM,1,"MACRO:mesh format not given on command line.");
+  if(mesh_f == FORMAT_NULL)SETERRQ(MACRO_COMM,1,"mesh format not given on command line.");
 
   ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"MACRO:mesh file not given on command line.");
+  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"mesh file not given on command line.");
 
   ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"MACRO:input file not given.");
+  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"input file not given.");
 
   /* 
      Stablish a new local communicator
@@ -156,8 +163,8 @@ int main(int argc, char **argv)
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
-  PetscPrintf(MACRO_COMM,"MACRO: Reading mesh elements\n");
-  read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
+  PetscPrintf(MACRO_COMM,"Reading mesh elements\n");
+  ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
@@ -165,15 +172,15 @@ int main(int argc, char **argv)
   /*
      partition the mesh
   */
-  PetscPrintf(MACRO_COMM,"MACRO: Partitioning and distributing mesh\n");
+  PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
-  part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );
+  ierr = part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
   /*
      Calculate <*ghosts> and <nghosts> 
   */
-  PetscPrintf(MACRO_COMM,"MACRO: Calculating Ghost Nodes\n");
+  PetscPrintf(MACRO_COMM,"Calculating Ghost Nodes\n");
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
   ierr = calculate_ghosts(&MACRO_COMM, myname);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
@@ -181,7 +188,7 @@ int main(int argc, char **argv)
   /*
      Reenumerate Nodes
   */
-  PetscPrintf(MACRO_COMM,"MACRO: Reenumering nodes\n");
+  PetscPrintf(MACRO_COMM,"Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
   ierr = reenumerate_PETSc(MACRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
@@ -189,7 +196,7 @@ int main(int argc, char **argv)
   /*
      Coordinate Reading
   */
-  PetscPrintf(MACRO_COMM,"MACRO: Reading Coordinates\n");
+  PetscPrintf(MACRO_COMM,"Reading Coordinates\n");
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
   ierr = read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);

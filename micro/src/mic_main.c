@@ -89,11 +89,11 @@ int main(int argc, char **argv)
   if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
   ierr = PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
-  if(mesh_f == FORMAT_NULL)SETERRQ(MICRO_COMM,1,"MICRO:mesh format not given on command line.");
+  if(mesh_f == FORMAT_NULL)SETERRQ(MICRO_COMM,1,"mesh format not given on command line.");
   ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:mesh file not given on command line.");
+  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"mesh file not given on command line.");
   ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"MICRO:input file not given.");
+  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"input file not given.");
   /*
      Homogenization Options
   */
@@ -171,7 +171,7 @@ int main(int argc, char **argv)
      partition the mesh
   */
   if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"MICRO: Partitioning and distributing mesh\n");
+    PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
   ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
      Calculate <*ghosts> and <nghosts> 
   */
   if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"MICRO: Calculating Ghost Nodes\n");
+    PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
   ierr = calculate_ghosts(&MICRO_COMM, myname);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
@@ -189,7 +189,7 @@ int main(int argc, char **argv)
      Reenumerate Nodes
   */
   if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"MICRO: Reenumering nodes\n");
+    PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
   ierr = reenumerate_PETSc(MICRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
      Coordinate Reading
   */
   if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"MICRO: Reading Coordinates\n");
+    PetscPrintf(MICRO_COMM,"Reading Coordinates\n");
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
   ierr = read_mesh_coord(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
