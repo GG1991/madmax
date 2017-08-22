@@ -9,9 +9,9 @@ lx=1.5;
 ly=1.5;
 lz=3.0;
 r = 0.4;
-Nc = 5;
-Next = 20;
-Nint = 5;
+Nint = Nint_m4;
+Next = Nint*2;
+Nc = Nint;
 Nz = 1;
 sin45=0.707106781;
 
