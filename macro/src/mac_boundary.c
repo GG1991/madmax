@@ -125,7 +125,7 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   return 0;
 }
 /****************************************************************************************************/
-int MacroParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
+int macro_parse_boundary(MPI_Comm PROBLEM_COMM, char *input)
 {
   /*
      Parse the boundary of the problem
@@ -140,10 +140,8 @@ int MacroParseBoundary(MPI_Comm *PROBLEM_COMM, char *input )
    */
 
   FILE   *file = fopen(input,"r"); if(!file) SETERRQ(PETSC_COMM_SELF,1,"File not found");
-  char   buf[NBUF];
-  char   *data;
-  int    ln = 0;
-  int    flag_start_boundary = 0;
+  char   buf[NBUF], *data;
+  int    ln=0, flag_start_boundary=0;
 
   mac_boundary_t mac_boundary;
 

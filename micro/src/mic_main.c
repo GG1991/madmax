@@ -211,11 +211,11 @@ int main(int argc, char **argv)
   /*
      Read materials, physical entities, boundaries from input and mesh file
   */
-  ierr = list_init(&physical_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
-  ierr = list_init(&function_list, sizeof(physical_t), NULL); CHKERRQ(ierr);
+  ierr = list_init(&physical_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
+  ierr = list_init(&function_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
   ierr = parse_material(MICRO_COMM, input_n);CHKERRQ(ierr);
-  ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f); CHKERRQ(ierr);
-  ierr = SpuParseFunctions( &MICRO_COMM, input_n ); CHKERRQ(ierr); 
+  ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
+  ierr = parse_function(MICRO_COMM, input_n);CHKERRQ(ierr); 
 
   /*
      Check if Physical Entities <P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1> exist in mesh

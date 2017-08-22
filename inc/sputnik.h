@@ -122,8 +122,7 @@ int spu_parse_scheme( char *input );
 int spu_parse_mesh( char * input );
 int parse_material(MPI_Comm PROBLEM_COMM, char *input);
 int CheckPhysicalID(void);
-int SpuParseBoundary(MPI_Comm *PROBLEM_COMM, char *input);
-int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input );
+int parse_function(MPI_Comm PROBLEM_COMM, char *input);
 int StrBin2Dec(char *str);
 
 // spu_mesh.c

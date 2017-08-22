@@ -87,21 +87,17 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input )
 	      v = ((type_00*)material.type)->poisson;
 	      ((type_00*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
 	      ((type_00*)material.type)->mu = E/(2*(1+v));
-
 	    }
 	    else if(!strcmp(data,"MICRO00")){
-
 	      material.typeID = MICRO00;
 	      material.GmshID = -1;
 	      material.type = NULL;
-	      
 	    }
 	    else{
 	      SETERRQ1(PROBLEM_COMM,1,"material type %s not valid.",data);
 	    }
 	    // lo insertamos en la lista 
 	    list_insertlast(&material_list, &material);
-
 	  }
 	}
       } // inside $Materials
@@ -141,7 +137,7 @@ int CheckPhysicalID(void)
   return 0;
 }
 /****************************************************************************************************/
-int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
+int parse_function(MPI_Comm PROBLEM_COMM, char *input )
 {
   /*
      Parse the functions of the problem
@@ -158,10 +154,8 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
    */
 
   FILE   *file = fopen(input,"r"); if(!file) return 1;
-  char   buf[NBUF];
-  char   *data;
-  int    ln = 0, n;
-  int    flag_start_function = 0;
+  char   buf[NBUF], *data;
+  int    ln=0, n, flag_start_function=0;
 
   f1d_t f1d;
   list_init(&function_list, sizeof(f1d_t), NULL);
@@ -174,16 +168,19 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
     if(data){
       if(!strcmp(data,"$Function")){
         
-	if(flag_start_function) CHECK_INPUT_ERROR(NULL);
+	if(flag_start_function)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
 	flag_start_function=1;
-	CHECK_INPUT_ERROR(fgets(buf,NBUF,file)); ln ++;
+	fgets(buf,NBUF,file); ln ++;
 
 	// <fnum>
-	data = strtok(buf," \n"); CHECK_INPUT_ERROR(data);
+	data = strtok(buf," \n");
+	if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
 	f1d.fnum = atoi(data);
 
 	// <inter> 
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	data = strtok(NULL," \n");
+	if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
+
 	if(!strcmp(data,"INTER1")){
 	    f1d.inter = INTER1 ;
 	}
@@ -192,7 +189,8 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
 	}
 
 	// <n>
-	data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data);
+	data = strtok(NULL," \n");
+	if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
 	f1d.n = atoi(data);
 	f1d.x = malloc(f1d.n*sizeof(double));
 	f1d.y = malloc(f1d.n*sizeof(double));
@@ -200,9 +198,13 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
 	n = 0;
 	while( fgets(buf,NBUF,file) != NULL ){
 	  if(n >= f1d.n) break;
-	  data = strtok(buf," \n"); CHECK_INPUT_ERROR(data); 
+
+	  data = strtok(buf," \n");
+	  if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
 	  f1d.x[n] = atof(data);
-	  data = strtok(NULL," \n"); CHECK_INPUT_ERROR(data); 
+
+	  data = strtok(NULL," \n");
+	  if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
 	  f1d.y[n] = atof(data);
 	  n++;
 	}
@@ -213,12 +215,11 @@ int SpuParseFunctions(MPI_Comm *PROBLEM_COMM, char *input )
       } // inside $Function
 
       if(!strcmp(data,"$EndFunction")){
-	CHECK_INPUT_ERROR(flag_start_function);
+	if(!flag_start_function)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
 	flag_start_function = 0;
       }
     }
   }
-//  PetscPrintf(*PROBLEM_COMM, "# of functions found in %s : %d\n", input, function_list.sizelist);
   return 0;
 }
 /****************************************************************************************************/
