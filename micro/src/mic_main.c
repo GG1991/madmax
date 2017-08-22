@@ -33,23 +33,6 @@ int main(int argc, char **argv)
   char vtkfile_n[NBUF];
   PetscBool  set;
 
-  PetscViewer    viewer;
-
-#if defined(PETSC_USE_LOG)
-  PetscLogStage stages[3];
-  PetscLogEvent EVENT_READ_MESH_ELEM,
-		EVENT_PART_MESH,
-		EVENT_CALC_GHOSTS,
-		EVENT_REENUMERATE,
-		EVENT_READ_COORD,
-		EVENT_INIT_GAUSS,
-		EVENT_ALLOC_MATVEC,
-		EVENT_SET_DISP_BOU,
-		EVENT_ASSEMBLY_JAC,
-		EVENT_ASSEMBLY_RES,
-		EVENT_SOLVE_SYSTEM;
-#endif
-
   WORLD_COMM = MPI_COMM_WORLD;
   ierr = MPI_Init(&argc, &argv);
   ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
@@ -255,15 +238,22 @@ int main(int argc, char **argv)
      micro main coupling loop
    */
   double strain_ave[6], stress_ave[6], ttensor[36];
-  int    nr_its = -1, kspits = -1, i, j;
-  double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
 
   ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);CHKERRQ(ierr);
   ierr = PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);CHKERRQ(ierr);
 
   if(flag_coupling){
+
     /*
-       Coupling
+       COUPLING EXECUTION
+
+       In this mode <micro> is used to homogenize RVE properties 
+       and send them to <macro> program
+
+       1) waits intruction 
+       2) excute intruction
+       3) finish if intruction = SIGNAL_MICRO_END  
+
      */
     int signal = SIGNAL_NULL;
     while(signal != SIGNAL_MICRO_END ){
@@ -274,15 +264,12 @@ int main(int argc, char **argv)
 	     Wait for strain
 	  */
 	  ierr = MicCommRecvStrain( WORLD_COMM, strain );
+
 	  /*
 	     Performs the micro calculation
 	  */
 	  ierr = micro_apply_bc(0, strain, &x, &A, &b, SET_DISPLACE);
-	  if( flag_print | (1<<PRINT_PETSC) ){
-	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-	    ierr = VecView(x,viewer); CHKERRQ(ierr);
-	  }
-	  stress_ave[0] = 1.0; stress_ave[1] = 1.0; stress_ave[2] = 1.0; stress_ave[3] = -1.0; stress_ave[4] = 1.0; stress_ave[5] = 1.0;
+
 	  /*
 	     Send Stress
 	  */
@@ -296,9 +283,11 @@ int main(int argc, char **argv)
     }
   }
   else{
+
     /*
-       Standalone MICRO execution
+       STANDALONE EXECUTION
      */
+    int i, j;
     double strain_bc[6] = {0.005,0.005,0.005,0.005,0.005,0.005};
 
     if(homo_type==HOMO_TAYLOR){
@@ -339,72 +328,8 @@ int main(int argc, char **argv)
 
       for(i=0;i<6;i++){
 
-	ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MICRO_COMM,"\nExperiment i=%d\n",i);CHKERRQ(ierr);
-	ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
-	if( flag_print & (1<<PRINT_PETSC) ){
-	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-	  ierr = VecView(x,viewer); CHKERRQ(ierr);
-	}
-	ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
+	ierr = micro_homogenize_linear(MICRO_COMM, i, strain_bc, strain_ave, stress_ave);CHKERRQ(ierr);
 
-	nr_its = 0; norm = 2*NormTol;
-	while( nr_its < NRMaxIts && norm > NormTol )
-	{
-	  /*
-	     Assemblying Residual
-	   */
-	  ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-	  ierr = PetscPrintf(MICRO_COMM,"Assembling Residual ");CHKERRQ(ierr);
-	  ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
-	  ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_RESIDUAL);
-	  if( flag_print & (1<<PRINT_PETSC) ){
-	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
-	    ierr = VecView(b,viewer); CHKERRQ(ierr);
-	  }
-	  ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-	  ierr = PetscPrintf(MICRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
-	  ierr = VecScale(b,-1.0); CHKERRQ(ierr);
-	  ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-	  if( !(norm > NormTol) )break;
-	  /*
-	     Assemblying Jacobian
-	   */
-	  ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-	  ierr = PetscPrintf(MICRO_COMM,"Assembling Jacobian\n");
-	  ierr = AssemblyJacobianSmallDeformation(&A);
-	  ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_JACOBIAN);CHKERRQ(ierr);
-	  if( flag_print & (1<<PRINT_PETSC) ){
-	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
-	    ierr = MatView(A,viewer); CHKERRQ(ierr);
-	  }
-	  ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-	  /*
-	     Solving Problem
-	   */
-	  ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-	  ierr = PetscPrintf(MICRO_COMM,"Solving Linear System ");
-	  ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
-	  ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
-	  ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
-	  ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
-	  ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
-	  if( flag_print & (1<<PRINT_PETSC) ){
-	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
-	    ierr = VecView(dx,viewer); CHKERRQ(ierr);
-	    ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-	    ierr = VecView(x,viewer); CHKERRQ(ierr);
-	  }
-	  ierr = PetscPrintf(MICRO_COMM,"Iterations %D Norm %e reason %d\n",kspits, kspnorm, reason);CHKERRQ(ierr);
-	  ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-
-	  nr_its ++;
-	}
-
-	/*
-	   Calculate the average stress, strain and constitutive tensor
-	 */
-	ierr = SpuAveStressAndStrain(MICRO_COMM, &x, strain_ave, stress_ave);CHKERRQ(ierr);
 	ierr = PetscPrintf(MICRO_COMM,"strain_ave = ");CHKERRQ(ierr);
 	for(j=0;j<6;j++){
 	  ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);CHKERRQ(ierr);
@@ -433,7 +358,6 @@ int main(int argc, char **argv)
 	  }
 	  free(stress); free(strain);
 	}
-	ierr = PetscPrintf(MICRO_COMM,"NR its : %d\n",nr_its);CHKERRQ(ierr);
 
       }
       ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");CHKERRQ(ierr);

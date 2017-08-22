@@ -61,6 +61,7 @@ typedef struct _physical_t{
 char         input_n[NBUF];            // Input file name
 
 MPI_Status   status;
+PetscViewer    viewer;
 
 #define PRINT_PETSC        0
 #define PRINT_VTK          1
