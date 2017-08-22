@@ -2171,7 +2171,7 @@ int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM)
   while(pp)
   {
     if( !((physical_t*)pp->data)->FlagFound ){PetscPrintf(PROBLEM_COMM,
-	"WARNING:Physical %s not found on boundary_list.\n",((physical_t*)pp->data)->name);}
+	"\nWARNING:Physical %s not found on boundary_list.\n",((physical_t*)pp->data)->name);}
     pp = pp->next;
   }
   return 0;

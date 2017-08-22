@@ -30,6 +30,7 @@ int main(int argc, char **argv)
   int  ierr;
   char *myname = strdup("macro");
   char vtkfile_n[NBUF];
+  double t0=0.0, tf, dt;
   PetscBool  set;
 
   PetscViewer    viewer;
@@ -95,6 +96,13 @@ int main(int argc, char **argv)
 
   ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"input file not given.");
+  /*
+     flow execution variables
+  */
+  ierr = PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);CHKERRQ(ierr);
+  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"-tf not given.");
+  ierr = PetscOptionsGetReal(NULL,NULL,"-dt",&dt,&set);CHKERRQ(ierr);
+  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"-dt not given.");
 
   /* 
      Stablish a new local communicator
@@ -163,7 +171,7 @@ int main(int argc, char **argv)
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
-  PetscPrintf(MACRO_COMM,"Reading mesh elements\n");
+  ierr = PetscPrintf(MACRO_COMM,"Reading mesh elements\n");CHKERRQ(ierr);
   ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
 
@@ -172,7 +180,7 @@ int main(int argc, char **argv)
   /*
      partition the mesh
   */
-  PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");
+  ierr = PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
   ierr = part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
@@ -180,7 +188,7 @@ int main(int argc, char **argv)
   /*
      Calculate <*ghosts> and <nghosts> 
   */
-  PetscPrintf(MACRO_COMM,"Calculating Ghost Nodes\n");
+  ierr = PetscPrintf(MACRO_COMM,"Calculating Ghost Nodes\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
   ierr = calculate_ghosts(&MACRO_COMM, myname);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
@@ -188,7 +196,7 @@ int main(int argc, char **argv)
   /*
      Reenumerate Nodes
   */
-  PetscPrintf(MACRO_COMM,"Reenumering nodes\n");
+  ierr = PetscPrintf(MACRO_COMM,"Reenumering nodes\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
   ierr = reenumerate_PETSc(MACRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
@@ -196,14 +204,14 @@ int main(int argc, char **argv)
   /*
      Coordinate Reading
   */
-  PetscPrintf(MACRO_COMM,"Reading Coordinates\n");
+  ierr = PetscPrintf(MACRO_COMM,"Reading Coordinates\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
   ierr = read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
   if(flag_print == PRINT_VTKPART){
     sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mac);
-    spu_vtk_partition( vtkfile_n, &MACRO_COMM );
+    ierr = spu_vtk_partition( vtkfile_n, &MACRO_COMM );CHKERRQ(ierr);
   }
 
   /*
@@ -249,7 +257,7 @@ int main(int argc, char **argv)
   */
   int    nr_its = -1, kspits = -1;
   int    time_step = 0;
-  double t0 = 0.0, tf = 1.0, dt = 1.0, t = t0;
+  double t = t0;
   double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
 
 

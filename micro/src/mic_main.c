@@ -28,9 +28,9 @@ static char help[] =
 int main(int argc, char **argv)
 {
 
-  int    ierr;
-  char   *myname = strdup("micro");
-  char   vtkfile_n[NBUF];
+  int ierr;
+  char *myname = strdup("micro");
+  char vtkfile_n[NBUF];
   PetscBool  set;
 
   PetscViewer    viewer;
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
   if(set==PETSC_TRUE) homo_type=HOMO_TAYLOR;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo_type=HOMO_LINEAR;
-  if(homo_type==0)SETERRQ(MICRO_COMM,1,"No homogenization option specified");
+  if(homo_type==0)SETERRQ(MICRO_COMM,1,"no homogenization option specified");
 
   /* 
      Stablish a new local communicator
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
 
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
   if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"MICRO: Reading mesh elements\n");
+    PetscPrintf(MICRO_COMM,"Reading mesh elements\n");
   ierr = read_mesh_elmv(MICRO_COMM, myname, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
 
@@ -291,7 +291,7 @@ int main(int argc, char **argv)
 	case SIGNAL_MICRO_END:
 	  break;
 	default:
-	  SETERRQ(MICRO_COMM,1,"MICRO:can no identify recv signal.");
+	  SETERRQ(MICRO_COMM,1,"can no identify recv signal.");
       }
     }
   }
@@ -340,7 +340,7 @@ int main(int argc, char **argv)
       for(i=0;i<6;i++){
 
 	ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MICRO_COMM,"\nMICRO: Experiment i=%d\n",i);CHKERRQ(ierr);
+	ierr = PetscPrintf(MICRO_COMM,"\nExperiment i=%d\n",i);CHKERRQ(ierr);
 	ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
 	if( flag_print & (1<<PRINT_PETSC) ){
 	  ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
@@ -355,7 +355,7 @@ int main(int argc, char **argv)
 	     Assemblying Residual
 	   */
 	  ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-	  ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Residual ");CHKERRQ(ierr);
+	  ierr = PetscPrintf(MICRO_COMM,"Assembling Residual ");CHKERRQ(ierr);
 	  ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
 	  ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_RESIDUAL);
 	  if( flag_print & (1<<PRINT_PETSC) ){
@@ -371,7 +371,7 @@ int main(int argc, char **argv)
 	     Assemblying Jacobian
 	   */
 	  ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-	  ierr = PetscPrintf(MICRO_COMM,"MICRO: Assembling Jacobian\n");
+	  ierr = PetscPrintf(MICRO_COMM,"Assembling Jacobian\n");
 	  ierr = AssemblyJacobianSmallDeformation(&A);
 	  ierr = micro_apply_bc(i, strain_bc, &x, &A, &b, SET_JACOBIAN);CHKERRQ(ierr);
 	  if( flag_print & (1<<PRINT_PETSC) ){
@@ -383,7 +383,7 @@ int main(int argc, char **argv)
 	     Solving Problem
 	   */
 	  ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-	  ierr = PetscPrintf(MICRO_COMM,"MICRO: Solving Linear System ");
+	  ierr = PetscPrintf(MICRO_COMM,"Solving Linear System ");
 	  ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
 	  ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
 	  ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
