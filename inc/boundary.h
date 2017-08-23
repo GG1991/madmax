@@ -31,6 +31,16 @@ typedef struct mic_boundary_t_{
 
 }mic_boundary_t;
 
+/*
+   u = e_mac * x
+*/
+typedef struct mic_boundary_linear_t_{
+
+  int * index;
+  double * u_val;
+
+}mic_boundary_linear_t;
+
 /* 
    All we want to know about a generic boundary is its 
    GmshId, name and the nodes that it has

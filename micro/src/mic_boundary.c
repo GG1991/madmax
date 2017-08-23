@@ -508,3 +508,18 @@ int micro_apply_bc(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag)
   }
   return 0;
 }
+/****************************************************************************************************/
+int micro_apply_bc_linear(double strain_mac[6], Vec *x, Mat *J, Vec *b, int flag)
+{
+  /* 
+     Apply a pure Dirichlet boundary condition type on all the boundary
+     the value of displacement is u = e_mac * x
+
+     flag = SET_DISPLACE
+     flag = SET_JACOBIAN
+     flag = SET_RESIDUAL
+     flag = SET_JACRES
+   */
+
+   return 0;
+}
