@@ -258,9 +258,18 @@ int main(int argc, char **argv)
     /*
        Routine to send a calculating strain to micro and obtain the stress
      */
-    ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
-    ierr = mac_send_strain(WORLD_COMM, strain_mac);CHKERRQ(ierr);
-    ierr = mac_recv_stress(WORLD_COMM, stress_mac);CHKERRQ(ierr);
+    int i, j; 
+    for(i=0;i<6;i++){
+      memset(strain_mac,0.0,6*sizeof(double));
+      strain_mac[i] = 0.005;
+      ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
+      ierr = mac_send_strain(WORLD_COMM, strain_mac);CHKERRQ(ierr);
+      ierr = mac_recv_stress(WORLD_COMM, stress_mac);CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM,"\nstress_ave = ");CHKERRQ(ierr);
+      for(j=0;j<6;j++)
+	ierr = PetscPrintf(MACRO_COMM,"%e ",stress_mac[j]);CHKERRQ(ierr);
+      ierr = PetscPrintf(MACRO_COMM,"\n");CHKERRQ(ierr);
+    }
   }
   else{
     while( t < (tf + 1.0e-10))
