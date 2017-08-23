@@ -69,16 +69,16 @@ int MicroAllocMatrixVector(MPI_Comm MICRO_COMM, int nlocal, int ntotal)
   int Istart, Iend;
   ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
   if( Istart != StartIndexRank[rank_mic]*3 )
-    SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
+    SETERRQ(MICRO_COMM,1,"error on indeces set for matrix and vector.");
       
   if(rank_mic<nproc_mic-1){
     if( Iend != StartIndexRank[rank_mic+1]*3 ){
-      SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
+      SETERRQ(MICRO_COMM,1,"error on indeces set for matrix and vector.");
     }
   }
   else{
     if( Iend != NTotalNod*3 ){
-      SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
+      SETERRQ(MICRO_COMM,1,"error on indeces set for matrix and vector.");
     }
   }
 

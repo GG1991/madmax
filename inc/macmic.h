@@ -65,8 +65,6 @@ coupling_t macmic;
    Global Variables
 */
 
-MPI_Comm     MICRO_COMM;
-MPI_Comm     MACRO_COMM;
 
 int          *remote_ranks;     //  remote ranks if micro processes
 

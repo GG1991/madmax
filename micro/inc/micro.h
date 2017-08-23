@@ -19,8 +19,9 @@ double          *gauss_param_d;
    Variables Send by <macro>
 */
 
-int             rank_mic;          //  rank on macro comm
-int             nproc_mic;         //  # of micro processes (MICRO_COMM)
+MPI_Comm     MICRO_COMM;
+int          rank_mic;          //  rank on macro comm
+int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 
 /*
    indeces for specifying boundary conditions
