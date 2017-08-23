@@ -251,8 +251,8 @@ int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 	}
 	pn=pn->next;
       }
+      pb=pb->next;
     }
-    pb=pb->next;
 
   }
   return 0;
@@ -577,11 +577,11 @@ int micro_apply_bc_linear(double strain_mac[6], Vec *x, Mat *J, Vec *b, int flag
 	  }
 	}
       }
-      ierr = VecSetValues( *x, nnods, index, u_val, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues( *x, nnods*3, index, u_val, INSERT_VALUES); CHKERRQ(ierr);
     }
 
     if(flag&(1<<JACOBIAN)){
-      ierr = MatZeroRowsColumns(*J, nnods, index, 1.0, NULL, NULL); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(*J, nnods*3, index, 1.0, NULL, NULL); CHKERRQ(ierr);
     }
 
     if(flag&(1<<RESIDUAL)){
@@ -590,7 +590,7 @@ int micro_apply_bc_linear(double strain_mac[6], Vec *x, Mat *J, Vec *b, int flag
 	  u_val[i*3+d] = 0.0;
 	}
       }
-      ierr = VecSetValues(*b, nnods, index, u_val, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(*b, nnods*3, index, u_val, INSERT_VALUES); CHKERRQ(ierr);
     }
 
     pb=pb->next;

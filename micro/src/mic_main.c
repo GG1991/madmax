@@ -85,6 +85,8 @@ int main(int argc, char **argv)
   if(set==PETSC_TRUE) homo_type=HOMO_TAYLOR;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo_type=HOMO_LINEAR;
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_exp",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) homo_type=HOMO_EXP;
   if(homo_type==0)SETERRQ(MICRO_COMM,1,"no homogenization option specified");
 
   /* 
@@ -370,7 +372,46 @@ int main(int argc, char **argv)
       ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
     }
     else if(homo_type==HOMO_EXP){
+
+      for(i=0;i<6;i++){
+
+	memset(strain_bc,0.0,6*sizeof(double));
+	strain_bc[i] = 0.005;
 	ierr = micro_homogenize(MICRO_COMM, strain_bc, strain_ave, stress_ave);CHKERRQ(ierr);
+
+	ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");CHKERRQ(ierr);
+	for(j=0;j<6;j++)
+	  ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);CHKERRQ(ierr);
+
+	ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");CHKERRQ(ierr);
+	for(j=0;j<6;j++)
+	  ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);CHKERRQ(ierr);
+
+	ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+	for(j=0;j<6;j++)
+	  ttensor[j*6+i] = stress_ave[j] / strain_ave[i];
+
+	if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){ 
+	  strain = malloc(nelm*6*sizeof(double));
+	  stress = malloc(nelm*6*sizeof(double));
+	  ierr = SpuCalcStressOnElement(&x, strain, stress);
+	  if(flag_print & (1<<PRINT_VTK)){ 
+	    sprintf(vtkfile_n,"%s_displ_exp%d_%d.vtk",myname,i,rank_mic);
+	    ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
+	  }
+	  if(flag_print & (1<<PRINT_VTU)){ 
+	    sprintf(vtkfile_n,"%s_displ_exp%d",myname,i);
+	    ierr = write_vtu(MICRO_COMM, vtkfile_n, &x, strain, stress);CHKERRQ(ierr);
+	  }
+	  free(stress); free(strain);
+	}
+      }
+      ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");CHKERRQ(ierr);
+      for(i=0;i<6;i++){
+	for(j=0;j<6;j++){
+	  ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j])>1.0)?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
+	}ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+      }ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
     }
 
   }
