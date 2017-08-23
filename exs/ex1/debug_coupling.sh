@@ -1,7 +1,7 @@
 #!/bin/bash
 
-break_mac=( 'mac_main.c:78' ) 
-break_mic=( 'mic_main.c:78' ) 
+break_mac=( 'mac_main.c:52' ) 
+break_mic=( 'mic_main.c:52' ) 
 #break_mac=( 'spu_mesh.c:136' ) 
 #break_mic=( 'spu_mesh.c:136' ) 
 #break_mac=( 'macmic.c:143' ) 
@@ -27,13 +27,29 @@ do
 done
 exopt_mic+="-ex 'r'"
 
-gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro ex1.spu"
-gdbcomm_mac+=" -mesh ../../meshes/cube_unif/cube.msh"
-gdbcomm_mac+=" -coupl 1"
-gdbcomm_mac+=" -testcomm 1"
+gdbcomm_mac="gdb $exopt_mac --args  ../../macro/macro \
+	     -input ex1.spu \
+	     -mesh ../../meshes/cube_unif/cube.msh \
+	     -coupl 1 \
+	     -mesh_gmsh \
+	     -ksp_type cg \
+	     -ksp_rtol 1.0e-13 \
+	     -ksp_atol 1.0e-11 \
+	     -coupl \
+	     -tf 1.0 \
+	     -dt 1.0 \
+	     -options_left 0 \
+	     -testcomm 1"
 
-gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro ex1.spu"
-gdbcomm_mic+=" -mesh ../../meshes/cube_unif/cube.msh"
-gdbcomm_mic+=" -coupl 1"
+gdbcomm_mic="gdb $exopt_mic --args ../../micro/micro \
+	     -input ex1.spu \
+	     -mesh ../../meshes/cube_unif/cube.msh \
+	     -mesh_gmsh \
+	     -ksp_type cg \
+	     -ksp_rtol 1.0e-13 \
+	     -ksp_atol 1.0e-11 \
+	     -options_left 0 \
+	     -homo_exp \
+	     -coupl 1"
 
 ./mpirun -np $NM xterm -e "$gdbcomm_mac" : -np $Nm xterm -e "$gdbcomm_mic"

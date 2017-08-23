@@ -69,8 +69,9 @@ int main(int argc, char **argv)
   else{
     macmic.type = COUP_1;
   }
-  ierr = PetscOptionsGetInt(NULL, NULL, "-testcomm", &flag_testcomm, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) flag_testcomm  = TESTCOMM_NULL;
+  flag_testcomm  = TESTCOMM_NULL;
+  ierr = PetscOptionsHasName(NULL,NULL,"-testcomm",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_testcomm  = TESTCOMM_STRAIN;
   /*
      Mesh and Input Options
   */
