@@ -370,17 +370,14 @@ int GetElemenDispls( int e, double *Displacement, double *ElemDispls )
 /****************************************************************************************************/
 int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 {
-
-  /*  Calculates constitutive tensor
-   *  according to the element type
+  /*  
+      Calculates constitutive tensor
+      according to the element type
    */
-
-//  int npe, type;
   double la, mu;
 
-//  npe = eptr[e+1]-eptr[e];
-
-  material_t *material = GetMaterial(PhysicalID[e]); CHECK_SPU_ERROR(material);
+  material_t *material = GetMaterial(PhysicalID[e]);
+  if(!material) SETERRQ1(PETSC_COMM_SELF,1,"material with physical_id %d not found",PhysicalID[e]);
 
   switch(material->typeID){
 
@@ -388,7 +385,6 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
       /* 
 	 Elástico lineal 
        */
-
       la = ((type_00*)material->type)->lambda;
       mu = ((type_00*)material->type)->mu;
 
@@ -398,6 +394,10 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
       DsDe[3][0]=0.0     ;DsDe[3][1]=0.0     ;DsDe[3][2]=0.0     ;DsDe[3][3]=mu ; DsDe[3][4]=0.0; DsDe[3][5]=0.0;
       DsDe[4][0]=0.0     ;DsDe[4][1]=0.0     ;DsDe[4][2]=0.0     ;DsDe[4][3]=0.0; DsDe[4][4]=mu ; DsDe[4][5]=0.0;
       DsDe[5][0]=0.0     ;DsDe[5][1]=0.0     ;DsDe[5][2]=0.0     ;DsDe[5][3]=0.0; DsDe[5][4]=0.0; DsDe[5][5]=mu ;
+
+      break;
+
+    case MICRO:
 
       break;
 

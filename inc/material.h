@@ -11,7 +11,7 @@
 #define TYPE00    0
 #define TYPE01    1
 
-#define MICRO00   2
+#define MICRO  2
 
 #ifndef _MATERIALH_
 #define _MATERIALH_

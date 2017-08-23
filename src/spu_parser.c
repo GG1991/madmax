@@ -7,19 +7,12 @@
 
 #include "sputnik.h"
 
-#define CHECK_INPUT_ERROR(data_char)                                                   \
-     {if(!(data_char)){                                                                \
-	 printf("INPUT ERROR on %s line %d\n",__FILE__,__LINE__);                      \
-	 return -1;                                                                    \
-     }}
-
-
 int parse_material(MPI_Comm PROBLEM_COMM, char * input )
 {
   /*
      Parse the materials of the problem
 
-     Example:
+     Example>
 
      $materials
      <PhysicalName> <TYPEXX> <options>
@@ -51,7 +44,7 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input )
 
 	  // <name>
 	  data = strtok(buf," \n"); 
-	  if(!data) SETERRQ(PROBLEM_COMM,1,"SpuParseMaterials: <name> expected.");
+	  if(!data) SETERRQ(PROBLEM_COMM,1,"<name> expected.");
 
 	  if(data[0]!='#'){
 
@@ -61,7 +54,7 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input )
 
 	    // <type> & <options>
 	    data = strtok(NULL," \n");
-	    if(!data) SETERRQ(PROBLEM_COMM,1,"SpuParseMaterials: <type> expected.");
+	    if(!data) SETERRQ(PROBLEM_COMM,1,"<type> expected.");
 
 	    if(!strcmp(data,"TYPE00")){
 
@@ -88,8 +81,8 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input )
 	      ((type_00*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
 	      ((type_00*)material.type)->mu = E/(2*(1+v));
 	    }
-	    else if(!strcmp(data,"MICRO00")){
-	      material.typeID = MICRO00;
+	    else if(!strcmp(data,"MICRO")){
+	      material.typeID = MICRO;
 	      material.GmshID = -1;
 	      material.type = NULL;
 	    }
@@ -208,7 +201,9 @@ int parse_function(MPI_Comm PROBLEM_COMM, char *input )
 	  f1d.y[n] = atof(data);
 	  n++;
 	}
-	data = strtok(buf," \n"); CHECK_INPUT_ERROR(data); 
+	data = strtok(buf," \n");
+	if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
+
 	if(strcmp(data,"$EndFunction"))return 1;
 	// si llegamos hasta acá esta todo 0K lo insertamos en la lista 
 	list_insertlast(&function_list, &f1d);
