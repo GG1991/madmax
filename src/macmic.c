@@ -176,8 +176,11 @@ int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal)
   MPI_Status status;
   *signal = -1;
   if(macmic.type == COUP_1){
-    remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
-    ierr = MPI_Recv(signal, 1, MPI_INT, remote_rank, 0, WORLD_COMM, &status);CHKERRQ(ierr);
+    if(((coupMic_1_t*)macmic.coup)->im_leader){
+      remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
+      ierr = MPI_Recv(signal, 1, MPI_INT, remote_rank, 0, WORLD_COMM, &status);CHKERRQ(ierr);
+    }
+    ierr = MPI_Bcast(signal, 1, MPI_INT, 0, MICRO_COMM);CHKERRQ(ierr);
   }
   else{
     return 1;
@@ -209,8 +212,11 @@ int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6])
   int ierr, remote_rank;
   MPI_Status status;
   if(macmic.type == COUP_1){
-    remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
-    ierr = MPI_Recv(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+    if(((coupMic_1_t*)macmic.coup)->im_leader){
+      remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
+      ierr = MPI_Recv(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, &status); CHKERRQ(ierr);
+    }
+    ierr = MPI_Bcast(strain, 6, MPI_DOUBLE, 0, MICRO_COMM);CHKERRQ(ierr);
   }
   else{
     return 1;
@@ -237,7 +243,7 @@ int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6])
 int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6])
 {
   /*
-     Sends to macro leader the averange Stress tensor calculated here
+     Sends to macro leader the averange stress tensor calculated here
   */
   int ierr, remote_rank;
   if(macmic.type == COUP_1){
@@ -245,6 +251,25 @@ int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6])
       // only the micro leader sends the stress
       remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
       ierr = MPI_Ssend(stress, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM);CHKERRQ(ierr);
+    }
+  }
+  else{
+    return 1;
+  }
+  return 0;
+}
+/****************************************************************************************************/
+int mic_send_strain(MPI_Comm WORLD_COMM, double strain[6])
+{
+  /*
+     Sends to macro leader the averange strain tensor calculated here
+  */
+  int ierr, remote_rank;
+  if(macmic.type == COUP_1){
+    if(((coupMic_1_t*)macmic.coup)->im_leader){
+      // only the micro leader sends the stress
+      remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
+      ierr = MPI_Ssend(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM);CHKERRQ(ierr);
     }
   }
   else{

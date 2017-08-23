@@ -97,6 +97,7 @@ double        *stress, *strain;     // Averange strain and stress on each elemen
 int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM);
 int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal);
 int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6]);
+int mic_send_strain(MPI_Comm WORLD_COMM, double strain[6]);
 int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6]);
 int mic_sent_ttensor(MPI_Comm WORLD_COMM, double ttensor[36]);
 
