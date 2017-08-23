@@ -1,11 +1,10 @@
 #!/bin/bash
 
-
 #break_mic=( 'mic_main.c:xx' ) 
 #break_mic=( 'spu_mesh.c:xx' ) 
 #break_mic=( 'micmic.c:xx' ) 
 #break_mic=( 'mic_alloc.c:xx' ) 
-break_mic=( 'spu_assembly.c:50' ) 
+#break_mic=( 'spu_assembly.c:xx' ) 
 #break_mic=( 'mic_boundary.c:xx' ) 
 
 # BREAKPOINTS
@@ -89,6 +88,25 @@ eval ./mpirun -np $NM valgrind --log-file=\"valgrind.out\" --leak-check=full ../
   -print_vtu
 }
 
+# 23-08-2017
+# Cube with cilindrical fiber in the middle
+function cube_fiber_seq {
+NM=1
+
+eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro   \
+  -input ex1.spu                                                         \
+  -mesh ../../meshes/cube_fiber/cube_fiber.msh                           \
+  -mesh_gmsh                                                             \
+  -ksp_type cg                                                           \
+  -ksp_rtol 1.0e-13                                                      \
+  -ksp_atol 1.0e-19                                                      \
+  -pc_type bjacobi                                                       \
+  -options_left 0                                                        \
+  -log_trace micro_trace                                                 \
+  -homo_exp  \
+  -print_vtu
+}
+
 # 16-08-2017
 # Cube with cilindrical fiber in the middle
 function cube_fiber_par {
@@ -113,4 +131,5 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro   \
 #barbero_debug
 #cube_cube_hole_fill_seq
 #cube_fiber_par_valgrind
+#cube_fiber_seq
 #cube_fiber_par
