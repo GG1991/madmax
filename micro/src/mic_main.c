@@ -62,8 +62,13 @@ int main(int argc, char **argv)
   /*
      Coupling Options
   */
-  ierr = PetscOptionsGetBool(NULL, NULL, "-coupl", &flag_coupling, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) flag_coupling  = PETSC_FALSE;
+  ierr = PetscOptionsHasName(NULL,NULL,"-coupl",&set);CHKERRQ(ierr);
+  if(set == PETSC_FALSE){
+    flag_coupling  = PETSC_FALSE;
+  }
+  else{
+    macmic.type = COUP_1;
+  }
   /*
      Mesh and Input Options
   */
