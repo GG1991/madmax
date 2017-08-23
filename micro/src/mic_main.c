@@ -332,7 +332,6 @@ int main(int argc, char **argv)
       /*
 	 Linear Homogenization Method - Performs 6 experiment
        */
-
       for(i=0;i<6;i++){
 
 	ierr = micro_homogenize_linear(MICRO_COMM, i, strain_bc, strain_ave, stress_ave);CHKERRQ(ierr);

@@ -68,10 +68,7 @@ coupling_t macmic;
 
 int          *remote_ranks;     //  remote ranks if micro processes
 
-MPI_Comm     WORLD_COMM;
 int          color;
-int          rank_wor;                 //  rank on world comm
-int          nproc_wor;                //  # of processes (WORLD_COMM)
 
 int          nstruc_mic;               // number of micro structures
 int          *nproc_per_mic;           // number of processes per micro structure ( size = nstruc_mic )
@@ -83,10 +80,10 @@ PetscBool    flag_coupling;
 
 // Matrices and vectors
 
-Mat           A;                    /* Jacobian Matrix          */
-Vec           x, dx, b;             /* Vectors unknowns and RHS */
-KSP           ksp;                  /* linear solver context    */
-KSPConvergedReason  reason;
+Mat           A;                    // Jacobian Matrix          
+Vec           x, dx, b;             // Vectors unknowns and RHS 
+KSP           ksp;                  // linear solver context    
+int           reason;
 
 double        *stress, *strain;     // Averange strain and stress on each element
 

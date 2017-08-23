@@ -28,18 +28,6 @@
 #define PARMETIS_KWAY       3
 #define PARMETIS_MESHKWAY   4
 
-#define CHECK_SPU_ERROR(data)                                                          \
-     {if(!data){                                                                       \
-	 printf("SPUTNIK ERROR on %s line %d\n",__FILE__,__LINE__);                    \
-	 return -1;                                                                    \
-     }}
-
-#define CHECK_NEG_ERROR(data_int)                                                      \
-     {if(data_int<0){                                                                  \
-	 printf("SPUTNIK ERROR on %s line %d\n",__FILE__,__LINE__);                    \
-	 return -1;                                                                    \
-     }}
-
 #if defined(PETSC_USE_LOG)
   PetscLogStage stages[3];
   PetscLogEvent EVENT_READ_MESH_ELEM,
@@ -75,8 +63,12 @@ typedef struct _physical_t{
 
 char         input_n[NBUF];            // Input file name
 
+MPI_Comm     WORLD_COMM;
 MPI_Status   status;
 PetscViewer  viewer;
+
+int          rank_wor;                 //  rank on world comm
+int          nproc_wor;                //  # of processes (WORLD_COMM)
 
 #define PRINT_PETSC        0
 #define PRINT_VTK          1
@@ -90,7 +82,7 @@ int          flag_print;
 #define FORMAT_GMSH        1
 #define FORMAT_ALYA        2
 
-int          mesh_f;               // Mesh format number
+int          mesh_f;                   // Mesh format number
 
 // Time measurement
 
