@@ -62,11 +62,11 @@ int main(int argc, char **argv)
   /*
      Coupling Options
   */
+  flag_coupling = PETSC_FALSE;
   ierr = PetscOptionsHasName(NULL,NULL,"-coupl",&set);CHKERRQ(ierr);
-  if(set == PETSC_FALSE){
-    flag_coupling  = PETSC_FALSE;
-  }
-  else{
+  macmic.type = 0;
+  if(set == PETSC_TRUE){
+    flag_coupling = PETSC_TRUE;
     macmic.type = COUP_1;
   }
   /*
@@ -98,7 +98,6 @@ int main(int argc, char **argv)
      Stablish a new local communicator
    */
   color = MICRO;
-  macmic.type = COUP_NULL;
   ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM); /* color can change */
 
   ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
@@ -273,7 +272,7 @@ int main(int argc, char **argv)
 	  /*
 	     Wait for strain
 	  */
-	  ierr = mic_recv_strain(WORLD_COMM, strain);CHKERRQ(ierr);
+	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);CHKERRQ(ierr);
 	  /*
 	     Performs the micro homogenization
 	  */

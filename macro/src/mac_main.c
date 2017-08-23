@@ -62,11 +62,11 @@ int main(int argc, char **argv)
   /*
      Coupling Options
   */
+  flag_coupling = PETSC_FALSE;
   ierr = PetscOptionsHasName(NULL,NULL,"-coupl",&set);CHKERRQ(ierr);
-  if(set == PETSC_FALSE){
-    flag_coupling  = PETSC_FALSE;
-  }
-  else{
+  macmic.type = 0;
+  if(set == PETSC_TRUE){
+    flag_coupling = PETSC_TRUE;
     macmic.type = COUP_1;
   }
   flag_testcomm  = TESTCOMM_NULL;
@@ -99,7 +99,6 @@ int main(int argc, char **argv)
      Stablish a new local communicator
   */
   color = MACRO;
-  macmic.type = COUP_NULL;
   ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
   ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
   ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
@@ -248,107 +247,106 @@ int main(int argc, char **argv)
   int    time_step = 0;
   double t = t0;
   double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
-
+  double strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
+  double stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
   // Initial condition <x> = 0
   ierr = VecZeroEntries(x);CHKERRQ(ierr);
 
-  while( t < (tf + 1.0e-10))
+  if(flag_testcomm == TESTCOMM_STRAIN)
   {
-    ierr = PetscPrintf(MACRO_COMM, "\nTime step %3d %e seg\n", time_step, t);CHKERRQ(ierr);
-
     /*
-       Setting Displacement on Dirichlet Indeces on <x>
-    */
-    ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-    ierr = MacroSetDisplacementOnBoundary( t, &x);
-    if( flag_print & (1<<PRINT_PETSC) ){
-      ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-      ierr = VecView(x,viewer); CHKERRQ(ierr);
-    }
-    ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-
-    /*
-       If the Residual Norm is bigger than <NormTol>
-       we should iterate
-    */
-
-    nr_its = 0; norm = 2*NormTol;
-    while( nr_its < NRMaxIts && norm > NormTol )
+       Routine to send a calculating strain to micro and obtain the stress
+     */
+    ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
+    ierr = mac_send_strain(WORLD_COMM, strain_mac);CHKERRQ(ierr);
+    ierr = mac_recv_stress(WORLD_COMM, stress_mac);CHKERRQ(ierr);
+  }
+  else{
+    while( t < (tf + 1.0e-10))
     {
+      ierr = PetscPrintf(MACRO_COMM, "\nTime step %3d %e seg\n", time_step, t);CHKERRQ(ierr);
 
       /*
-	 Assemblying Residual
+	 Setting Displacement on Dirichlet Indeces on <x>
        */
-      ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MACRO_COMM, "Assembling Residual ");CHKERRQ(ierr);
-      ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
-      ierr = MacroSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
+      ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
+      ierr = MacroSetDisplacementOnBoundary( t, &x);
       if( flag_print & (1<<PRINT_PETSC) ){
-	ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
-	ierr = VecView(b,viewer); CHKERRQ(ierr);
-      }
-      ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-      ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
-      ierr = VecScale(b,-1.0); CHKERRQ(ierr);
-      ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-      if( !(norm > NormTol) )break;
-      /*
-	 Assemblying Jacobian
-       */
-      ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
-      ierr = AssemblyJacobianSmallDeformation(&A);
-      ierr = MacroSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
-      if( flag_print & (1<<PRINT_PETSC) ){
-	ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
-	ierr = MatView(A,viewer); CHKERRQ(ierr);
-      }
-      ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-      /*
-	 Solving Problem
-       */
-      ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MACRO_COMM, "Solving Linear System ");
-      ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
-      ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
-      ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
-      ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
-      ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
-      if( flag_print == PRINT_PETSC ){
-	ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
-	ierr = VecView(dx,viewer); CHKERRQ(ierr);
 	ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(x,viewer); CHKERRQ(ierr);
       }
-      ierr = PetscPrintf(MACRO_COMM,"Iterations %D Norm %e reason %d\n",kspits, kspnorm, reason);CHKERRQ(ierr);
-      ierr = PetscLogEventEnd(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
+      ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
 
-      nr_its ++;
+      /*
+	 If the Residual Norm is bigger than <NormTol>
+	 we should iterate
+       */
+      nr_its = 0; norm = 2*NormTol;
+      while( nr_its < NRMaxIts && norm > NormTol )
+      {
+	/*
+	   Assemblying Residual
+	 */
+	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+	ierr = PetscPrintf(MACRO_COMM, "Assembling Residual ");CHKERRQ(ierr);
+	ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
+	ierr = MacroSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
+	if( flag_print & (1<<PRINT_PETSC) ){
+	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
+	  ierr = VecView(b,viewer); CHKERRQ(ierr);
+	}
+	ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
+	ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
+	ierr = VecScale(b,-1.0); CHKERRQ(ierr);
+	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+	if( !(norm > NormTol) )break;
+	/*
+	   Assemblying Jacobian
+	 */
+	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
+	ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
+	ierr = AssemblyJacobianSmallDeformation(&A);
+	ierr = MacroSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
+	if( flag_print & (1<<PRINT_PETSC) ){
+	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
+	  ierr = MatView(A,viewer); CHKERRQ(ierr);
+	}
+	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
+	/*
+	   Solving Problem
+	 */
+	ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
+	ierr = PetscPrintf(MACRO_COMM, "Solving Linear System ");
+	ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
+	ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
+	ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
+	ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
+	ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
+	if( flag_print == PRINT_PETSC ){
+	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
+	  ierr = VecView(dx,viewer); CHKERRQ(ierr);
+	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
+	  ierr = VecView(x,viewer); CHKERRQ(ierr);
+	}
+	ierr = PetscPrintf(MACRO_COMM,"Iterations %D Norm %e reason %d\n",kspits, kspnorm, reason);CHKERRQ(ierr);
+	ierr = PetscLogEventEnd(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
+
+	nr_its ++;
+      }
+
+      if(flag_print == PRINT_VTK){ 
+	strain = malloc(nelm*6*sizeof(double));
+	stress = malloc(nelm*6*sizeof(double));
+	ierr = SpuCalcStressOnElement(&x, strain, stress);
+	sprintf(vtkfile_n,"%s_displ_%d.vtk",myname,rank_mac);
+	ierr = SpuVTKPlot_Displ_Strain_Stress(MACRO_COMM, vtkfile_n, &x, strain, stress);
+	free(stress); free(strain);
+      }
+
+      t += dt;
+      time_step ++;
     }
-
-    if(flag_print == PRINT_VTK){ 
-      strain = malloc(nelm*6*sizeof(double));
-      stress = malloc(nelm*6*sizeof(double));
-      ierr = SpuCalcStressOnElement(&x, strain, stress);
-      sprintf(vtkfile_n,"%s_displ_%d.vtk",myname,rank_mac);
-      ierr = SpuVTKPlot_Displ_Strain_Stress(MACRO_COMM, vtkfile_n, &x, strain, stress);
-      free(stress); free(strain);
-    }
-
-    t += dt;
-    time_step ++;
-  }
-
-  /*
-     Routine to send a calculating strain to micro and obtain the stress
-  */
-  if(flag_coupling && (flag_testcomm == TESTCOMM_STRAIN)){
-    double strain[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
-    double stress[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
-    ierr = mac_send_strain(WORLD_COMM, strain);CHKERRQ(ierr);
-    ierr = mac_recv_stress(WORLD_COMM, stress);CHKERRQ(ierr);
   }
   /*
      Stop signal to micro if it is coupled
