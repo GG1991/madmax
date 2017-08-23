@@ -37,6 +37,7 @@ typedef struct mic_boundary_t_{
 typedef struct mic_boundary_linear_t_{
 
   int * index;
+  int * nod_loc;
   double * u_val;
 
 }mic_boundary_linear_t;

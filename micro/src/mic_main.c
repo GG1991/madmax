@@ -369,6 +369,9 @@ int main(int argc, char **argv)
       }
       ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
     }
+    else if(homo_type==HOMO_EXP){
+	ierr = micro_homogenize(MICRO_COMM, strain_bc, strain_ave, stress_ave);CHKERRQ(ierr);
+    }
 
   }
 

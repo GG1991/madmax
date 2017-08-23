@@ -155,8 +155,7 @@ int micro_homogenize_linear(MPI_Comm MICRO_COMM, int i, double strain_bc[6], dou
   return 0;
 }
 /****************************************************************************************************/
-int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6], int
-kind)
+int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
   /*
@@ -166,6 +165,7 @@ kind)
      HOMO_TAYLOR  1
      HOMO_LINEAR  2
      HOMO_PERIOD  3
+     HOMO_EXP     9
 
      HOMO_TAYLOR > no need of calculating a displacement field
      
@@ -173,7 +173,7 @@ kind)
   int    ierr, nr_its = -1, kspits = -1;
   double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
 
-  if(kind==HOMO_TAYLOR){
+  if(homo_type==HOMO_TAYLOR){
     ierr = micro_homogenize_taylor(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
   }
   else{
@@ -182,14 +182,14 @@ kind)
     /*
        depending on the <kind> we apply a specific boundary condition
      */
-    if(kind==HOMO_LINEAR){
+    if(homo_type==HOMO_EXP){
       ierr = micro_apply_bc_linear(strain_mac, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
     }
-    else if(kind==HOMO_PERIOD){
-      SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",kind);
+    else if(homo_type==HOMO_PERIOD){
+      SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",homo_type);
     }
     else{
-      SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",kind);
+      SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",homo_type);
     }
 
     if( flag_print & (1<<PRINT_PETSC) ){
@@ -208,14 +208,14 @@ kind)
       ierr = PetscPrintf(MICRO_COMM,"Assembling Residual ");CHKERRQ(ierr);
       ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
       
-      if(kind==HOMO_LINEAR){
+      if(homo_type==HOMO_EXP){
 	ierr = micro_apply_bc_linear(strain_mac, &x, &A, &b, SET_RESIDUAL);CHKERRQ(ierr);
       }
-      else if(kind==HOMO_PERIOD){
-	SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",kind);
+      else if(homo_type==HOMO_PERIOD){
+	SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",homo_type);
       }
       else{
-	SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",kind);
+	SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",homo_type);
       }
 
       if( flag_print & (1<<PRINT_PETSC) ){
@@ -234,14 +234,14 @@ kind)
       ierr = PetscPrintf(MICRO_COMM,"Assembling Jacobian\n");
       ierr = AssemblyJacobianSmallDeformation(&A);
 
-      if(kind==HOMO_LINEAR){
+      if(homo_type==HOMO_EXP){
 	ierr = micro_apply_bc_linear(strain_mac, &x, &A, &b, SET_JACOBIAN);CHKERRQ(ierr);
       }
-      else if(kind==HOMO_PERIOD){
-	SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",kind);
+      else if(homo_type==HOMO_PERIOD){
+	SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",homo_type);
       }
       else{
-	SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",kind);
+	SETERRQ1(MICRO_COMM,1,"<kind> %d not supported",homo_type);
       }
 
       if( flag_print & (1<<PRINT_PETSC) ){
