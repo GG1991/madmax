@@ -205,7 +205,8 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
 	 Assemblying Residual
        */
       ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM,"Assembling Residual ");CHKERRQ(ierr);
+      if(flag_coupling)
+	ierr = PetscPrintf(MICRO_COMM,"Assembling Residual ");CHKERRQ(ierr);
       ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
       
       if(homo_type==HOMO_EXP){
@@ -231,7 +232,8 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
 	 Assemblying Jacobian
        */
       ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM,"Assembling Jacobian\n");
+      if(flag_coupling)
+	ierr = PetscPrintf(MICRO_COMM,"Assembling Jacobian\n");
       ierr = AssemblyJacobianSmallDeformation(&A);
 
       if(homo_type==HOMO_EXP){
@@ -253,7 +255,8 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
 	 Solving Problem
        */
       ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM,"Solving Linear System ");
+      if(flag_coupling)
+	ierr = PetscPrintf(MICRO_COMM,"Solving Linear System ");
       ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
       ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
       ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
@@ -265,7 +268,8 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
 	ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	ierr = VecView(x,viewer); CHKERRQ(ierr);
       }
-      ierr = PetscPrintf(MICRO_COMM,"Iterations %D Norm %e reason %d\n",kspits, kspnorm, reason);CHKERRQ(ierr);
+      if(flag_coupling)
+	ierr = PetscPrintf(MICRO_COMM,"Iterations %D Norm %e reason %d\n",kspits, kspnorm, reason);CHKERRQ(ierr);
       ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
 
       nr_its ++;
