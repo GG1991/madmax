@@ -94,8 +94,8 @@ int main(int argc, char **argv)
    */
   color = MICRO;
   macmic.type = COUP_NULL;
-  ierr = MacMicParseScheme(input_n);
-  ierr = MacMicColoring(WORLD_COMM, &color, &macmic, &MICRO_COMM); /* color can change */
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM); /* color can change */
+
   ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
   ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
 
@@ -212,7 +212,6 @@ int main(int argc, char **argv)
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = micro_init_boundary(MICRO_COMM, &boundary_list );CHKERRQ(ierr);
-  ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
 
   /*
      Allocate matrices & vectors
@@ -239,7 +238,7 @@ int main(int argc, char **argv)
   /*
      micro main coupling loop
    */
-  double strain_ave[6], stress_ave[6], ttensor[36];
+  double strain_mac[6], strain_ave[6], stress_ave[6], ttensor[36];
 
   ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);CHKERRQ(ierr);
   ierr = PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);CHKERRQ(ierr);
@@ -252,32 +251,34 @@ int main(int argc, char **argv)
        In this mode <micro> is used to homogenize RVE properties 
        and send them to <macro> program
 
-       1) waits intruction 
-       2) excute intruction
-       3) finish if intruction = SIGNAL_MICRO_END  
+       1) waits instruction 
+       2) execute instruction
+       3) finish if instruction = SIGNAL_MICRO_END  
 
      */
-    int signal = SIGNAL_NULL;
-    while(signal != SIGNAL_MICRO_END ){
-      ierr = MicCommWaitSignal( WORLD_COMM, &signal );CHKERRQ(ierr);
-      switch( signal ){
-	case SIGNAL_SEND_STRAIN:
+    int signal=-1;
+
+    while(signal!=MIC_END)
+    {
+      ierr = mic_recv_signal(WORLD_COMM, &signal);CHKERRQ(ierr);
+
+      switch(signal)
+      {
+	case MAC2MIC_STRAIN:
 	  /*
 	     Wait for strain
 	  */
-	  ierr = MicCommRecvStrain( WORLD_COMM, strain );
-
+	  ierr = mic_recv_strain(WORLD_COMM, strain);CHKERRQ(ierr);
 	  /*
-	     Performs the micro calculation
+	     Performs the micro homogenization
 	  */
-	  ierr = micro_apply_bc(0, strain, &x, &A, &b, SET_DISPLACE);
-
+	  ierr = micro_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
 	  /*
 	     Send Stress
 	  */
-	  ierr = MicCommSendStress( WORLD_COMM, stress_ave );
+	  ierr = mic_send_stress(WORLD_COMM, stress_ave);CHKERRQ(ierr);
 	  break;
-	case SIGNAL_MICRO_END:
+	case MIC_END:
 	  break;
 	default:
 	  SETERRQ(MICRO_COMM,1,"can no identify recv signal.");

@@ -10,85 +10,7 @@
 #include "micro.h"
 #include "macro.h"
 
-int MacMicInitGaussStructure(int *eptr, int nelm)
-{
-  /*
-     Allocates memory for Gauss point global structure <gauss>
-     of type <gauss_t>
-   */
-  int i, ngp, ngauss = 0;
-  for(i=1;i<(nelm+1);i++){
-    // we assume that each element has the same number of gauss points as vertices 
-    ngp = eptr[i] - eptr[i-1]; 
-    ngauss += ngp; 
-  }
-  gauss = malloc(ngauss * sizeof(gauss_t)); if(!gauss) return 1;
-
-  for(i=0;i<ngauss;i++){
-    gauss[i].param_d = NULL;
-  }
-
-  return 0;
-}
-/****************************************************************************************************/
-int MacMicParseScheme( char *input )
-{
-
-  /*
-     Parse the communication scheme from input file
-
-     Examples>
-
-     $scheme
-     scheme  COUP_1
-     $end_scheme
-   */
-
-  FILE * file = fopen(input,"r");
-  char   buf[NBUF];
-  char * data;
-  int    ln;
-
-
-  if(!file) return 1;
-
-  ln = 0;
-  while(fgets(buf,NBUF,file) != NULL)
-  {
-
-    ln ++;
-    data = strtok(buf," \n");
-    if(data){
-      if(!strcmp(data,"$scheme")){
-
-	while(fgets(buf,NBUF,file) != NULL){
-	  ln ++;
-	  data = strtok(buf," \n"); 
-	  if(data){ 
-	    if(strcmp(data,"scheme")) return 1;
-
-	    data = strtok(NULL," \n"); if(!data) return 1;
-
-	    if(!strcmp(data,"COUP_1")){
-	      macmic.type = COUP_1;
-	      return 0;
-	    }
-	    else{
-	      return -1;
-	    }
-	  }
-	}
-
-	return -1; //no encontro $end_scheme
-
-      } // inside $scheme
-    }
-
-  }
-  return 1;
-}
-/****************************************************************************************************/
-int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM)
+int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM)
 {
   /* 
      Creates the new communicators "MACRO_COMM" & "MICRO_COMM" 
@@ -245,9 +167,8 @@ int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm
   return 0;
 }
 /****************************************************************************************************/
-int MicCommWaitSignal( MPI_Comm WORLD_COMM, int *signal )
+int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal)
 {
-
   /*
      The processes will wait here until they receive the signal
   */
@@ -264,7 +185,7 @@ int MicCommWaitSignal( MPI_Comm WORLD_COMM, int *signal )
   return 0;
 }
 /****************************************************************************************************/
-int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal )
+int mac_send_signal(MPI_Comm WORLD_COMM, int signal)
 {
   /*
      The processes will wait here until they receive the signal
@@ -280,7 +201,7 @@ int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal )
   return 0;
 }
 /****************************************************************************************************/
-int MicCommRecvStrain( MPI_Comm WORLD_COMM, double strain[6] )
+int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6])
 {
   /*
      The processes will wait here until they receive a signal
@@ -296,8 +217,8 @@ int MicCommRecvStrain( MPI_Comm WORLD_COMM, double strain[6] )
   }
   return 0;
 }
-/****************************************************************************************************/
-int MacCommSendStrain( MPI_Comm WORLD_COMM, double strain[6] )
+/***************************************************************************************************/
+int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6])
 {
   /*
      The processes will wait here until they receive the signal
@@ -313,39 +234,7 @@ int MacCommSendStrain( MPI_Comm WORLD_COMM, double strain[6] )
   return 0;
 }
 /****************************************************************************************************/
-int MicCommRecvGPnum( MPI_Comm WORLD_COMM )
-{
-
-  /*
-     The processes will wait here until they receive a signal
-  */
-
-  int ierr;
-  MPI_Status status;
-
-//  ierr = MPI_Recv(&mac_gp, 1, MPI_INT, MyMacroRankLeader, 0, WORLD_COMM, &status); CHKERRQ(ierr);
-
-  return 0;
-}
-/****************************************************************************************************/
-int MicCommSendAveStressAndTanTensor( MPI_Comm WORLD_COMM )
-{
-
-  /*
-     Sends to macro leader the contiguos vector that has the averange 
-     stress and tangent strain tensor calculated here
-  */
-
-  int ierr;
-
-  if(rank_mic==0){
-//    ierr = MPI_Ssend(mic_stress_ttensor, 6+81, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-/****************************************************************************************************/
-int MicCommSendStress( MPI_Comm WORLD_COMM, double stress[6] )
+int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6])
 {
   /*
      Sends to macro leader the averange Stress tensor calculated here
@@ -364,14 +253,14 @@ int MicCommSendStress( MPI_Comm WORLD_COMM, double stress[6] )
   return 0;
 }
 /****************************************************************************************************/
-int MacCommRecvStress( MPI_Comm WORLD_COMM, double stress[6] )
+int mac_recv_stress(MPI_Comm WORLD_COMM, double stress[6])
 {
   /*
      The processes will wait here until they receive the stress
   */
   int ierr, remote_rank;
   MPI_Status status;
-  if(macmic.type == COUP_1){
+  if(macmic.type==COUP_1){
     remote_rank = ((coupMac_1_t*)macmic.coup)->mic_rank;
     ierr = MPI_Recv(stress, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, &status); CHKERRQ(ierr);
   }
@@ -381,18 +270,22 @@ int MacCommRecvStress( MPI_Comm WORLD_COMM, double stress[6] )
   return 0;
 }
 /****************************************************************************************************/
-int MicCommSendTTensor( MPI_Comm WORLD_COMM )
+int mic_send_ttensor(MPI_Comm WORLD_COMM, double ttensor[36])
 {
-
   /*
      Sends to macro leader the averange Tangent Tensor calculated here
   */
-
-  int ierr;
-
-  if(rank_mic==0){
-//    ierr = MPI_Ssend(mic_ttensor, 9, MPI_DOUBLE, MyMacroRankLeader, 0, WORLD_COMM); CHKERRQ(ierr);
+  int ierr, remote_rank;
+  if(macmic.type == COUP_1){
+    if(((coupMic_1_t*)macmic.coup)->im_leader){
+      // only the micro leader sends the tensor
+      remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
+      ierr = MPI_Ssend(ttensor, 36, MPI_DOUBLE, remote_rank, 0, WORLD_COMM);CHKERRQ(ierr);
+    }
   }
-
+  else{
+    return 1;
+  }
   return 0;
 }
+/****************************************************************************************************/

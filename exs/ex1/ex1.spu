@@ -1,8 +1,3 @@
-
-$scheme
-  scheme COUP_1
-$end_scheme
-
 $Materials
 IRON   TYPE00  E=1.0e7 v=0.25
 IRON2  TYPE00  E=1.0e8 v=0.25

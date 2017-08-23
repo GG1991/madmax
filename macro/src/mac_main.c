@@ -33,23 +33,6 @@ int main(int argc, char **argv)
   double t0=0.0, tf, dt;
   PetscBool  set;
 
-  PetscViewer    viewer;
-
-#if defined(PETSC_USE_LOG)
-  PetscLogStage stages[3];
-  PetscLogEvent EVENT_READ_MESH_ELEM,
-                EVENT_PART_MESH,
-                EVENT_CALC_GHOSTS,
-                EVENT_REENUMERATE,
-                EVENT_READ_COORD,
-		EVENT_INIT_GAUSS,
-                EVENT_ALLOC_MATVEC,
-                EVENT_SET_DISP_BOU,
-                EVENT_ASSEMBLY_JAC,
-                EVENT_ASSEMBLY_RES,
-		EVENT_SOLVE_SYSTEM;
-#endif
-
   WORLD_COMM = MPI_COMM_WORLD;
   ierr = MPI_Init(&argc, &argv);
   ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
@@ -109,8 +92,7 @@ int main(int argc, char **argv)
   */
   color = MACRO;
   macmic.type = COUP_NULL;
-  ierr = MacMicParseScheme(input_n);
-  ierr = MacMicColoring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
   ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
   ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
   
@@ -227,7 +209,6 @@ int main(int argc, char **argv)
   ierr = CheckPhysicalID();CHKERRQ(ierr);
   ierr = read_boundary(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = MacroFillBoundary(MACRO_COMM, &boundary_list);
-  ierr = MacMicInitGaussStructure(eptr, nelm);CHKERRQ(ierr);
 
   /*
      Allocate matrices & vectors
@@ -357,15 +338,15 @@ int main(int argc, char **argv)
   if(flag_coupling && (flag_testcomm == TESTCOMM_STRAIN)){
     double strain[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
     double stress[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    ierr = MacCommSendSignal( WORLD_COMM, SIGNAL_SEND_STRAIN);CHKERRQ(ierr);
-    ierr = MacCommSendStrain( WORLD_COMM, strain);CHKERRQ(ierr);
-    ierr = MacCommRecvStress( WORLD_COMM, stress);CHKERRQ(ierr);
+    ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
+    ierr = mac_send_strain(WORLD_COMM, strain);CHKERRQ(ierr);
+    ierr = mac_recv_stress(WORLD_COMM, stress);CHKERRQ(ierr);
   }
   /*
      Stop signal to micro if it is coupled
   */
   if(flag_coupling){
-    ierr = MacCommSendSignal( WORLD_COMM, SIGNAL_MICRO_END); CHKERRQ(ierr);
+    ierr = mac_send_signal(WORLD_COMM, MIC_END); CHKERRQ(ierr);
   }
 
   /*

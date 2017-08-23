@@ -41,21 +41,6 @@ double *value_z1_ux, *value_z1_uy, *value_z1_uz;
 int P000[3], P000_ismine, P100[3], P100_ismine, P010[3], P010_ismine;
 double PVAL[3];
 
-#if defined(PETSC_USE_LOG)
-  PetscLogStage stages[3];
-  PetscLogEvent EVENT_READ_MESH_ELEM,
-		EVENT_PART_MESH,
-		EVENT_CALC_GHOSTS,
-		EVENT_REENUMERATE,
-		EVENT_READ_COORD,
-		EVENT_INIT_GAUSS,
-		EVENT_ALLOC_MATVEC,
-		EVENT_SET_DISP_BOU,
-		EVENT_ASSEMBLY_JAC,
-		EVENT_ASSEMBLY_RES,
-		EVENT_SOLVE_SYSTEM;
-#endif
-
 /*
    Homogenization Variables
 */

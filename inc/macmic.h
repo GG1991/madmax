@@ -18,13 +18,8 @@
 #define MACRO         1     // MACRO IDs and colors
 #define MICRO         2     // MICRO IDs and colors
 
-#define MACMIC_START  1
-#define MACMIC_END    2
-
-#define SIGNAL_NULL         -1
-#define SIGNAL_MICRO_CALC    3
-#define SIGNAL_MICRO_END     4
-#define SIGNAL_SEND_STRAIN   5
+#define MIC_END            1
+#define MAC2MIC_STRAIN     2
 
 /*
    This structure represents a Gauss points
@@ -69,12 +64,11 @@ coupling_t macmic;
 /*
    Global Variables
 */
+
 MPI_Comm     MICRO_COMM;
 MPI_Comm     MACRO_COMM;
 
 int          *remote_ranks;     //  remote ranks if micro processes
-
-int          nev;
 
 MPI_Comm     WORLD_COMM;
 int          color;
@@ -102,20 +96,14 @@ double        *stress, *strain;     // Averange strain and stress on each elemen
    Common functions
 */
 
-int MacMicInitGaussStructure(int *eptr, int nelm);
-int MacMicParseScheme( char *input );
-int MacMicColoring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM);
-int MicCommWaitSignal( MPI_Comm WORLD_COMM, int *signal );
-int MicCommWaitStartSignal( MPI_Comm WORLD_COMM );
-int MicCommRecvStrain( MPI_Comm WORLD_COMM, double strain[6] );
-int MicCommRecvGPnum( MPI_Comm WORLD_COMM );
-int MicCommSendAveStressAndTanTensor( MPI_Comm WORLD_COMM );
-int MicCommSendStress( MPI_Comm WORLD_COMM, double stress[6] );
-int MicCommSendTTensor( MPI_Comm WORLD_COMM );
+int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM);
+int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal);
+int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6]);
+int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6]);
+int mic_sent_ttensor(MPI_Comm WORLD_COMM, double ttensor[36]);
 
-int MacCommSendSignal( MPI_Comm WORLD_COMM, int signal );
-int MacCommSendStrain( MPI_Comm WORLD_COMM, double strain[6] );
-int MacCommRecvStress( MPI_Comm WORLD_COMM, double stress[6] );
-
+int mac_send_signal(MPI_Comm WORLD_COMM, int signal);
+int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6]);
+int mac_recv_stress(MPI_Comm WORLD_COMM, double stress[6]);
 
 #endif
