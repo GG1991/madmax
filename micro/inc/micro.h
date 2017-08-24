@@ -46,10 +46,9 @@ double PVAL[3];
    Homogenization Variables
 */
 
-#define HOMO_TAYLOR  1
-#define HOMO_LINEAR  2
-#define HOMO_PERIOD  3
-#define HOMO_EXP     9
+#define HOMO_TAYLOR       1
+#define HOMO_LINEAR       2
+#define HOMO_LINEAR_HEXA  3
 
 int homo_type;
 
@@ -80,9 +79,11 @@ int micro_check_physical_entities( list_t *physical_list );
 #define SET_RESIDUAL    4
 #define SET_JACRES      6
 
-int micro_apply_bc(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag);
 int micro_apply_bc_linear(double strain_mac[6], Vec *x, Mat *J, Vec *b, int flag);
+int micro_apply_bc_linear_hexa(double strain[6], Vec *x, Mat *J, Vec *b, int flag);
+
 int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int micro_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
-int micro_homogenize_linear(MPI_Comm MICRO_COMM, int i, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
+int micro_homogenize_linear_hexa(MPI_Comm MICRO_COMM, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
+int micro_homogenize_linear(MPI_Comm MICRO_COMM, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
 int voigt2mat(double voigt[6], double matrix[3][3]);

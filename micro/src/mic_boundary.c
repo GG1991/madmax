@@ -101,7 +101,7 @@ int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
-  if(homo_type==HOMO_LINEAR){
+  if(homo_type==HOMO_LINEAR_HEXA){
 
     int *px, *py, *pz;
     P000_ismine = P100_ismine = P010_ismine = -1;
@@ -225,7 +225,7 @@ int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
     if(flag != 63)SETERRQ(MICRO_COMM,1, "MICRO:One entity not found P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1.");
     //  if(flag != 511)SETERRQ(MICRO_COMM,1, "MICRO:One entity not found P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1.");
   }
-  else if(homo_type==HOMO_EXP){
+  else if(homo_type==HOMO_LINEAR){
 
     // experimental u = e * x
     
@@ -258,7 +258,7 @@ int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   return 0;
 }
 /****************************************************************************************************/
-int micro_apply_bc(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag)
+int micro_apply_bc_linear_hexa(double strain[6], Vec *x, Mat *J, Vec *b, int flag)
 {
   /* 
      Sets values of displacements on <x>
@@ -272,7 +272,7 @@ int micro_apply_bc(int dir, double strain[6], Vec *x, Mat *J, Vec *b, int flag)
   */
   if( !(flag|SET_DISPLACE) && !(flag|SET_RESIDUAL) && !(flag|SET_JACOBIAN) ) SETERRQ(MICRO_COMM,1, "Incorrect flag value");
 
-  int ierr, i;
+  int ierr, i, dir=0;
 
   switch(dir){
     case 0:
