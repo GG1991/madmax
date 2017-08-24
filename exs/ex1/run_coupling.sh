@@ -20,7 +20,7 @@ function cube_fiber {
     -coupl \
     -tf 1.0 \
     -dt 1.0 \
-    -testcomm \
+    -print_vtu \
     -options_left 0 \
 : -np $Nm ../../micro/micro \
     -input ex1.spu \

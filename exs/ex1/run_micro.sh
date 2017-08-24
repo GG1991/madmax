@@ -198,7 +198,7 @@ function struct_fiber_par {
     -pc_type bjacobi  \
     -options_left 0 \
     -log_trace micro_trace \
-    -homo_linear           \
+    -homo_linear \
     -print_vtu
 }
 
