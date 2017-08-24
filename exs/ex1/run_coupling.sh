@@ -12,7 +12,7 @@ function cube_fiber {
 
 ./mpirun -np $NM ../../macro/macro \
     -input ex1.spu \
-    -mesh ../../meshes/cube_unif/cube.msh \
+    -mesh ../../meshes/cube_fiber/struct_fiber_homog.msh \
     -mesh_gmsh \
     -ksp_type cg \
     -ksp_rtol 1.0e-13 \
@@ -24,10 +24,10 @@ function cube_fiber {
     -options_left 0 \
 : -np $Nm ../../micro/micro \
     -input ex1.spu \
-    -mesh ../../meshes/cube_unif/cube.msh \
+    -mesh ../../meshes/cube_fiber/cube_fiber.msh \
     -mesh_gmsh \
     -coupl \
-    -homo_exp \
+    -homo_linear \
     -options_left 0
 }
 
