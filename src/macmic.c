@@ -113,9 +113,9 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
       }
       if(mac_rank < 0) return 1;
 
-      macmic->coup = malloc(sizeof(coupMic_1_t));
-      ((coupMic_1_t*)macmic->coup)->mac_rank = mac_rank;
-      ((coupMic_1_t*)macmic->coup)->im_leader = im_leader;
+      macmic->coup = malloc(sizeof(mic_coup_1_t));
+      ((mic_coup_1_t*)macmic->coup)->mac_rank = mac_rank;
+      ((mic_coup_1_t*)macmic->coup)->im_leader = im_leader;
 
     } // in MICRO
     else{
@@ -149,8 +149,8 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
       }
       if(mic_rank < 0) return 1;
 
-      macmic->coup = malloc(sizeof(coupMac_1_t));
-      ((coupMac_1_t*)macmic->coup)->mic_rank = mic_rank;
+      macmic->coup = malloc(sizeof(mac_coup_1_t));
+      ((mac_coup_1_t*)macmic->coup)->mic_rank = mic_rank;
 
     }
 
@@ -176,8 +176,8 @@ int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal)
   MPI_Status status;
   *signal = -1;
   if(macmic.type == COUP_1){
-    if(((coupMic_1_t*)macmic.coup)->im_leader){
-      remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
+    if(((mic_coup_1_t*)macmic.coup)->im_leader){
+      remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
       ierr = MPI_Recv(signal, 1, MPI_INT, remote_rank, 0, WORLD_COMM, &status);CHKERRQ(ierr);
     }
     ierr = MPI_Bcast(signal, 1, MPI_INT, 0, MICRO_COMM);CHKERRQ(ierr);
@@ -195,7 +195,7 @@ int mac_send_signal(MPI_Comm WORLD_COMM, int signal)
   */
   int ierr, remote_rank;
   if(macmic.type == COUP_1){
-    remote_rank = ((coupMac_1_t*)macmic.coup)->mic_rank;
+    remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
     ierr = MPI_Ssend(&signal, 1, MPI_INT, remote_rank, 0, WORLD_COMM);CHKERRQ(ierr);
   }
   else{
@@ -212,8 +212,8 @@ int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6])
   int ierr, remote_rank;
   MPI_Status status;
   if(macmic.type == COUP_1){
-    if(((coupMic_1_t*)macmic.coup)->im_leader){
-      remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
+    if(((mic_coup_1_t*)macmic.coup)->im_leader){
+      remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
       ierr = MPI_Recv(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, &status); CHKERRQ(ierr);
     }
     ierr = MPI_Bcast(strain, 6, MPI_DOUBLE, 0, MICRO_COMM);CHKERRQ(ierr);
@@ -231,7 +231,7 @@ int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6])
   */
   int ierr, remote_rank;
   if(macmic.type == COUP_1){
-    remote_rank = ((coupMac_1_t*)macmic.coup)->mic_rank;
+    remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
     ierr = MPI_Ssend(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM);CHKERRQ(ierr);
   }
   else{
@@ -247,9 +247,9 @@ int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6])
   */
   int ierr, remote_rank;
   if(macmic.type == COUP_1){
-    if(((coupMic_1_t*)macmic.coup)->im_leader){
+    if(((mic_coup_1_t*)macmic.coup)->im_leader){
       // only the micro leader sends the stress
-      remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
+      remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
       ierr = MPI_Ssend(stress, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM);CHKERRQ(ierr);
     }
   }
@@ -266,9 +266,9 @@ int mic_send_strain(MPI_Comm WORLD_COMM, double strain[6])
   */
   int ierr, remote_rank;
   if(macmic.type == COUP_1){
-    if(((coupMic_1_t*)macmic.coup)->im_leader){
+    if(((mic_coup_1_t*)macmic.coup)->im_leader){
       // only the micro leader sends the stress
-      remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
+      remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
       ierr = MPI_Ssend(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM);CHKERRQ(ierr);
     }
   }
@@ -286,7 +286,7 @@ int mac_recv_stress(MPI_Comm WORLD_COMM, double stress[6])
   int ierr, remote_rank;
   MPI_Status status;
   if(macmic.type==COUP_1){
-    remote_rank = ((coupMac_1_t*)macmic.coup)->mic_rank;
+    remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
     ierr = MPI_Recv(stress, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, &status); CHKERRQ(ierr);
   }
   else{
@@ -302,14 +302,34 @@ int mic_send_ttensor(MPI_Comm WORLD_COMM, double ttensor[36])
   */
   int ierr, remote_rank;
   if(macmic.type == COUP_1){
-    if(((coupMic_1_t*)macmic.coup)->im_leader){
+    if(((mic_coup_1_t*)macmic.coup)->im_leader){
       // only the micro leader sends the tensor
-      remote_rank = ((coupMic_1_t*)macmic.coup)->mac_rank;
+      remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
       ierr = MPI_Ssend(ttensor, 36, MPI_DOUBLE, remote_rank, 0, WORLD_COMM);CHKERRQ(ierr);
     }
   }
   else{
     return 1;
+  }
+  return 0;
+}
+/****************************************************************************************************/
+int mac_calc_homo_cij(double homo_cij[36])
+{
+  /*
+     Send the order to micro worker for performing the 6 homogenizations
+  */
+  int i, j, ierr; 
+  double strain_mac[6], stress_ave[6];
+  for(i=0;i<6;i++){
+    memset(strain_mac,0.0,6*sizeof(double));
+    strain_mac[i] = 0.005;
+    ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
+    ierr = mac_send_strain(WORLD_COMM, strain_mac);CHKERRQ(ierr);
+    ierr = mac_recv_stress(WORLD_COMM, stress_ave);CHKERRQ(ierr);
+    for(j=0;j<6;j++){
+      homo_cij[j*6+i] = (fabs(stress_ave[j] / strain_mac[i])>1.0e-1)?(stress_ave[j] / strain_mac[i]):0;
+    }
   }
   return 0;
 }

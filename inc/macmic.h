@@ -39,18 +39,33 @@ gauss_t * gauss;
 #define  COUP_NULL  0
 #define  COUP_1     1
 
-typedef struct coupMac_1_t_{
+/*
+   COUP_1 > linear analisis only one kind of micro structure with homogeneum material
+   ____________________                      __________
+   |microstructure     | -> macro-structure  |         | -> micro-structure
+   |      _____________|                     | ||||||| |
+   |      |homogeneous |                     |         |
+   |______|____________|                     |_________|
 
-  int   mic_rank; /* rank of micro worker */
+   We store the constitutive tensor on the <macro> processes, they 
+   are calculated only once by their respectively <micro> workers.
+   All the calculations should give the same values of <homo_cij>.
 
-}coupMac_1_t;
+*/
+ 
+typedef struct mac_coup_1_t_{
 
-typedef struct coupMic_1_t_{
+  int     mic_rank;     // rank of micro worker
+  double  homo_cij[36]; // tangent constitutive tensor of the micro-structure
 
-  int   mac_rank; /* rank of macro leader */
-  int   im_leader;/* 1 if im the leader 0 if not */
+}mac_coup_1_t;
 
-}coupMic_1_t;
+typedef struct mic_coup_1_t_{
+
+  int   mac_rank;      // rank of macro leader
+  int   im_leader;     // 1 if im the leader 0 if not
+
+}mic_coup_1_t;
 
 typedef struct coupling_t_{
 
@@ -65,16 +80,14 @@ coupling_t macmic;
    Global Variables
 */
 
-
 int          *remote_ranks;     //  remote ranks if micro processes
-
 int          color;
 
-int          nstruc_mic;               // number of micro structures
-int          *nproc_per_mic;           // number of processes per micro structure ( size = nstruc_mic )
-int          nproc_mic_group;          // number of micro process in a group = sum_i nproc_per_mic[i]
-int          nmic_worlds;              // number of micro worlds nproc_mic / nproc_mic_group
-int          scheme;                   // communication approach
+int          nstruc_mic;        // number of micro structures
+int          *nproc_per_mic;    // number of processes per micro structure ( size = nstruc_mic )
+int          nproc_mic_group;   // number of micro process in a group = sum_i nproc_per_mic[i]
+int          nmic_worlds;       // number of micro worlds nproc_mic / nproc_mic_group
+int          scheme;            // communication approach
 
 PetscBool    flag_coupling;
 
@@ -101,5 +114,7 @@ int mic_sent_ttensor(MPI_Comm WORLD_COMM, double ttensor[36]);
 int mac_send_signal(MPI_Comm WORLD_COMM, int signal);
 int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6]);
 int mac_recv_stress(MPI_Comm WORLD_COMM, double stress[6]);
+
+int mac_calc_homo_cij(double homo_cij[36]);
 
 #endif
