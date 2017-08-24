@@ -7,6 +7,7 @@
  */
 
 #include "sputnik.h"
+#include "macmic.h"
 
 int assembly_jacobian_sd(Mat *J)
 {
@@ -95,13 +96,14 @@ int assembly_residual_sd(Vec *Displacement_old, Vec *Residue)
   double ShapeDerivs[8][3];
   double DetJac;
   double ElemResidual[8*3];
-  double B[6][3*8], Sigma[6], Epsilon[6];
+  double B[6][3*8], stress_gp[6], strain_gp[6];
   double DsDe[6][6];
   double *wp = NULL;
   double ElemDispls[8*3];
   double *xvalues;
 
   Vec xlocal;
+  material_t *material;
 
   register double wp_eff;
 
@@ -116,6 +118,9 @@ int assembly_residual_sd(Vec *Displacement_old, Vec *Residue)
 
   for(e=0;e<nelm;e++){
 
+    material = GetMaterial(PhysicalID[e]);
+    if(!material) SETERRQ1(PETSC_COMM_SELF,1,"material with physical_id %d not found",PhysicalID[e]);
+
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
     GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
@@ -128,28 +133,34 @@ int assembly_residual_sd(Vec *Displacement_old, Vec *Residue)
     memset(ElemResidual, 0.0, (npe*3)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
-      memset(Epsilon, 0.0, 6*sizeof(double));
-      memset(Sigma  , 0.0, 6*sizeof(double));
+      memset(strain_gp, 0.0, 6*sizeof(double));
+      memset(stress_gp  , 0.0, 6*sizeof(double));
       get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
 
       for(i=0;i<6;i++){
 	for(k=0;k<npe*3;k++){
-	  Epsilon[i] += B[i][k]*ElemDispls[k];
+	  strain_gp[i] += B[i][k]*ElemDispls[k];
 	}
       }
 
-      for(i=0;i<6;i++){
-	for(k=0;k<6;k++){
-	  Sigma[i] += DsDe[i][k]*Epsilon[k];
+      if(material->typeID==MICRO){
+	ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
+	ierr = mac_send_strain(WORLD_COMM, strain_gp);CHKERRQ(ierr);
+	ierr = mac_recv_stress(WORLD_COMM, stress_gp);CHKERRQ(ierr);
+      }else{
+	for(i=0;i<6;i++){
+	  for(k=0;k<6;k++){
+	    stress_gp[i] += DsDe[i][k]*strain_gp[k];
+	  }
 	}
       }
 
       wp_eff = DetJac * wp[gp];
       for(i=0;i<npe*3;i++){
 	for(k=0;k<6;k++){
-	  ElemResidual[i] += B[k][i]*Sigma[k] * wp_eff;
+	  ElemResidual[i] += B[k][i]*stress_gp[k] * wp_eff;
 	}
       }
 
@@ -374,7 +385,8 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
       Calculates constitutive tensor
       according to the element type
    */
-  double la, mu;
+  double la, mu; 
+  int i, j;
 
   material_t *material = GetMaterial(PhysicalID[e]);
   if(!material) SETERRQ1(PETSC_COMM_SELF,1,"material with physical_id %d not found",PhysicalID[e]);
@@ -398,6 +410,14 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
       break;
 
     case MICRO:
+
+      if(macmic.type==COUP_1){
+	for(i=0;i<6;i++){
+	  for(j=0;j<6;j++){
+	    DsDe[i][j]=((mac_coup_1_t*)macmic.coup)->homo_cij[i*6+j];
+	  }
+	}
+      }
 
       break;
 
