@@ -256,8 +256,8 @@ int main(int argc, char **argv)
   if(flag_testcomm == TESTCOMM_STRAIN)
   {
     /*
-       Routine to send a calculating strain to micro and obtain the stress
-     */
+       It is test. Sends a calculating strain to micro and obtain the stress
+    */
     int i, j; 
     for(i=0;i<6;i++){
       memset(strain_mac,0.0,6*sizeof(double));
@@ -272,6 +272,14 @@ int main(int argc, char **argv)
     }
   }
   else{
+    /*
+       It is real calculation
+    */
+
+    if(macmic.type==COUP_1){
+      ierr = mac_calc_homo_cij(((mac_coup_1_t*)macmic.coup)->homo_cij);
+    }
+
     while( t < (tf + 1.0e-10))
     {
       ierr = PetscPrintf(MACRO_COMM, "\nTime step %3d %e seg\n", time_step, t);CHKERRQ(ierr);
