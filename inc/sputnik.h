@@ -185,8 +185,8 @@ int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);
 // spu_assembly.c
 int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex);
 int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3]);
-int AssemblyJacobianSmallDeformation(Mat *J);
-int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue);
+int assembly_jacobian_sd(Mat *J);
+int assembly_residual_sd(Vec *Displacement_old, Vec *Residue);
 int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);
 int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] );
 int GetWeight(int npe, double **wp);
@@ -194,7 +194,7 @@ int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );
 material_t * GetMaterial(int GmshIDToSearch);
 int GetElemenDispls( int e, double *Displacement, double *ElemDispls );
 int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress);
-int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6]);
+int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6]);
 
 
 #endif

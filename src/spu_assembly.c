@@ -8,7 +8,7 @@
 
 #include "sputnik.h"
 
-int AssemblyJacobianSmallDeformation(Mat *J)
+int assembly_jacobian_sd(Mat *J)
 {
 
   /*    Assembly the Jacobian for Small Deformation
@@ -80,7 +80,7 @@ int AssemblyJacobianSmallDeformation(Mat *J)
 
 }
 /****************************************************************************************************/
-int AssemblyResidualSmallDeformation(Vec *Displacement_old, Vec *Residue)
+int assembly_residual_sd(Vec *Displacement_old, Vec *Residue)
 {
   /*
      Assembly the Residual for Small Deformation
@@ -248,7 +248,7 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
   return 0;
 }
 /****************************************************************************************************/
-int SpuAveStressAndStrain(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6])
+int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6])
 {
   /*    
 	Calculate averange Strain and Stress tensors on each element

@@ -299,7 +299,7 @@ int main(int argc, char **argv)
 	 */
 	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
 	ierr = PetscPrintf(MACRO_COMM, "Assembling Residual ");CHKERRQ(ierr);
-	ierr = AssemblyResidualSmallDeformation( &x, &b);CHKERRQ(ierr);
+	ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
 	ierr = MacroSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
 	if( flag_print & (1<<PRINT_PETSC) ){
 	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
@@ -315,7 +315,7 @@ int main(int argc, char **argv)
 	 */
 	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
 	ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
-	ierr = AssemblyJacobianSmallDeformation(&A);
+	ierr = assembly_jacobian_sd(&A);
 	ierr = MacroSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
 	if( flag_print & (1<<PRINT_PETSC) ){
 	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
