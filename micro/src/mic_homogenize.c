@@ -89,8 +89,10 @@ int micro_homogenize_linear_hexa(MPI_Comm MICRO_COMM, double strain_mac[6], doub
      Performs linear homogenization of the RVE cell acording to <strain_mac[6]>
    */
 
-  int    ierr, nr_its = -1, kspits = -1;
-  double norm = -1.0, norm_tol = 1.0e-8, max_its = 3, ksp_norm = -1.0;
+  int ierr, nr_its = -1; 
+  //  int kspits = -1;
+  double norm = -1.0, norm_tol = 1.0e-8, max_its = 3; 
+  //  double ksp_norm = -1.0;
 
   ierr = micro_apply_bc_linear_hexa(strain_mac, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
 
@@ -128,8 +130,7 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
      HOMO_TAYLOR > no need of calculating a displacement field
      
    */
-  int    ierr, nr_its = -1, kspits = -1;
-  double norm = -1.0, norm_tol = 1.0e-8, max_its = 3, ksp_norm = -1.0;
+  int ierr;
 
   if(homo_type==HOMO_TAYLOR){
     ierr = micro_homogenize_taylor(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
