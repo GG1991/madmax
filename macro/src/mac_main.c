@@ -243,7 +243,7 @@ int main(int argc, char **argv)
   /*
      Begin time dependent loop
   */
-  int    nr_its = -1, kspits = -1;
+  int    i, j, nr_its = -1, kspits = -1;
   int    time_step = 0;
   double t = t0;
   double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
@@ -258,7 +258,6 @@ int main(int argc, char **argv)
     /*
        It is test. Sends a calculating strain to micro and obtain the stress
     */
-    int i, j; 
     for(i=0;i<6;i++){
       memset(strain_mac,0.0,6*sizeof(double));
       strain_mac[i] = 0.005;
@@ -277,7 +276,13 @@ int main(int argc, char **argv)
     */
 
     if(macmic.type==COUP_1){
+      ierr = PetscPrintf(MACRO_COMM,"\ncalculating homo_cij\n", time_step, t);CHKERRQ(ierr);
       ierr = mac_calc_homo_cij(((mac_coup_1_t*)macmic.coup)->homo_cij);
+      for(i=0;i<6;i++){
+	for(j=0;j<6;j++){
+	  ierr = PetscPrintf(MACRO_COMM,"%e ",((mac_coup_1_t*)macmic.coup)->homo_cij[i*6+j]);CHKERRQ(ierr);
+	}ierr = PetscPrintf(MACRO_COMM,"\n");CHKERRQ(ierr);
+      }ierr = PetscPrintf(MACRO_COMM,"\n");CHKERRQ(ierr);
     }
 
     while( t < (tf + 1.0e-10))
