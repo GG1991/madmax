@@ -357,12 +357,18 @@ int main(int argc, char **argv)
 	nr_its ++;
       }
 
-      if(flag_print == PRINT_VTK){ 
+      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){ 
 	strain = malloc(nelm*6*sizeof(double));
 	stress = malloc(nelm*6*sizeof(double));
 	ierr = SpuCalcStressOnElement(&x, strain, stress);
-	sprintf(vtkfile_n,"%s_displ_%d.vtk",myname,rank_mac);
-	ierr = SpuVTKPlot_Displ_Strain_Stress(MACRO_COMM, vtkfile_n, &x, strain, stress);
+	if(flag_print & (1<<PRINT_VTK)){ 
+	  sprintf(vtkfile_n,"%s_t_%d_%d.vtk",myname,time_step,rank_mac);
+	  ierr = SpuVTKPlot_Displ_Strain_Stress(MACRO_COMM, vtkfile_n, &x, strain, stress);
+	}
+	if(flag_print & (1<<PRINT_VTU)){ 
+	  sprintf(vtkfile_n,"%s_t_%d",myname,time_step);
+	  ierr = write_vtu(MACRO_COMM, vtkfile_n, &x, strain, stress);CHKERRQ(ierr);
+	}
 	free(stress); free(strain);
       }
 
