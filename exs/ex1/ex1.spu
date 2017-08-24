@@ -7,9 +7,6 @@ MICRO  MICRO
 $EndMaterials
 
 $Boundary
-  P000     1   111   0   0   0
-  P100     2   111   0   0   1
-  P010     3   101   0   0   0
   X0       4   001   0   0   0
   X1       5   001   0   0   1
   Z0       6   100   0   0   0
