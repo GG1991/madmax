@@ -304,18 +304,19 @@ int main(int argc, char **argv)
        e5 = (    0 0 0 0 0 0 0 0.005 )
      */
     int i, j;
-    double strain_bc[6];
+    double strain_mac[6];
 
+    memset(ttensor,0.0,36*sizeof(double));
     for(i=0;i<6;i++){
 
-      ierr = micro_homogenize(MICRO_COMM, strain_bc, strain_ave, stress_ave);CHKERRQ(ierr);
+      memset(strain_mac,0.0,6*sizeof(double));strain_mac[i]=0.005;
+      ierr = micro_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
 
-      ierr = PetscPrintf(MICRO_COMM,"strain_ave = ");CHKERRQ(ierr);
+      ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");CHKERRQ(ierr);
       for(j=0;j<6;j++){
 	ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);CHKERRQ(ierr);
       }
-      ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
-      ierr = PetscPrintf(MICRO_COMM,"stress_ave = ");CHKERRQ(ierr);
+      ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");CHKERRQ(ierr);
       for(j=0;j<6;j++){
 	ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);CHKERRQ(ierr);
       }
@@ -339,15 +340,13 @@ int main(int argc, char **argv)
 	free(stress); free(strain);
       }
 
-      ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");CHKERRQ(ierr);
-      for(i=0;i<6;i++){
-	for(j=0;j<6;j++){
-	  ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j])>1.0)?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
-	}
-	ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
-      }
-      ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
     }
+    ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");CHKERRQ(ierr);
+    for(i=0;i<6;i++){
+      for(j=0;j<6;j++){
+	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j])>1.0)?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
+      }ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+    }ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
 
   }
 
