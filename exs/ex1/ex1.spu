@@ -7,8 +7,8 @@ MICRO  MICRO
 $EndMaterials
 
 $Boundary
-  X0       4   001   0   0   0
-  X1       5   001   0   0   1
+  X0       4   111   0   0   0
+  X1       5   010   0   1   0
   Z0       6   100   0   0   0
   Z1       7   000   0   0   0
   Y0       8   010   0   0   0
