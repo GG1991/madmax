@@ -1,0 +1,19 @@
+\documentclass{standalone}
+
+\begin{document}
+
+\begin{tikzpicture}[>=latex,node distance=0pt]
+
+\foreach \y [count=\n]in {0,4,8,12}{ 
+  \foreach \x [count=\n]in {0,4,8,12}{ 
+    \begin{scope}[yshift = \y cm,xshift = \x cm,start chain=going right]
+      \draw (0,0) -- (4,0) -- (4,4) -- (0,4) -- cycle;
+      \filldraw[fill=black!40!white,draw=black] (2,2) circle (1cm);
+    \end{scope}
+  }
+}
+
+\end{tikzpicture}
+
+\end{document}
+

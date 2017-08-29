@@ -1,0 +1,13 @@
+\documentclass{standalone}
+
+\begin{document}
+
+\begin{tikzpicture}
+
+\draw (0,0) -- (4,0) -- (4,4) -- (0,4) -- cycle;
+\filldraw[fill=black!40!white,draw=black] (2,2) circle (1cm);
+
+\end{tikzpicture}
+
+\end{document}
+

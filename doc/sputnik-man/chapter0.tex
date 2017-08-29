@@ -4,17 +4,39 @@
 \sputnik is code for calculating a composite material structure. It is composed by two main codes called \macro and
 \micro each one design for perfomed coupled calculation with themselves.
 
-\chapter{Introduction}
-
 \chapter{Homogenization theory}
+This chapter is aimed to explain the state of the art on homogenization theory. The main concepts where taken from
+\cite{suquet_1985}.
 
-\par
+\section{Introduction}
+
+\begin{figure}[h!]
+\resizebox{2cm}{!}{
+ \input{figures/rve.tikz}
+}
+\end{figure}
+
+\begin{figure}[h!]
+\resizebox{5cm}{!}{
+ \input{figures/macro_with_rve.tikz}
+}
+\end{figure}
+
+
 \section{Localization and homogenization}
 
+\begin{equation}
+E_{ij} = \frac{1}{V}\int_{V}\epsilon_{ij}dy = \langle \epsilon_{ij} \rangle
+\end{equation}
+
+\begin{equation}
+\Sigma_{ij} = \frac{1}{V}\int_{V}\sigma_{ij}dy = \langle \sigma_{ij} \rangle
+\end{equation}
+
 \subsection{Localization}
+
+
 \subsection{Homogenization}
-\cite{hollister_1992}
-\cite{suquet_1985}
 
 
 
