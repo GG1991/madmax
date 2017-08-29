@@ -12,6 +12,8 @@
 *.jpg
 *.vtu
 *.pvtu
+*.bbl
+*.blg
 
 null
 
