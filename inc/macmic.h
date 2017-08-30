@@ -98,7 +98,7 @@ Vec           x, dx, b;             // Vectors unknowns and RHS
 KSP           ksp;                  // linear solver context    
 int           reason;
 
-double        *stress, *strain;     // Averange strain and stress on each element
+double  *stress, *strain, *energy;  // Averange strain, stress and energy on each element
 
 /*
    Common functions

@@ -12,9 +12,9 @@
 int assembly_jacobian_sd(Mat *J)
 {
 
-  /*    Assembly the Jacobian for Small Deformation
-   *    approach.
-   *
+  /*    
+	Assembly the Jacobian for Small Deformation
+	approach.
    */
 
   int    i, j, k, e, gp, ngp, npe;
@@ -81,7 +81,7 @@ int assembly_jacobian_sd(Mat *J)
 
 }
 /****************************************************************************************************/
-int assembly_residual_sd(Vec *Displacement_old, Vec *Residue)
+int assembly_residual_sd(Vec *x_old, Vec *Residue)
 {
   /*
      Assembly the Residual for Small Deformation
@@ -111,9 +111,9 @@ int assembly_residual_sd(Vec *Displacement_old, Vec *Residue)
      Local representation of <x> with ghost padding
   */
   ierr = VecZeroEntries(*Residue); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(*Displacement_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(*Displacement_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostGetLocalForm(*Displacement_old,&xlocal); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(*x_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(*x_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostGetLocalForm(*x_old,&xlocal); CHKERRQ(ierr);
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr); CHKERRQ(ierr);
 
   for(e=0;e<nelm;e++){
@@ -176,10 +176,10 @@ int assembly_residual_sd(Vec *Displacement_old, Vec *Residue)
 
 }
 /****************************************************************************************************/
-int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
+int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *energy)
 {
   /*    
-	Calculate averange Strain and Stress tensors on each element
+	Calculate averange strain and stress tensors on each element
    */
   int    i, k, e, gp, ngp, npe;
   int    ierr;
@@ -187,7 +187,7 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
   double ElemCoord[8][3];
   double ShapeDerivs[8][3];
   double det_jac;
-  double B[6][3*8], stress_gp[6], strain_gp[6], stress_ave[6], strain_ave[6];
+  double B[6][3*8], stress_gp[6], strain_gp[6], energy_gp[6], stress_ave[6], strain_ave[6], energy_ave[6];
   double DsDe[6][6];
   double *wp = NULL;
   double ElemDispls[8*3];
@@ -201,9 +201,9 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
   /* 
      Local representation of <x> with ghost padding
   */
-  ierr = VecGhostUpdateBegin(*Displacement,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(*Displacement,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostGetLocalForm(*Displacement,&xlocal); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(*x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(*x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostGetLocalForm(*x,&xlocal); CHKERRQ(ierr);
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr); CHKERRQ(ierr);
 
   for(e=0;e<nelm;e++){
@@ -216,13 +216,15 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
     GetElemenDispls( e, xvalues, ElemDispls );
 
     vol = 0.0;
-    memset(strain_ave, 0.0, 6*sizeof(double));
-    memset(stress_ave  , 0.0, 6*sizeof(double));
+    memset(strain_ave,0.0,6*sizeof(double));
+    memset(stress_ave,0.0,6*sizeof(double));
+    memset(energy_ave,0.0,6*sizeof(double));
 
     for(gp=0;gp<ngp;gp++){
       
-      memset(strain_gp, 0.0, 6*sizeof(double));
-      memset(stress_gp  , 0.0, 6*sizeof(double));
+      memset(strain_gp,0.0,6*sizeof(double));
+      memset(stress_gp,0.0,6*sizeof(double));
+      memset(energy_gp,0.0,6*sizeof(double));
 
       get_dsh(gp, npe, ElemCoord, ShapeDerivs, &det_jac);
       GetB( npe, ShapeDerivs, B );
@@ -240,17 +242,22 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
 	  stress_gp[i] += DsDe[i][k]*strain_gp[k];
 	}
       }
+      for(k=0;k<6;k++){
+	energy_gp[i] += stress_gp[k]*strain_gp[k];
+      }
 
       for(i=0;i<6;i++){
 	stress_ave[i] += stress_gp[i] * wp_eff;
 	strain_ave[i] += strain_gp[i] * wp_eff;
+	energy_ave[i] += energy_gp[i] * wp_eff;
       }
 
       vol += det_jac*wp[gp];
     }
     for(i=0;i<6;i++){
-      Strain[e*6+i] = strain_ave[i] / vol; 
-      Stress[e*6+i] = stress_ave[i] / vol;
+      strain[e*6+i] = strain_ave[i] / vol; 
+      stress[e*6+i] = stress_ave[i] / vol;
+      energy[e*6+i] = energy_ave[i] / vol;
     }
 
   }
@@ -262,7 +269,7 @@ int SpuCalcStressOnElement(Vec *Displacement, double *Strain, double *Stress)
 int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6])
 {
   /*    
-	Calculate averange Strain and Stress tensors on each element
+	Calculate averange strain and stress tensors on each element
 
         Input
 	<Vec x>  > distributed vector of displacements
@@ -363,7 +370,7 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
   return 0;
 }
 /****************************************************************************************************/
-int GetElemenDispls( int e, double *Displacement, double *ElemDispls )
+int GetElemenDispls( int e, double *x, double *ElemDispls )
 {
 
   int  d, n, npe;
@@ -372,7 +379,7 @@ int GetElemenDispls( int e, double *Displacement, double *ElemDispls )
   for(n=0;n<npe;n++){
     for(d=0;d<3;d++){
       // para usar VecGetValues usamos la numeracion global
-      ElemDispls[n*3+d] = Displacement[eind[eptr[e]+n]*3+d];
+      ElemDispls[n*3+d] = x[eind[eptr[e]+n]*3+d];
     }
   }
   
