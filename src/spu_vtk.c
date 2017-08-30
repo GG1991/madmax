@@ -17,7 +17,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
 {
 
   /* 
-   * Function for plotting the partition
+     Function for plotting the partition
    */
 
   FILE    *vtkfl;
@@ -235,7 +235,7 @@ int write_pvtu(MPI_Comm PROBLEM_COMM, char *name)
   return 0;
 }
 /****************************************************************************************************/
-int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress)
+int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress, double *energy)
 {
   int  rank, nproc, ierr; 
 
@@ -277,6 +277,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
 	"<PDataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\"/>\n"
 	"<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\"/>\n"
+	"<PDataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\"/>\n"
 	"</PCellData>\n"); 
     for(i=0;i<nproc;i++){
       sprintf(file_name,"%s_%d",name,i);
@@ -386,6 +387,16 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
     fprintf(fm, "%lf %lf %lf ", stress[i*6+0],stress[i*6+3],stress[i*6+5]);
     fprintf(fm, "%lf %lf %lf ", stress[i*6+3],stress[i*6+1],stress[i*6+4]);
     fprintf(fm, "%lf %lf %lf ", stress[i*6+5],stress[i*6+4],stress[i*6+2]);
+  }
+  fprintf(fm,"\n");
+  fprintf(fm,"</DataArray>\n");
+
+  /*
+     <stress>
+   */
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+  for (i=0;i<nelm;i++){
+    fprintf(fm, "%lf ", energy[i]);
   }
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");

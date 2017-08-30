@@ -187,7 +187,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
   double ElemCoord[8][3];
   double ShapeDerivs[8][3];
   double det_jac;
-  double B[6][3*8], stress_gp[6], strain_gp[6], energy_gp[6], stress_ave[6], strain_ave[6], energy_ave[6];
+  double B[6][3*8], stress_gp[6], strain_gp[6], energy_gp, stress_ave[6], strain_ave[6], energy_ave;
   double DsDe[6][6];
   double *wp = NULL;
   double ElemDispls[8*3];
@@ -218,13 +218,13 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
     vol = 0.0;
     memset(strain_ave,0.0,6*sizeof(double));
     memset(stress_ave,0.0,6*sizeof(double));
-    memset(energy_ave,0.0,6*sizeof(double));
+    energy_ave = 0.0;
 
     for(gp=0;gp<ngp;gp++){
       
       memset(strain_gp,0.0,6*sizeof(double));
       memset(stress_gp,0.0,6*sizeof(double));
-      memset(energy_gp,0.0,6*sizeof(double));
+      energy_gp = 0.0;
 
       get_dsh(gp, npe, ElemCoord, ShapeDerivs, &det_jac);
       GetB( npe, ShapeDerivs, B );
@@ -243,22 +243,22 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
 	}
       }
       for(k=0;k<6;k++){
-	energy_gp[i] += stress_gp[k]*strain_gp[k];
+	energy_gp += stress_gp[k]*strain_gp[k];
       }
 
       for(i=0;i<6;i++){
 	stress_ave[i] += stress_gp[i] * wp_eff;
 	strain_ave[i] += strain_gp[i] * wp_eff;
-	energy_ave[i] += energy_gp[i] * wp_eff;
       }
+      energy_ave    += energy_gp * wp_eff;
 
       vol += det_jac*wp[gp];
     }
     for(i=0;i<6;i++){
       strain[e*6+i] = strain_ave[i] / vol; 
       stress[e*6+i] = stress_ave[i] / vol;
-      energy[e*6+i] = energy_ave[i] / vol;
     }
+    energy[e] = energy_ave / vol;
 
   }
   VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);

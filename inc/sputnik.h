@@ -177,7 +177,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );
 int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strain, double *Stress);
 int vtkcode(int dim,int npe);
 int write_pvtu(MPI_Comm PROBLEM_COMM, char *name);
-int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress);
+int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress, double *energy);
 
 // spu_time.c
 int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);
@@ -188,9 +188,9 @@ int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3]);
 int assembly_jacobian_sd(Mat *J);
 int assembly_residual_sd(Vec *Displacement_old, Vec *Residue);
 int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);
-int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] );
+int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8]);
 int GetWeight(int npe, double **wp);
-int GetDsDe( int npe, double *ElemDisp, double DsDe[6][6] );
+int GetDsDe(int npe, double *ElemDisp, double DsDe[6][6]);
 material_t * GetMaterial(int GmshIDToSearch);
 int GetElemenDispls( int e, double *Displacement, double *ElemDispls );
 int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *energy);
