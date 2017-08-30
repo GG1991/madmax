@@ -1,0 +1,32 @@
+\documentclass{standalone}
+
+\begin{document}
+
+\begin{tikzpicture}[>=latex,node distance=0pt,font={\fontsize{50pt}{12}\selectfont}]
+
+% structure
+\draw[line width=1.75mm] (0,0) -- (16,0) -- (16,16) -- (0,16) -- cycle;
+\foreach \y [count=\n]in {0,4,8,12}{ 
+  \foreach \x [count=\n]in {0,4,8,12}{ 
+    \begin{scope}[yshift = \y cm,xshift = \x cm,start chain=going right]
+      \draw (0,0) -- (4,0) -- (4,4) -- (0,4) -- cycle;
+      \filldraw[fill=black!40!white,draw=black] (2,2) circle (1cm);
+    \end{scope}
+  }
+}
+
+% wall lines
+\foreach \y [count=\n]in {0,...,15}{ 
+ \draw[line width=1.75mm] (-1,\y)-- ++ (1,1) ;
+}
+
+% point and arrow for displacement BC
+\filldraw[fill=black,draw=black] (16,0) circle (0.3cm);
+\draw[-latex,line width=1.75mm] (16,0) -- node[right, xshift=1cm]{$u=d$} (16,-2) ;
+
+%\node (a) at (20,8) {$a=0$} ;
+
+\end{tikzpicture}
+
+\end{document}
+

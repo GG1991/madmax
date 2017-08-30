@@ -11,6 +11,118 @@ This chapter is aimed to explain the state of the art on homogenization theory. 
 \section{Introduction}
 
 \begin{figure}[h!]
+\resizebox{5cm}{!}{
+ \input{figures/macro_with_one_rve.tikz}
+}
+\end{figure}
+
+The macroscopic problem :
+
+\[
+\begin{cases}
+   \text{div } \Sigma =  b\\
+   \Sigma = f(E(u))\\
+   b.c.
+\end{cases}
+\]
+
+The microscopic problem :
+
+\[
+\begin{cases}
+   \text{div } \sigma = 0\\
+   \sigma = f(\epsilon(u))\\
+   b.c. = g(E , \Sigma) 
+\end{cases}
+\]
+
+The relation between the maximum size of the r.v.e. ($l$) and the maximum size of the macroscopic 
+structure ($L$) as: (\textcolor{blue}{cite the first one in doing this}):
+
+\[
+  \eta = \frac{l}{L}
+\]
+and it will play an important role in this work.
+
+The idea is to try to obtain the same in-situ boundary conditions that the r.v.e. has on the macroscopic 
+structure. This boundary condition are difficult to know a priori so we aproximate them.
+There are three types of boundary condition that we should consider here : \emph{uniform displacement}, 
+\emph{uniform traction} and \emph{periodic}.
+
+%------------------------------------------------------------ 
+\subsection{Uniform displacements}
+\begin{equation}
+u = E \cdot y
+\end{equation}
+
+%------------------------------------------------------------ 
+\subsection{Uniform tractions}
+\begin{equation}
+\sigma \cdot \hat{n} = \Sigma
+\end{equation}
+
+%------------------------------------------------------------ 
+\subsection{Periodic}
+Periodic seems to be the most promising b.c. specially for those cases where $\eta \rightarrow 0$ 
+due to the \emph{Saint Venant's Principle}
+
+%------------------------------------------------------------ 
+\section{Example}
+
+Let study the simple case of a composite structure made of an heterogeneous material as shown on figure
+\ref{fig_rve_measures}.
+
+\begin{figure}[h!]
+\resizebox{6cm}{!}{
+ \input{figures/macro_bc.tikz}
+}
+\caption{Composite material problem to solve.}
+%\label{fig_rve_measures}
+\end{figure}
+
+\begin{figure}[h!]
+\fboxsep=0pt
+\noindent
+%\fbox{%
+\begin{minipage}[t]{0.3\linewidth}
+\vspace{0pt}
+\begin{flushleft}
+\resizebox{6cm}{!}{
+ \input{figures/macro_bc.tikz}
+}
+\end{flushleft}
+\end{minipage}
+%}%
+%\hfill%
+%\fbox{%
+\begin{minipage}[t]{0.48\linewidth}
+\vspace{0pt}
+\begin{flushleft}
+Boundary conditions
+\[
+\begin{cases}
+   u_i = 0 \text{ if } x_1 = 0 \text{ for } i=1,2\\
+   u_1 = 0, u_2 = d \text{ if } x_1 = L, x_2 = 0\\
+   \sigma = 0 \text{ otherwise}
+\end{cases}
+\]
+\end{flushleft}
+\end{minipage}
+%}
+\caption{Composite material problem to solve.}
+\label{fig_rve_measures}
+\end{figure}
+
+\begin{figure}[h!]
+\resizebox{6cm}{!}{
+ \input{figures/rve_measures.tikz}
+}
+\caption{r.v.e. that represents the microstructure}
+\label{fig_rve_measures}
+\end{figure}
+
+
+\begin{figure}[h!]
 \resizebox{2cm}{!}{
  \input{figures/rve.tikz}
 }
@@ -22,6 +134,9 @@ This chapter is aimed to explain the state of the art on homogenization theory. 
 }
 \end{figure}
 
+\begin{figure}[h!]
+  \includegraphics[width=0.5\textwidth]{figures/mesh-struc.pdf}
+\end{figure}
 
 \section{Localization and homogenization}
 

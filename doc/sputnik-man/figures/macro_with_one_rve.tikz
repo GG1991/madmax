@@ -1,0 +1,17 @@
+\documentclass{standalone}
+
+\begin{document}
+
+\begin{tikzpicture}[>=latex,node distance=0pt]
+
+    %\draw [gray!50]  (2,0) -- (13,1) -- (26,6) -- (15,23) -- (1,20) -- cycle;
+    \draw [black] plot [smooth cycle] coordinates {(2,0) (13,1) (26,6) (15,23) (1,20)};
+    \begin{scope}[yshift = 10 cm,xshift = 8 cm,start chain=going right]
+      \draw (0,0) -- (4,0) -- (4,4) -- (0,4) -- cycle;
+      \filldraw[fill=black!40!white,draw=black] (2,2) circle (1cm);
+    \end{scope}
+
+\end{tikzpicture}
+
+\end{document}
+
