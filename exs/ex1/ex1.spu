@@ -3,16 +3,16 @@ IRON   TYPE00  E=1.0e7 v=0.25
 IRON2  TYPE00  E=1.0e8 v=0.25
 MATRIX TYPE00  E=1.0e6 v=0.3
 FIBER  TYPE00  E=1.0e7 v=0.3
-MICRO  MICRO
+MICRO  TYPE00  E=1.0e7 v=0.3
+#MICRO  MICRO
 $EndMaterials
 
 $Boundary
-  X0       4   111   0   0   0
-  X1       5   010   0   1   0
-  Z0       6   100   0   0   0
-  Z1       7   000   0   0   0
-  Y0       8   010   0   0   0
-  Y1       9   000   0   0   0
+  P000     1   111   0   0   0
+  P001     2   010   0   1   0
+  P101     3   010   0   1   0
+  P010     4   111   0   0   0
+  X0       5   011   0   0   0
 $EndBoundary
 
 $Function
@@ -22,6 +22,6 @@ $EndFunction
 
 $Function
   1 INTER1 2
-  0.0  0.0
-  1.0  0.005
+  0.0   0.0
+  10.0  -0.05
 $EndFunction

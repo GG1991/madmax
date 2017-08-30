@@ -23,10 +23,28 @@ NM=4
     -mesh_gmsh \
     -ksp_type cg \
     -ksp_rtol 1.0e-13 \
-    -log_trace macro_trace                 \
+    -log_trace macro_trace \
     -print_vtu \
     -tf 1.0 \
     -dt 1.0 \
     -options_left 0
 }
+
+function struct_fiber_homog {
+
+NM=1
+./mpirun -np $NM ../../macro/macro \
+    -input ex1.spu \
+    -mesh ../../meshes/cube_fiber/struct_fiber_homog.msh \
+    -mesh_gmsh \
+    -ksp_type cg \
+    -ksp_rtol 1.0e-13 \
+    -log_trace macro_trace \
+    -print_vtu \
+    -tf 1.0 \
+    -dt 1.0 \
+    -options_left 0
+}
+
 #struct_fiber
+#struct_fiber_homog
