@@ -700,7 +700,7 @@ int GmshNodesPerElement(int code)
 /****************************************************************************************************/
 int GmshIsAsurfaceElement(int code)
 {
-  return (code == 2 || code == 3 || code == 15) ? 1 : 0;
+  return (code == 1 || code == 2 || code == 3 || code == 15) ? 1 : 0;
 }
 /****************************************************************************************************/
 int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f)
