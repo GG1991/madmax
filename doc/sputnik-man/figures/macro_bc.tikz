@@ -2,7 +2,7 @@
 
 \begin{document}
 
-\begin{tikzpicture}[>=latex,node distance=0pt,font={\fontsize{50pt}{12}\selectfont}]
+\begin{tikzpicture}[>=latex,node distance=0pt,font={\fontsize{40pt}{12}\selectfont}]
 
 % structure
 \draw[line width=1.75mm] (0,0) -- (16,0) -- (16,16) -- (0,16) -- cycle;
@@ -21,10 +21,16 @@
 }
 
 % point and arrow for displacement BC
-\filldraw[fill=black,draw=black] (16,0) circle (0.3cm);
-\draw[-latex,line width=1.75mm] (16,0) -- node[right, xshift=1cm]{$u=d$} (16,-2) ;
+% bending
+%\filldraw[fill=black,draw=black] (16,0) circle (0.3cm);
+%\draw[-latex,line width=1.75mm] (16,0) -- node[right, xshift=1cm]{$u=d$} ++ (0,-2) ;
 
-%\node (a) at (20,8) {$a=0$} ;
+% horizontal traction
+\foreach \y [count=\n]in {0,...,16}{ 
+ \draw[-latex,line width=1.75mm] (16,\y) -- ++ (2, 0) ;
+}
+\node (a) at (20,8) {$u=d$};
+
 
 \end{tikzpicture}
 

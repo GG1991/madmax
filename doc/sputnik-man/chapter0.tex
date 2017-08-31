@@ -44,10 +44,10 @@ structure ($L$) as: (\textcolor{blue}{cite the first one in doing this}):
 \]
 and it will play an important role in this work.
 
-The idea is to try to obtain the same in-situ boundary conditions that the r.v.e. has on the macroscopic 
-structure. This boundary condition are difficult to know a priori so we aproximate them.
-There are three types of boundary condition that we should consider here : \emph{uniform displacement}, 
-\emph{uniform traction} and \emph{periodic}.
+The idea is to try to obtain the same in-situ boundary conditions of the r.v.e. placed on 
+the macroscopic structure. This boundary condition are difficult to know a priori so we try to 
+approximate them. There are three types of boundary condition that we should consider here : 
+\emph{uniform displacement}, \emph{uniform traction} and \emph{periodic}.
 
 %------------------------------------------------------------ 
 \subsection{Uniform displacements}
@@ -63,28 +63,28 @@ u = E \cdot y
 
 %------------------------------------------------------------ 
 \subsection{Periodic}
-Periodic seems to be the most promising b.c. specially for those cases where $\eta \rightarrow 0$ 
+Periodic seems to be the most promising b.c. particularly for those cases where $\eta \rightarrow 0$ 
 due to the \emph{Saint Venant's Principle}
 
 %------------------------------------------------------------ 
 \section{Example}
 
-Let study the simple case of a composite structure made of an heterogeneous material as shown on figure
+We are going to focus now on 2D examples to understand the basics on homogenization procedures. \sputnik is 
+a 3D code so for obtaining 2D solution we will have to take special care on the boundary conditions of the 
+problem.
+Let study first the simple case of a composite structure made of an heterogeneous material as shown on figure
 \ref{fig_rve_measures}.
 
-\begin{figure}[h!]
-\resizebox{6cm}{!}{
- \input{figures/macro_bc.tikz}
-}
-\caption{Composite material problem to solve.}
-%\label{fig_rve_measures}
-\end{figure}
+The idea is to compare how accurate can be the homogenization procedure under the different boundary 
+condition setting. The comparison should be done with some experiment or with a direct calculation, 
+this mean to solve the problem numerically considering all the micro-structure details such as the 
+one shown on figure \ref{fig_mesh_struc_micro}. 
 
 \begin{figure}[h!]
 \fboxsep=0pt
 \noindent
 %\fbox{%
-\begin{minipage}[t]{0.3\linewidth}
+\begin{minipage}[t]{0.35\linewidth}
 \vspace{0pt}
 \begin{flushleft}
 \resizebox{6cm}{!}{
@@ -95,9 +95,9 @@ Let study the simple case of a composite structure made of an heterogeneous mate
 %}%
 %\hfill%
 %\fbox{%
-\begin{minipage}[t]{0.48\linewidth}
+\begin{minipage}[t]{0.4\linewidth}
 \vspace{0pt}
-\begin{flushleft}
+%\begin{flushleft}
 Boundary conditions
 \[
 \begin{cases}
@@ -106,7 +106,7 @@ Boundary conditions
    \sigma = 0 \text{ otherwise}
 \end{cases}
 \]
-\end{flushleft}
+%\end{flushleft}
 \end{minipage}
 %}
 \caption{Composite material problem to solve.}
@@ -117,7 +117,7 @@ Boundary conditions
 \resizebox{6cm}{!}{
  \input{figures/rve_measures.tikz}
 }
-\caption{r.v.e. that represents the microstructure}
+\caption{r.v.e. that represents the micro-structure}
 \label{fig_rve_measures}
 \end{figure}
 
@@ -136,6 +136,8 @@ Boundary conditions
 
 \begin{figure}[h!]
   \includegraphics[width=0.5\textwidth]{figures/mesh-struc.pdf}
+  \caption{Mesh that represents the hole structure with its micro-structure.}
+  \label{fig_mesh_struc_micro}
 \end{figure}
 
 \section{Localization and homogenization}
