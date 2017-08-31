@@ -56,5 +56,8 @@ typedef struct boundary_t_{
 }boundary_t;
 
 list_t boundary_list;      // it is used to store things particular for each problem
+int *bc_kinds;             // this array is to store all the kinds of the nodes and plot them as a number
+                           // -1 is in the ghost nodes' positions and nodes that the bc was not specified
+			   // xxx -> to decimal (e.g. 111->7) on the local nodes where it was specified
 
 #endif

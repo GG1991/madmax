@@ -8,11 +8,10 @@ MICRO  TYPE00  E=1.0e7 v=0.3
 $EndMaterials
 
 $Boundary
-  P000     1   111   0   0   0
-  P001     2   010   0   1   0
-  P101     3   010   0   1   0
-  P010     4   111   0   0   0
-  X0       5   011   0   0   0
+  X1       4   111   0   0   1
+  X0       5   111   0   0   0
+  Z0       6   100   0   0   0
+  Z1       7   100   0   0   0
 $EndBoundary
 
 $Function
@@ -23,5 +22,5 @@ $EndFunction
 $Function
   1 INTER1 2
   0.0   0.0
-  10.0  -0.05
+  10.0  1.05
 $EndFunction

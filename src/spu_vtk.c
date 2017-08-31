@@ -253,7 +253,6 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
    */
   if(!rank){
 
-
     strcpy(file_name,name);
     strcat(file_name,".pvtu");
     fm = fopen(file_name,"w"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s could not be opened",file_name);
@@ -269,12 +268,14 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
 	"<PDataArray type=\"Int32\" Name=\"offsets\"      NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"UInt8\" Name=\"types\"        NumberOfComponents=\"1\"/>\n"
 	"</PCells>\n" 
-	"<PPointData Vectors=\"displ\">\n"
-//	"<PointData>\n"
-	"<PDataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" />\n"
+
+	"<PPointData Vectors=\"displ\">\n" // Vectors inside is a filter we should not use this here
+	"<PDataArray type=\"Float64\" Name=\"displ\"    NumberOfComponents=\"3\" />\n"
+	"<PDataArray type=\"Int32\"   Name=\"bc_kinds\" NumberOfComponents=\"1\" />\n"
 	"</PPointData>\n"
+
 	"<PCellData>\n"
-	"<PDataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\"/>\n"
+	"<PDataArray type=\"Int32\"   Name=\"part\" NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\"/>\n"
 	"<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\"/>\n"
 	"<PDataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\"/>\n"
@@ -335,27 +336,41 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
 
   fprintf(fm,"</Cells>\n");
   
+  fprintf(fm,"<PointData Vectors=\"displ\">\n"); // Vectors inside is a filter we should not use this here
+
   /*
      <displ>
    */
   ierr = VecGhostUpdateBegin(*x,INSERT_VALUES,SCATTER_FORWARD);
   ierr = VecGhostUpdateEnd(*x,INSERT_VALUES,SCATTER_FORWARD);
   ierr = VecGhostGetLocalForm(*x,&xlocal);
-  fprintf(fm,"<PointData Vectors=\"displ\">\n");
-//  fprintf(fm,"<PointData>\n");
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
-  for (i=0;i<nallnods;i++){
-    for (d=0;d<3;d++){
+  for(i=0;i<nallnods;i++){
+    for(d=0;d<3;d++){
       fprintf(fm, "%lf ", xvalues[i*3+d]);
     }
     fprintf(fm,"\n");
   }
   VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
   fprintf(fm,"</DataArray>\n");
+
+  /*
+     <bc_kinds>
+   */
+  fprintf(fm,"<DataArray type=\"Int32\" Name=\"bc_kinds\" NumberOfComponents=\"1\" format=\"ascii\" >\n");
+  for(i=0;i<nmynods;i++){
+    fprintf(fm, "%d ", bc_kinds[i]);
+  }
+  for(i=0;i<nghost;i++){
+    fprintf(fm, "%d ", -1);
+  }
+  fprintf(fm,"\n");
+  fprintf(fm,"</DataArray>\n");
   fprintf(fm,"</PointData>\n");
 
   fprintf(fm,"<CellData>\n");
+
   /*
      <part>
    */
@@ -369,7 +384,6 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
   /*
      <strain>
    */
-
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\" format=\"ascii\">\n");
   for (i=0;i<nelm;i++){
     fprintf(fm, "%lf %lf %lf ", strain[i*6+0],strain[i*6+3],strain[i*6+5]);

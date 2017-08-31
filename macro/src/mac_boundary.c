@@ -52,10 +52,13 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   }
 
   // ahora metemos los nodos de las listas en la estructura posta <boundary_list>
-  int NodeOrig, NodeLocal, NodeGlobal, numnodes, kind, ndir_pn= -1, nneu_pn = -1;
+  int NodeOrig, NodeLocal, NodeGlobal, numnodes, kind, ndir_pn=-1, nneu_pn=-1;
   int DirCount, NeuCount, *p, d, n;
 
   mac_boundary_t *mac_boundary;
+
+  bc_kinds=malloc(nmynods*sizeof(int));
+  for(i=0;i<nmynods;i++)bc_kinds[i]=-1;
 
   node_list_t *pBound = boundary_list->head;
   while(pBound)
@@ -85,36 +88,41 @@ int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
     mac_boundary->neu_idx  = malloc(numnodes * nneu_pn * sizeof(int));
     mac_boundary->neu_val  = malloc(numnodes * nneu_pn * sizeof(double));
 
+    node_list_t  *pn = ((boundary_t*)pBound->data)->Nods.head;
     n=0; DirCount = 0; NeuCount = 0;
     while(n<numnodes)
     {
       /* we set the Original node numeration first */
-      NodeOrig = *(int*)(((boundary_t*)pBound->data)->Nods.head->data); 
+      NodeOrig = *(int*)(pn->data); 
       mac_boundary->nods[n] = NodeOrig;
 
       p = bsearch(&NodeOrig, mynods, nmynods, sizeof(int), cmpfunc); 
-      if(!p){SETERRQ2(PROBLEM_COMM,1,
-	  "A boundary node (%d) seems now to not belong to this process (rank:%d)",NodeOrig,rank);}
+      if(!p){
+	SETERRQ2(PROBLEM_COMM,1,
+	    "A boundary node (%d) seems now to not belong to this process (rank:%d)",NodeOrig,rank);
+      }
 
-      NodeLocal  = p - mynods;        // Local numeration
+      NodeLocal  = p - mynods;           // Local numeration
       NodeGlobal = loc2petsc[NodeLocal]; // PETSc numeration
+      bc_kinds[NodeLocal] = kind;
 
       for(d=0;d<3;d++){
 	if( (kind & (1<<d)) == (1<<d) ){ /* Dirichlet */
 	  mac_boundary->dir_idx[DirCount] = NodeGlobal*3 + d; DirCount++;
 	}
 	else{ /* Neumann */
-	  mac_boundary->neu_idx[NeuCount]   = NodeGlobal*3 + d; NeuCount++;
+	  mac_boundary->neu_idx[NeuCount] = NodeGlobal*3 + d; NeuCount++;
 	}
       }
       n++;
-      list_delfirst( &(((boundary_t *)pBound->data)->Nods) ) ; 
+      pn = pn->next;
+      //list_delfirst( &(((boundary_t *)pBound->data)->Nods) ) ; 
     }
 
-    if(((boundary_t*)pBound->data)->Nods.head) // simple check 
-      SETERRQ(PROBLEM_COMM,1,"It's seems that there some more nodes in the list.");
+    //if(((boundary_t*)pBound->data)->Nods.head) // simple check 
+    //SETERRQ(PROBLEM_COMM,1,"It's seems that there some more nodes in the list.");
 
-    list_clear(&(((boundary_t *)pBound->data)->Nods)); 
+    //list_clear(&(((boundary_t *)pBound->data)->Nods)); 
 
     /* completamos el <bvoid> */
     //    ((boundary_t *)pBound->data)->bvoid = malloc(sizeof(mac_boundary_t));
