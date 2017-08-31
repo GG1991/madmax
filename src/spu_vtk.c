@@ -235,7 +235,7 @@ int write_pvtu(MPI_Comm PROBLEM_COMM, char *name)
   return 0;
 }
 /****************************************************************************************************/
-int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double *stress, double *energy)
+int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain, double *stress, double *energy)
 {
   int  rank, nproc, ierr; 
 
@@ -271,6 +271,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
 
 	"<PPointData Vectors=\"displ\">\n" // Vectors inside is a filter we should not use this here
 	"<PDataArray type=\"Float64\" Name=\"displ\"    NumberOfComponents=\"3\" />\n"
+	"<PDataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" />\n"
 	"<PDataArray type=\"Int32\"   Name=\"bc_kinds\" NumberOfComponents=\"1\" />\n"
 	"</PPointData>\n"
 
@@ -345,6 +346,23 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, double *strain, double 
   ierr = VecGhostUpdateEnd(*x,INSERT_VALUES,SCATTER_FORWARD);
   ierr = VecGhostGetLocalForm(*x,&xlocal);
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
+  ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
+  for(i=0;i<nallnods;i++){
+    for(d=0;d<3;d++){
+      fprintf(fm, "%lf ", xvalues[i*3+d]);
+    }
+    fprintf(fm,"\n");
+  }
+  VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
+  fprintf(fm,"</DataArray>\n");
+
+  /*
+     <residual>
+   */
+  ierr = VecGhostUpdateBegin(*b,INSERT_VALUES,SCATTER_FORWARD);
+  ierr = VecGhostUpdateEnd(*b,INSERT_VALUES,SCATTER_FORWARD);
+  ierr = VecGhostGetLocalForm(*b,&xlocal);
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
   for(i=0;i<nallnods;i++){
     for(d=0;d<3;d++){
