@@ -6,7 +6,7 @@
 #include "sputnik.h"
 #include "micro.h"
 
-int MicroAllocMatrixVector(MPI_Comm MICRO_COMM, int nlocal, int ntotal)
+int mic_alloc(MPI_Comm MICRO_COMM)
 {
   /*
      Allocates memory for Mat A, Vec x, Vec dx, Vec b
@@ -22,7 +22,16 @@ int MicroAllocMatrixVector(MPI_Comm MICRO_COMM, int nlocal, int ntotal)
 
    */
 
-  int rank, nproc, ierr;
+  int rank, nproc, ierr, nlocal, ntotal;
+
+  if(flag_reactions == PETSC_TRUE){
+    nlocal = 3*nmynods + 3*nmybcnods;
+    ntotal = 3*NTotalNod+ 3*nallbcnods;
+  }else{
+    nlocal = 3*nmynods;
+    ntotal = 3*NTotalNod;
+  }
+
 
   MPI_Comm_size(MICRO_COMM, &nproc);
   MPI_Comm_rank(MICRO_COMM, &rank);

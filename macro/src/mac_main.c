@@ -95,6 +95,9 @@ int main(int argc, char **argv)
   ierr = PetscOptionsGetReal(NULL,NULL,"-dt",&dt,&set);CHKERRQ(ierr);
   if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"-dt not given.");
 
+  ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
+  flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
+
   /* 
      Stablish a new local communicator
   */
@@ -215,14 +218,14 @@ int main(int argc, char **argv)
   ierr = set_id_on_material_and_boundary(MACRO_COMM);CHKERRQ(ierr); 
   ierr = CheckPhysicalID();CHKERRQ(ierr);
   ierr = read_boundary(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
-  ierr = MacroFillBoundary(MACRO_COMM, &boundary_list);
+  ierr = mac_init_boundary(MACRO_COMM, &boundary_list);
 
   /*
      Allocate matrices & vectors
   */ 
   ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
   ierr = PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");CHKERRQ(ierr);
-  ierr = MacroAllocMatrixVector( MACRO_COMM, nmynods*3, NTotalNod*3);CHKERRQ(ierr);
+  ierr = mac_alloc(MACRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
   /*

@@ -16,6 +16,10 @@ static char help[] =
 "It has the capability of being couple with MACRO.\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
+"-homo_linear_taylor\n"
+"-homo_linear_linear\n"
+"-homo_linear_lagrange\n"
+"-homo_linear_linear_hexa\n"
 "-print_petsc\n"
 "-print_vtk\n"
 "-print_part\n"
@@ -37,14 +41,12 @@ int main(int argc, char **argv)
   ierr = MPI_Init(&argc, &argv);
   ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
   ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
-
   /* 
      We start PETSc before coloring here for using command line reading tools only
      Then we finalize it
   */
   PETSC_COMM_WORLD = WORLD_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
-
   /*
      Printing Options
   */
@@ -90,10 +92,14 @@ int main(int argc, char **argv)
   if(set==PETSC_TRUE) homo_type=HOMO_TAYLOR;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo_type=HOMO_LINEAR;
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear_lagrange",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) homo_type=HOMO_LINEAR_LAGRANGE;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear_hexa",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo_type=HOMO_LINEAR_HEXA;
   if(homo_type==0)SETERRQ(MICRO_COMM,1,"no homogenization option specified");
 
+  ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
+  flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
   /* 
      Stablish a new local communicator
    */
@@ -104,7 +110,6 @@ int main(int argc, char **argv)
   ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
 
   ierr = PetscFinalize();CHKERRQ(ierr);
-
   /*
      Set PETSc communicator to MICRO_COMM
      and start again
@@ -221,7 +226,7 @@ int main(int argc, char **argv)
      Allocate matrices & vectors
   */ 
   ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
-  ierr = MicroAllocMatrixVector( MICRO_COMM, nmynods*3, NTotalNod*3);CHKERRQ(ierr);
+  ierr = mic_alloc(MICRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
   /*

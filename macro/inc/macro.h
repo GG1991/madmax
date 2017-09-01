@@ -31,10 +31,10 @@ int main(int argc, char **args);
 int mac_comm_init(void);
 
 // mac_alloc.c
-int MacroAllocMatrixVector(MPI_Comm PROBLEM_COMM, int nlocal, int ntotal);
+int mac_alloc(MPI_Comm PROBLEM_COMM);
 
 // mac_boundary.c
-int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list);
+int mac_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list);
 int MacroSetDisplacementOnBoundary( double time, Vec *x );
 int MacroSetBoundaryOnJacobian( Mat *J );
 int MacroSetBoundaryOnResidual( Vec *b );

@@ -6,7 +6,7 @@
 #include "sputnik.h"
 #include "macro.h"
 
-int MacroAllocMatrixVector(MPI_Comm MACRO_COMM, int nlocal, int ntotal)
+int mac_alloc(MPI_Comm MACRO_COMM)
 {
   /*
      Allocates memory for Mat A, Vec x, Vec dx, Vec b
@@ -22,7 +22,10 @@ int MacroAllocMatrixVector(MPI_Comm MACRO_COMM, int nlocal, int ntotal)
 
    */
 
-  int rank, nproc, ierr;
+  int rank, nproc, ierr, nlocal, ntotal;
+
+  nlocal = 3*nmynods;
+  ntotal = 3*NTotalNod;
 
   MPI_Comm_size(MACRO_COMM, &nproc);
   MPI_Comm_rank(MACRO_COMM, &rank);
