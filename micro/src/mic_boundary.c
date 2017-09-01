@@ -9,7 +9,7 @@
 
 #include "micro.h"
 
-int micro_init_boundary_list(list_t *boundary_list)
+int mic_init_boundary_list(list_t *boundary_list)
 {
   /*
      Creates the boundary list with names
@@ -86,16 +86,15 @@ int micro_check_physical_entities( list_t *physical_list )
   return 0;
 }
 /****************************************************************************************************/
-int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
+int mic_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 {
   /*
      Checks if "P000" "P100" "P010" "X0" "X1" "Y0" "Y1" "Z0" "Z1"
      are define in the boundary_list
   */
   int i=0, n=-1, *p, flag=0, flag_pn=0, nnods=0;
-  int node_petsc, node_orig;
+  int node_petsc, node_orig, ierr, nproc, rank;
   char *name;
-  int nproc, rank;
   node_list_t *pb, *pn;
 
   MPI_Comm_size(PROBLEM_COMM, &nproc);
@@ -227,12 +226,14 @@ int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   }
   else if(homo_type==HOMO_LINEAR){
 
-    // experimental u = e * x
+    // linear displacements u = e * x
     
+    nmybcnods = 0;
     pb = boundary_list->head;
     while(pb)
     {
       nnods = ((boundary_t*)pb->data)->Nods.sizelist;
+      nmybcnods += nnods;
       ((boundary_t*)pb->data)->bvoid = malloc(sizeof(mic_boundary_linear_t));
       ((mic_boundary_linear_t*)(((boundary_t*)pb->data)->bvoid))->u_val = malloc(nnods*3*sizeof(double));
       ((mic_boundary_linear_t*)(((boundary_t*)pb->data)->bvoid))->index = malloc(nnods*3*sizeof(int));
@@ -253,7 +254,7 @@ int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
       }
       pb=pb->next;
     }
-
+    ierr = MPI_Allreduce(&nmybcnods, &nallbcnods, 1, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
   }
   return 0;
 }

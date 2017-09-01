@@ -24,8 +24,13 @@ int mac_alloc(MPI_Comm MACRO_COMM)
 
   int rank, nproc, ierr, nlocal, ntotal;
 
-  nlocal = 3*nmynods;
-  ntotal = 3*NTotalNod;
+  if(flag_reactions == PETSC_TRUE){
+    nlocal = 3*nmynods + 3*nmybcnods;
+    ntotal = 3*NTotalNod+ 3*nallbcnods;
+  }else{
+    nlocal = 3*nmynods;
+    ntotal = 3*NTotalNod;
+  }
 
   MPI_Comm_size(MACRO_COMM, &nproc);
   MPI_Comm_rank(MACRO_COMM, &rank);
@@ -35,7 +40,7 @@ int mac_alloc(MPI_Comm MACRO_COMM)
   ierr = MatSetFromOptions(A);CHKERRQ(ierr);
   ierr = MatSeqAIJSetPreallocation(A,117,NULL);CHKERRQ(ierr);
   ierr = MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);CHKERRQ(ierr);
-  ierr = MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+  ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
   /*
      Create parallel vectors.
