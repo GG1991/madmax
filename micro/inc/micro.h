@@ -68,8 +68,8 @@ int mic_comm_init(void);
 int mic_alloc(MPI_Comm comm);
 
 // mic_boundary.c
-int micro_init_boundary_list(list_t *boundary_list);
-int micro_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list);
+int mic_init_boundary_list(list_t *boundary_list);
+int mic_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list);
 int micro_check_physical_entities( list_t *physical_list );
 
 #define DISPLACE    0
