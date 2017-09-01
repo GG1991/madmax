@@ -67,8 +67,8 @@ MPI_Comm     WORLD_COMM;
 MPI_Status   status;
 PetscViewer  viewer;
 
-int          rank_wor;                 //  rank on world comm
-int          nproc_wor;                //  # of processes (WORLD_COMM)
+int rank_wor;                 //  rank on world comm
+int nproc_wor;                //  # of processes (WORLD_COMM)
 
 #define PRINT_PETSC        0
 #define PRINT_VTK          1
@@ -76,46 +76,47 @@ int          nproc_wor;                //  # of processes (WORLD_COMM)
 #define PRINT_VTKPART      4
 #define PRINT_ALL          8
 
-int          flag_print;
+int  flag_print;
+bool flag_reactions;
 
 #define FORMAT_NULL        0
 #define FORMAT_GMSH        1
 #define FORMAT_ALYA        2
 
-int          mesh_f;                   // Mesh format number
+int mesh_f;                   // Mesh format number
 
 // Time measurement
 
-FILE         *time_fl;
-FILE         *FileOutputStructures;
-double       t0,t1;
-double       *time_vec;
+FILE *time_fl;
+FILE *FileOutputStructures;
+double t0,t1;
+double *time_vec;
 
 // Structures to save de mesh on CSR format 
 
-char          mesh_n[NBUF];            // Mesh file name
+char mesh_n[NBUF];           // Mesh file name
 
-int           *part;
-int           *elmdist;                // number of elements inside each procesor
-int            nelm;                   // # of local elements
-int           *eptr;                   // list of indeces of nodes inside eind
-int           *eind;                   // list of nodes for elem "i" is between 
-                                       // eind[eptr[i]] eind[eptr[i+1]] (not including)
-int           *PhysicalID;             // element property number
+int *part;
+int *elmdist;                // number of elements inside each procesor
+int nelm;                    // # of local elements
+int *eptr;                   // list of indeces of nodes inside eind
+int *eind;                   // list of nodes for elem "i" is between 
+                             // eind[eptr[i]] eind[eptr[i+1]] (not including)
+int *PhysicalID;             // element property number
 
-int           *StartIndexRank;
-int           *allnods;                // all nodes including mynods and ghost
-int           nallnods;                // <nmynods> + <nghost>
-int           *mynods;                 // Original (gmsh) numbers of my nodes
-int           nmynods;                 // Number of <mynods> 
-int           *ghost;                  // Original numbers of my ghosts nodes
-int           nghost;                  // Number of my ghost nodes
-int           NTotalNod;               // Number of total nodes in the mesh
+int *StartIndexRank;
+int *allnods;                // all nodes including mynods and ghost
+int nallnods;                // <nmynods> + <nghost>
+int *mynods;                 // Original (gmsh) numbers of my nodes
+int nmynods;                 // Number of <mynods> 
+int *ghost;                  // Original numbers of my ghosts nodes
+int nghost;                  // Number of my ghost nodes
+int NTotalNod;               // Number of total nodes in the mesh
 
-double        *coord;                  // nodes' coordinates
+double *coord;               // nodes' coordinates
 
-int           *loc2petsc;              // array of size <nmynods>+<nghost>
-                                       // returns the position in PETSc matrix & vectors
+int *loc2petsc;              // array of size <nmynods>+<nghost>
+                             // returns the position in PETSc matrix & vectors
 
 // List of different utilities
 list_t function_list;
@@ -184,15 +185,15 @@ int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);
 
 // spu_assembly.c
 int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex);
-int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3]);
+int GetElemCoord(int *LocalNod, int n, double elem_coor[8][3]);
 int assembly_jacobian_sd(Mat *J);
-int assembly_residual_sd(Vec *Displacement_old, Vec *Residue);
+int assembly_residual_sd(Vec *x, Vec *b);
 int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);
 int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8]);
 int GetWeight(int npe, double **wp);
 int GetDsDe(int npe, double *ElemDisp, double DsDe[6][6]);
 material_t * GetMaterial(int GmshIDToSearch);
-int GetElemenDispls( int e, double *Displacement, double *ElemDispls );
+int GetElemenDispls( int e, double *x, double *elem_disp );
 int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *energy);
 int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6]);
 

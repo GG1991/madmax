@@ -60,4 +60,7 @@ int *bc_kinds;             // this array is to store all the kinds of the nodes 
                            // -1 is in the ghost nodes' positions and nodes that the bc was not specified
 			   // xxx -> to decimal (e.g. 111->7) on the local nodes where it was specified
 
+int nmybcnods;             // # of boundary nodes local to this process
+int nallbcnods;            // # of total boundary nodes
+
 #endif

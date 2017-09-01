@@ -7,7 +7,7 @@
 
 #include "macro.h"
 
-int MacroFillBoundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
+int mac_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 {
   /* 
      Here we fill the <boundary_list> structure acording to our problem 
