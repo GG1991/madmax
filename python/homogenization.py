@@ -163,14 +163,16 @@ for e in range(0, elem.shape[0]):
   b[index] += be
 
 ub = x[x_bc] 
+b[nx*ny*2 + np.arange(x_bc.size)] = ub - np.transpose(np.dot(D.transpose(),e_mac))
 print x_bc
 print nx*ny*2 + x_bc
-b[nx*ny*2 + np.arange(x_bc.size)] = ub - np.transpose(np.dot(D.transpose(),e_mac))
 print b
+x = np.linalg.solve(J, b)
+print x
 
 # plot the matrix
 plt.matshow(J)
-plt.show()
+#plt.show()
 
 print elem, "\n"
 print coor, "\n"
