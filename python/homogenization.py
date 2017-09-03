@@ -134,6 +134,7 @@ n_ind_bc = np.concatenate((ux_y0_ind, ux_x1_ind, ux_y1_ind, ux_x0_ind))/2
 x_bc = np.concatenate((ux_y0_ind,uy_y0_ind,ux_x1_ind,uy_x1_ind,ux_y1_ind,uy_y1_ind,ux_x0_ind,uy_x0_ind))
 
 print "n_ind_bc",n_ind_bc
+print "x_bc",x_bc
 
 for i in range(0, n_bc):
   D[0,i*2+0] = coor[n_ind_bc[i],0]   ; D[0,i*2+1] = 0
@@ -153,8 +154,8 @@ for e in range(0, elem.shape[0]):
   J[np.ix_(index,index)] += ke
 
 # set BCs on J
-J[x_bc[:], nx*ny*2 + np.arange(x_bc.size)] = 1e6;
-J[nx*ny*2 + np.arange(x_bc.size), x_bc[:]] = 1e6;
+J[x_bc[:], nx*ny*2 + x_bc[:]] = 1e6;
+J[nx*ny*2 + x_bc[:], x_bc[:]] = 1e6;
 
 e_mac = np.array([[1.0],[0.0],[0.0]])
 
@@ -168,6 +169,7 @@ for e in range(0, elem.shape[0]):
 
 ub = x[x_bc] 
 delta = x[nx*ny*2:]
+b[x_bc] -= delta
 b[nx*ny*2 + np.arange(x_bc.size)] = ub - np.transpose(np.dot(D.transpose(),e_mac))
 b = -b
 
@@ -187,13 +189,14 @@ for e in range(0, elem.shape[0]):
 ub = x[x_bc] 
 delta = x[nx*ny*2:]
 print "D^T*e",np.transpose(np.dot(D.transpose(),e_mac))
+b[x_bc] -= delta
 b[nx*ny*2 + np.arange(x_bc.size)] = ub - np.transpose(np.dot(D.transpose(),e_mac))
 b = -b
 print b
 
 # plot the matrix
 plt.matshow(J)
-#plt.show()
+plt.show()
 
 print elem, "\n"
 print coor, "\n"
