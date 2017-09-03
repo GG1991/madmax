@@ -154,8 +154,8 @@ for e in range(0, elem.shape[0]):
   J[np.ix_(index,index)] += ke
 
 # set BCs on J
-J[x_bc[:], nx*ny*2 + x_bc[:]] = 1e6;
-J[nx*ny*2 + x_bc[:], x_bc[:]] = 1e6;
+J[x_bc[:], nx*ny*2 + x_bc[:]] = 1.0;
+J[nx*ny*2 + x_bc[:], x_bc[:]] = 1.0;
 
 e_mac = np.array([[1.0],[0.0],[0.0]])
 
@@ -188,6 +188,7 @@ for e in range(0, elem.shape[0]):
 
 ub = x[x_bc] 
 delta = x[nx*ny*2:]
+print "delta", delta
 print "D^T*e",np.transpose(np.dot(D.transpose(),e_mac))
 b[x_bc] -= delta
 b[nx*ny*2 + np.arange(x_bc.size)] = ub - np.transpose(np.dot(D.transpose(),e_mac))
