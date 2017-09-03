@@ -88,10 +88,12 @@ C = np.array([
 C = np.multiply(C,E*(1-nu)/((1+nu)*(1-2*nu)))
 
 J  = np.zeros( (nx*ny*2 + n_bc*2,nx*ny*2 + n_bc*2) )
-x  = np.zeros( nx*ny*2 )
-b  = np.zeros( nx*ny*2 )
+x  = np.zeros( nx*ny*2 + n_bc*2 )
+dx = np.zeros( nx*ny*2 + n_bc*2)
+b  = np.zeros( nx*ny*2 + n_bc*2 )
 ke = np.zeros( (4*2,4*2) )
 be = np.zeros( 4*2 )
+D  = np.zeros( (3,n_bc*2) )
 
 elem = np.zeros( ((nx-1)*(ny-1),4), dtype=np.int )
 coor = np.zeros( (nx*ny,2) )
@@ -108,6 +110,34 @@ for i in range(0, ny):
     coor[i*nx+j,0] = j*lx/(nx-1)
     coor[i*nx+j,1] = i*ly/(ny-1)
 
+# Boundary conditions indeces
+ux_x0_ind = np.arange(0          ,ny*nx*2,nx*2)
+ux_x1_ind = np.arange((nx-1)*2   ,ny*nx*2,nx*2)
+uy_x0_ind = np.arange(1          ,ny*nx*2,nx*2)
+uy_x1_ind = np.arange((nx-1)*2+1 ,ny*nx*2,nx*2)
+
+ux_y0_ind = np.arange(2          ,nx*2-2,2)
+uy_y0_ind = np.arange(3          ,nx*2-2,2)
+ux_y1_ind = np.arange(((ny-1)*nx+1)*2,ny*nx*2-2,2)
+uy_y1_ind = np.arange(((ny-1)*nx+1)*2+1,ny*nx*2-2,2)
+#print ux_x0_ind, "\n"
+#print ux_x1_ind, "\n"
+#print uy_x0_ind, "\n"
+#print uy_x1_ind, "\n"
+#print ux_y0_ind, "\n"
+#print uy_y0_ind, "\n"
+#print ux_y1_ind, "\n"
+#print uy_y1_ind, "\n"
+
+n_ind_bc = np.concatenate((ux_y0_ind, ux_x1_ind, ux_y1_ind, ux_x0_ind))/2
+x_bc = np.concatenate((ux_y0_ind,uy_y0_ind,ux_x1_ind,uy_x1_ind,ux_y1_ind,uy_y1_ind,ux_x0_ind,uy_x0_ind))
+
+print "n_ind_bc",n_ind_bc
+
+for i in range(0, n_bc):
+  D[0,i*2+0] = coor[n_ind_bc[i],0]   ; D[0,i*2+1] = 0
+  D[1,i*2+0] = 0                     ; D[1,i*2+1] = coor[n_ind_bc[i],1]
+  D[2,i*2+0] = coor[n_ind_bc[i],1]/2 ; D[2,i*2+1] = coor[n_ind_bc[i]/2,0]
 
 #calculate elemental matrix
 elem_matrix( ke )
@@ -119,19 +149,24 @@ for e in range(0, elem.shape[0]):
     index[[n*2+0, n*2+1]] = [elem[e,n]*2+0,elem[e,n]*2+1]
   J[np.ix_(index,index)] += ke
 
-# assembly residual 
+# set BCs on J
+J[x_bc[:], nx*ny*2 + np.arange(x_bc.size)] = 1e7;
+J[nx*ny*2 + np.arange(x_bc.size), x_bc[:]] = 1e7;
+
+e_mac = np.array([[1.0],[0.0],[0.0]])
+
+# assembly b 
 for e in range(0, elem.shape[0]):
   elem_residue(e, elem, x, be)
-  print be
   for n in range( 0, elem.shape[1]):
     index[[n*2+0, n*2+1]] = [elem[e,n]*2+0,elem[e,n]*2+1]
   b[index] += be
 
-# Boundary conditions indeces
-ux_x0_ind = np.arange(0   ,ny*nx*2,nx*2)
-ux_x1_ind = np.arange(nx-1,ny*nx*2,nx*2)
-uy_x0_ind = np.arange(1   ,ny*nx*2,nx*2)
-uy_x1_ind = np.arange(nx  ,ny*nx*2,nx*2)
+ub = x[x_bc] 
+print x_bc
+print nx*ny*2 + x_bc
+b[nx*ny*2 + np.arange(x_bc.size)] = ub - np.transpose(np.dot(D.transpose(),e_mac))
+print b
 
 # plot the matrix
 plt.matshow(J)
@@ -139,6 +174,5 @@ plt.show()
 
 print elem, "\n"
 print coor, "\n"
-
 
 ############################################################
