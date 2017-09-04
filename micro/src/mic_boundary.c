@@ -191,11 +191,11 @@ int mic_parse_boundary(MPI_Comm PROBLEM_COMM, char *input)
 
      Searchs for keywords>
 
-     $Boundary
-     <name1> <order> <kind> <fnumx> <fnumy> <fnumz>
-     <name2> <order> <kind> <fnumx> <fnumy> <fnumz>
+     $BoundaryMic
+     <name1>
+     <name2>
      ...
-     $EndBoundary
+     $EndBoundaryMic
    */
 
   FILE   *file = fopen(input,"r"); if(!file) SETERRQ(PETSC_COMM_SELF,1,"File not found");
@@ -211,7 +211,7 @@ int mic_parse_boundary(MPI_Comm PROBLEM_COMM, char *input)
     ln ++;
     data = strtok(buf," \n");
     if(data){ 
-      if(!strcmp(data,"$Boundary")){
+      if(!strcmp(data,"$BoundaryMic")){
 
 	flag_start_boundary=1;
 	while(fgets(buf,NBUF,file) != NULL)
@@ -220,7 +220,7 @@ int mic_parse_boundary(MPI_Comm PROBLEM_COMM, char *input)
 
 	  // <name>
 	  data = strtok(buf," \n"); 
-	  if(!strcmp(data,"$EndBoundary")) break;
+	  if(!strcmp(data,"$EndBoundaryMic")) break;
 	  boundary.name = strdup(data);
 
 	  // si llegamos hasta acá esta todo 0K lo insertamos en la lista 
@@ -229,9 +229,9 @@ int mic_parse_boundary(MPI_Comm PROBLEM_COMM, char *input)
 	}
       } 
 
-      if(!strcmp(data,"$EndBoundary")){
+      if(!strcmp(data,"$EndBoundaryMic")){
 	if(!flag_start_boundary){
-	  SETERRQ(PETSC_COMM_SELF,1,"$EndBoundary found but not $Boundary");
+	  SETERRQ(PETSC_COMM_SELF,1,"$EndBoundaryMic found but not $Boundary");
 	}
 	return 0;
       }

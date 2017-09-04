@@ -168,9 +168,10 @@ int mic_init_homo(void)
       pb=pb->next;
     }
     ((homog_ld_lagran_t*)homo.st)->nnods_bc = nnods_bc;
-
+    ((homog_ld_lagran_t*)homo.st)->index = malloc(nnods_bc*3*sizeof(int));
+    ((homog_ld_lagran_t*)homo.st)->ub_val = malloc(nnods_bc*3*sizeof(double));
 
   }
-
   return 0;
 }
+/****************************************************************************************************/
