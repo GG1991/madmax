@@ -94,16 +94,16 @@ function cube_fiber_seq {
 NM=1
 
 eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro   \
-  -input ex1.spu                                                         \
-  -mesh ../../meshes/cube_fiber/cube_fiber.msh                           \
-  -mesh_gmsh                                                             \
-  -ksp_type cg                                                           \
-  -ksp_rtol 1.0e-13                                                      \
-  -ksp_atol 1.0e-19                                                      \
-  -pc_type bjacobi                                                       \
-  -options_left 0                                                        \
-  -log_trace micro_trace                                                 \
-  -homo_exp  \
+  -input ex1.spu \
+  -mesh ../../meshes/cube_fiber/cube_fiber.msh \
+  -mesh_gmsh \
+  -ksp_type cg \
+  -ksp_rtol 1.0e-13 \
+  -ksp_atol 1.0e-19 \
+  -pc_type bjacobi \
+  -options_left 0 \
+  -log_trace micro_trace \
+  -homo_ld \
   -print_vtu
 }
 
@@ -112,17 +112,17 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro   \
 function cube_fiber_par {
 NM=4
 
-eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro   \
-  -input ex1.spu                                                         \
-  -mesh ../../meshes/cube_fiber/cube_fiber.msh                           \
-  -mesh_gmsh                                                             \
-  -ksp_type cg                                                           \
-  -ksp_rtol 1.0e-13                                                      \
-  -ksp_atol 1.0e-19                                                      \
-  -pc_type bjacobi                                                       \
-  -options_left 0                                                        \
-  -log_trace micro_trace                                                 \
-  -homo_linear  \
+eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
+  -input ex1.spu \
+  -mesh ../../meshes/cube_fiber/cube_fiber.msh \
+  -mesh_gmsh \
+  -ksp_type cg \
+  -ksp_rtol 1.0e-13 \
+  -ksp_atol 1.0e-19 \
+  -pc_type bjacobi  \
+  -options_left 0 \
+  -log_trace micro_trace \
+  -homo_ld \
   -print_vtu
 }
 

@@ -92,7 +92,7 @@ int main(int argc, char **argv)
   if(set==PETSC_TRUE) homo.type=HOMO_TAYLOR;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo.type=HOMO_LINEAR;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear_lagrange",&set);CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_ld",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo.type=LD_LAGRAN;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear_hexa",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo.type=HOMO_LINEAR_HEXA;
@@ -216,6 +216,7 @@ int main(int argc, char **argv)
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = mic_init_boundary(MICRO_COMM, &boundary_list );CHKERRQ(ierr);
+  ierr = mic_init_homo();CHKERRQ(ierr);
 
   /*
      Allocate matrices & vectors
