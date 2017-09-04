@@ -70,7 +70,7 @@ int mic_alloc(MPI_Comm MICRO_COMM)
 
     int nlocal_ext, ntotal_ext;
 
-    nlocal_ext = ((homog_ld_lagran_t*)homo.st)->nnods_bc * 3;
+    nlocal_ext = nlocal + ((homog_ld_lagran_t*)homo.st)->nnods_bc * 3;
 
     ierr = MPI_Allreduce(&nlocal_ext, &ntotal_ext, 1, MPI_INT, MPI_SUM, MICRO_COMM);
 
