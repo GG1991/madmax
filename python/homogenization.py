@@ -16,15 +16,16 @@ import math as math
 #
 def elem_matrix(ke):
 
+  ke.fill(0.0)
   for gp in range(0, xp.shape[0]):
 
     B = np.zeros( (3,4*2) )
-    for sh in range(0, dsh.shape[0]):
+    for sh in range(0, 4):
       B[0,[sh*2+0, sh*2+1]] = [dsh[sh,0,gp], 0           ]
-      B[1,[sh*2+0, sh*2+1]] = [0           , dsh[sh,0,gp]]
+      B[1,[sh*2+0, sh*2+1]] = [0           , dsh[sh,1,gp]]
       B[2,[sh*2+0, sh*2+1]] = [dsh[sh,1,gp], dsh[sh,0,gp]]
 
-    ke += reduce(np.dot,[B.transpose(),C,B])
+    ke += reduce(np.dot,[B.transpose(),C,B])*wp[gp]*area
 
   return;
 ############################################################
@@ -33,23 +34,25 @@ def elem_matrix(ke):
 #
 def elem_residue(e, elem, x, be):
 
+  be.fill(0.0)
   for n in range(0, 4):
     index[[n*2+0, n*2+1]] = [elem[e,n]*2+0,elem[e,n]*2+1]
   elem_disp = x[index]
   stress_gp = np.zeros( 3 )
-  print "elem_disp",elem_disp
 
-  for gp in range(0, xp.shape[0]):
+  B = np.zeros( (3,4*2) )
+  for gp in range(0,4):
 
-    B = np.zeros( (3,4*2) )
     for sh in range(0, dsh.shape[0]):
       B[0,[sh*2+0, sh*2+1]] = [dsh[sh,0,gp], 0           ]
-      B[1,[sh*2+0, sh*2+1]] = [0           , dsh[sh,0,gp]]
+      B[1,[sh*2+0, sh*2+1]] = [0           , dsh[sh,1,gp]]
       B[2,[sh*2+0, sh*2+1]] = [dsh[sh,1,gp], dsh[sh,0,gp]]
 
-    stress_gp = np.dot(B,elem_disp)
-    print "stress_gp",stress_gp
-    be += np.dot(B.transpose(), stress_gp)
+    strain_gp = np.dot(B,elem_disp)
+    stress_gp = np.dot(C,strain_gp)
+    #print "strain_gp",strain_gp
+    #print "stress_gp",stress_gp
+    be += np.dot(B.transpose(), stress_gp)*wp[gp]*area
 
   return;
 
@@ -57,10 +60,13 @@ def elem_residue(e, elem, x, be):
 #
 # main program
 #
-nx = 2
-ny = 2
+nx = 30
+ny = 30 
 lx = 1.0
 ly = 1.0
+hx = lx/(nx-1)
+hy = ly/(ny-1)
+area = hx*hy
 
 n_bc = ny*2 + (nx-2)*2
 
@@ -75,10 +81,10 @@ wp = np.multiply(wp,0.25)
 
 dsh = np.zeros( (4,2,4) ) # num_sh, x_dir, num_gp
 for gp in range(0, xp.shape[0]):
-  dsh[0,0,gp] = -1.0*(1-xp[gp,1]); dsh[0,1,gp] = (1-xp[gp,0])*-1.0
-  dsh[1,0,gp] = +1.0*(1-xp[gp,1]); dsh[1,1,gp] = (0+xp[gp,0])*-1.0
-  dsh[2,0,gp] = +1.0*(0+xp[gp,1]); dsh[2,1,gp] = (0+xp[gp,0])*+1.0
-  dsh[3,0,gp] = -1.0*(0+xp[gp,1]); dsh[3,1,gp] = (1-xp[gp,0])*+1.0
+  dsh[0,0,gp] = -1.0*(1-xp[gp,1])/hx; dsh[0,1,gp] = (1-xp[gp,0])*-1.0/hy
+  dsh[1,0,gp] = +1.0*(1-xp[gp,1])/hx; dsh[1,1,gp] = (0+xp[gp,0])*-1.0/hy
+  dsh[2,0,gp] = +1.0*(0+xp[gp,1])/hx; dsh[2,1,gp] = (0+xp[gp,0])*+1.0/hy
+  dsh[3,0,gp] = -1.0*(0+xp[gp,1])/hx; dsh[3,1,gp] = (1-xp[gp,0])*+1.0/hy
 
 # define constitutive tensor
 nu = 0.3; E  = 1e6
@@ -91,13 +97,16 @@ C = np.multiply(C,E*(1-nu)/((1+nu)*(1-2*nu)))
 
 J  = np.zeros( (nx*ny*2 + n_bc*2,nx*ny*2 + n_bc*2) )
 x  = np.zeros( nx*ny*2 + n_bc*2 )
+b  = np.zeros( nx*ny*2 + n_bc*2 )
 dx = np.zeros( nx*ny*2 + n_bc*2)
 ke = np.zeros( (4*2,4*2) )
 be = np.zeros( 4*2 )
 D  = np.zeros( (3,n_bc*2) )
 
-elem = np.zeros( ((nx-1)*(ny-1),4), dtype=np.int )
-coor = np.zeros( (nx*ny,2) )
+nelm = (nx-1)*(ny-1)
+nnod = nx*ny
+elem = np.zeros( (nelm,4), dtype=np.int)
+coor = np.zeros( (nnod,2) )
 
 for i in range(0, ny-1):
   for j in range(0,nx-1):
@@ -108,40 +117,34 @@ for i in range(0, ny-1):
 
 for i in range(0, ny):
   for j in range(0,nx):
-    coor[i*nx+j,0] = j*lx/(nx-1)
-    coor[i*nx+j,1] = i*ly/(ny-1)
+    coor[i*nx+j,0] = j*hx
+    coor[i*nx+j,1] = i*hy
 
-# Boundary conditions indeces
-ux_x0_ind = np.arange(0          ,ny*nx*2,nx*2)
-ux_x1_ind = np.arange((nx-1)*2   ,ny*nx*2,nx*2)
-uy_x0_ind = np.arange(1          ,ny*nx*2,nx*2)
-uy_x1_ind = np.arange((nx-1)*2+1 ,ny*nx*2,nx*2)
+# Boundary nodes index
+y0_ind = np.arange(2          ,nx*2-2,2)
+x1_ind = np.arange((nx-1)*2   ,ny*nx*2,nx*2)
+y1_ind = np.arange(((ny-1)*nx+1)*2,ny*nx*2-2,2)
+x0_ind = np.arange(0          ,ny*nx*2,nx*2)
 
-ux_y0_ind = np.arange(2          ,nx*2-2,2)
-uy_y0_ind = np.arange(3          ,nx*2-2,2)
-ux_y1_ind = np.arange(((ny-1)*nx+1)*2,ny*nx*2-2,2)
-uy_y1_ind = np.arange(((ny-1)*nx+1)*2+1,ny*nx*2-2,2)
-#print "ux_x0_ind",ux_x0_ind, "\n"
-#print "ux_x1_ind",ux_x1_ind, "\n"
-#print "uy_x0_ind",uy_x0_ind, "\n"
-#print "uy_x1_ind",uy_x1_ind, "\n"
-#print "ux_y0_ind",ux_y0_ind, "\n"
-#print "uy_y0_ind",uy_y0_ind, "\n"
-#print "ux_y1_ind",ux_y1_ind, "\n"
-#print "uy_y1_ind",uy_y1_ind, "\n"
+bc_nods = np.sort(np.concatenate((y0_ind, x1_ind, y1_ind, x0_ind))/2)
+bc_inds = np.zeros(bc_nods.size*2, dtype=np.int)
+for i in range(0, bc_nods.size):
+  bc_inds[i*2+0] = bc_nods[i]*2+0
+  bc_inds[i*2+1] = bc_nods[i]*2+1
 
-n_ind_bc = np.concatenate((ux_y0_ind, ux_x1_ind, ux_y1_ind, ux_x0_ind))/2
-x_bc = np.concatenate((ux_y0_ind,uy_y0_ind,ux_x1_ind,uy_x1_ind,ux_y1_ind,uy_y1_ind,ux_x0_ind,uy_x0_ind))
-
-print "n_ind_bc",n_ind_bc
-print "x_bc",x_bc
+print
+print "bc_nods",bc_nods
+print "bc_inds",bc_inds
+print
 
 for i in range(0, n_bc):
-  D[0,i*2+0] = coor[n_ind_bc[i],0]   ; D[0,i*2+1] = 0
-  D[1,i*2+0] = 0                     ; D[1,i*2+1] = coor[n_ind_bc[i],1]
-  D[2,i*2+0] = coor[n_ind_bc[i],1]/2 ; D[2,i*2+1] = coor[n_ind_bc[i],0]/2
+  D[0,i*2+0] = coor[bc_nods[i],0]   ; D[0,i*2+1] = 0
+  D[1,i*2+0] = 0                    ; D[1,i*2+1] = coor[bc_nods[i],1]
+  D[2,i*2+0] = coor[bc_nods[i],1]/2 ; D[2,i*2+1] = coor[bc_nods[i],0]/2
 
-print "D^T\n",np.transpose(D)
+e_mac = np.array([1.0,0.0,0.0])
+e_mac = e_mac.transpose()
+print "D^T*e",np.transpose(np.dot(D.transpose(),e_mac))
 
 #calculate elemental matrix
 elem_matrix( ke )
@@ -149,57 +152,58 @@ elem_matrix( ke )
 # assembly J 
 index = np.zeros(4*2, dtype=np.int)
 for e in range(0, elem.shape[0]):
-  for n in range( 0, elem.shape[1]):
+  for n in range( 0, 4):
     index[[n*2+0, n*2+1]] = [elem[e,n]*2+0,elem[e,n]*2+1]
   J[np.ix_(index,index)] += ke
 
 # set BCs on J
-J[x_bc[:], nx*ny*2 + x_bc[:]] = 1.0;
-J[nx*ny*2 + x_bc[:], x_bc[:]] = 1.0;
-
-e_mac = np.array([[1.0],[0.0],[0.0]])
+J[bc_inds[:], nx*ny*2 + np.arange(bc_inds.size)] = -1.0;
+J[nx*ny*2 + np.arange(bc_inds.size), bc_inds[:]] = +1.0;
 
 # assembly b 
-b  = np.zeros( nx*ny*2 + n_bc*2 )
+b.fill(0.0)
 for e in range(0, elem.shape[0]):
   elem_residue(e, elem, x, be)
-  for n in range( 0, elem.shape[1]):
+  for n in range( 0, 4):
     index[[n*2+0, n*2+1]] = [elem[e,n]*2+0,elem[e,n]*2+1]
   b[index] += be
 
-ub = x[x_bc] 
-delta = x[nx*ny*2:]
-b[x_bc] -= delta
-b[nx*ny*2 + np.arange(x_bc.size)] = ub - np.transpose(np.dot(D.transpose(),e_mac))
+u_bc = x[bc_inds] 
+lamb = x[nx*ny*2:]
+b[bc_inds] -= lamb
+b[nx*ny*2 + np.arange(bc_inds.size)] = u_bc - np.transpose(np.dot(D.transpose(),e_mac))
 b = -b
 
-print "delta", delta
-print x_bc
-print nx*ny*2 + x_bc
-print b
-x = np.linalg.solve(J, b)
+dx = np.linalg.solve(J, b)
+x  = x + dx
+print 
+print "|b|",np.linalg.norm(b),"\n"
 
-b  = np.zeros( nx*ny*2 + n_bc*2 )
+b.fill(0.0)
 for e in range(0, elem.shape[0]):
   elem_residue(e, elem, x, be)
-  for n in range( 0, elem.shape[1]):
+  for n in range(0, 4):
     index[[n*2+0, n*2+1]] = [elem[e,n]*2+0,elem[e,n]*2+1]
   b[index] += be
 
-ub = x[x_bc] 
-delta = x[nx*ny*2:]
-print "delta", delta
-print "D^T*e",np.transpose(np.dot(D.transpose(),e_mac))
-b[x_bc] -= delta
-b[nx*ny*2 + np.arange(x_bc.size)] = ub - np.transpose(np.dot(D.transpose(),e_mac))
+u_bc = x[bc_inds] 
+lamb = x[nx*ny*2:]
+b[bc_inds] -= lamb
+b[nx*ny*2 + np.arange(bc_inds.size)] = u_bc - np.transpose(np.dot(D.transpose(),e_mac))
 b = -b
-print b
+dx = np.linalg.solve(J, b)
+x = x + dx
+print
+print "|b|",np.linalg.norm(b),"\n"
+print "u_bc", u_bc
+print "b",b
+print "forces",x[nnod*2:], "\n"
 
 # plot the matrix
 plt.matshow(J)
-plt.show()
+#plt.show()
 
-print elem, "\n"
-print coor, "\n"
+#print "elem",elem, "\n"
+#print "coor",coor, "\n"
 
 ############################################################
