@@ -24,6 +24,9 @@ MPI_Comm     MICRO_COMM;
 int          rank_mic;          //  rank on macro comm
 int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 
+Mat  J; // extended matrix for lagrange multipliers boundary setting
+Vec  xe, re; // extended distributed vectors for lagrange multipliers boundary setting
+
 /*
    indeces for specifying boundary conditions
 */
@@ -59,6 +62,7 @@ int mic_comm_init(void);
 int mic_alloc(MPI_Comm comm);
 
 // mic_boundary.c
+int mic_parse_boundary(MPI_Comm PROBLEM_COMM, char *input);
 int mic_init_boundary_list(list_t *boundary_list);
 int mic_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list);
 int micro_check_physical_entities( list_t *physical_list );
