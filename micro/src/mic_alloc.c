@@ -24,14 +24,8 @@ int mic_alloc(MPI_Comm MICRO_COMM)
 
   int rank, nproc, ierr, nlocal, ntotal;
 
-  if(flag_reactions == PETSC_TRUE){
-    nlocal = 3*nmynods + 3*nmybcnods;
-    ntotal = 3*NTotalNod+ 3*nallbcnods;
-  }else{
-    nlocal = 3*nmynods;
-    ntotal = 3*NTotalNod;
-  }
-
+  nlocal = 3*nmynods;
+  ntotal = 3*NTotalNod;
 
   MPI_Comm_size(MICRO_COMM, &nproc);
   MPI_Comm_rank(MICRO_COMM, &rank);
@@ -62,33 +56,33 @@ int mic_alloc(MPI_Comm MICRO_COMM)
     }
   }
 
-  //  ierr = VecCreate(comm,x);CHKERRQ(ierr);
-  //  ierr = VecSetSizes(x,nmynods,NTotalNod);CHKERRQ(ierr);
   ierr = VecCreateGhost(MICRO_COMM, nmynods*3, NTotalNod*3, nghost*3, ghostsIndex, &x); CHKERRQ(ierr);
   ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
   ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
 
   free(ghostsIndex);
 
-  /*
-     Currently, all PETSc parallel matrix formats are partitioned by
-     contiguous chunks of rows across the processors.  Determine which
-     rows of the matrix are locally owned.
-   */
-  int Istart, Iend;
-  ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
-  if( Istart != StartIndexRank[rank_mic]*3 )
-    SETERRQ(MICRO_COMM,1,"error on indeces set for matrix and vector.");
-      
-  if(rank_mic<nproc_mic-1){
-    if( Iend != StartIndexRank[rank_mic+1]*3 ){
-      SETERRQ(MICRO_COMM,1,"error on indeces set for matrix and vector.");
-    }
-  }
-  else{
-    if( Iend != NTotalNod*3 ){
-      SETERRQ(MICRO_COMM,1,"error on indeces set for matrix and vector.");
-    }
+  if(homo.type==LD_LAGRAN){
+
+    /*
+       Linear displacements with Lagrangian Multiplier approach
+    */
+
+    int nlocal_ext, ntotal_ext;
+
+    nlocal_ext = ((homog_ld_lagran_t*)homo.st)->nnods_bc * 3;
+
+    ierr = MPI_Allreduce(&nlocal_ext, &ntotal_ext, 1, MPI_INT, MPI_SUM, MICRO_COMM);
+
+    ierr = MatCreate(MICRO_COMM,&J);CHKERRQ(ierr);
+    ierr = MatSetSizes(J,nlocal_ext,nlocal_ext,ntotal_ext,ntotal_ext);CHKERRQ(ierr);
+    ierr = MatSetFromOptions(J);CHKERRQ(ierr);
+    ierr = MatSeqAIJSetPreallocation(J,117,NULL);CHKERRQ(ierr);
+    ierr = MatMPIAIJSetPreallocation(J,117,NULL,117,NULL);CHKERRQ(ierr);
+    ierr = MatSetOption(J,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+
+    ierr = VecCreate(MICRO_COMM, &xe);CHKERRQ(ierr);
+    ierr = VecSetSizes(xe, nlocal_ext, ntotal_ext);CHKERRQ(ierr);
   }
 
   return 0;
