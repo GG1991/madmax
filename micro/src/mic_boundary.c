@@ -182,6 +182,65 @@ int mic_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   return 0;
 }
 /****************************************************************************************************/
+int mic_parse_boundary(MPI_Comm PROBLEM_COMM, char *input)
+{
+  /*
+     Parse the boundary of the problem, for <micro> 
+     we only want the name of the boundary for homogenization
+     purposes
+
+     Searchs for keywords>
+
+     $Boundary
+     <name1> <order> <kind> <fnumx> <fnumy> <fnumz>
+     <name2> <order> <kind> <fnumx> <fnumy> <fnumz>
+     ...
+     $EndBoundary
+   */
+
+  FILE   *file = fopen(input,"r"); if(!file) SETERRQ(PETSC_COMM_SELF,1,"File not found");
+  char   buf[NBUF], *data;
+  int    ln=0, flag_start_boundary=0;
+
+  boundary_t boundary;
+  list_init(&boundary.Nods, sizeof(int), cmpfunc_for_list);
+
+  while(fgets(buf,NBUF,file) != NULL)
+  {
+
+    ln ++;
+    data = strtok(buf," \n");
+    if(data){ 
+      if(!strcmp(data,"$Boundary")){
+
+	flag_start_boundary=1;
+	while(fgets(buf,NBUF,file) != NULL)
+	{
+	  ln ++;
+
+	  // <name>
+	  data = strtok(buf," \n"); 
+	  if(!strcmp(data,"$EndBoundary")) break;
+	  boundary.name = strdup(data);
+
+	  // si llegamos hasta acá esta todo 0K lo insertamos en la lista 
+	  boundary.bvoid = malloc(sizeof(mic_boundary_t));
+	  list_insertlast(&boundary_list, &boundary);
+	}
+      } 
+
+      if(!strcmp(data,"$EndBoundary")){
+	if(!flag_start_boundary){
+	  SETERRQ(PETSC_COMM_SELF,1,"$EndBoundary found but not $Boundary");
+	}
+	return 0;
+      }
+    }
+  }
+  SETERRQ(PETSC_COMM_SELF,1,"any boundary condition found");
+  return 1;
+}
+/****************************************************************************************************/
 int micro_apply_bc_linear_hexa(double strain[6], Vec *x, Mat *J, Vec *b, int flag)
 {
   /* 
