@@ -207,15 +207,11 @@ int main(int argc, char **argv)
   */
   ierr = list_init(&physical_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
   ierr = list_init(&function_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
+  ierr = list_init(&boundary_list, sizeof(boundary_t), NULL);CHKERRQ(ierr);
   ierr = parse_material(MICRO_COMM, input_n);CHKERRQ(ierr);
   ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = parse_function(MICRO_COMM, input_n);CHKERRQ(ierr); 
-
-  /*
-     Creates the boundary_list with <P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1>
-  */
-  ierr = micro_check_physical_entities(&physical_list);CHKERRQ(ierr);
-  ierr = mic_init_boundary_list(&boundary_list);CHKERRQ(ierr);
+  ierr = mic_parse_boundary(MICRO_COMM, input_n);CHKERRQ(ierr);
   ierr = set_id_on_material_and_boundary(MICRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
