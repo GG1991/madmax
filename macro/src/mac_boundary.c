@@ -195,7 +195,9 @@ int macro_parse_boundary(MPI_Comm PROBLEM_COMM, char *input)
 	  // <kind> 
 	  data = strtok(NULL," \n");
 	  mac_boundary.kind = StrBin2Dec(data);
-	  if(mac_boundary.kind<0 || mac_boundary.kind>7)SETERRQ(PETSC_COMM_SELF,1,"Bad <kind> code on boundary element.");
+	  if(mac_boundary.kind<0 || mac_boundary.kind>7){
+	    SETERRQ(PETSC_COMM_SELF,1,"Bad <kind> code on boundary element.");
+	  }
 
 	  // <nfz> 
 	  data = strtok(NULL," \n");
@@ -227,8 +229,7 @@ int macro_parse_boundary(MPI_Comm PROBLEM_COMM, char *input)
       }
     }
   }
-  // any boundary condition found
-  // printf("SpuParseBoundary: Any boundary found on input file\n");
+  SETERRQ(PETSC_COMM_SELF,1,"any boundary condition found");
   return 1;
 }
 /****************************************************************************************************/
