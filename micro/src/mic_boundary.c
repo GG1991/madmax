@@ -100,7 +100,7 @@ int mic_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
-  if(homo_type==HOMO_LINEAR_HEXA){
+  if(homo.type==HOMO_LINEAR_HEXA){
 
     int *px, *py, *pz;
     P000_ismine = P100_ismine = P010_ismine = -1;
@@ -224,7 +224,7 @@ int mic_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
     if(flag != 63)SETERRQ(MICRO_COMM,1, "MICRO:One entity not found P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1.");
     //  if(flag != 511)SETERRQ(MICRO_COMM,1, "MICRO:One entity not found P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1.");
   }
-  else if(homo_type==HOMO_LINEAR){
+  else if(homo.type==HOMO_LINEAR){
 
     // linear displacements u = e * x
     

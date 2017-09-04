@@ -87,16 +87,16 @@ int main(int argc, char **argv)
   /*
      Homogenization Options
   */
-  homo_type=0;
+  homo.type=0;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo_type=HOMO_TAYLOR;
+  if(set==PETSC_TRUE) homo.type=HOMO_TAYLOR;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo_type=HOMO_LINEAR;
+  if(set==PETSC_TRUE) homo.type=HOMO_LINEAR;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear_lagrange",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo_type=HOMO_LINEAR_LAGRANGE;
+  if(set==PETSC_TRUE) homo.type=LD_LAGRAN;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear_hexa",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo_type=HOMO_LINEAR_HEXA;
-  if(homo_type==0)SETERRQ(MICRO_COMM,1,"no homogenization option specified");
+  if(set==PETSC_TRUE) homo.type=HOMO_LINEAR_HEXA;
+  if(homo.type==0)SETERRQ(MICRO_COMM,1,"no homogenization option specified");
 
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;

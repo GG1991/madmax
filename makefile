@@ -38,9 +38,10 @@ DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h    \
 	       ${DEP_DIR}/fun.h        \
 	       ${DEP_DIR}/material.h
 
-DEPS_MACMIC =  ${DEP_DIR}/macmic.h     \
-	       ${MAC_INC_DIR}/macro.h  \
-	       ${MIC_INC_DIR}/micro.h  \
+DEPS_MACMIC =  ${DEP_DIR}/macmic.h \
+	       ${MAC_INC_DIR}/macro.h \
+	       ${MIC_INC_DIR}/micro.h \
+	       ${MIC_INC_DIR}/homogenization.h \
 	       ${DEP_DIR}/sputnik.h
 
 DEP_DIRS= ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}

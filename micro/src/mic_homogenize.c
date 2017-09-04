@@ -132,13 +132,13 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
    */
   int ierr;
 
-  if(homo_type==HOMO_TAYLOR){
+  if(homo.type==HOMO_TAYLOR){
     ierr = micro_homogenize_taylor(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
   }
-  else if(homo_type==HOMO_LINEAR){
+  else if(homo.type==HOMO_LINEAR){
     ierr = micro_homogenize_linear(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
   }
-  else if(homo_type==HOMO_LINEAR_HEXA){
+  else if(homo.type==HOMO_LINEAR_HEXA){
     ierr = micro_homogenize_linear_hexa(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
   }
   else{
@@ -148,3 +148,29 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
   return 0;
 }
 /****************************************************************************************************/
+int mic_init_homo(void)
+{
+  
+  if(homo.type==LD_LAGRAN){
+    /*
+       a) Count how many nodes (nnods_bc) belongs 
+       to the boundary search in the boundary_list
+       b) Allocate <index> and <ub_val>
+    */
+
+    homo.st = malloc(sizeof(homog_ld_lagran_t));
+
+    int nnods_bc=0;
+    node_list_t *pb;
+    pb = boundary_list.head;
+    while(pb){
+      nnods_bc += ((boundary_t*)pb->data)->Nods.sizelist;
+      pb=pb->next;
+    }
+    ((homog_ld_lagran_t*)homo.st)->nnods_bc = nnods_bc;
+
+
+  }
+
+  return 0;
+}

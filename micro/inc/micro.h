@@ -3,7 +3,8 @@
 *****************************************************************************************************/
 
 #include "sputnik.h"
-#include "macmic.h"  /* Routines inside sputinik that are common for <macro> and <micro> only */
+#include "homogenization.h"
+#include "macmic.h"  
 
 /*****************************************************************************************************
    MICRO global variables 
@@ -42,16 +43,6 @@ double *value_z1_ux, *value_z1_uy, *value_z1_uz;
 int P000[3], P000_ismine, P100[3], P100_ismine, P010[3], P010_ismine;
 double PVAL[3];
 
-/*
-   Homogenization Variables
-*/
-
-#define HOMO_TAYLOR           1
-#define HOMO_LINEAR           2
-#define HOMO_LINEAR_HEXA      3
-#define HOMO_LINEAR_LAGRANGE  4
-
-int homo_type;
 
 
 /*****************************************************************************************************
