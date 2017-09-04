@@ -115,6 +115,44 @@ int micro_homogenize_linear_hexa(MPI_Comm MICRO_COMM, double strain_mac[6], doub
   return 0;
 }
 /****************************************************************************************************/
+int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
+{
+  /*
+     Here we apply the Lagrage multiplier procedure 
+     to stablish the linear displacement boundary conditions. 
+     The equations can be written:
+     fa(u)=0
+     fb(u)-d=0
+     ub-D^Te=0
+         | A    ei |
+     J = |         | 
+         | ei^T 0  |
+  */
+  int    ierr, nr_its=-1, max_its=3;
+  double norm_tol=1.0e-8, norm=2*norm_tol;
+
+
+  while( nr_its < max_its && norm > norm_tol )
+  {
+    /* internal forces */
+    ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
+    ierr = micro_apply_bc_linear(strain_mac, &x, &A, &b, SET_RESIDUAL);CHKERRQ(ierr);
+    ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
+    if( !(norm > norm_tol) )break;
+    ierr = VecScale(b,-1.0); CHKERRQ(ierr);
+    /* Tangent matrix */
+    ierr = assembly_jacobian_sd(&A);
+    ierr = micro_apply_bc_linear(strain_mac, &x, &A, &b, SET_JACOBIAN);CHKERRQ(ierr);
+    ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
+    ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
+    nr_its ++;
+  }
+
+  ierr = calc_ave_strain_stress(MICRO_COMM, &x, strain_ave, stress_ave);CHKERRQ(ierr);
+
+  return 0;
+}
+/****************************************************************************************************/
 int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
@@ -122,13 +160,9 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
      Performs linear homogenization of the RVE 
      Possible types are>
 
-     HOMO_TAYLOR  1
-     HOMO_LINEAR  2
-     HOMO_PERIOD  3
-     HOMO_EXP     9
+     HOMO_TAYLOR, HOMO_LINEAR, HOMO_PERIOD, HOMO_LD_LAGRAN, HOMO_EXP
 
      HOMO_TAYLOR > no need of calculating a displacement field
-     
    */
   int ierr;
 
@@ -140,6 +174,9 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
   }
   else if(homo.type==HOMO_LINEAR_HEXA){
     ierr = micro_homogenize_linear_hexa(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
+  }
+  else if(homo.type==HOMO_LD_LAGRAN){
+    ierr = mic_homogenize_ld_lagran(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
   }
   else{
     return 1;

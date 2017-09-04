@@ -82,4 +82,5 @@ int micro_homogenize(MPI_Comm COMM, double strain_mac[6], double strain_ave[6], 
 int micro_homogenize_taylor(MPI_Comm COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int micro_homogenize_linear_hexa(MPI_Comm COMM, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
 int micro_homogenize_linear(MPI_Comm COMM, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
+int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int voigt2mat(double voigt[6], double matrix[3][3]);
