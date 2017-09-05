@@ -160,7 +160,7 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
      Performs linear homogenization of the RVE 
      Possible types are>
 
-     HOMO_TAYLOR, HOMO_LINEAR, HOMO_PERIOD, HOMO_LD_LAGRAN, HOMO_EXP
+     HOMO_TAYLOR, HOMO_LINEAR, HOMO_PERIOD, HOMO_LD_LAGRAN_SEQ, HOMO_EXP
 
      HOMO_TAYLOR > no need of calculating a displacement field
    */
@@ -175,7 +175,7 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
   else if(homo.type==HOMO_LINEAR_HEXA){
     ierr = micro_homogenize_linear_hexa(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
   }
-  else if(homo.type==HOMO_LD_LAGRAN){
+  else if(homo.type==LD_LAGRAN_SEQ){
     ierr = mic_homogenize_ld_lagran(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
   }
   else{
@@ -188,7 +188,7 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
 int mic_init_homo(void)
 {
   
-  if(homo.type==LD_LAGRAN){
+  if(homo.type==LD_LAGRAN_SEQ){
     /*
        a) Count how many nodes (nnods_bc) belongs 
        to the boundary search in the boundary_list

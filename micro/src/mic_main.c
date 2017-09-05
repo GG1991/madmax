@@ -16,16 +16,12 @@ static char help[] =
 "It has the capability of being couple with MACRO.\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
-"-homo_linear_taylor\n"
-"-homo_linear_linear\n"
-"-homo_linear_lagrange\n"
-"-homo_linear_linear_hexa\n"
+"-homo_ld_seq : homogenization using Lagrange multipliers in sequencial\n"
 "-print_petsc\n"
 "-print_vtk\n"
 "-print_part\n"
 "-print_vtu\n"
-"-print_all\n"
-"[-homo_taylor -homo_linear]\n";
+"-print_all\n";
 
 #include "micro.h"
 
@@ -92,8 +88,8 @@ int main(int argc, char **argv)
   if(set==PETSC_TRUE) homo.type=HOMO_TAYLOR;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo.type=HOMO_LINEAR;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_ld",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo.type=LD_LAGRAN;
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_ld_seq",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) homo.type=LD_LAGRAN_SEQ;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear_hexa",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo.type=HOMO_LINEAR_HEXA;
   if(homo.type==0)SETERRQ(MICRO_COMM,1,"no homogenization option specified");
@@ -110,6 +106,7 @@ int main(int argc, char **argv)
   ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
 
   ierr = PetscFinalize();CHKERRQ(ierr);
+
   /*
      Set PETSc communicator to MICRO_COMM
      and start again
@@ -122,6 +119,12 @@ int main(int argc, char **argv)
 	"--------------------------------------------------\n"
 	"  MICRO: STANDALONE \n"
 	"--------------------------------------------------\n");
+  }
+
+  if(nproc_mic > 1 && homo.type==LD_LAGRAN_SEQ){
+    PetscPrintf(MICRO_COMM,"Homogenization set is : Linear Displacements with Lagrangian BC,"
+	" it can be only executed in sequential\n");
+    goto end_micro;
   }
 
   FileOutputStructures = NULL;
@@ -161,32 +164,35 @@ int main(int argc, char **argv)
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
-  /*
-     partition the mesh
-  */
-  if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
-  ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
-  ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );CHKERRQ(ierr);
-  ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
+  if(0){
+    /*
+       partition the mesh
+     */
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
+    ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
+    ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     Calculate <*ghosts> and <nghosts> 
-  */
-  if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
-  ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
-  ierr = calculate_ghosts(&MICRO_COMM, myname);CHKERRQ(ierr);
-  ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
+    /*
+       Calculate <*ghosts> and <nghosts> 
+     */
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
+    ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
+    nghost = 0;
+    ierr = calculate_ghosts(&MICRO_COMM, myname);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     Reenumerate Nodes
-  */
-  if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
-  ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-  ierr = reenumerate_PETSc(MICRO_COMM);CHKERRQ(ierr);
-  ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
+    /*
+       Reenumerate Nodes
+     */
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
+    ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
+    ierr = reenumerate_PETSc(MICRO_COMM);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
+  }
 
   /*
      Coordinate Reading
@@ -352,6 +358,8 @@ int main(int argc, char **argv)
     }ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
 
   }
+
+end_micro:
 
   if(!flag_coupling){
     PetscPrintf(MICRO_COMM,

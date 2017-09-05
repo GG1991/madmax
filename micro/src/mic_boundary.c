@@ -147,7 +147,7 @@ int mic_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
     if(flag != 63)SETERRQ(MICRO_COMM,1, "MICRO:One entity not found P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1.");
     //  if(flag != 511)SETERRQ(MICRO_COMM,1, "MICRO:One entity not found P000 P100 P010 X0 X1 Y0 Y1 Z0 Z1.");
   }
-  else if(homo.type==HOMO_LINEAR || homo.type==LD_LAGRAN){
+  else if(homo.type==HOMO_LINEAR || homo.type==LD_LAGRAN_SEQ){
 
     // linear displacements u = e * x
     

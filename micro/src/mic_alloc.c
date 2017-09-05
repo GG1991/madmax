@@ -62,7 +62,7 @@ int mic_alloc(MPI_Comm MICRO_COMM)
 
   free(ghostsIndex);
 
-  if(homo.type==LD_LAGRAN){
+  if(homo.type==LD_LAGRAN_SEQ){
 
     /*
        Linear displacements with Lagrangian Multiplier approach
