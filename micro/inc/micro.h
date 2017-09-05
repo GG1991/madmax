@@ -30,6 +30,8 @@ Vec  xe, re; // extended distributed vectors for lagrange multipliers boundary s
 /*
    indeces for specifying boundary conditions
 */
+
+int dim;
 double LX, LY, LZ;
 int *index_x0_ux, *index_x0_uy, *index_x0_uz, nnods_x0; 
 int *index_y0_ux, *index_y0_uy, *index_y0_uz, nnods_y0; 

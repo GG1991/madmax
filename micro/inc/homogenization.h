@@ -5,7 +5,8 @@
 #define HOMO_TAYLOR           1
 #define HOMO_LINEAR           2
 #define HOMO_LINEAR_HEXA      3
-#define LD_LAGRAN_SEQ             4
+#define LD_LAGRAN_SEQ         4
+#define LD_LAGRAN_PAR         5
 
 /*
    Linear deformation using Lagrange multipliers

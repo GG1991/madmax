@@ -96,6 +96,8 @@ int main(int argc, char **argv)
 
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
+
+  dim = 3;
   /* 
      Stablish a new local communicator
    */
@@ -164,35 +166,33 @@ int main(int argc, char **argv)
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
-  if(0){
-    /*
-       partition the mesh
-     */
-    if(!flag_coupling)
-      PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
-    ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
-    ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );CHKERRQ(ierr);
-    ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
+  /*
+     Partition the mesh
+   */
+  if(!flag_coupling)
+    PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
+  ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
+  ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
-    /*
-       Calculate <*ghosts> and <nghosts> 
-     */
-    if(!flag_coupling)
-      PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
-    ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
-    nghost = 0;
-    ierr = calculate_ghosts(&MICRO_COMM, myname);CHKERRQ(ierr);
-    ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
+  /*
+     Calculate <*ghosts> and <nghosts> 
+   */
+  if(!flag_coupling)
+    PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
+  ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
+  nghost = 0;
+  ierr = calculate_ghosts(&MICRO_COMM, myname);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
-    /*
-       Reenumerate Nodes
-     */
-    if(!flag_coupling)
-      PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
-    ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-    ierr = reenumerate_PETSc(MICRO_COMM);CHKERRQ(ierr);
-    ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-  }
+  /*
+     Reenumerate Nodes
+   */
+  if(!flag_coupling)
+    PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
+  ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
+  ierr = reenumerate_PETSc(MICRO_COMM);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
   /*
      Coordinate Reading
@@ -212,11 +212,12 @@ int main(int argc, char **argv)
      Read materials, physical entities, boundaries from input and mesh file
   */
   ierr = list_init(&physical_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
-  ierr = list_init(&function_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
   ierr = list_init(&boundary_list, sizeof(boundary_t), NULL);CHKERRQ(ierr);
+  /*
+     Read materials and functions from input
+  */
   ierr = parse_material(MICRO_COMM, input_n);CHKERRQ(ierr);
   ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
-  ierr = parse_function(MICRO_COMM, input_n);CHKERRQ(ierr); 
   ierr = mic_parse_boundary(MICRO_COMM, input_n);CHKERRQ(ierr);
   ierr = set_id_on_material_and_boundary(MICRO_COMM); CHKERRQ(ierr); 
   ierr = CheckPhysicalID(); CHKERRQ(ierr);

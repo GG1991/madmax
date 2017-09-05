@@ -22,67 +22,80 @@ int mic_alloc(MPI_Comm MICRO_COMM)
 
    */
 
-  int rank, nproc, ierr, nlocal, ntotal;
+  if(0){
 
-  nlocal = 3*nmynods;
-  ntotal = 3*NTotalNod;
+    int rank, nproc, ierr, nlocal, ntotal;
 
-  MPI_Comm_size(MICRO_COMM, &nproc);
-  MPI_Comm_rank(MICRO_COMM, &rank);
+    nlocal = 3*nmynods;
+    ntotal = 3*NTotalNod;
 
-  ierr = MatCreate(MICRO_COMM,&A);CHKERRQ(ierr);
-  ierr = MatSetSizes(A,nlocal,nlocal,ntotal,ntotal);CHKERRQ(ierr);
-  ierr = MatSetFromOptions(A);CHKERRQ(ierr);
-  ierr = MatSeqAIJSetPreallocation(A,117,NULL);CHKERRQ(ierr);
-  ierr = MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);CHKERRQ(ierr);
-  ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+    MPI_Comm_size(MICRO_COMM, &nproc);
+    MPI_Comm_rank(MICRO_COMM, &rank);
 
-  /*
-     Create parallel vectors.
-     - We form 1 vector from scratch and then duplicate as needed.
-     This vector has ghost pathing in order to Get & and Set 
-     ghost values in an easy way. This is a great PETSc tool.
-     - When solving a linear system, the vectors and matrices MUST
-     be partitioned accordingly.  PETSc automatically generates
-     appropriately partitioned matrices and vectors when MatCreate()
-     and VecCreate() are used with the same communicator.
-   */
-  int i, d, *ghostsIndex;
-  ghostsIndex = malloc(nghost*3* sizeof(int));
+    ierr = MatCreate(MICRO_COMM,&A);CHKERRQ(ierr);
+    ierr = MatSetSizes(A,nlocal,nlocal,ntotal,ntotal);CHKERRQ(ierr);
+    ierr = MatSetFromOptions(A);CHKERRQ(ierr);
+    ierr = MatSeqAIJSetPreallocation(A,117,NULL);CHKERRQ(ierr);
+    ierr = MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);CHKERRQ(ierr);
+    ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
-  for(i=0;i<nghost;i++){
-    for(d=0;d<3;d++){
-      ghostsIndex[i*3+d] = loc2petsc[nmynods + i]*3+d;
+    /*
+       Create parallel vectors.
+       - We form 1 vector from scratch and then duplicate as needed.
+       This vector has ghost pathing in order to Get & and Set 
+       ghost values in an easy way. This is a great PETSc tool.
+       - When solving a linear system, the vectors and matrices MUST
+       be partitioned accordingly.  PETSc automatically generates
+       appropriately partitioned matrices and vectors when MatCreate()
+       and VecCreate() are used with the same communicator.
+     */
+    int i, d, *ghostsIndex;
+    ghostsIndex = malloc(nghost*3* sizeof(int));
+
+    for(i=0;i<nghost;i++){
+      for(d=0;d<3;d++){
+	ghostsIndex[i*3+d] = loc2petsc[nmynods + i]*3+d;
+      }
     }
-  }
 
-  ierr = VecCreateGhost(MICRO_COMM, nmynods*3, NTotalNod*3, nghost*3, ghostsIndex, &x); CHKERRQ(ierr);
-  ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
-  ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
+    ierr = VecCreateGhost(MICRO_COMM, nmynods*3, NTotalNod*3, nghost*3, ghostsIndex, &x); CHKERRQ(ierr);
+    ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
+    ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
 
-  free(ghostsIndex);
+    free(ghostsIndex);
 
-  if(homo.type==LD_LAGRAN_SEQ){
+  }else if(homo.type==LD_LAGRAN_SEQ){
 
     /*
        Linear displacements with Lagrangian Multiplier approach
-    */
+     */
 
-    int nlocal_ext, ntotal_ext;
+    int n,ierr;
 
-    nlocal_ext = nlocal + ((homog_ld_lagran_t*)homo.st)->nnods_bc * 3;
+    n = (nmynods + ((homog_ld_lagran_t*)homo.st)->nnods_bc) * dim;
 
-    ierr = MPI_Allreduce(&nlocal_ext, &ntotal_ext, 1, MPI_INT, MPI_SUM, MICRO_COMM);
+    ierr = MatCreateSeqAIJ(MICRO_COMM,n,n,177,PETSC_NULL,&A);CHKERRQ(ierr);
+    ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+    ierr = MatSetFromOptions(A);CHKERRQ(ierr);
 
-    ierr = MatCreate(MICRO_COMM,&J);CHKERRQ(ierr);
-    ierr = MatSetSizes(J,nlocal_ext,nlocal_ext,ntotal_ext,ntotal_ext);CHKERRQ(ierr);
-    ierr = MatSetFromOptions(J);CHKERRQ(ierr);
-    ierr = MatSeqAIJSetPreallocation(J,117,NULL);CHKERRQ(ierr);
-    ierr = MatMPIAIJSetPreallocation(J,117,NULL,117,NULL);CHKERRQ(ierr);
-    ierr = MatSetOption(J,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+    ierr = VecCreateSeq(MICRO_COMM, n, &x);CHKERRQ(ierr);
 
-    ierr = VecCreate(MICRO_COMM, &xe);CHKERRQ(ierr);
-    ierr = VecSetSizes(xe, nlocal_ext, ntotal_ext);CHKERRQ(ierr);
+  }else if(homo.type==LD_LAGRAN_PAR){
+
+//    nlocal_ext = nlocal + ((homog_ld_lagran_t*)homo.st)->nnods_bc * 3;
+//
+//    ierr = MPI_Allreduce(&nlocal_ext, &ntotal_ext, 1, MPI_INT, MPI_SUM, MICRO_COMM);
+//    
+//    ierr = MatCreate(MICRO_COMM,&J);CHKERRQ(ierr); // this communicator should have only 1 process here
+//    ierr = MatSetSizes(J,nlocal_ext,nlocal_ext,ntotal_ext,ntotal_ext);CHKERRQ(ierr);
+//    ierr = MatSetFromOptions(J);CHKERRQ(ierr);
+//    ierr = MatSeqAIJSetPreallocation(J,117,NULL);CHKERRQ(ierr);
+//    ierr = MatMPIAIJSetPreallocation(J,117,NULL,117,NULL);CHKERRQ(ierr);
+//    ierr = MatSetOption(J,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+//
+//    ierr = VecCreate(MICRO_COMM, &xe);CHKERRQ(ierr);
+//    ierr = VecSetSizes(xe, nlocal_ext, ntotal_ext);CHKERRQ(ierr);
+
   }
 
   return 0;
