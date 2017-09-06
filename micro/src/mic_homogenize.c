@@ -125,14 +125,14 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
      fb(u)-ub=0
      ub-D^Te=0
 
-         | A    ei |       | f       |
-     J = |         |  b =  |         |
-         | ei^T 0  |       | ub-D^Te |
+         | A    ei |       | f       |     | x_val |
+     J = |         |  b =  |         | x = |       |
+         | ei^T 0  |       | ub-D^Te |     | l_val |
 
      the "f" contains fa and fb mixed depending on the node numeration
   */
-  int    ierr, nr_its=-1, max_its=3, nnods_bc, i, d, k, n_loc;
-  double norm_tol=1.0e-8, norm=2*norm_tol, ub, strain_matrix[3][3];
+  int    ierr, nr_its=-1, max_its=3, nnods_bc, i, d, k, n_loc, *ixb, *il;
+  double norm_tol=1.0e-8, norm=2*norm_tol, ub, strain_matrix[3][3], *xb_val, *l_val;
 
   if(dim==2){
     strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[2];
@@ -145,13 +145,23 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
   }
 
   nnods_bc = ((homog_ld_lagran_t*)homo.st)->nnods_bc;
+  xb_val = malloc(nnods_bc*dim*sizeof(double));
+  l_val  = malloc(nnods_bc*dim*sizeof(double));
+  il     = malloc(nnods_bc*dim*sizeof(int));
+  ixb    = ((homog_ld_lagran_t*)homo.st)->index;
+
+  for(i=nmynods;i<(nmynods+nnods_bc);i++){
+    for(d=0;d<dim;d++){
+      il[(i-nmynods)*dim+d] = i*dim+d;	
+    }
+  }
 
   while( nr_its < max_its && norm > norm_tol )
   {
     // first we fill the value ub_val in <homog_ld_lagran_t> structure
     for(i=0; i<nnods_bc; i++){
       for(d=0;d<dim;d++){
-	n_loc = ((homog_ld_lagran_t*)homo.st)->index[i*dim+d]/dim;
+	n_loc = ixb[i*dim+d]/dim;
 	ub = 0.0;
 	for(k=0;k<dim;k++){
 	  ub += strain_matrix[d][k]*coord[n_loc * 3 + k];
@@ -159,6 +169,8 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
 	((homog_ld_lagran_t*)homo.st)->ub_val[i*dim+d] = ub;
       }
     }
+    VecGetValues(x,nnods_bc*dim,ixb,xb_val); 
+    VecGetValues(x,nnods_bc*dim,il,l_val); // get lagrange multipliers
 
     /* internal forces */
     ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
@@ -166,6 +178,7 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
     ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
     if( !(norm > norm_tol) )break;
     ierr = VecScale(b,-1.0); CHKERRQ(ierr);
+
     /* Tangent matrix */
     ierr = assembly_jacobian_sd(&A);
     ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
@@ -174,6 +187,9 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
   }
 
   ierr = calc_ave_strain_stress(MICRO_COMM, &x, strain_ave, stress_ave);CHKERRQ(ierr);
+  free(xb_val);
+  free(l_val);
+  free(il);
 
   return 0;
 }
