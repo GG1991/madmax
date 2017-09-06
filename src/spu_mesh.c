@@ -483,27 +483,27 @@ int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
   node_list_t  *pBound;
 
   fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
-  //
-  // Ahora hay que completar la lista <Nods>
-  //
+  /*
+     Ahora hay que completar la lista <Nods>
+   */
   while(fgets(buf,NBUF,fm)!=NULL){
     data=strtok(buf," \n");
-    //
-    // leemos hasta encontrar $Elements
-    //
+    /*
+       leemos hasta encontrar $Elements
+     */
     if(!strcmp(data,"$Elements")){
-      //
-      // leemos el numero total pero no lo usamos 
-      // (incluye elementos de superficie y de volumen)
-      //
+      /*
+	 leemos el numero total pero no lo usamos 
+	 (incluye elementos de superficie y de volumen)
+       */
       fgets(buf,NBUF,fm);
       data  = strtok(buf," \n");
       total = atoi(data);
-      //
-      // leemos hasta $EndElements o encontramos un elemento de
-      // de volumen. En general todos los de superficie estan
-      // antes que los de volumen en Gmsh.
-      //
+      /*
+	 leemos hasta $EndElements o encontramos un elemento de
+	 de volumen. En general todos los de superficie estan
+	 antes que los de volumen en Gmsh.
+       */
       i=0;
       while(i<total)
       {
@@ -511,7 +511,7 @@ int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 	data=strtok(buf," \n");
 	data=strtok(NULL," \n");
 
-	if(GmshIsAsurfaceElement(atoi(data))){
+	if(gmsh_is_surf_elm(atoi(data))){
 
 	  NPE = GmshNodesPerElement(atoi(data));
 	  data=strtok(NULL," \n");
@@ -551,8 +551,10 @@ int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 
 	}
 	else{
-	  // is a volume element so I expect not to 
-	  // see surface elements far beyond this file
+	  /* 
+	     is a volume element so I expect not to 
+	     see surface elements far beyond this file
+	   */
 	  break;
 	}
 	i++;
@@ -563,22 +565,6 @@ int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
   }
   fclose(fm);
 
-//  if(outfile!=NULL){
-//    // queremos escribir algo
-//    if(rank==0){
-//      fprintf(outfile,"boundary_list\n");
-//      pBound = boundary_list.head;
-//      while(pBound){
-//	fprintf(outfile,"name: %-8s NNod: %6d\n",
-//	    ((boundary_t*)pBound->data)->name,((boundary_t*)pBound->data)->NNods);
-//	for(i=0;i<((boundary_t*)pBound->data)->NNods;i++){
-//	  fprintf(outfile,"%6d ", ((boundary_t*)pBound->data)->Nods[i]);
-//	}
-//	fprintf(outfile,"\n");
-//	pBound=pBound->next;
-//      }
-//    }
-//  }
   //
   /**************************************************/
   return 0;   
@@ -698,9 +684,28 @@ int GmshNodesPerElement(int code)
     }
 }
 /****************************************************************************************************/
-int GmshIsAsurfaceElement(int code)
+int gmsh_is_surf_elm(int code)
 {
-  return (code == 1 || code == 2 || code == 3 || code == 15) ? 1 : 0;
+  // returns 1 if the code corresponds to a surface element, 0 othewhise
+  if(dim == 2){
+    return (code == 1 || code == 15) ? 1 : 0;
+  }
+  else if(dim == 3){
+    return (code == 1 || code == 2 || code == 3 || code == 15) ? 1 : 0;
+  }
+  return 1;
+}
+/****************************************************************************************************/
+int gmsh_is_vol_elm(int code)
+{
+  // returns 1 if the code corresponds to a volume element, 0 othewhise
+  if(dim == 2){
+    return (code == 2 || code == 3) ? 1 : 0;
+  }
+  else if(dim == 3){
+    return (code == 4 || code == 5 || code == 6) ? 1 : 0;
+  }
+  return 1;
 }
 /****************************************************************************************************/
 int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f)
@@ -991,37 +996,37 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
 
   /**************************************************/
-  //  count the total number of volumetric elements 
-  //  nelm_tot
-  //
+  /*  count the total number of volumetric elements 
+      nelm_tot
+   */
   offset   = 0;
   nelm_tot = 0;
   while(fgets(buf,NBUF,fm)!=NULL){
     offset += strlen(buf); 
     data=strtok(buf," \n");
-    //
-    // leemos hasta encontrar $Elements
-    //
+    /*
+       leemos hasta encontrar $Elements
+     */
     if(strcmp(data,"$Elements")==0){
-      //
-      // leemos el numero total pero no lo usamos 
-      // (incluye elementos de superficie y de volumen)
-      //
+      /*
+         leemos el numero total pero no lo usamos 
+         (incluye elementos de superficie y de volumen)
+      */
       fgets(buf,NBUF,fm);
       offset += strlen(buf); 
       data  = strtok(buf," \n");
       total = atoi(data);
 
-      //
-      // leemos hasta $EndElements
-      // y contamos el numero total de los elementos volumen
-      //
+      /*
+	 leemos hasta $EndElements
+	 y contamos el numero total de los elementos volumen
+       */
       for(i=0; i<total; i++){
 	fgets(buf,NBUF,fm); 
 	len = strlen(buf);
 	data=strtok(buf," \n");
 	data=strtok(NULL," \n");
-	if(atoi(data) == 4 || atoi(data) == 5 || atoi(data) == 6){
+	if(gmsh_is_vol_elm(atoi(data))){
 	  nelm_tot ++;
 	}
 	else{
