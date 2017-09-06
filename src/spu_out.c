@@ -64,7 +64,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
 
   fprintf(vtkfl, "CELL_TYPES %i\n", nelm);
   for (e=0;e<nelm;e++){
-    fprintf(vtkfl, "%d\n",vtkcode(3,eptr[e+1] - eptr[e]));  
+    fprintf(vtkfl, "%d\n",vtkcode(dim,eptr[e+1] - eptr[e]));  
   }
 
   fprintf(vtkfl, "CELL_DATA %i\n",nelm);
@@ -144,7 +144,7 @@ int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *
 
   fprintf(vtkfl, "CELL_TYPES %i\n", nelm);
   for (e=0;e<nelm;e++){
-    fprintf(vtkfl, "%d\n",vtkcode(3,eptr[e+1] - eptr[e]));  
+    fprintf(vtkfl, "%d\n",vtkcode(dim,eptr[e+1] - eptr[e]));  
   }
 
   fprintf(vtkfl, "POINT_DATA %i\n",nallnods);
@@ -303,8 +303,11 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   fprintf(fm,"<Points>\n");
   fprintf(fm,"<DataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
   for(i=0;i<nallnods;i++){
-    for(d=0;d<3;d++){
+    for(d=0;d<dim;d++){
       fprintf(fm,"%e ",coord[i*3+d]);
+    }
+    for(d=dim;d<3;d++){
+      fprintf(fm,"%e ",0.0);
     }
     fprintf(fm,"\n ");
   }
@@ -330,7 +333,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for (i=0;i<nelm;i++){
-    fprintf(fm, "%d ",vtkcode(3,eptr[i+1] - eptr[i]));  
+    fprintf(fm, "%d ",vtkcode(dim,eptr[i+1] - eptr[i]));  
   }
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
@@ -438,38 +441,6 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
       "</Piece>\n"
       "</UnstructuredGrid>\n"
       "</VTKFile>\n");
-
-//<?xml version="1.0"?> 
-//
-//<VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian"> 
-//<UnstructuredGrid> 
-//<Piece NumberOfPoints="3" NumberOfCells="1"> 
-//<Points> 
-//<DataArray type="Float32" Name="Position" NumberOfComponents="3" format="ascii"> 
-//0.0    0.0    0.0 
-//1.0    1.0    0.0 
-//0.0    1.0    0.0 
-//</DataArray> 
-//</Points> 
-//<Cells> 
-//<DataArray type="Int32" Name="connectivity" NumberOfComponents="1" format="ascii"> 
-//0    1    2        
-//</DataArray> 
-//<DataArray type="Int32" Name="offsets" NumberOfComponents="1" format="ascii"> 
-//3    
-//</DataArray> 
-//<DataArray type="UInt8"  Name="types" NumberOfComponents="1" format="ascii"> 
-//5 
-//</DataArray> 
-//</Cells> 
-//<CellData Scalars="Material"> 
-//<DataArray type="Int32" Name="Material" NumberOfComponents="1" format="ascii"> 
-//1    
-//</DataArray> 
-//</CellData> 
-//</Piece> 
-//</UnstructuredGrid> 
-//</VTKFile>
 
   fclose(fm);
   return 0;
