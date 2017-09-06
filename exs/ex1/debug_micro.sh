@@ -129,12 +129,13 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
 # 06-09-2017
 # Cube with cilindrical fiber in the middle
 # Linear Displacements with Lagrangian BC
-function cube_fiber_ld_seq {
+function cube_fiber_2d_ld_seq {
 NM=1 # this technique is sequencial only 
 
 eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
-  -input ex1.spu \
-  -mesh ../../meshes/cube_fiber/cube_fiber.msh \
+  -input ex1_2d.spu \
+  -mesh ../../meshes/cube_fiber/cube_fiber_2d.msh \
+  -dim 2 \
   -mesh_gmsh \
   -ksp_type cg \
   -ksp_rtol 1.0e-13 \
