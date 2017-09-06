@@ -28,7 +28,7 @@ static char help[] =
 int main(int argc, char **argv)
 {
 
-  int ierr;
+  int ierr, ierr_1=0;
   char *myname = strdup("micro");
   char vtkfile_n[NBUF];
   PetscBool  set;
@@ -80,6 +80,12 @@ int main(int argc, char **argv)
   if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"mesh file not given on command line.");
   ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"input file not given.");
+  ierr = PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE){
+    PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
+    ierr_1 = 1;
+    goto end_micro_1;
+  }
   /*
      Homogenization Options
   */
@@ -106,8 +112,10 @@ int main(int argc, char **argv)
 
   ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
   ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
-
+  
+end_micro_1:
   ierr = PetscFinalize();CHKERRQ(ierr);
+  if(ierr_1) goto end_micro_2;
 
   /*
      Set PETSc communicator to MICRO_COMM
@@ -369,7 +377,10 @@ end_micro:
   }
 
   ierr = PetscFinalize();
+
+end_micro_2:
   ierr = MPI_Finalize();
+
 
   return 0;
 }

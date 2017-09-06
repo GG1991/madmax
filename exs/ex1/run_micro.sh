@@ -202,6 +202,23 @@ function struct_fiber_par {
     -print_vtu
 }
 
+function cube_fiber_ld_seq {
+NM=1 # this technique is sequencial only 
+
+  ./mpirun -np $NM ../../micro/micro \
+  -input ex1.spu \
+  -mesh ../../meshes/cube_fiber/cube_fiber.msh \
+  -mesh_gmsh \
+  -ksp_type cg \
+  -ksp_rtol 1.0e-13 \
+  -ksp_atol 1.0e-19 \
+  -pc_type bjacobi  \
+  -options_left 0 \
+  -log_trace micro_trace \
+  -homo_ld_seq \
+  -print_vtu
+}
+
 #cube_seq
 #cube_par
 #barbero_test_seq
