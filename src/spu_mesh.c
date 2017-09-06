@@ -2112,9 +2112,9 @@ int is_in_vector(int val, int *vector, int size)
 int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM)
 {
   /* 
-     For each material on <material_list> 
-     Searchs for the <GmshID> in the 
-     <physical_list>
+     For each physical entity of volume should be a material associated
+     in the material list if material do not have physical entity associated 
+     its GmshId will be -1. The same for the boundary elements.
    */
   node_list_t *pm, *pp;
 
@@ -2132,6 +2132,9 @@ int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM)
     if(pp!=NULL){
       ((physical_t*)pp->data)->FlagFound = 1;
     }
+    else{
+      ((material_t*)pm->data)->GmshID = -1;
+    }
     pm = pm->next;
   }
 
@@ -2145,10 +2148,12 @@ int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM)
       }
       pp = pp->next;
     }
-    if(!pp){ 
-      SETERRQ1(PETSC_COMM_SELF,1,"Boundary %s not found in Gmsh File.",((boundary_t*)pm->data)->name);
+    if(pp!=NULL){
+      ((physical_t*)pp->data)->FlagFound = 1;
     }
-    ((physical_t*)pp->data)->FlagFound = 1;
+    else{
+      ((boundary_t*)pm->data)->GmshID = -1;
+    }
     pm = pm->next;
   }
 
@@ -2156,7 +2161,8 @@ int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM)
   pp = physical_list.head;
   while(pp)
   {
-    if( !((physical_t*)pp->data)->FlagFound ){PetscPrintf(PROBLEM_COMM,
+    if( !((physical_t*)pp->data)->FlagFound ){
+      PetscPrintf(PROBLEM_COMM,
 	"\nWARNING:Physical %s not found on boundary_list.\n",((physical_t*)pp->data)->name);}
     pp = pp->next;
   }
