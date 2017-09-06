@@ -168,7 +168,7 @@ int search_position_linear(int *array, int size, int val, int *pos);
 int search_position_logn(int *array, int size, int val, int *pos);
 int cmpfunc (const void * a, const void * b);
 int cmpfunc_for_list (void * a, void * b);
-int GmshNodesPerElement(int code);
+int gmsh_npe(int code);
 int gmsh_is_surf_elm(int code);
 int gmsh_is_vol_elm(int code);
 int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM);

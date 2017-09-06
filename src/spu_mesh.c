@@ -513,7 +513,7 @@ int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 
 	if(gmsh_is_surf_elm(atoi(data))){
 
-	  NPE = GmshNodesPerElement(atoi(data));
+	  NPE = gmsh_npe(atoi(data));
 	  data=strtok(NULL," \n");
 	  ntag = atoi(data);
 	  // read the GmshID (or the same as PhysicalID for volumes)
@@ -662,7 +662,7 @@ int read_boundary_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
   return 0;   
 }
 /****************************************************************************************************/
-int GmshNodesPerElement(int code)
+int gmsh_npe(int code)
 {
     switch(code){
 	case 1:  
@@ -1043,13 +1043,14 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   /**************************************************/
 
   /**************************************************/
-  //  armamos el vector elmdist. 
-  //  example: P0 tiene sus elementos entre 
-  //  elmdist[0] a elemdist[1] (not included)
-  //  los elementos que sobran a la division 
-  //  nelm_tot/nproc los repartimos uno por 
-  //  uno entre los primeros procesos
-  //
+  /*  
+      armamos el vector elmdist. 
+      example> P0 tiene sus elementos entre 
+      elmdist[0] a elemdist[1] (not included)
+      los elementos que sobran a la division 
+      nelm_tot/nproc los repartimos uno por 
+      uno entre los primeros procesos
+   */
   elmdist = (int*)calloc( nproc + 1 ,sizeof(int));
   resto = nelm_tot % nproc;
   elmdist[0] = 0;
@@ -1070,8 +1071,10 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
     printf("\n");
   }
 
-  // ya podemos allocar el vector "eptr" su dimension es :
-  // número de elementos locales + 1 = nelm + 1
+  /*
+     ya podemos allocar el vector "eptr" su dimension es :
+     número de elementos locales + 1 = nelm + 1
+   */
   nelm = elmdist[rank+1] - elmdist[rank];
   eptr = malloc( (nelm + 1) * sizeof(int));
   PhysicalID = malloc( nelm * sizeof(int));
@@ -1080,12 +1083,12 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   /**************************************************/
 
   /**************************************************/
-  //   
-  // we read the file again (from offset) 
-  // to count number of nodes 
-  // per element and fill "eptr"
-  // with this vector we can alloc memory for "eind"
-  //    
+  /*   
+       we read the file again (from offset) 
+       to count number of nodes 
+       per element and fill "eptr"
+       with this vector we can alloc memory for "eind"
+   */    
   fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
   for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
     fgets(buf,NBUF,fm); 
@@ -1097,20 +1100,8 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
     data=strtok(buf," \n");
     data=strtok(NULL," \n");
     npe = -1;
-    switch(atoi(data)){
-      case 4:
-	npe = 4;
-	break;
-      case 5:
-	npe = 8;
-	break;
-      case 6:
-	npe = 6;
-	break;
-      default:
-	break;
-    }
-    if(npe<0)return 1;
+    npe = gmsh_npe(atoi(data));
+    if(npe<0) SETERRQ1(PROBLEM_COMM,1,"element type %d not recognized",atoi(data));
     eptr[i] = eptr[i-1] + npe; 
   }
   eind = malloc( eptr[nelm] * sizeof(int));
