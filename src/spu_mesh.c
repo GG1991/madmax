@@ -1328,34 +1328,35 @@ int read_physical_entities_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
      Output>
      list_t  physical_list > physical entities list
    */
-  FILE                 *fm;
-
-  int                  i, ntot; 
-  int                  ln = 0;  // line counter and offset for moving faster in the file
-
-  char                 buf[NBUF];   
-  char                 *data;
+  FILE *fm;
+  int i, ntot, ln = 0;
+  char buf[NBUF], *data;
 
   physical_t physical;
 
-  fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
+  fm = fopen(mesh_n,"r");
+  if(!fm){
+    PetscPrintf(PROBLEM_COMM,"format error at line %d on %s\n", ln, mesh_n);
+    return 1;
+  }
 
   /**************************************************/
-  //  go to "$PhysicalNames" and then read them
-  //  filling physical_list
-  //
+  /*  
+      go to "$PhysicalNames" and then read them
+      filling physical_list
+   */
   while(fgets(buf,NBUF,fm)!=NULL)
   {
     ln++;
     data=strtok(buf," \n");
-    //
-    // leemos hasta encontrar $PhysicalNames
-    //
+    /*
+       leemos hasta encontrar $PhysicalNames
+     */
     if(strcmp(data,"$PhysicalNames")==0){
-      //
-      // leemos la cantidad de physical entities
-      // solo para hacer verificaciones
-      //
+      /*
+	 leemos la cantidad de physical entities
+	 solo para hacer verificaciones
+       */
       fgets(buf,NBUF,fm);
       data  = strtok(buf," \n");
       ntot = atoi(data);
@@ -1367,8 +1368,8 @@ int read_physical_entities_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 	// dimension
 	data=strtok(buf," \n");
 	if(!data){
-	  printf("format error at line %d on %s\n", ln, mesh_n);
-	  return -1;
+	  PetscPrintf(PROBLEM_COMM,"format error at line %d on %s\n", ln, mesh_n);
+	  return 1;
 	}
 	if(!strcmp(data,"$EndPhysicalNames")) break;
 	physical.dim = atoi(data);
