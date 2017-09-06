@@ -135,14 +135,13 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
   double norm_tol=1.0e-8, norm=2*norm_tol, ub, strain_matrix[3][3];
 
   if(dim==2){
-
-
-  }else if(dim==3){
-
+    strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[2];
+    strain_matrix[1][0]=strain_mac[2]; strain_matrix[1][1]=strain_mac[1];
+  }
+  else if(dim==3){
     strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[3]; strain_matrix[0][2]=strain_mac[5];
     strain_matrix[1][0]=strain_mac[3]; strain_matrix[1][1]=strain_mac[1]; strain_matrix[1][2]=strain_mac[4];
     strain_matrix[2][0]=strain_mac[5]; strain_matrix[2][1]=strain_mac[4]; strain_matrix[2][2]=strain_mac[2];
-
   }
 
   nnods_bc = ((homog_ld_lagran_t*)homo.st)->nnods_bc;
@@ -150,9 +149,6 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
   while( nr_its < max_its && norm > norm_tol )
   {
     // first we fill the value ub_val in <homog_ld_lagran_t> structure
-    // ((homog_ld_lagran_t*)homo.st)->index  = malloc(nnods_bc*dim*sizeof(int));
-    // ((homog_ld_lagran_t*)homo.st)->ub_val = malloc(nnods_bc*dim*sizeof(double));
-
     for(i=0; i<nnods_bc; i++){
       for(d=0;d<dim;d++){
 	n_loc = ((homog_ld_lagran_t*)homo.st)->index[i*dim+d]/dim;
