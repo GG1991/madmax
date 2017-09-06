@@ -1110,30 +1110,19 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
 
 
   /**************************************************/
-  //
-  // repetimos el proceso pero esta vez leemos los 
-  // nodos y completamos el vector "eind[eptr[nelm]]"
-  // empezamos a leer desde "offset"
-  //
+  /*
+     repetimos el proceso pero esta vez leemos los 
+     nodos y completamos el vector "eind[eptr[nelm]]"
+     empezamos a leer desde "offset"
+   */
   fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
   n = 0;
   for(i=0; i<nelm; i++){
     fgets(buf,NBUF,fm); 
     data=strtok(buf," \n");
     data=strtok(NULL," \n");
-    switch(atoi(data)){
-      case 4:
-	npe = 4;
-	break;
-      case 5:
-	npe = 8;
-	break;
-      case 6:
-	npe = 6;
-	break;
-      default:
-	break;
-    }
+    npe = gmsh_npe(atoi(data));
+    if(npe<0) SETERRQ1(PROBLEM_COMM,1,"element type %d not recognized",atoi(data));
     data=strtok(NULL," \n");
     ntag = atoi(data);
     // we read the PhysicalID
