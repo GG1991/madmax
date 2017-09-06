@@ -80,6 +80,8 @@ int mic_alloc(MPI_Comm MICRO_COMM)
     ierr = MatSetFromOptions(A);CHKERRQ(ierr);
 
     ierr = VecCreateSeq(MICRO_COMM, n, &x);CHKERRQ(ierr);
+    ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
+    ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
 
   }else if(homo.type==LD_LAGRAN_PAR){
 
