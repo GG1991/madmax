@@ -1,6 +1,7 @@
 /*
- *  General allocation routines 
- *
+    Allocation routines 
+    The sizes of the matrices depends on the homogenization technique 
+    that it is going to be used
  */
 
 #include "sputnik.h"

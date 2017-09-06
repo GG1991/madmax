@@ -181,7 +181,6 @@ int main(int argc, char **argv)
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
-  nghost = 0;
   ierr = calculate_ghosts(&MICRO_COMM, myname);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
