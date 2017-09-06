@@ -405,25 +405,45 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   /*
      <strain>
    */
-  fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\" format=\"ascii\">\n");
-  for (i=0;i<nelm;i++){
-    fprintf(fm, "%lf %lf %lf ", strain[i*6+0],strain[i*6+3],strain[i*6+5]);
-    fprintf(fm, "%lf %lf %lf ", strain[i*6+3],strain[i*6+1],strain[i*6+4]);
-    fprintf(fm, "%lf %lf %lf ", strain[i*6+5],strain[i*6+4],strain[i*6+2]);
+  if(dim==2){
+    fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"4\" format=\"ascii\">\n");
+    for (i=0;i<nelm;i++){
+      fprintf(fm, "%lf %lf ", strain[i*3+0],strain[i*3+2]);
+      fprintf(fm, "%lf %lf ", strain[i*3+2],strain[i*3+1]);
+    }
+    fprintf(fm,"\n");
   }
-  fprintf(fm,"\n");
+  else if(dim==3){
+    fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\" format=\"ascii\">\n");
+    for (i=0;i<nelm;i++){
+      fprintf(fm, "%lf %lf %lf ", strain[i*6+0],strain[i*6+3],strain[i*6+5]);
+      fprintf(fm, "%lf %lf %lf ", strain[i*6+3],strain[i*6+1],strain[i*6+4]);
+      fprintf(fm, "%lf %lf %lf ", strain[i*6+5],strain[i*6+4],strain[i*6+2]);
+    }
+    fprintf(fm,"\n");
+  }
   fprintf(fm,"</DataArray>\n");
 
   /*
      <stress>
    */
-  fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\" format=\"ascii\">\n");
-  for (i=0;i<nelm;i++){
-    fprintf(fm, "%lf %lf %lf ", stress[i*6+0],stress[i*6+3],stress[i*6+5]);
-    fprintf(fm, "%lf %lf %lf ", stress[i*6+3],stress[i*6+1],stress[i*6+4]);
-    fprintf(fm, "%lf %lf %lf ", stress[i*6+5],stress[i*6+4],stress[i*6+2]);
+  if(dim==2){
+    fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"4\" format=\"ascii\">\n");
+    for (i=0;i<nelm;i++){
+      fprintf(fm, "%lf %lf ", stress[i*3+0],stress[i*3+2]);
+      fprintf(fm, "%lf %lf ", stress[i*3+2],stress[i*3+1]);
+    }
+    fprintf(fm,"\n");
   }
-  fprintf(fm,"\n");
+  else if(dim==3){
+    fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\" format=\"ascii\">\n");
+    for (i=0;i<nelm;i++){
+      fprintf(fm, "%lf %lf %lf ", stress[i*6+0],stress[i*6+3],stress[i*6+5]);
+      fprintf(fm, "%lf %lf %lf ", stress[i*6+3],stress[i*6+1],stress[i*6+4]);
+      fprintf(fm, "%lf %lf %lf ", stress[i*6+5],stress[i*6+4],stress[i*6+2]);
+    }
+    fprintf(fm,"\n");
+  }
   fprintf(fm,"</DataArray>\n");
 
   /*
