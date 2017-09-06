@@ -368,8 +368,11 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
   for(i=0;i<nallnods;i++){
-    for(d=0;d<3;d++){
+    for(d=0;d<dim;d++){
       fprintf(fm, "%lf ", xvalues[i*3+d]);
+    }
+    for(d=dim;d<3;d++){
+      fprintf(fm, "%lf ", 0.0);
     }
     fprintf(fm,"\n");
   }
