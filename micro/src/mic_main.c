@@ -223,9 +223,9 @@ end_micro_1:
      Read materials and functions from input
   */
   ierr = parse_material(MICRO_COMM, input_n);CHKERRQ(ierr);
-  ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
-  ierr = mic_parse_boundary(MICRO_COMM, input_n);CHKERRQ(ierr);
-  ierr = set_id_on_material_and_boundary(MICRO_COMM); CHKERRQ(ierr); 
+  ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f); if(ierr) goto end_micro;
+  ierr = mic_parse_boundary(MICRO_COMM, input_n);if(ierr) goto end_micro;
+  ierr = set_id_on_material_and_boundary(MICRO_COMM); if(ierr) goto end_micro;
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = mic_init_boundary(MICRO_COMM, &boundary_list );CHKERRQ(ierr);
