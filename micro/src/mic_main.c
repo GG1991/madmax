@@ -103,7 +103,6 @@ int main(int argc, char **argv)
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
 
-  dim = 3;
   /* 
      Stablish a new local communicator
    */

@@ -510,3 +510,20 @@ int vtkcode(int dim,int npe)
       return -1;
   }
 }
+/****************************************************************************************************/
+//  if(outfile!=NULL){
+//    // queremos escribir algo
+//    if(rank==0){
+//      fprintf(outfile,"boundary_list\n");
+//      pBound = boundary_list.head;
+//      while(pBound){
+//	fprintf(outfile,"name: %-8s NNod: %6d\n",
+//	    ((boundary_t*)pBound->data)->name,((boundary_t*)pBound->data)->NNods);
+//	for(i=0;i<((boundary_t*)pBound->data)->NNods;i++){
+//	  fprintf(outfile,"%6d ", ((boundary_t*)pBound->data)->Nods[i]);
+//	}
+//	fprintf(outfile,"\n");
+//	pBound=pBound->next;
+//      }
+//    }
+//  }
