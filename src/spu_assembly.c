@@ -454,10 +454,9 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 /****************************************************************************************************/
 material_t * GetMaterial(int GmshIDToSearch)
 {
-  
-  /* Search in the <material_list> if for the one
-   * that has <GmshIDToSearch>
-   *
+  /* 
+     Search in the <material_list> if for the one
+     that has <GmshIDToSearch>
    */
 
   node_list_t *pn;
@@ -469,12 +468,10 @@ material_t * GetMaterial(int GmshIDToSearch)
   }
   if(!pn) return NULL;
   return (material_t*)pn->data;
-
 }
 /****************************************************************************************************/
 int GetWeight(int npe, double **wp)
 {
-
   *wp = FemGetPointer2Weight(npe, dim);
   return 0;
 }
@@ -495,7 +492,6 @@ int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
 
   if(dim==2){
     for(i=0;i<npe;i++){
-
       B[0][i*2+0] = ShapeDerivs[i][0]; 
       B[0][i*2+1] = 0.0         ;
 
@@ -508,7 +504,6 @@ int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
   }
   else if(dim==3){
     for(i=0;i<npe;i++){
-
       B[0][i*3+0] = ShapeDerivs[i][0]; 
       B[0][i*3+1] = 0.0         ;
       B[0][i*3+2] = 0.0         ; 
@@ -550,8 +545,8 @@ int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double
   ShapeDerivsMaster = FemGetPointer2ShapeDerivsMaster(npe, dim);
   if(ShapeDerivsMaster == NULL) return 1;
 
-  FemCalculateJac3D( coor, ShapeDerivsMaster, npe, gp, jac);
-  FemInvertJac3D( jac, ijac, DetJac);
+  fem_calc_jac(dim, coor, ShapeDerivsMaster, npe, gp, jac);
+  fem_invjac( dim, jac, ijac, DetJac);
   FemGiveShapeDerivs( ijac, npe, gp, ShapeDerivsMaster, ShapeDerivs);
 
   return 0;
@@ -576,8 +571,8 @@ int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex)
   int i, d;
 
   for(i=0;i<n;i++){
-    for(d=0;d<3;d++){
-      PETScIndex[i*3+d] = local2PETSc[LocalNod[i]]*3+d;
+    for(d=0;d<dim;d++){
+      PETScIndex[i*dim+d] = local2PETSc[LocalNod[i]]*dim+d;
     }
   }
   return 0;
@@ -592,7 +587,7 @@ int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3])
   int i, d;
 
   for(i=0;i<n;i++){
-    for(d=0;d<3;d++){
+    for(d=0;d<dim;d++){
       ElemCoord[i][d] = coord[ LocalNod[i]*3 + d ];
     }
   }
