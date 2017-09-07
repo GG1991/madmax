@@ -132,7 +132,7 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
      the "f" contains fa and fb mixed depending on the node numeration
   */
   int    ierr, nr_its=-1, max_its=3, nnods_bc, i, d, k, n_loc, *ixb, *il;
-  double norm_tol=1.0e-8, norm=2*norm_tol, ub, strain_matrix[3][3], *xb_val, *l_val;
+  double norm_tol=1.0e-8, norm=2*norm_tol, ub, strain_matrix[3][3], *x_arr;
 
   if(dim==2){
     strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[2];
@@ -144,9 +144,8 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
     strain_matrix[2][0]=strain_mac[5]; strain_matrix[2][1]=strain_mac[4]; strain_matrix[2][2]=strain_mac[2];
   }
 
+  ierr = VecGetArray(x, &x_arr);CHKERRQ(ierr);
   nnods_bc = ((homog_ld_lagran_t*)homo.st)->nnods_bc;
-  xb_val = malloc(nnods_bc*dim*sizeof(double));
-  l_val  = malloc(nnods_bc*dim*sizeof(double));
   il     = malloc(nnods_bc*dim*sizeof(int));
   ixb    = ((homog_ld_lagran_t*)homo.st)->index;
 
@@ -169,8 +168,6 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
 	((homog_ld_lagran_t*)homo.st)->ub_val[i*dim+d] = ub;
       }
     }
-    VecGetValues(x,nnods_bc*dim,ixb,xb_val); 
-    VecGetValues(x,nnods_bc*dim,il,l_val); // get lagrange multipliers
 
     /* internal forces */
     ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
@@ -187,9 +184,6 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
   }
 
   ierr = calc_ave_strain_stress(MICRO_COMM, &x, strain_ave, stress_ave);CHKERRQ(ierr);
-  free(xb_val);
-  free(l_val);
-  free(il);
 
   return 0;
 }

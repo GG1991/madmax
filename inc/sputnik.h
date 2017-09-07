@@ -70,6 +70,7 @@ PetscViewer  viewer;
 int rank_wor;  //  rank on world comm
 int nproc_wor; //  # of processes (WORLD_COMM)
 int dim;       //  problem dimensions 
+int nvoi;      //  number of voigt components (3 if dim=2, 6 if dim=3)
 
 #define PRINT_PETSC        0
 #define PRINT_VTK          1
