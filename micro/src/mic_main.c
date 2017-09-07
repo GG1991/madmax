@@ -343,7 +343,7 @@ end_micro_1:
     for(i=0;i<nvoi;i++){
 
       memset(strain_mac,0.0,nvoi*sizeof(double));strain_mac[i]=0.005;
-      ierr = micro_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
+      ierr = micro_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
 
       ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");CHKERRQ(ierr);
       for(j=0;j<nvoi;j++){

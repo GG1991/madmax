@@ -219,6 +219,26 @@ NM=1 # this technique is sequencial only
   -print_vtu
 }
 
+# 07-09-2017
+# Cube 2D
+# Linear Displacements with Lagrangian BC
+# this technique is sequencial only
+function cube_2d_ld_seq {
+NM=1  
+
+  ./mpirun -np $NM ../../micro/micro \
+  -input ex1_2d.spu \
+  -mesh ../../meshes/cube_unif/cube_2d.msh \
+  -dim 2 \
+  -mesh_gmsh \
+  -pc_type lu  \
+  -options_left 0 \
+  -log_trace micro_trace \
+  -homo_ld_seq \
+  -print_vtu \
+  -print_petsc
+}
+
 #cube_seq
 #cube_par
 #barbero_test_seq
