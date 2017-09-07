@@ -131,8 +131,8 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
 
      the "f" contains fa and fb mixed depending on the node numeration
   */
-  int    ierr, nr_its=-1, max_its=3, nnods_bc, i, d, k, n_loc, *ixb, *il;
-  double norm_tol=1.0e-8, norm=2*norm_tol, ub, strain_matrix[3][3], *x_arr;
+  int    ierr, nr_its=-1, max_its=3, nnods_bc, i, d, k, n_loc, *ixb;
+  double norm_tol=1.0e-8, norm=2*norm_tol, ub, strain_matrix[3][3], *x_arr, *b_arr;
 
   if(dim==2){
     strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[2];
@@ -146,14 +146,7 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
 
   ierr = VecGetArray(x, &x_arr);CHKERRQ(ierr);
   nnods_bc = ((homog_ld_lagran_t*)homo.st)->nnods_bc;
-  il     = malloc(nnods_bc*dim*sizeof(int));
-  ixb    = ((homog_ld_lagran_t*)homo.st)->index;
-
-  for(i=nmynods;i<(nmynods+nnods_bc);i++){
-    for(d=0;d<dim;d++){
-      il[(i-nmynods)*dim+d] = i*dim+d;	
-    }
-  }
+  ixb = ((homog_ld_lagran_t*)homo.st)->index;
 
   while( nr_its < max_its && norm > norm_tol )
   {
@@ -171,13 +164,55 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
 
     /* internal forces */
     ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
+    /* fb - delta */
+    ierr = VecGetArray(b, &b_arr);CHKERRQ(ierr);
+    for(i=0; i<nnods_bc; i++){
+      for(d=0;d<dim;d++){
+	b_arr[ixb[i*dim+d]] -= x_arr[nmynods*dim+i*dim+d];
+      }
+    }
+    /* ub - D^T . e_mac */
+    for(i=0; i<nnods_bc; i++){
+      for(d=0;d<dim;d++){
+	b_arr[i*dim+d] = x_arr[ixb[i*dim+d]] - ((homog_ld_lagran_t*)homo.st)->ub_val[i*dim+d];
+      }
+    }
+    ierr = VecRestoreArray(b, &b_arr);CHKERRQ(ierr);
 
     ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
     if( !(norm > norm_tol) )break;
     ierr = VecScale(b,-1.0); CHKERRQ(ierr);
 
     /* Tangent matrix */
+    /*
+         | A    0  |
+     J = |         |
+         | 0    0  |
+    */
     ierr = assembly_jacobian_sd(&A);
+    /*
+         | A    ei |
+     J = |         |
+         | 0    0  |
+    */
+    for(i=0; i<nnods_bc; i++){
+      for(d=0;d<dim;d++){
+	MatSetValue(A,ixb[i*dim+d],nmynods*dim+i*dim+d,1.0,INSERT_VALUES);
+      }
+    }
+    /*
+         | A    ei |
+     J = |         |
+         | ei^T 0  |
+    */
+    for(i=0; i<nnods_bc; i++){
+      for(d=0;d<dim;d++){
+	MatSetValue(A,nmynods*dim+i*dim+d,ixb[i*dim+d],1.0,INSERT_VALUES);
+      }
+    }
+    MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+
     ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
     ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
     nr_its ++;
