@@ -13,6 +13,7 @@
 int fem_inigau(void);
 int fem_caljac3(double coor[8][3],double ***ds, int npe,int gp,double jac[3][3]);
 int fem_invjac3(double jac[3][3],double ijac[3][3],double *det);
+int fem_invjac(int dim, double jac[3][3],double ijac[3][3],double *det);
 int fem_calode(int npe, int dim, double ****oder);
 int fem_calwei(int npe, int dim, double **wp);
 int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[3][3]);
@@ -22,6 +23,7 @@ int fem_dotdsh(int i, int j, double **derivs, int dim, double *p);
 int fem_vcross(double *v1, double *v2, double *vr);
 
 int FemCalculateJac3D(double coor[8][3],double ***ds, int npe,int gp,double jac[3][3]);
+int fem_calc_jac(int dim, double coor[8][3],double ***ds, int npe,int gp,double jac[3][3]);
 int FemInvertJac3D(double jac[3][3],double ijac[3][3],double *det);
 int FemGiveShapeDerivs(double ijac[3][3],int nsh,int gp,double ***ShapeDerivsMaster, double ShapeDerivs[8][3]);
 double *** FemGetPointer2ShapeDerivsMaster(int npe, int dim);

@@ -351,34 +351,37 @@ int fem_caljac3(double coor[8][3],double ***ds, int npe,int gp,double jac[3][3])
   }
   return 0;
 }
-
 /****************************************************************************************************/
-
 int FemCalculateJac3D(double coor[8][3],double ***ds, int npe,int gp,double jac[3][3])
 {
-
   int i, j, n;
-
   if( !jac || !coor || !ds ) return 1;
-
   for(i=0;i<3;i++){
     for(j=0;j<3;j++){
-
       jac[i][j]=0.0;
-
       for(n=0;n<npe;n++){
         jac[i][j] += ds[n][i][gp]*coor[n][j];
       }
-
     }
   }
-
   return 0;
 }
-
 /****************************************************************************************************/
-
-
+int fem_calc_jac(int dim, double coor[8][3],double ***ds, int npe,int gp,double jac[3][3])
+{
+  int i, j, n;
+  if( !jac || !coor || !ds ) return 1;
+  for(i=0;i<dim;i++){
+    for(j=0;j<dim;j++){
+      jac[i][j]=0.0;
+      for(n=0;n<npe;n++){
+        jac[i][j] += ds[n][i][gp]*coor[n][j];
+      }
+    }
+  }
+  return 0;
+}
+/****************************************************************************************************/
 int fem_invjac3(double jac[3][3],double ijac[3][3],double *det)
 {
   double c00,c01,c02,c10,c11,c12,c20,c21,c22;
@@ -404,6 +407,50 @@ int fem_invjac3(double jac[3][3],double ijac[3][3],double *det)
   ijac[2][0]=c02/(*det);
   ijac[2][1]=c12/(*det);
   ijac[2][2]=c22/(*det);
+  return 0;
+}
+/****************************************************************************************************/
+int fem_invjac(int dim, double jac[3][3],double ijac[3][3],double *det)
+{
+  double c00,c01,c02,c10,c11,c12,c20,c21,c22;
+
+  if( !jac || !ijac ) return 1;
+
+  if(dim==2){
+    c00 = +jac[1][1];
+    c01 = -jac[1][0];
+    c10 = -jac[0][1];
+    c11 = +jac[0][0];
+
+    (*det)=jac[0][0]*c00 + jac[0][1]*c01;
+    ijac[0][0]=c00/(*det);
+    ijac[0][1]=c10/(*det);
+    ijac[1][0]=c01/(*det);
+    ijac[1][1]=c11/(*det);
+  }
+  else if(dim==3){
+    c00 = +jac[1][1]*jac[2][2]-jac[2][1]*jac[1][2];
+    c01 = -jac[1][0]*jac[2][2]+jac[2][0]*jac[1][2];
+    c02 = +jac[1][0]*jac[2][1]-jac[2][0]*jac[1][1];
+    c10 = -jac[0][1]*jac[2][2]+jac[2][1]*jac[0][2];
+    c11 = +jac[0][0]*jac[2][2]-jac[2][0]*jac[0][2];
+    c12 = -jac[0][0]*jac[2][1]+jac[2][0]*jac[0][1];
+    c20 = +jac[0][1]*jac[1][2]-jac[1][1]*jac[0][2];
+    c21 = -jac[0][0]*jac[1][2]+jac[1][0]*jac[0][2];
+    c22 = +jac[0][0]*jac[1][1]-jac[1][0]*jac[0][1];
+
+    (*det)=jac[0][0]*c00 + jac[0][1]*c01 + jac[0][2]*c02;
+    ijac[0][0]=c00/(*det);
+    ijac[0][1]=c10/(*det);
+    ijac[0][2]=c20/(*det);
+    ijac[1][0]=c01/(*det);
+    ijac[1][1]=c11/(*det);
+    ijac[1][2]=c21/(*det);
+    ijac[2][0]=c02/(*det);
+    ijac[2][1]=c12/(*det);
+    ijac[2][2]=c22/(*det);
+  }
+
   return 0;
 }
 
