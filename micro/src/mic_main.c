@@ -321,39 +321,47 @@ end_micro_1:
        STANDALONE EXECUTION
 
        We perform 6 homogenization using :
+
+       dim = 2
+
+       e0 = (  0.005 0 0  )
+       e1 = (  0 0.005 0  )
+       e2 = (  0 0 0.005  )
+
+       dim = 3
        
-       e0 = (    0.005 0 0 0 0 0     )
-       e1 = (    0 0.005 0 0 0 0     )
-       e2 = (    0 0 0.005 0 0 0     )
-       e3 = (    0 0 0 0.005 0 0     )
-       e4 = (    0 0 0 0 0 0 0.005   )
-       e5 = (    0 0 0 0 0 0 0 0.005 )
+       e0 = (  0.005 0 0 0 0 0     )
+       e1 = (  0 0.005 0 0 0 0     )
+       e2 = (  0 0 0.005 0 0 0     )
+       e3 = (  0 0 0 0.005 0 0     )
+       e4 = (  0 0 0 0 0 0 0.005   )
+       e5 = (  0 0 0 0 0 0 0 0.005 )
      */
     int i, j;
     double strain_mac[6];
 
     memset(ttensor,0.0,36*sizeof(double));
-    for(i=0;i<6;i++){
+    for(i=0;i<nvoi;i++){
 
-      memset(strain_mac,0.0,6*sizeof(double));strain_mac[i]=0.005;
+      memset(strain_mac,0.0,nvoi*sizeof(double));strain_mac[i]=0.005;
       ierr = micro_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
 
       ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");CHKERRQ(ierr);
-      for(j=0;j<6;j++){
+      for(j=0;j<nvoi;j++){
 	ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);CHKERRQ(ierr);
       }
       ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");CHKERRQ(ierr);
-      for(j=0;j<6;j++){
+      for(j=0;j<nvoi;j++){
 	ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);CHKERRQ(ierr);
       }
       ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
-      for(j=0;j<6;j++){
-	ttensor[j*6+i] = stress_ave[j] / strain_ave[i];
+      for(j=0;j<nvoi;j++){
+	ttensor[j*nvoi+i] = stress_ave[j] / strain_ave[i];
       }
 
       if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){ 
-	strain = malloc(nelm*6*sizeof(double));
-	stress = malloc(nelm*6*sizeof(double));
+	strain = malloc(nelm*nvoi*sizeof(double));
+	stress = malloc(nelm*nvoi*sizeof(double));
 	energy = malloc(nelm*sizeof(double));
 	ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
@@ -370,9 +378,9 @@ end_micro_1:
 
     }
     ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");CHKERRQ(ierr);
-    for(i=0;i<6;i++){
-      for(j=0;j<6;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*6+j])>1.0)?ttensor[i*6+j]:0.0);CHKERRQ(ierr);
+    for(i=0;i<nvoi;i++){
+      for(j=0;j<nvoi;j++){
+	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*nvoi+j])>1.0)?ttensor[i*nvoi+j]:0.0);CHKERRQ(ierr);
       }ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
     }ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
 
