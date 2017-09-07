@@ -254,7 +254,6 @@ end_micro_1:
      Setting solver options 
   */
   ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
-  ierr = KSPSetType(ksp,KSPCG); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
 
