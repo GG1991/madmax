@@ -453,42 +453,7 @@ int fem_invjac(int dim, double jac[3][3],double ijac[3][3],double *det)
 
   return 0;
 }
-
 /****************************************************************************************************/
-
-int FemInvertJac3D(double jac[3][3],double ijac[3][3],double *det)
-{
-
-  double c00,c01,c02,c10,c11,c12,c20,c21,c22;
-
-  if( !jac || !ijac ) return 1;
-
-  c00 = +jac[1][1]*jac[2][2]-jac[2][1]*jac[1][2];
-  c01 = -jac[1][0]*jac[2][2]+jac[2][0]*jac[1][2];
-  c02 = +jac[1][0]*jac[2][1]-jac[2][0]*jac[1][1];
-  c10 = -jac[0][1]*jac[2][2]+jac[2][1]*jac[0][2];
-  c11 = +jac[0][0]*jac[2][2]-jac[2][0]*jac[0][2];
-  c12 = -jac[0][0]*jac[2][1]+jac[2][0]*jac[0][1];
-  c20 = +jac[0][1]*jac[1][2]-jac[1][1]*jac[0][2];
-  c21 = -jac[0][0]*jac[1][2]+jac[1][0]*jac[0][2];
-  c22 = +jac[0][0]*jac[1][1]-jac[1][0]*jac[0][1];
-
-  (*det)=jac[0][0]*c00 + jac[0][1]*c01 + jac[0][2]*c02;
-  ijac[0][0]=c00/(*det);
-  ijac[0][1]=c10/(*det);
-  ijac[0][2]=c20/(*det);
-  ijac[1][0]=c01/(*det);
-  ijac[1][1]=c11/(*det);
-  ijac[1][2]=c21/(*det);
-  ijac[2][0]=c02/(*det);
-  ijac[2][1]=c12/(*det);
-  ijac[2][2]=c22/(*det);
-
-  return 0;
-}
-
-/****************************************************************************************************/
-
 int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[8][3])
 {
   int i,j,sh; 
@@ -507,9 +472,7 @@ int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[8][3]
   }        
   return 0;
 }
-
 /****************************************************************************************************/
-
 int fem_trans_dsh(int dim, double ijac[3][3],int nsh,int gp,double ***ShapeDerivsMaster,double ShapeDerivs[8][3])
 {
   int i, j, sh; 
@@ -527,9 +490,7 @@ int fem_trans_dsh(int dim, double ijac[3][3],int nsh,int gp,double ***ShapeDeriv
   }        
   return 0;
 }
-
 /****************************************************************************************************/
-
 int fem_calshp(int nsh, int npe, int dim, int gp, double *val){
 
   switch(dim){
