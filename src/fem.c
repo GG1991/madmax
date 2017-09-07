@@ -510,24 +510,21 @@ int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[8][3]
 
 /****************************************************************************************************/
 
-int FemGiveShapeDerivs(double ijac[3][3],int nsh,int gp,double ***ShapeDerivsMaster,double ShapeDerivs[8][3])
+int fem_trans_dsh(int dim, double ijac[3][3],int nsh,int gp,double ***ShapeDerivsMaster,double ShapeDerivs[8][3])
 {
-
   int i, j, sh; 
 
   if( !ijac || !ShapeDerivsMaster || !ShapeDerivs ) return 1;
 
   for(sh=0;sh<nsh;sh++){
-    for(i=0;i<3;i++){
-    
+    for(i=0;i<dim;i++){
       ShapeDerivs[sh][i]=0.0;
-      for(j=0;j<3;j++){
+      for(j=0;j<dim;j++){
         ShapeDerivs[sh][i] += ijac[i][j] * ShapeDerivsMaster[sh][j][gp];
       }
 
     }
   }        
-
   return 0;
 }
 

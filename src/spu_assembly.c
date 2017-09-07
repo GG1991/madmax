@@ -126,7 +126,7 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
     GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
     GetWeight(npe, &wp);
-    GetElemenDispls( e, xvalues, ElemDispls );
+    GetElemenDispls(e, xvalues, ElemDispls);
 
     // calculate <ElemResidue> by numerical integration
 
@@ -370,7 +370,7 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
   return 0;
 }
 /****************************************************************************************************/
-int GetElemenDispls( int e, double *x, double *ElemDispls )
+int GetElemenDispls(int e, double *x, double *ElemDispls )
 {
 
   int  d, n, npe;
@@ -546,8 +546,8 @@ int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double
   if(ShapeDerivsMaster == NULL) return 1;
 
   fem_calc_jac(dim, coor, ShapeDerivsMaster, npe, gp, jac);
-  fem_invjac( dim, jac, ijac, DetJac);
-  FemGiveShapeDerivs( ijac, npe, gp, ShapeDerivsMaster, ShapeDerivs);
+  fem_invjac(dim, jac, ijac, DetJac);
+  fem_trans_dsh(dim, ijac, npe, gp, ShapeDerivsMaster, ShapeDerivs);
 
   return 0;
 }
