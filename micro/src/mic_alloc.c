@@ -82,6 +82,7 @@ int mic_alloc(MPI_Comm MICRO_COMM)
     ierr = VecCreateSeq(MICRO_COMM, n, &x);CHKERRQ(ierr);
     ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
     ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
+    ierr = VecDuplicate(x,&b1);CHKERRQ(ierr);
 
   }else if(homo.type==LD_LAGRAN_PAR){
 

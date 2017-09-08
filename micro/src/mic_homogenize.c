@@ -186,9 +186,10 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
     ierr = VecScale(b,-1.0); CHKERRQ(ierr);
 
     /* Tangent matrix 
-         | A    ei |
-     J = |         |
-         | ei^T 0  |
+
+         | K    1  |
+     A = |         |
+         | 1    0  |
     */
     ierr = assembly_jacobian_sd(&A);
     for(i=0; i<nnods_bc; i++){
@@ -209,14 +210,18 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
     MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
   
-    ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
-    ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
+    ierr = KSPSolve(ksp, b, dx);CHKERRQ(ierr);
+    ierr = VecAXPY(x, 1.0, dx); CHKERRQ(ierr);
+
+    ierr = MatMult(A, dx, b1);CHKERRQ(ierr);
     
     if( flag_print & (1<<PRINT_PETSC) ){
       ierr = PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
       ierr = MatView(A,viewer); CHKERRQ(ierr);
       ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
       ierr = VecView(b,viewer); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIOpen(MICRO_COMM,"b1.dat",&viewer); CHKERRQ(ierr);
+      ierr = VecView(b1,viewer); CHKERRQ(ierr);
       ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
       ierr = VecView(x,viewer); CHKERRQ(ierr);
       ierr = PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);

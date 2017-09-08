@@ -26,6 +26,7 @@ int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 
 Mat  J; // extended matrix for lagrange multipliers boundary setting
 Vec  xe, re; // extended distributed vectors for lagrange multipliers boundary setting
+Vec  b1;
 
 /*
    indeces for specifying boundary conditions

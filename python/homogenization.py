@@ -60,8 +60,8 @@ def elem_residue(e, elem, x, be):
 #
 # main program
 #
-nx = 30
-ny = 30 
+nx = 2
+ny = 2 
 lx = 1.0
 ly = 1.0
 hx = lx/(nx-1)
@@ -81,19 +81,25 @@ wp = np.multiply(wp,0.25)
 
 dsh = np.zeros( (4,2,4) ) # num_sh, x_dir, num_gp
 for gp in range(0, xp.shape[0]):
-  dsh[0,0,gp] = -1.0*(1-xp[gp,1])/hx; dsh[0,1,gp] = (1-xp[gp,0])*-1.0/hy
-  dsh[1,0,gp] = +1.0*(1-xp[gp,1])/hx; dsh[1,1,gp] = (0+xp[gp,0])*-1.0/hy
-  dsh[2,0,gp] = +1.0*(0+xp[gp,1])/hx; dsh[2,1,gp] = (0+xp[gp,0])*+1.0/hy
-  dsh[3,0,gp] = -1.0*(0+xp[gp,1])/hx; dsh[3,1,gp] = (1-xp[gp,0])*+1.0/hy
+  dsh[0,0,gp] = -0.5*(1-xp[gp,1])/hx; dsh[0,1,gp] = (1-xp[gp,0])*-0.5/hy
+  dsh[1,0,gp] = +0.5*(1-xp[gp,1])/hx; dsh[1,1,gp] = (0+xp[gp,0])*-0.5/hy
+  dsh[2,0,gp] = +0.5*(0+xp[gp,1])/hx; dsh[2,1,gp] = (0+xp[gp,0])*+0.5/hy
+  dsh[3,0,gp] = -0.5*(0+xp[gp,1])/hx; dsh[3,1,gp] = (1-xp[gp,0])*+0.5/hy
 
 # define constitutive tensor
 nu = 0.3; E  = 1e6
+#C = np.array([
+#    [1         ,nu/(1-nu) ,0                  ],
+#    [nu/(1-nu) ,1         ,0                  ],
+#    [0         ,0         ,(1-2*nu)/(2*(1-nu))]
+#])
+#C = np.multiply(C,E*(1-nu)/((1+nu)*(1-2*nu)))
 C = np.array([
-    [1         ,nu/(1-nu) ,0                  ],
-    [nu/(1-nu) ,1         ,0                  ],
-    [0         ,0         ,(1-2*nu)/(2*(1-nu))]
+    [1         ,nu        ,0                  ],
+    [nu        ,1         ,0                  ],
+    [0         ,0         ,(1-nu)/2           ]
 ])
-C = np.multiply(C,E*(1-nu)/((1+nu)*(1-2*nu)))
+C = np.multiply(C,E/(1-nu*nu))
 
 J  = np.zeros( (nx*ny*2 + n_bc*2,nx*ny*2 + n_bc*2) )
 x  = np.zeros( nx*ny*2 + n_bc*2 )
@@ -159,6 +165,7 @@ for e in range(0, elem.shape[0]):
 # set BCs on J
 J[bc_inds[:], nx*ny*2 + np.arange(bc_inds.size)] = -1.0;
 J[nx*ny*2 + np.arange(bc_inds.size), bc_inds[:]] = +1.0;
+print "J ",J
 
 # assembly b 
 b.fill(0.0)

@@ -233,13 +233,15 @@ NM=1
   -mesh_gmsh \
   -options_left 0 \
   -pc_type ilu \
+  -pc_factor_nonzeros_along_diagonal \
   -log_trace micro_trace \
   -homo_ld_seq \
   -print_vtu \
   -print_petsc
   #-ksp_type gmres \
-  #-ksp_rtol 1.0e-13 \
-  #-ksp_atol 1.0e-19 \
+  #-ksp_rtol 1.0e-20 \
+  #-ksp_atol 1.0e-20 \
+  #-pc_type ilu \
 }
 
 #cube_seq

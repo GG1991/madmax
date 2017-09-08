@@ -78,7 +78,6 @@ int assembly_jacobian_sd(Mat *J)
   ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
   return 0;
-
 }
 /****************************************************************************************************/
 int assembly_residual_sd(Vec *x_old, Vec *Residue)
@@ -134,7 +133,7 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
     for(gp=0;gp<ngp;gp++){
 
       memset(strain_gp, 0.0, nvoi*sizeof(double));
-      memset(stress_gp  , 0.0, nvoi*sizeof(double));
+      memset(stress_gp, 0.0, nvoi*sizeof(double));
       get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
