@@ -138,14 +138,12 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
   -mesh ../../meshes/cube_fiber/cube_fiber_2d.msh \
   -dim 2 \
   -mesh_gmsh \
-  -ksp_type cg \
-  -ksp_rtol 1.0e-13 \
-  -ksp_atol 1.0e-19 \
-  -pc_type bjacobi  \
+  -pc_type lu  \
+  -homo_ld \
   -options_left 0 \
   -log_trace micro_trace \
-  -homo_ld_seq \
   -print_vtu
+  #-homo_ld_seq \
 }
 
 # 07-09-2017
@@ -160,12 +158,13 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
   -mesh ../../meshes/cube_unif/cube_2d.msh \
   -dim 2 \
   -mesh_gmsh \
-  -pc_type ilu  \
+  -pc_type lu  \
   -options_left 0 \
+  -homo_ld \
   -log_trace micro_trace \
-  -homo_ld_seq \
   -print_vtu \
   -print_petsc
+  #-homo_ld_seq \
 }
 
 #ex_common

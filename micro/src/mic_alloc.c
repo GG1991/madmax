@@ -23,12 +23,12 @@ int mic_alloc(MPI_Comm MICRO_COMM)
 
    */
 
-  if(0){
+  if(homo.type==LD){
 
     int rank, nproc, ierr, nlocal, ntotal;
 
-    nlocal = 3*nmynods;
-    ntotal = 3*NTotalNod;
+    nlocal = dim*nmynods;
+    ntotal = dim*NTotalNod;
 
     MPI_Comm_size(MICRO_COMM, &nproc);
     MPI_Comm_rank(MICRO_COMM, &rank);
@@ -54,14 +54,15 @@ int mic_alloc(MPI_Comm MICRO_COMM)
     ghostsIndex = malloc(nghost*3* sizeof(int));
 
     for(i=0;i<nghost;i++){
-      for(d=0;d<3;d++){
-	ghostsIndex[i*3+d] = loc2petsc[nmynods + i]*3+d;
+      for(d=0;d<dim;d++){
+	ghostsIndex[i*dim+d] = loc2petsc[nmynods + i]*dim+d;
       }
     }
 
-    ierr = VecCreateGhost(MICRO_COMM, nmynods*3, NTotalNod*3, nghost*3, ghostsIndex, &x); CHKERRQ(ierr);
+    ierr = VecCreateGhost(MICRO_COMM, nmynods*dim, NTotalNod*dim, nghost*dim, ghostsIndex, &x); CHKERRQ(ierr);
     ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
     ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
+    ierr = VecDuplicate(x,&b1);CHKERRQ(ierr);
 
     free(ghostsIndex);
 

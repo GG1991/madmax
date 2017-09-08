@@ -232,16 +232,43 @@ NM=1
   -dim 2 \
   -mesh_gmsh \
   -options_left 0 \
-  -pc_type ilu \
-  -pc_factor_nonzeros_along_diagonal \
+  -pc_type lu \
   -log_trace micro_trace \
-  -homo_ld_seq \
+  -homo_ld \
   -print_vtu \
   -print_petsc
   #-ksp_type gmres \
   #-ksp_rtol 1.0e-20 \
   #-ksp_atol 1.0e-20 \
   #-pc_type ilu \
+  #-homo_ld_seq \
+  #-pc_factor_nonzeros_along_diagonal \
+}
+
+# 08-09-2017
+# Cube 2D with fiber
+# Linear Displacements with Lagrangian BC
+# this technique is sequencial only
+function cube_fiber_2d_ld_seq {
+NM=1  
+
+  ./mpirun -np $NM ../../micro/micro \
+  -input ex1_2d.spu \
+  -mesh ../../meshes/cube_fiber/cube_fiber_2d.msh \
+  -dim 2 \
+  -mesh_gmsh \
+  -options_left 0 \
+  -pc_type lu \
+  -log_trace micro_trace \
+  -homo_ld \
+  -print_vtu \
+  -print_petsc
+  #-ksp_type gmres \
+  #-ksp_rtol 1.0e-20 \
+  #-ksp_atol 1.0e-20 \
+  #-pc_type ilu \
+  #-homo_ld_l_seq \
+  #-pc_factor_nonzeros_along_diagonal \
 }
 
 #cube_seq
