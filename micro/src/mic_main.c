@@ -104,9 +104,9 @@ int main(int argc, char **argv)
   homo.type=0;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo.type=HOMO_TAYLOR;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo.type=HOMO_LINEAR;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_ld_seq",&set);CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_ld",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) homo.type=LD;
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_ld_l_seq",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo.type=LD_LAGRAN_SEQ;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear_hexa",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo.type=HOMO_LINEAR_HEXA;
