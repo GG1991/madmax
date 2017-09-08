@@ -23,6 +23,9 @@ int mic_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
+  bc_kinds=malloc(nmynods*sizeof(int));
+  for(i=0;i<nmynods;i++)bc_kinds[i]=-1;
+
   if(homo.type==HOMO_LINEAR_HEXA){
 
     int *px, *py, *pz;
