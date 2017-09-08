@@ -365,11 +365,11 @@ end_micro_1:
 	ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
 	if(flag_print & (1<<PRINT_VTK)){ 
-	  sprintf(vtkfile_n,"%s_displ_exp%d_%d.vtk",myname,i,rank_mic);
+	  sprintf(vtkfile_n,"%s_exp%d_%d.vtk",myname,i,rank_mic);
 	  ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
 	}
 	if(flag_print & (1<<PRINT_VTU)){ 
-	  sprintf(vtkfile_n,"%s_displ_exp%d",myname,i);
+	  sprintf(vtkfile_n,"%s_exp%d",myname,i);
 	  ierr = write_vtu(MICRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);CHKERRQ(ierr);
 	}
 	free(stress); free(strain); free(energy);
