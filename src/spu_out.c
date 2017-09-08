@@ -184,56 +184,6 @@ int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *
   return 0;
 }   
 /****************************************************************************************************/
-int write_pvtu(MPI_Comm PROBLEM_COMM, char *name)
-{
-  /*
-     Rank 0 writes this file
-  */
-  int  rank, nproc; 
-
-  MPI_Comm_size(PROBLEM_COMM, &nproc);
-  MPI_Comm_rank(PROBLEM_COMM, &rank);
-
-  if(!rank){
-
-    FILE *fm;
-    char file_name[NBUF];
-    int  i;
-
-    strcpy(file_name,name);
-    strcat(file_name,".pvtu");
-    fm = fopen(file_name,"w"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s could not be opened",file_name);
-
-    fprintf(fm, "<?xml version=\"1.0\"?>\n"
-	"<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
-	"<PUnstructuredGrid GhostLevel=\"0\">\n"
-	"<PPoints>\n"
-	"<PDataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\"/>\n"
-	"</PPoints>\n"
-	"<PointData> Vectors=\"displ\"\n"
-	"<PDataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" />"
-	"</PointData>\n"
-	"<PCells>\n"
-	"<PDataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\"/>\n"
-	"<PDataArray type=\"Int32\" Name=\"offsets\"      NumberOfComponents=\"1\"/>\n"
-	"<PDataArray type=\"UInt8\" Name=\"types\"        NumberOfComponents=\"1\"/>\n"
-	"</PCells>\n" 
-	"<PCellData Scalars=\"Stress\">"
-	"<PDataArray type=\"Int32\" Name=\"Material\" NumberOfComponents=\"1\"/>\n"
-	"</PCellData>\n"); 
-    for(i=0;i<nproc;i++){
-      sprintf(file_name,"%s_%d",name,i);
-      fprintf(fm,	"<Piece Source=\"%s.vtu\"/>\n",file_name);
-    }
-    fprintf(fm,	"</PUnstructuredGrid>\n" 
-      "</VTKFile>\n"
-      );
-
-    fclose(fm);
-  }
-  return 0;
-}
-/****************************************************************************************************/
 int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain, double *stress, double *energy)
 {
   int  rank, nproc, ierr; 
@@ -243,9 +193,16 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 
   FILE *fm;
   char file_name[NBUF];
-  int  i, d;
+  int  i, d, ns;
   Vec  xlocal;
   double *xvalues;
+
+  if(dim==2){
+    ns = 4;
+  }
+  else if(dim==3){
+    ns = 9;
+  }
  
   /* 
      rank 0 writes the .pvtu file first
@@ -275,9 +232,12 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 	"</PPointData>\n"
 
 	"<PCellData>\n"
-	"<PDataArray type=\"Int32\"   Name=\"part\" NumberOfComponents=\"1\"/>\n"
-	"<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\"/>\n"
-	"<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\"/>\n"
+	"<PDataArray type=\"Int32\"   Name=\"part\" NumberOfComponents=\"1\"/>\n");
+    fprintf(fm,
+	  "<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\"/>\n",ns);
+    fprintf(fm,
+	  "<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\"/>\n",ns);
+    fprintf(fm, 
 	"<PDataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\"/>\n"
 	"</PCellData>\n"); 
     for(i=0;i<nproc;i++){
@@ -350,8 +310,11 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
   for(i=0;i<nallnods;i++){
-    for(d=0;d<3;d++){
-      fprintf(fm, "%lf ", xvalues[i*3+d]);
+    for(d=0;d<dim;d++){
+      fprintf(fm, "%lf ", xvalues[i*dim+d]);
+    }
+    for(d=dim;d<3;d++){
+      fprintf(fm,"%lf ",0.0);
     }
     fprintf(fm,"\n");
   }
@@ -368,7 +331,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
   for(i=0;i<nallnods;i++){
     for(d=0;d<dim;d++){
-      fprintf(fm, "%lf ", xvalues[i*3+d]);
+      fprintf(fm, "%lf ", xvalues[i*dim+d]);
     }
     for(d=dim;d<3;d++){
       fprintf(fm, "%lf ", 0.0);
