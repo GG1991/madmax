@@ -231,12 +231,15 @@ NM=1
   -mesh ../../meshes/cube_unif/cube_2d.msh \
   -dim 2 \
   -mesh_gmsh \
-  -pc_type lu  \
   -options_left 0 \
+  -pc_type ilu \
   -log_trace micro_trace \
   -homo_ld_seq \
   -print_vtu \
   -print_petsc
+  #-ksp_type gmres \
+  #-ksp_rtol 1.0e-13 \
+  #-ksp_atol 1.0e-19 \
 }
 
 #cube_seq
@@ -252,3 +255,4 @@ NM=1
 #cube_fiber_par
 #struct_fiber_seq
 #struct_fiber_par
+#cube_2d_ld_seq

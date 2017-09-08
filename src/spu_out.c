@@ -1,6 +1,5 @@
 /*
- * VTK routines
- *
+   Output routines
  */
 
 #define   VTK_POINT         1

@@ -179,48 +179,28 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
       }
     }
     ierr = VecRestoreArray(b, &b_arr);CHKERRQ(ierr);
-    if( flag_print & (1<<PRINT_PETSC) ){
-      ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
-      ierr = VecView(b,viewer); CHKERRQ(ierr);
-    }
 
     ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
     PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
     if( !(norm > norm_tol) ) break;
     ierr = VecScale(b,-1.0); CHKERRQ(ierr);
 
-    /* Tangent matrix */
-    /*
-         | A    0  |
-     J = |         |
-         | 0    0  |
-    */
-    ierr = assembly_jacobian_sd(&A);
-    /*
-         | A    ei |
-     J = |         |
-         | 0    0  |
-    */
-    if( flag_print & (1<<PRINT_PETSC) ){
-      ierr = PetscViewerASCIIOpen(MICRO_COMM,"A_1.dat",&viewer); CHKERRQ(ierr);
-      ierr = MatView(A,viewer); CHKERRQ(ierr);
-    }
-    for(i=0; i<nnods_bc; i++){
-      for(d=0;d<dim;d++){
-	MatSetValue(A,ixb[i*dim+d],nmynods*dim+i*dim+d,1.0,INSERT_VALUES);
-      }
-    }
-    /*
+    /* Tangent matrix 
          | A    ei |
      J = |         |
          | ei^T 0  |
     */
+    ierr = assembly_jacobian_sd(&A);
+    for(i=0; i<nnods_bc; i++){
+      for(d=0;d<dim;d++){
+	MatSetValue(A,ixb[i*dim+d],nmynods*dim+i*dim+d,-1.0,INSERT_VALUES);
+      }
+    }
     for(i=0; i<nnods_bc; i++){
       for(d=0;d<dim;d++){
 	MatSetValue(A,nmynods*dim+i*dim+d,ixb[i*dim+d],1.0,INSERT_VALUES);
       }
     }
-    /* fill with 0 the diagonal */
     for(i=0; i<nnods_bc; i++){
       for(d=0;d<dim;d++){
 	MatSetValue(A,nmynods*dim+i*dim+d,nmynods*dim+i*dim+d,0.0,INSERT_VALUES);
@@ -228,14 +208,21 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
     }
     MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
-
-    if( flag_print & (1<<PRINT_PETSC) ){
-      ierr = PetscViewerASCIIOpen(MICRO_COMM,"A_2.dat",&viewer); CHKERRQ(ierr);
-      ierr = MatView(A,viewer); CHKERRQ(ierr);
-    }
-
+  
     ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
     ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
+    
+    if( flag_print & (1<<PRINT_PETSC) ){
+      ierr = PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
+      ierr = MatView(A,viewer); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
+      ierr = VecView(b,viewer); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
+      ierr = VecView(x,viewer); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
+      ierr = VecView(x,viewer); CHKERRQ(ierr);
+    }
+
     nr_its ++;
   }
 

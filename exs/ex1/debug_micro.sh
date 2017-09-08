@@ -127,10 +127,11 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
 }
 
 # 06-09-2017
-# Cube with cilindrical fiber in the middle
+# Cube with cilindrical fiber in the middle 2D
 # Linear Displacements with Lagrangian BC
+# this technique is sequencial only
 function cube_fiber_2d_ld_seq {
-NM=1 # this technique is sequencial only 
+NM=1  
 
 eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
   -input ex1_2d.spu \
@@ -145,6 +146,26 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
   -log_trace micro_trace \
   -homo_ld_seq \
   -print_vtu
+}
+
+# 07-09-2017
+# Cube 2D
+# Linear Displacements with Lagrangian BC
+# this technique is sequencial only
+function cube_2d_ld_seq {
+NM=1  
+
+eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
+  -input ex1_2d.spu \
+  -mesh ../../meshes/cube_unif/cube_2d.msh \
+  -dim 2 \
+  -mesh_gmsh \
+  -pc_type ilu  \
+  -options_left 0 \
+  -log_trace micro_trace \
+  -homo_ld_seq \
+  -print_vtu \
+  -print_petsc
 }
 
 #ex_common
