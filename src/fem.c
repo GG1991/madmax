@@ -1,6 +1,5 @@
-/* Routines to perform Finite Element Analisys
- * 
- * 
+/* 
+   Routines to Finite Element 
  */
 #include "fem.h"
 
@@ -42,17 +41,17 @@ int fem_inigau(void){
         for(j=0;j<2;j++)
             ds_tria_3[i][j]=(double *)calloc(3,sizeof(double));
     }
-    xp_tria_3[0][0]=+0.166666666666666; 
-    xp_tria_3[0][1]=+0.166666666666666;
-    wp_tria_3[0]   =+0.166666666666666;          
+    xp_tria_3[0][0] = +0.166666666666666; 
+    xp_tria_3[0][1] = +0.166666666666666;
+    wp_tria_3[0]    = +0.166666666666666;          
     
-    xp_tria_3[1][0]=+0.666666666666666; 
-    xp_tria_3[1][1]=+0.166666666666666;
-    wp_tria_3[1]   =+0.166666666666666;        
+    xp_tria_3[1][0] = +0.666666666666666; 
+    xp_tria_3[1][1] = +0.166666666666666;
+    wp_tria_3[1]    = +0.166666666666666;        
 
-    xp_tria_3[2][0]=+0.166666666666666; 
-    xp_tria_3[2][1]=+0.666666666666666;
-    wp_tria_3[2]   =+0.166666666666666;
+    xp_tria_3[2][0] = +0.166666666666666; 
+    xp_tria_3[2][1] = +0.666666666666666;
+    wp_tria_3[2]    = +0.166666666666666;
    
     for(gp=0;gp<3;gp++)
     {
@@ -459,13 +458,10 @@ int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[8][3]
   int i,j,sh; 
   if(!ijac || !oder || !der)
     return 1;
-  for(sh=0;sh<nsh;sh++)
-  {
-    for(i=0;i<3;i++)
-    {
+  for(sh=0;sh<nsh;sh++){
+    for(i=0;i<3;i++){
       der[sh][i]=0.0;
-      for(j=0;j<3;j++)
-      {
+      for(j=0;j<3;j++){
         der[sh][i] += ijac[i][j] * oder[sh][j][gp];
       }
     }
@@ -541,9 +537,7 @@ int fem_calshp(int nsh, int npe, int dim, int gp, double *val){
   }
   return 0;
 }
-
 /****************************************************************************************************/
-
 int fem_calode(int npe, int dim, double ****oder){
 
   switch(dim)
@@ -587,9 +581,7 @@ int fem_calode(int npe, int dim, double ****oder){
   }
   return 0;
 }
-
 /****************************************************************************************************/
-
 double *** FemGetPointer2ShapeDerivsMaster(int npe, int dim)
 {
 
@@ -631,14 +623,11 @@ double *** FemGetPointer2ShapeDerivsMaster(int npe, int dim)
   }
 
 }
-
 /****************************************************************************************************/
-
 double * FemGetPointer2Weight(int npe, int dim)
 {
-
-  switch(dim){
-
+  switch(dim)
+  {
     case 1:
       return NULL;
 
@@ -669,10 +658,7 @@ double * FemGetPointer2Weight(int npe, int dim)
   }
 
 }
-
-
 /****************************************************************************************************/
-
 int fem_calwei(int npe, int dim, double **wp)
 {
   switch(dim)
@@ -712,12 +698,12 @@ int fem_calwei(int npe, int dim, double **wp)
   }
   return 1;
 }
-
-
-int fem_calare(double **pts, int npe, int dim, double *area){
-
+/****************************************************************************************************/
+int fem_calare(double **pts, int npe, int dim, double *area)
+{
   int d;
   double v1[3],v2[3],v3[3],vr[3],mod;
+
   *area=0.0;
   if(dim==1){
 
@@ -753,7 +739,7 @@ int fem_calare(double **pts, int npe, int dim, double *area){
   }
   return 1;
 }
-
+/****************************************************************************************************/
 int fem_vecmod(double *vec, int n, double *mod){
 
   int d;
@@ -765,7 +751,7 @@ int fem_vecmod(double *vec, int n, double *mod){
   *mod=sqrt(*mod);
   return 0;
 }
-
+/****************************************************************************************************/
 int fem_vcross(double *v1, double *v2, double *vr){
 
   if(!v1 || !v2 || !vr)
@@ -775,7 +761,7 @@ int fem_vcross(double *v1, double *v2, double *vr){
   vr[2]= v1[0]*v2[1]-v2[0]*v1[1];
   return 0;
 }
-
+/****************************************************************************************************/
 int fem_dotdsh(int i, int j, double **derivs, int dim, double *p){
 
   int d;

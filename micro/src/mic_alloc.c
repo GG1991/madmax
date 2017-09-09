@@ -40,16 +40,6 @@ int mic_alloc(MPI_Comm MICRO_COMM)
     ierr = MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);CHKERRQ(ierr);
     ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
-    /*
-       Create parallel vectors.
-       - We form 1 vector from scratch and then duplicate as needed.
-       This vector has ghost pathing in order to Get & and Set 
-       ghost values in an easy way. This is a great PETSc tool.
-       - When solving a linear system, the vectors and matrices MUST
-       be partitioned accordingly.  PETSc automatically generates
-       appropriately partitioned matrices and vectors when MatCreate()
-       and VecCreate() are used with the same communicator.
-     */
     int i, d, *ghostsIndex;
     ghostsIndex = malloc(nghost*3* sizeof(int));
 

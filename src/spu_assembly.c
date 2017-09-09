@@ -475,7 +475,7 @@ int GetWeight(int npe, double **wp)
   return 0;
 }
 /****************************************************************************************************/
-int GetB( int npe, double ShapeDerivs[8][3], double B[6][3*8] )
+int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8] )
 {
   /*
   e = Bu    e=[exx eyy ezz exy eyz exz]
@@ -551,7 +551,7 @@ int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double
   return 0;
 }
 /****************************************************************************************************/
-int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex)
+int GetPETScIndeces(int *LocalNod, int npe, int *local2PETSc, int *PETScIndex)
 {
   /* 
      Gives the indeces to Gather fields and assembly on
@@ -559,17 +559,16 @@ int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex)
 
      Input>
      LocalNod    >  array with local node numeration
-     n           > number of nodes of the element
+     npe         > number of nodes of the element
      local2PETSc > renumbering vetor to transform from local to PETSc
 
      Output>
      PETScIndex > Array with PETSc numeration
 
    */
-
   int i, d;
 
-  for(i=0;i<n;i++){
+  for(i=0;i<npe;i++){
     for(d=0;d<dim;d++){
       PETScIndex[i*dim+d] = local2PETSc[LocalNod[i]]*dim+d;
     }
