@@ -29,6 +29,7 @@ NM=1
     -pc_type lu \
     -options_left 0 \
     -homo_ld \
+    -fiber_cilin 0.4 \
     -print_vtu
 }
 

@@ -111,7 +111,7 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
 
   for(e=0;e<nelm;e++){
 
-    material = GetMaterial(PhysicalID[e]);
+    material = GetMaterial(e);
     if(!material) SETERRQ1(PETSC_COMM_SELF,1,"material with physical_id %d not found",PhysicalID[e]);
 
     npe = eptr[e+1]-eptr[e];
@@ -391,7 +391,7 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
   double la, mu, poi, you; 
   int i, j;
 
-  material_t *material = GetMaterial(PhysicalID[e]);
+  material_t *material = GetMaterial(e);
   if(!material) SETERRQ1(PETSC_COMM_SELF,1,"material with physical_id %d not found",PhysicalID[e]);
 
   switch(material->typeID){
@@ -448,22 +448,86 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
   return 0;
 }
 /****************************************************************************************************/
-material_t * GetMaterial(int GmshIDToSearch)
+material_t * GetMaterial(int e)
 {
   /* 
      Search in the <material_list> if for the one
      that has <GmshIDToSearch>
+     this is normally done except if one of the 
+     following options it is activated
+     -fiber_middle <radious>
    */
-
+  int         id;
   node_list_t *pn;
+
   pn = material_list.head;
   while(pn)
   {
-    if( ((material_t*)pn->data)->GmshID == GmshIDToSearch ) break;
+    if(flag_fiber_cilin){
+      if(is_inside_fiber_cilin(e)){
+	if(!strcmp(((material_t*)pn->data)->name,"FIBER")) break;
+      }
+      else{
+	if(!strcmp(((material_t*)pn->data)->name,"MATRIX")) break;
+      }
+    }
+    else{
+      id = PhysicalID[e];
+      if( ((material_t*)pn->data)->GmshID == id ) break;
+    }
     pn = pn->next;
   }
   if(!pn) return NULL;
   return (material_t*)pn->data;
+}
+/****************************************************************************************************/
+int is_inside_fiber_cilin(int e)
+{
+  int    d;
+  double l=-1, centroid[3];
+  double center_cell[3] = {0.0, 0.0, 1.5};
+  get_centroid(e, centroid);
+
+  l=0.0;
+  for(d=0;d<2;d++){
+    l = l + pow(centroid[d]-center_cell[d],2);
+  }
+  l = sqrt(l);
+  return (l<=fiber_cilin_r) ? 1:0;
+}
+/****************************************************************************************************/
+int get_centroid(int e, double centroid[3])
+{
+  double   elem_coor[8][3];
+  int      i, d;
+  int      npe = eptr[e+1]-eptr[e];
+
+  get_elem_coor(e, elem_coor);
+  for(d=0;d<dim;d++){
+    centroid[d] = 0.0;
+    for(i=0;i<npe;i++){
+      centroid[d] = centroid[d] + elem_coor[i][d];
+    }
+  }
+  for(d=0;d<dim;d++){
+    centroid[d] = centroid[d] / npe;
+  }
+
+  return 0;
+}
+/****************************************************************************************************/
+int get_elem_coor(int e, double elem_coor[8][3])
+{
+  int i, d;
+  int npe = eptr[e+1]-eptr[e];
+
+  for(i=0;i<npe;i++){
+    for(d=0;d<dim;d++){
+      elem_coor[i][d] = coord[ eind[eptr[e]+i]*dim + d ];
+    }
+  }
+
+  return 0;
 }
 /****************************************************************************************************/
 int GetWeight(int npe, double **wp)
@@ -475,7 +539,7 @@ int GetWeight(int npe, double **wp)
 int GetB(int npe, double dsh[8][3], double B[6][3*8] )
 {
   /*
-  e = Bu    e=[exx eyy ezz exy eyz exz]
+     e = Bu    e=[exx eyy ezz exy eyz exz]
 
   e=[
   exx exy exz

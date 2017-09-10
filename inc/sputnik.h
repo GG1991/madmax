@@ -81,6 +81,12 @@ int nvoi;      //  number of voigt components (3 if dim=2, 6 if dim=3)
 int  flag_print;
 bool flag_reactions;
 
+/*
+   Cilindrical Fiber in quad Matrix
+*/
+int    flag_fiber_cilin;
+double fiber_cilin_r;
+
 #define FORMAT_NULL        0
 #define FORMAT_GMSH        1
 #define FORMAT_ALYA        2
@@ -195,10 +201,13 @@ int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double
 int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8]);
 int GetWeight(int npe, double **wp);
 int GetDsDe(int npe, double *ElemDisp, double DsDe[6][6]);
-material_t * GetMaterial(int GmshIDToSearch);
+material_t * GetMaterial(int e);
 int GetElemenDispls( int e, double *x, double *elem_disp );
 int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *energy);
 int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6]);
+int get_elem_coor(int e, double elem_coor[8][3]);
+int is_inside_fiber_cilin(int e);
+int get_centroid(int e, double centroid[3]);
 
 // spu_util.c
 int get_nods_bc(int **nods, int *nnods);

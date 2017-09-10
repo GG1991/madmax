@@ -116,6 +116,11 @@ int main(int argc, char **argv)
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
 
+  /*Fiber in the middle */
+  flag_fiber_cilin = 0;
+  ierr = PetscOptionsGetReal(NULL, NULL, "-fiber_cilin", &fiber_cilin_r, &set); CHKERRQ(ierr); 
+  if(set==PETSC_TRUE) flag_fiber_cilin=1;
+
   /* 
      Stablish a new local communicator
    */
