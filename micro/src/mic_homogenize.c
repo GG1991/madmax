@@ -81,7 +81,7 @@ int micro_homogenize_linear(MPI_Comm MICRO_COMM, double strain_mac[6], double st
       n_loc = ixb[i*dim+d]/dim;
       ub = 0.0;
       for(k=0;k<dim;k++){
-	ub += strain_matrix[d][k]*coord[n_loc * 3 + k];
+	ub += strain_matrix[d][k]*coord[n_loc * dim + k];
       }
       ((homog_ld_t*)homo.st)->ub_val[i*dim+d] = ub;
     }

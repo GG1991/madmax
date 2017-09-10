@@ -47,5 +47,8 @@ surf_4[]=Symmetry {-1, 0, 0, lx} {
   Duplicata { Surface{surf_1,surf_2[0],surf_3[0],surf_3[1]}; }
 };
 
-Physical Surface(42) = {17, 12, 32, 37, 27, 22, 6, 7};
-Physical Line(43) = {11, 21, 31, 41, 3, 26, 16, 36};
+Physical Surface("MATRIX") = {17, 12, 32, 37, 27, 22, 6, 7};
+Physical Line("X0") = {11, 21};
+Physical Line("X1") = {31, 41};
+Physical Line("Y0") = {3, 26};
+Physical Line("Y1") = {16, 36};
