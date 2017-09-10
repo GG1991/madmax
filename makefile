@@ -32,10 +32,10 @@ CFLAGS=-g -O0
 endif
 	
 
-DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h    \
-	       ${DEP_DIR}/list.h       \
-	       ${DEP_DIR}/boundary.h   \
-	       ${DEP_DIR}/fun.h        \
+DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
+	       ${DEP_DIR}/list.h \
+	       ${DEP_DIR}/boundary.h \
+	       ${DEP_DIR}/fun.h \
 	       ${DEP_DIR}/material.h
 
 DEPS_MACMIC =  ${DEP_DIR}/macmic.h \
@@ -46,23 +46,24 @@ DEPS_MACMIC =  ${DEP_DIR}/macmic.h \
 
 DEP_DIRS= ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
 
-SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o     \
-           $(SPU_OBJ_DIR)/spu_time.o     \
-           $(SPU_OBJ_DIR)/spu_parser.o   \
-           $(SPU_OBJ_DIR)/spu_out.o      \
+SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o \
+           $(SPU_OBJ_DIR)/spu_time.o \
+           $(SPU_OBJ_DIR)/spu_parser.o \
+           $(SPU_OBJ_DIR)/spu_out.o \
            $(SPU_OBJ_DIR)/spu_assembly.o \
+           $(SPU_OBJ_DIR)/spu_util.o \
            $(SPU_OBJ_DIR)/macmic.o    
 
-MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o      \
-           ${MAC_OBJ_DIR}/mac_alloc.o     \
+MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o \
+           ${MAC_OBJ_DIR}/mac_alloc.o \
            ${MAC_OBJ_DIR}/mac_boundary.o       
 
-MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o       \
-           ${MIC_OBJ_DIR}/mic_alloc.o      \
+MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o \
+           ${MIC_OBJ_DIR}/mic_alloc.o \
            ${MIC_OBJ_DIR}/mic_homogenize.o \
            ${MIC_OBJ_DIR}/mic_boundary.o       
 
-EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o  \
+EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o \
            $(SPU_OBJ_DIR)/list.o \
            $(SPU_OBJ_DIR)/fun.o 
  
@@ -77,7 +78,7 @@ SPU_OBJ+= $(EXT_OBJ)
 
 PARMETIS_DIR = ${HOME}/libs/parmetis-4.0.3
 
-PARMETIS_INC = -I${PARMETIS_DIR}/include       \
+PARMETIS_INC = -I${PARMETIS_DIR}/include \
                -I${PARMETIS_DIR}/metis/include
 
 PARMETIS_HEA = ${PARMETIS_DIR}/include/parmetis.h ${PARMETIS_DIR}/metis/include/metis.h
