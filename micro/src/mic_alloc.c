@@ -41,7 +41,7 @@ int mic_alloc(MPI_Comm MICRO_COMM)
     ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
     int i, d, *ghostsIndex;
-    ghostsIndex = malloc(nghost*3* sizeof(int));
+    ghostsIndex = malloc(nghost*dim* sizeof(int));
 
     for(i=0;i<nghost;i++){
       for(d=0;d<dim;d++){

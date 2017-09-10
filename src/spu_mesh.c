@@ -753,7 +753,7 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 
   fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
 
-  coord = malloc( nallnods*3 * sizeof(double));
+  coord = malloc( nallnods*dim * sizeof(double));
 
   /**************************************************/
   //  go to "$Nodes" and then read coordinates 
@@ -786,9 +786,9 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 	  i++;
 	}
 	data=strtok(buf," \n");
-	for( d=0;d<3;d++){
+	for( d=0;d<dim;d++){
 	  data=strtok(NULL," \n");
-	  coord[c*3 + d] = atof(data);
+	  coord[c*dim + d] = atof(data);
 	}
 	c++;
       }
@@ -811,9 +811,9 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
       i++;
     }
     data=strtok(buf," \n");
-    for( d=0;d<3;d++){
+    for( d=0;d<dim;d++){
       data=strtok(NULL," \n");
-      coord[ (nmynods + c)*3 + d] = atof(data);
+      coord[ (nmynods + c)*dim + d] = atof(data);
     }
     c++;
   }

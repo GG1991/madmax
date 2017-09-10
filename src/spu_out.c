@@ -263,7 +263,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   fprintf(fm,"<DataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
   for(i=0;i<nallnods;i++){
     for(d=0;d<dim;d++){
-      fprintf(fm,"%e ",coord[i*3+d]);
+      fprintf(fm,"%e ",coord[i*dim+d]);
     }
     for(d=dim;d<3;d++){
       fprintf(fm,"%e ",0.0);

@@ -50,7 +50,7 @@ int assembly_jacobian_sd(Mat *J)
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
 
-      for(i=0;i<6;i++){
+      for(i=0;i<nvoi;i++){
 	for(j=0;j<npe*dim;j++){
 	  Baux[i][j]=0.0;
 	  for(k=0;k<nvoi;k++){
@@ -417,7 +417,7 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 	DsDe[2][0]=0.0; DsDe[2][1]=0.0; DsDe[2][2]=(1-poi)/2;
 	for(i=0;i<3;i++){
 	  for(j=0;j<3;j++){
-	    DsDe[i][j]*=you/(1-pow(poi,2));
+	    DsDe[i][j] = DsDe[i][j] * you/(1-pow(poi,2));
 	  }
 	}
       }
@@ -491,41 +491,19 @@ int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8] )
 
   if(dim==2){
     for(i=0;i<npe;i++){
-      B[0][i*2+0] = ShapeDerivs[i][0]; 
-      B[0][i*2+1] = 0.0         ;
-
-      B[1][i*2+0] = 0.0         ;
-      B[1][i*2+1] = ShapeDerivs[i][1];
-
-      B[2][i*2+0] = ShapeDerivs[i][1];
-      B[2][i*2+1] = ShapeDerivs[i][0];
+      B[0][i*2+0] = ShapeDerivs[i][0]; B[0][i*2+1] = 0.0         ;
+      B[1][i*2+0] = 0.0              ; B[1][i*2+1] = ShapeDerivs[i][1];
+      B[2][i*2+0] = ShapeDerivs[i][1]; B[2][i*2+1] = ShapeDerivs[i][0];
     }
   }
   else if(dim==3){
     for(i=0;i<npe;i++){
-      B[0][i*3+0] = ShapeDerivs[i][0]; 
-      B[0][i*3+1] = 0.0         ;
-      B[0][i*3+2] = 0.0         ; 
-
-      B[1][i*3+0] = 0.0         ;
-      B[1][i*3+1] = ShapeDerivs[i][1];
-      B[1][i*3+2] = 0.0         ; 
-
-      B[2][i*3+0] = 0.0         ;
-      B[2][i*3+1] = 0.0         ;
-      B[2][i*3+2] = ShapeDerivs[i][2]; 
-
-      B[3][i*3+0] = ShapeDerivs[i][1];
-      B[3][i*3+1] = ShapeDerivs[i][0];
-      B[3][i*3+2] = 0.0         ; 
-
-      B[4][i*3+0] = 0.0         ;
-      B[4][i*3+1] = ShapeDerivs[i][2];
-      B[4][i*3+2] = ShapeDerivs[i][1];
-
-      B[5][i*3+0] = ShapeDerivs[i][2];
-      B[5][i*3+1] = 0.0         ;
-      B[5][i*3+2] = ShapeDerivs[i][0]; 
+      B[0][i*3+0] = ShapeDerivs[i][0]; B[0][i*3+1] = 0.0               ; B[0][i*3+2] = 0.0              ; 
+      B[1][i*3+0] = 0.0              ; B[1][i*3+1] = ShapeDerivs[i][1] ; B[1][i*3+2] = 0.0              ; 
+      B[2][i*3+0] = 0.0              ; B[2][i*3+1] = 0.0               ; B[2][i*3+2] = ShapeDerivs[i][2]; 
+      B[3][i*3+0] = ShapeDerivs[i][1]; B[3][i*3+1] = ShapeDerivs[i][0] ; B[3][i*3+2] = 0.0              ; 
+      B[4][i*3+0] = 0.0              ; B[4][i*3+1] = ShapeDerivs[i][2] ; B[4][i*3+2] = ShapeDerivs[i][1];
+      B[5][i*3+0] = ShapeDerivs[i][2]; B[5][i*3+1] = 0.0               ; B[5][i*3+2] = ShapeDerivs[i][0]; 
 
     }
   }
@@ -586,7 +564,7 @@ int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3])
 
   for(i=0;i<n;i++){
     for(d=0;d<dim;d++){
-      ElemCoord[i][d] = coord[ LocalNod[i]*3 + d ];
+      ElemCoord[i][d] = coord[ LocalNod[i]*dim + d ];
     }
   }
 
