@@ -200,5 +200,9 @@ int GetElemenDispls( int e, double *x, double *elem_disp );
 int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *energy);
 int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6]);
 
+// spu_util.c
+int get_nods_bc(int **nods, int *nnods);
+int get_nods_index(int *nods_bc, int nnods_bc, int *ix_loc, int *ix_glo);
+
 
 #endif

@@ -25,7 +25,7 @@ int assembly_jacobian_sd(Mat *J)
   double dsh[8][3];
   double DetJac;
   double Ke[8*3 * 8*3];
-  double B[6][3*8], Baux[6][3*8];
+  double B[6][3*8];
   double DsDe[6][6];
   double *wp = NULL;
   double ElemDispls[8*3];

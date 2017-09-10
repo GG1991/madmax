@@ -75,22 +75,6 @@ int mic_alloc(MPI_Comm MICRO_COMM)
     ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
     ierr = VecDuplicate(x,&b1);CHKERRQ(ierr);
 
-  }else if(homo.type==LD_LAGRAN_PAR){
-
-//    nlocal_ext = nlocal + ((homog_ld_lagran_t*)homo.st)->nnods_bc * 3;
-//
-//    ierr = MPI_Allreduce(&nlocal_ext, &ntotal_ext, 1, MPI_INT, MPI_SUM, MICRO_COMM);
-//    
-//    ierr = MatCreate(MICRO_COMM,&J);CHKERRQ(ierr); // this communicator should have only 1 process here
-//    ierr = MatSetSizes(J,nlocal_ext,nlocal_ext,ntotal_ext,ntotal_ext);CHKERRQ(ierr);
-//    ierr = MatSetFromOptions(J);CHKERRQ(ierr);
-//    ierr = MatSeqAIJSetPreallocation(J,117,NULL);CHKERRQ(ierr);
-//    ierr = MatMPIAIJSetPreallocation(J,117,NULL,117,NULL);CHKERRQ(ierr);
-//    ierr = MatSetOption(J,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
-//
-//    ierr = VecCreate(MICRO_COMM, &xe);CHKERRQ(ierr);
-//    ierr = VecSetSizes(xe, nlocal_ext, ntotal_ext);CHKERRQ(ierr);
-
   }
 
   return 0;

@@ -57,9 +57,18 @@ int micro_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double 
 /****************************************************************************************************/
 int micro_homogenize_linear(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
+  /*
+     ub = E . x
+  */
 
-  int    ierr, nr_its=-1, max_its=6, nnods_bc, i, d, k, n_loc, *ixb;
-  double norm_tol=1.0e-8, norm=2*norm_tol, ub, strain_matrix[3][3], *x_arr, *b_arr;
+  int    ierr, nr_its=-1, max_its=6;
+  int    nnods_bc, *nods_bc;
+  int    i, d, k;
+  int    *ix_loc, *ix_glo;
+  double *ub;
+  double norm_tol=1.0e-8, norm=2*norm_tol;
+  double strain_matrix[3][3];
+  double *x_arr, *b_arr;
 
   if(dim==2){
     strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[2];
@@ -71,47 +80,57 @@ int micro_homogenize_linear(MPI_Comm MICRO_COMM, double strain_mac[6], double st
     strain_matrix[2][0]=strain_mac[5]; strain_matrix[2][1]=strain_mac[4]; strain_matrix[2][2]=strain_mac[2];
   }
 
-  ierr = VecGetArray(x, &x_arr);CHKERRQ(ierr);
-  nnods_bc = ((homog_ld_lagran_t*)homo.st)->nnods_bc;
-  ixb = ((homog_ld_lagran_t*)homo.st)->index;
+  /* get array of nods in al boundary without repetition */
+  ierr = get_nods_bc( &nods_bc, &nnods_bc);
+  if(ierr){
+    return 1;
+  }
+  ix_loc = malloc(nnods_bc*dim*sizeof(int));    /* indeces to search for local coordinates */
+  ix_glo = malloc(nnods_bc*dim*sizeof(int));    /* indeces to be set at boundary */
+  ub     = malloc(nnods_bc*dim*sizeof(double)); /* values  to be set at boundary */
+  ierr   = get_nods_index( nods_bc, nnods_bc, ix_loc, ix_glo);
 
   // first we fill the value ub_val in <homog_ld_lagran_t> structure
   for(i=0; i<nnods_bc; i++){
     for(d=0;d<dim;d++){
-      n_loc = ixb[i*dim+d]/dim;
-      ub = 0.0;
+      ub[i*dim+d] = 0.0;
       for(k=0;k<dim;k++){
-	ub += strain_matrix[d][k]*coord[n_loc * dim + k];
+	ub[ i * dim + d] = ub[ i * dim + d] +  strain_matrix[d][k] * coord[ix_loc[i* dim + k]];
       }
-      ((homog_ld_t*)homo.st)->ub_val[i*dim+d] = ub;
     }
   }
+
+  // first we fill the value ub_val in <homog_ld_lagran_t> structure
+  ierr = VecGetArray(x, &x_arr);CHKERRQ(ierr);
   for(i=0; i<nnods_bc; i++){
     for(d=0;d<dim;d++){
-      x_arr[ixb[i*dim+d]] = ((homog_ld_t*)homo.st)->ub_val[i*dim+d]; 
+      x_arr[ix_loc[i*dim+d]] = ub[i*dim+d]; 
     }
   }
+  ierr = VecRestoreArray(x, &x_arr);CHKERRQ(ierr);
 
   while( nr_its < max_its && norm > norm_tol )
   {
-    ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
+    ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
     ierr = VecGetArray(b, &b_arr);CHKERRQ(ierr);
     for(i=0; i<nnods_bc; i++){
       for(d=0;d<dim;d++){
-	b_arr[ixb[i*dim+d]] = 0.0;
+	b_arr[ix_loc[i*dim+d]] = 0.0;
       }
     }
     ierr = VecRestoreArray(b, &b_arr);CHKERRQ(ierr);
+    ierr = VecScale(b,-1.0); CHKERRQ(ierr);
+
     ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
     PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
+
     if( !(norm > norm_tol) )break;
-    ierr = VecScale(b,-1.0); CHKERRQ(ierr);
+
     ierr = assembly_jacobian_sd(&A);
-    ierr = MatZeroRowsColumns(A, nnods_bc*dim, ixb, 1.0, NULL, NULL); CHKERRQ(ierr);
+    ierr = MatZeroRowsColumns(A, nnods_bc*dim, ix_glo, 1.0, NULL, NULL); CHKERRQ(ierr);
     ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
 
     ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
-
     ierr = MatMult(A, dx, b1);CHKERRQ(ierr);
     
     if( flag_print & (1<<PRINT_PETSC) ){
@@ -173,7 +192,7 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
       n_loc = ixb[i*dim+d]/dim;
       ub = 0.0;
       for(k=0;k<dim;k++){
-	ub += strain_matrix[d][k]*coord[n_loc * 3 + k];
+	ub += strain_matrix[d][k]*coord[n_loc * dim + k];
       }
       ((homog_ld_lagran_t*)homo.st)->ub_val[i*dim+d] = ub;
     }
@@ -501,3 +520,4 @@ int micro_homogenize_linear_hexa(MPI_Comm MICRO_COMM, double strain_mac[6], doub
 
   return 0;
 }
+/****************************************************************************************************/
