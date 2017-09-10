@@ -186,16 +186,15 @@ int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *
 /****************************************************************************************************/
 int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain, double *stress, double *energy)
 {
-  int  rank, nproc, ierr; 
+  FILE   *fm;
+  int    rank, nproc, ierr; 
+  int    i, d, ns;
+  char   file_name[NBUF];
+  double *xvalues;
+  Vec    xlocal;
 
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
-
-  FILE *fm;
-  char file_name[NBUF];
-  int  i, d, ns;
-  Vec  xlocal;
-  double *xvalues;
 
   if(dim==2){
     ns = 4;

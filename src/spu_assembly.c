@@ -47,6 +47,7 @@ int assembly_jacobian_sd(Mat *J)
     for(gp=0;gp<ngp;gp++){
 
       get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      DetJac = fabs(DetJac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
 
@@ -135,6 +136,7 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
       memset(strain_gp, 0.0, nvoi*sizeof(double));
       memset(stress_gp, 0.0, nvoi*sizeof(double));
       get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      DetJac = fabs(DetJac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
 
@@ -226,6 +228,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
       energy_gp = 0.0;
 
       get_dsh(gp, npe, ElemCoord, ShapeDerivs, &det_jac);
+      det_jac = fabs(det_jac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
       wp_eff = det_jac*wp[gp];
@@ -327,9 +330,10 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
     for(gp=0;gp<ngp;gp++){
 
       memset(strain_gp, 0.0, nvoi*sizeof(double));
-      memset(stress_gp  , 0.0, nvoi*sizeof(double));
+      memset(stress_gp, 0.0, nvoi*sizeof(double));
 
       get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      DetJac = fabs(DetJac);
       GetB( npe, ShapeDerivs, B );
       GetDsDe( e, ElemDispls, DsDe );
       wp_eff = DetJac*wp[gp];
