@@ -5,14 +5,30 @@ function cube {
 
 NM=1
 
-./mpirun -np $NM ../../micro/micro         \
-    -input ex1.spu                         \
+./mpirun -np $NM ../../micro/micro \
+    -input ex1.spu \
     -mesh ../../meshes/cube_unif/cube.msh  \
-    -mesh_gmsh                             \
-    -ksp_type cg                           \
-    -ksp_rtol 1.0e-13                      \
-    -pc_type  lu                           \
-    -options_left 0                        \
+    -dim 3 \
+    -mesh_gmsh \
+    -pc_type lu \
+    -options_left 0 \
+    -homo_ld \
+    -print_vtu
+}
+
+#08-08-2017
+function cube_2d {
+
+NM=1
+
+./mpirun -np $NM ../../micro/micro \
+    -input ex1_2d.spu \
+    -mesh ../../meshes/cube_unif/cube_2d.msh \
+    -dim 2 \
+    -mesh_gmsh \
+    -pc_type lu \
+    -options_left 0 \
+    -homo_ld \
     -print_vtu
 }
 
@@ -70,37 +86,35 @@ NM=1
 
 # 16-08-2017
 # Cube with cilindrical fiber in the middle
-function cube_fiber_seq {
+function cube_fiber {
 NM=1
 
 ./mpirun -np $NM ../../micro/micro \
     -input ex1.spu \
     -mesh ../../meshes/cube_fiber/cube_fiber.msh \
+    -dim 3 \
     -mesh_gmsh \
     -pc_type lu \
     -options_left 0 \
     -log_trace micro_trace \
-    -homo_exp \
+    -homo_lu \
     -print_vtu
 }
 
 # 16-08-2017
 # Cube with cilindrical fiber in the middle
-function cube_fiber_par {
+function cube_fiber_2d {
+NM=1
 
-  NM=4
-
-    ./mpirun -np $NM ../../micro/micro \
-    -input ex1.spu \
-    -mesh ../../meshes/cube_fiber/cube_fiber.msh \
+./mpirun -np $NM ../../micro/micro \
+    -input ex1_2d.spu \
+    -mesh ../../meshes/cube_fiber/cube_fiber_2d.msh \
+    -dim 2 \
     -mesh_gmsh \
-    -ksp_type cg \
-    -ksp_rtol 1.0e-13 \
-    -ksp_atol 1.0e-19 \
-    -pc_type bjacobi \
+    -pc_type lu \
     -options_left 0 \
     -log_trace micro_trace \
-    -homo_linear \
+    -homo_ld \
     -print_vtu
 }
 
@@ -192,6 +206,8 @@ NM=1
 }
 
 #cube
+#cube_2d
 #barbero
-cube_hole_2d
 #cube_hole
+#cube_hole_2d
+cube_fiber_2d

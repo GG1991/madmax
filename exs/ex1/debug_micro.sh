@@ -4,7 +4,7 @@
 #break_mic=( 'spu_mesh.c:xx' ) 
 #break_mic=( 'micmic.c:xx' ) 
 #break_mic=( 'mic_alloc.c:xx' ) 
-#break_mic=( 'spu_assembly.c:xx' ) 
+break_mic=( 'spu_assembly.c:332' ) 
 #break_mic=( 'mic_boundary.c:xx' ) 
 
 # BREAKPOINTS
@@ -40,7 +40,7 @@ eval ./mpirun -np $NM valgrind --log-file=\"valgrind.out\" --leak-check=full ../
        -print_part
 }
 
-function barbero_debug {
+function barbero {
 eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" --args ../../micro/micro   \
     -input ex1.spu                            \
     -mesh ../../meshes/barbero/MESH01/Mesh01  \
@@ -54,96 +54,38 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" --args ../../micro/micro   \
     -print_part
 }
 
-function cube_cube_hole_fill_seq {
-
+# 23-08-2017
+# Cube with cilindrical hole in the middle
+function cube_hole_2d {
 NM=1
 
-eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" --args ../../micro/micro   \
-    -input ex1.spu                                                         \
-    -mesh ../../meshes/cube_hole/cube_cube_hole_fill.msh                   \
-    -mesh_gmsh                                                             \
-    -pc_type  lu                                                           \
-    -options_left 0                                                        \
-    -print_disp                                                            \
-    -log_trace micro_trace                                                 \
-    -print_part
-}
-
-# 16-08-2017
-# Cube with cilindrical fiber in the middle
-function cube_fiber_par_valgrind {
-
-NM=4
-
-eval ./mpirun -np $NM valgrind --log-file=\"valgrind.out\" --leak-check=full ../../micro/micro   \
-  -input ex1.spu                                                         \
-  -mesh ../../meshes/cube_fiber/cube_fiber.msh                           \
-  -mesh_gmsh                                                             \
-  -ksp_type cg                                                           \
-  -ksp_rtol 1.0e-13                                                      \
-  -ksp_atol 1.0e-19                                                      \
-  -pc_type bjacobi                                                       \
-  -options_left 0                                                        \
-  -log_trace micro_trace                                                 \
+eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
+  -input ex1_2d.spu \
+  -mesh ../../meshes/cube_hole/cube_hole_2d.msh \
+  -dim 2 \
+  -mesh_gmsh \
+  -pc_type lu \
+  -options_left 0 \
+  -log_trace micro_trace \
+  -homo_ld \
   -print_vtu
 }
 
 # 23-08-2017
 # Cube with cilindrical fiber in the middle
-function cube_fiber_seq {
+function cube_fiber {
 NM=1
-
-eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro   \
-  -input ex1.spu \
-  -mesh ../../meshes/cube_fiber/cube_fiber.msh \
-  -mesh_gmsh \
-  -ksp_type cg \
-  -ksp_rtol 1.0e-13 \
-  -ksp_atol 1.0e-19 \
-  -pc_type bjacobi \
-  -options_left 0 \
-  -log_trace micro_trace \
-  -homo_ld \
-  -print_vtu
-}
-
-# 16-08-2017
-# Cube with cilindrical fiber in the middle
-function cube_fiber_par {
-NM=4
-
-eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
-  -input ex1.spu \
-  -mesh ../../meshes/cube_fiber/cube_fiber.msh \
-  -mesh_gmsh \
-  -ksp_type cg \
-  -ksp_rtol 1.0e-13 \
-  -ksp_atol 1.0e-19 \
-  -pc_type bjacobi  \
-  -options_left 0 \
-  -log_trace micro_trace \
-  -homo_ld \
-  -print_vtu
-}
-
-# 06-09-2017
-# Cube with cilindrical fiber in the middle 2D
-# Linear Displacements with Lagrangian BC
-# this technique is sequencial only
-function cube_fiber_2d_ld_seq {
-NM=1  
 
 eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
   -input ex1_2d.spu \
   -mesh ../../meshes/cube_fiber/cube_fiber_2d.msh \
   -dim 2 \
   -mesh_gmsh \
-  -pc_type lu  \
-  -homo_ld \
+  -pc_type lu \
   -options_left 0 \
   -log_trace micro_trace \
+  -homo_ld \
   -print_vtu
-  #-homo_ld_seq \
 }
 
 # 07-09-2017
@@ -167,10 +109,5 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
   #-homo_ld_seq \
 }
 
-#ex_common
-#debug_valgrind
-#barbero_debug
-#cube_cube_hole_fill_seq
-#cube_fiber_par_valgrind
-#cube_fiber_seq
-#cube_fiber_par
+#cube_fiber
+cube_hole_2d
