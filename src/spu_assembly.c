@@ -17,14 +17,14 @@ int assembly_jacobian_sd(Mat *J)
 	approach.
    */
 
-  int    i, j, k, e, gp, ngp, npe;
+  int    i, j, k, l, e, gp, ngp, npe;
   int    PETScIdx[8*3];
   int    ierr;
 
   double ElemCoord[8][3];
-  double ShapeDerivs[8][3];
+  double dsh[8][3];
   double DetJac;
-  double ElemMatrix[8*3 * 8*3];
+  double Ke[8*3 * 8*3];
   double B[6][3*8], Baux[6][3*8];
   double DsDe[6][6];
   double *wp = NULL;
@@ -41,36 +41,29 @@ int assembly_jacobian_sd(Mat *J)
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
     GetWeight(npe, &wp);
 
-    // calculate <ElemMatrix> by numerical integration
+    // calculate <Ke> by numerical integration
 
-    memset(ElemMatrix, 0.0, (npe*dim*npe*dim)*sizeof(double));
+    memset(Ke, 0.0, (npe*dim*npe*dim)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
-      get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      get_dsh(gp, npe, ElemCoord, dsh, &DetJac);
       DetJac = fabs(DetJac);
-      GetB( npe, ShapeDerivs, B );
+      GetB( npe, dsh, B );
       GetDsDe( e, ElemDispls, DsDe );
-
-      for(i=0;i<nvoi;i++){
-	for(j=0;j<npe*dim;j++){
-	  Baux[i][j]=0.0;
-	  for(k=0;k<nvoi;k++){
-	    Baux[i][j] += DsDe[i][k]*B[k][j];
-	  }
-	}
-      }
 
       wp_eff = DetJac * wp[gp];
       for(i=0;i<npe*dim;i++){
 	for(j=0;j<npe*dim;j++){
 	  for(k=0;k<nvoi;k++){
-	    ElemMatrix[i*npe*dim+j] += B[k][i]*Baux[k][j] * wp_eff;
+	    for(l=0;l<nvoi;l++){
+	      Ke[i*npe*dim+j] = Ke[i*npe*dim+j] + B[k][i] * DsDe[k][l] * B[l][j] * wp_eff;
+	    }
 	  }
 	}
       }
 
     }
-    ierr = MatSetValues(*J, npe*dim, PETScIdx, npe*dim, PETScIdx, ElemMatrix, ADD_VALUES);CHKERRQ(ierr);
+    ierr = MatSetValues(*J, npe*dim, PETScIdx, npe*dim, PETScIdx, Ke, ADD_VALUES);CHKERRQ(ierr);
 
   }
 
@@ -93,7 +86,7 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
   int    ierr;
 
   double ElemCoord[8][3];
-  double ShapeDerivs[8][3];
+  double dsh[8][3];
   double DetJac;
   double ElemResidual[8*3];
   double B[6][3*8], stress_gp[6], strain_gp[6];
@@ -135,9 +128,9 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
 
       memset(strain_gp, 0.0, nvoi*sizeof(double));
       memset(stress_gp, 0.0, nvoi*sizeof(double));
-      get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      get_dsh(gp, npe, ElemCoord, dsh, &DetJac);
       DetJac = fabs(DetJac);
-      GetB( npe, ShapeDerivs, B );
+      GetB( npe, dsh, B );
       GetDsDe( e, ElemDispls, DsDe );
 
       for(i=0;i<nvoi;i++){
@@ -186,7 +179,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
   int    ierr;
 
   double ElemCoord[8][3];
-  double ShapeDerivs[8][3];
+  double dsh[8][3];
   double det_jac;
   double B[6][3*8], stress_gp[6], strain_gp[6], energy_gp, stress_ave[6], strain_ave[6], energy_ave;
   double DsDe[6][6];
@@ -227,9 +220,9 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
       memset(stress_gp,0.0,nvoi*sizeof(double));
       energy_gp = 0.0;
 
-      get_dsh(gp, npe, ElemCoord, ShapeDerivs, &det_jac);
+      get_dsh(gp, npe, ElemCoord, dsh, &det_jac);
       det_jac = fabs(det_jac);
-      GetB( npe, ShapeDerivs, B );
+      GetB( npe, dsh, B );
       GetDsDe( e, ElemDispls, DsDe );
       wp_eff = det_jac*wp[gp];
 
@@ -285,7 +278,7 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
   int    nproc, rank;
 
   double ElemCoord[8][3];
-  double ShapeDerivs[8][3];
+  double dsh[8][3];
   double DetJac;
   double B[6][3*8], stress_gp[6], strain_gp[6];
   double DsDe[6][6];
@@ -332,9 +325,9 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
       memset(strain_gp, 0.0, nvoi*sizeof(double));
       memset(stress_gp, 0.0, nvoi*sizeof(double));
 
-      get_dsh(gp, npe, ElemCoord, ShapeDerivs, &DetJac);
+      get_dsh(gp, npe, ElemCoord, dsh, &DetJac);
       DetJac = fabs(DetJac);
-      GetB( npe, ShapeDerivs, B );
+      GetB( npe, dsh, B );
       GetDsDe( e, ElemDispls, DsDe );
       wp_eff = DetJac*wp[gp];
 
@@ -479,7 +472,7 @@ int GetWeight(int npe, double **wp)
   return 0;
 }
 /****************************************************************************************************/
-int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8] )
+int GetB(int npe, double dsh[8][3], double B[6][3*8] )
 {
   /*
   e = Bu    e=[exx eyy ezz exy eyz exz]
@@ -495,19 +488,19 @@ int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8] )
 
   if(dim==2){
     for(i=0;i<npe;i++){
-      B[0][i*2+0] = ShapeDerivs[i][0]; B[0][i*2+1] = 0.0         ;
-      B[1][i*2+0] = 0.0              ; B[1][i*2+1] = ShapeDerivs[i][1];
-      B[2][i*2+0] = ShapeDerivs[i][1]; B[2][i*2+1] = ShapeDerivs[i][0];
+      B[0][i*2+0] = dsh[i][0]; B[0][i*2+1] = 0.0      ;
+      B[1][i*2+0] = 0.0      ; B[1][i*2+1] = dsh[i][1];
+      B[2][i*2+0] = dsh[i][1]; B[2][i*2+1] = dsh[i][0];
     }
   }
   else if(dim==3){
     for(i=0;i<npe;i++){
-      B[0][i*3+0] = ShapeDerivs[i][0]; B[0][i*3+1] = 0.0               ; B[0][i*3+2] = 0.0              ; 
-      B[1][i*3+0] = 0.0              ; B[1][i*3+1] = ShapeDerivs[i][1] ; B[1][i*3+2] = 0.0              ; 
-      B[2][i*3+0] = 0.0              ; B[2][i*3+1] = 0.0               ; B[2][i*3+2] = ShapeDerivs[i][2]; 
-      B[3][i*3+0] = ShapeDerivs[i][1]; B[3][i*3+1] = ShapeDerivs[i][0] ; B[3][i*3+2] = 0.0              ; 
-      B[4][i*3+0] = 0.0              ; B[4][i*3+1] = ShapeDerivs[i][2] ; B[4][i*3+2] = ShapeDerivs[i][1];
-      B[5][i*3+0] = ShapeDerivs[i][2]; B[5][i*3+1] = 0.0               ; B[5][i*3+2] = ShapeDerivs[i][0]; 
+      B[0][i*3+0] = dsh[i][0]; B[0][i*3+1] = 0.0       ; B[0][i*3+2] = 0.0      ; 
+      B[1][i*3+0] = 0.0      ; B[1][i*3+1] = dsh[i][1] ; B[1][i*3+2] = 0.0      ; 
+      B[2][i*3+0] = 0.0      ; B[2][i*3+1] = 0.0       ; B[2][i*3+2] = dsh[i][2]; 
+      B[3][i*3+0] = dsh[i][1]; B[3][i*3+1] = dsh[i][0] ; B[3][i*3+2] = 0.0      ; 
+      B[4][i*3+0] = 0.0      ; B[4][i*3+1] = dsh[i][2] ; B[4][i*3+2] = dsh[i][1];
+      B[5][i*3+0] = dsh[i][2]; B[5][i*3+1] = 0.0       ; B[5][i*3+2] = dsh[i][0]; 
 
     }
   }
@@ -515,7 +508,7 @@ int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8] )
   return 0;
 }
 /****************************************************************************************************/
-int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac)
+int get_dsh(int gp, int npe, double coor[8][3], double dsh[8][3], double *DetJac)
 {
 
   double ***ShapeDerivsMaster;
@@ -528,7 +521,7 @@ int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double
 
   fem_calc_jac(dim, coor, ShapeDerivsMaster, npe, gp, jac);
   fem_invjac(dim, jac, ijac, DetJac);
-  fem_trans_dsh(dim, ijac, npe, gp, ShapeDerivsMaster, ShapeDerivs);
+  fem_trans_dsh(dim, ijac, npe, gp, ShapeDerivsMaster, dsh);
 
   return 0;
 }
