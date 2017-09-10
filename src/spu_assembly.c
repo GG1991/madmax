@@ -485,12 +485,11 @@ int is_inside_fiber_cilin(int e)
 {
   int    d;
   double l=-1, centroid[3];
-  double center_cell[3] = {0.0, 0.0, 1.5};
   get_centroid(e, centroid);
 
   l=0.0;
   for(d=0;d<2;d++){
-    l = l + pow(centroid[d]-center_cell[d],2);
+    l = l + pow(centroid[d]-center_domain[d],2);
   }
   l = sqrt(l);
   return (l<=fiber_cilin_r) ? 1:0;

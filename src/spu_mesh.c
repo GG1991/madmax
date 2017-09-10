@@ -2182,18 +2182,61 @@ int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z)
   if(n==0) return 0;
 
   int i=0;
-  x[0] = coord[i*3+0]; x[1] = coord[i*3+0];
-  y[0] = coord[i*3+1]; y[1] = coord[i*3+1];
-  z[0] = coord[i*3+2]; z[1] = coord[i*3+2];
+  x[0] = coord[i*dim+0]; x[1] = coord[i*dim+0];
+  y[0] = coord[i*dim+1]; y[1] = coord[i*dim+1];
+  if(dim==2){
+    z[0] = 0.0; z[1] = 0.0;
+  }
+  else if(dim==3){
+    z[0] = coord[i*dim+2]; z[1] = coord[i*dim+2];
+  }
   for(i=1;i<n;i++){
-    if( coord[i*3+0] < x[0] ) x[0] = coord[i*3+0];
-    if( coord[i*3+0] > x[1] ) x[1] = coord[i*3+0];
-    if( coord[i*3+1] < y[0] ) y[0] = coord[i*3+1];
-    if( coord[i*3+1] > y[1] ) y[1] = coord[i*3+1];
-    if( coord[i*3+2] < z[0] ) z[0] = coord[i*3+2];
-    if( coord[i*3+2] > z[1] ) z[1] = coord[i*3+2];
+    if( coord[i*dim+0] < x[0] ) x[0] = coord[i*dim+0];
+    if( coord[i*dim+0] > x[1] ) x[1] = coord[i*dim+0];
+    if( coord[i*dim+1] < y[0] ) y[0] = coord[i*dim+1];
+    if( coord[i*dim+1] > y[1] ) y[1] = coord[i*dim+1];
+    if(dim==3){
+      if( coord[i*dim+2] < z[0] ) z[0] = coord[i*dim+2];
+      if( coord[i*dim+2] > z[1] ) z[1] = coord[i*dim+2];
+    }
   }
 
+  return 0;
+}
+/****************************************************************************************************/
+int get_domain_center(MPI_Comm PROBLEM_COMM, double *coord, int n, double center[3])
+{
+  int    rank, nproc, ierr, i;
+  double x[2],y[2],z[2],x_abs[2],y_abs[2],z_abs[2],*x_all,*y_all,*z_all;
+
+  MPI_Comm_size(PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(PROBLEM_COMM, &rank);
+
+  x_all = malloc(nproc*2*sizeof(double));
+  y_all = malloc(nproc*2*sizeof(double));
+  z_all = malloc(nproc*2*sizeof(double));
+
+  ierr = get_bbox_local_limits(coord, n, x, y, z);CHKERRQ(ierr);
+
+  ierr = MPI_Allgather(x, 2, MPI_DOUBLE, x_all, 2, MPI_DOUBLE, PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Allgather(y, 2, MPI_DOUBLE, y_all, 2, MPI_DOUBLE, PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Allgather(z, 2, MPI_DOUBLE, z_all, 2, MPI_DOUBLE, PROBLEM_COMM);CHKERRQ(ierr);
+
+  x_abs[0]=x_all[0]; x_abs[1]=x_all[1];
+  y_abs[0]=y_all[0]; y_abs[1]=y_all[1];
+  z_abs[0]=z_all[0]; z_abs[1]=z_all[1];
+  for(i=1;i<nproc;i++){
+    if( x_all[2*i+0] < x_abs[0] ) x_abs[0] = x_all[2*i+0];
+    if( x_all[2*i+1] > x_abs[1] ) x_abs[1] = x_all[2*i+1];
+    if( y_all[2*i+0] < y_abs[0] ) y_abs[0] = y_all[2*i+0];
+    if( y_all[2*i+1] > y_abs[1] ) y_abs[1] = y_all[2*i+1];
+    if( z_all[2*i+0] < z_abs[0] ) z_abs[0] = z_all[2*i+0];
+    if( z_all[2*i+1] > z_abs[1] ) z_abs[1] = z_all[2*i+1];
+  }
+
+  center[0] = (x_abs[1] + x_abs[0])/ 2;
+  center[1] = (y_abs[1] + y_abs[0]) /2;
+  center[2] = (z_abs[1] + z_abs[0]) /2;
   return 0;
 }
 /****************************************************************************************************/

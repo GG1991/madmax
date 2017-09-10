@@ -275,8 +275,10 @@ end_micro_1:
    */
   double strain_mac[6], strain_ave[6], stress_ave[6], ttensor[36];
 
-  ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);CHKERRQ(ierr);
-  ierr = PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);CHKERRQ(ierr);
+  ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);
+  ierr = PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);
+  ierr = get_domain_center(MICRO_COMM, coord, nmynods, center_domain);
+  ierr = PetscPrintf(MICRO_COMM,"center = %e %e %e\n",center_domain[0],center_domain[1],center_domain[2]);
 
   if(flag_coupling){
 

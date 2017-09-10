@@ -86,6 +86,7 @@ bool flag_reactions;
 */
 int    flag_fiber_cilin;
 double fiber_cilin_r;
+double center_domain[3];
 
 #define FORMAT_NULL        0
 #define FORMAT_GMSH        1
@@ -95,8 +96,8 @@ int mesh_f;                   // Mesh format number
 
 // Time measurement
 
-FILE *time_fl;
-FILE *FileOutputStructures;
+FILE   *time_fl;
+FILE   *FileOutputStructures;
 double t0,t1;
 double *time_vec;
 
@@ -181,6 +182,7 @@ int gmsh_is_vol_elm(int code);
 int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM);
 int get_bbox_limit_lengths(MPI_Comm PROBLEM_COMM, double *coord, int n, double *lx, double *ly, double *lz);
 int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z);
+int get_domain_center(MPI_Comm PROBLEM_COMM, double *coord, int n, double center[3]);
 
 // spu_vtk.c
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );

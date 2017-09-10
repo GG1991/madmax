@@ -27,6 +27,7 @@ main
 *.dat
 *.pdf
 *.msh
+*.png
 .gdb_history
 struct*
 *part*
