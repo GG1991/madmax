@@ -11,24 +11,22 @@
 
 int assembly_jacobian_sd(Mat *J)
 {
-
   /*    
 	Assembly the Jacobian for Small Deformation
 	approach.
    */
 
-  int    i, j, k, l, e, gp, ngp, npe;
-  int    PETScIdx[8*3];
-  int    ierr;
-
-  double ElemCoord[8][3];
-  double dsh[8][3];
-  double DetJac;
-  double Ke[8*3 * 8*3];
-  double B[6][3*8];
-  double DsDe[6][6];
-  double *wp = NULL;
-  double ElemDispls[8*3];
+  int     i, j, k, l, e, gp, ngp, npe;
+  int     PETScIdx[8*3];
+  int     ierr;
+  double  ElemCoord[8][3];
+  double  dsh[8][3];
+  double  detj;
+  double  Ke[8*3 * 8*3];
+  double  B[6][3*8];
+  double  DsDe[6][6];
+  double  *wp = NULL;
+  double  ElemDispls[8*3];
 
   register double wp_eff;
 
@@ -46,12 +44,12 @@ int assembly_jacobian_sd(Mat *J)
     memset(Ke, 0.0, (npe*dim*npe*dim)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
-      get_dsh(gp, npe, ElemCoord, dsh, &DetJac);
-      DetJac = fabs(DetJac);
+      get_dsh(gp, npe, ElemCoord, dsh, &detj);
+      detj = fabs(detj);
       GetB( npe, dsh, B );
       GetDsDe( e, ElemDispls, DsDe );
 
-      wp_eff = DetJac * wp[gp];
+      wp_eff = detj * wp[gp];
       for(i=0;i<npe*dim;i++){
 	for(j=0;j<npe*dim;j++){
 	  for(k=0;k<nvoi;k++){
@@ -64,7 +62,6 @@ int assembly_jacobian_sd(Mat *J)
 
     }
     ierr = MatSetValues(*J, npe*dim, PETScIdx, npe*dim, PETScIdx, Ke, ADD_VALUES);CHKERRQ(ierr);
-
   }
 
   /* communication between processes */
@@ -81,22 +78,21 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
      approach.
    */
 
-  int    i, k, e, gp, ngp, npe;
-  int    PETScIdx[8*3];
-  int    ierr;
+  int         i, k, e, gp, ngp, npe;
+  int         PETScIdx[8*3];
+  int         ierr;
+  double      ElemCoord[8][3];
+  double      dsh[8][3];
+  double      detj;
+  double      Re[8*3];
+  double      B[6][3*8], stress_gp[6], strain_gp[6];
+  double      DsDe[6][6];
+  double      *wp = NULL;
+  double      ElemDispls[8*3];
+  double      *xvalues;
 
-  double ElemCoord[8][3];
-  double dsh[8][3];
-  double DetJac;
-  double ElemResidual[8*3];
-  double B[6][3*8], stress_gp[6], strain_gp[6];
-  double DsDe[6][6];
-  double *wp = NULL;
-  double ElemDispls[8*3];
-  double *xvalues;
-
-  Vec xlocal;
-  material_t *material;
+  Vec         xlocal;
+  material_t  *material;
 
   register double wp_eff;
 
@@ -123,13 +119,13 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
 
     // calculate <ElemResidue> by numerical integration
 
-    memset(ElemResidual, 0.0, (npe*dim)*sizeof(double));
+    memset(Re, 0.0, (npe*dim)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
       memset(strain_gp, 0.0, nvoi*sizeof(double));
       memset(stress_gp, 0.0, nvoi*sizeof(double));
-      get_dsh(gp, npe, ElemCoord, dsh, &DetJac);
-      DetJac = fabs(DetJac);
+      get_dsh(gp, npe, ElemCoord, dsh, &detj);
+      detj = fabs(detj);
       GetB( npe, dsh, B );
       GetDsDe( e, ElemDispls, DsDe );
 
@@ -151,15 +147,15 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
 	}
       }
 
-      wp_eff = DetJac * wp[gp];
+      wp_eff = detj * wp[gp];
       for(i=0;i<npe*dim;i++){
 	for(k=0;k<nvoi;k++){
-	  ElemResidual[i] += B[k][i]*stress_gp[k] * wp_eff;
+	  Re[i] += B[k][i]*stress_gp[k] * wp_eff;
 	}
       }
 
     }
-    ierr = VecSetValues(*Residue, npe*dim, PETScIdx, ElemResidual, ADD_VALUES);CHKERRQ(ierr);
+    ierr = VecSetValues(*Residue, npe*dim, PETScIdx, Re, ADD_VALUES);CHKERRQ(ierr);
   }
   VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
 
@@ -180,7 +176,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
 
   double ElemCoord[8][3];
   double dsh[8][3];
-  double det_jac;
+  double detj;
   double B[6][3*8], stress_gp[6], strain_gp[6], energy_gp, stress_ave[6], strain_ave[6], energy_ave;
   double DsDe[6][6];
   double *wp = NULL;
@@ -220,11 +216,11 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
       memset(stress_gp,0.0,nvoi*sizeof(double));
       energy_gp = 0.0;
 
-      get_dsh(gp, npe, ElemCoord, dsh, &det_jac);
-      det_jac = fabs(det_jac);
+      get_dsh(gp, npe, ElemCoord, dsh, &detj);
+      detj = fabs(detj);
       GetB( npe, dsh, B );
       GetDsDe( e, ElemDispls, DsDe );
-      wp_eff = det_jac*wp[gp];
+      wp_eff = detj*wp[gp];
 
       for(i=0;i<nvoi;i++){
 	for(k=0;k<npe*dim;k++){
@@ -247,7 +243,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
       }
       energy_ave    += energy_gp * wp_eff;
 
-      vol += det_jac*wp[gp];
+      vol += detj*wp[gp];
     }
     for(i=0;i<nvoi;i++){
       strain[e*nvoi+i] = strain_ave[i] / vol; 
@@ -279,7 +275,7 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
 
   double ElemCoord[8][3];
   double dsh[8][3];
-  double DetJac;
+  double detj;
   double B[6][3*8], stress_gp[6], strain_gp[6];
   double DsDe[6][6];
   double *wp = NULL;
@@ -325,11 +321,11 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
       memset(strain_gp, 0.0, nvoi*sizeof(double));
       memset(stress_gp, 0.0, nvoi*sizeof(double));
 
-      get_dsh(gp, npe, ElemCoord, dsh, &DetJac);
-      DetJac = fabs(DetJac);
+      get_dsh(gp, npe, ElemCoord, dsh, &detj);
+      detj = fabs(detj);
       GetB( npe, dsh, B );
       GetDsDe( e, ElemDispls, DsDe );
-      wp_eff = DetJac*wp[gp];
+      wp_eff = detj*wp[gp];
 
       for(i=0;i<nvoi;i++){
 	for(k=0;k<npe*dim;k++){
@@ -571,7 +567,7 @@ int GetB(int npe, double dsh[8][3], double B[6][3*8] )
   return 0;
 }
 /****************************************************************************************************/
-int get_dsh(int gp, int npe, double coor[8][3], double dsh[8][3], double *DetJac)
+int get_dsh(int gp, int npe, double coor[8][3], double dsh[8][3], double *detj)
 {
 
   double ***ShapeDerivsMaster;
@@ -583,7 +579,7 @@ int get_dsh(int gp, int npe, double coor[8][3], double dsh[8][3], double *DetJac
   if(ShapeDerivsMaster == NULL) return 1;
 
   fem_calc_jac(dim, coor, ShapeDerivsMaster, npe, gp, jac);
-  fem_invjac(dim, jac, ijac, DetJac);
+  fem_invjac(dim, jac, ijac, detj);
   fem_trans_dsh(dim, ijac, npe, gp, ShapeDerivsMaster, dsh);
 
   return 0;
