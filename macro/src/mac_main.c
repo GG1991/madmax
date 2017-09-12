@@ -27,7 +27,7 @@ static char help[] =
 int main(int argc, char **argv)
 {
 
-  int  ierr;
+  int  ierr, ierr_1=0;
   char *myname = strdup("macro");
   char vtkfile_n[NBUF];
   double t0=0.0, tf, dt;
@@ -81,12 +81,28 @@ int main(int argc, char **argv)
   ierr = PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
   if(mesh_f == FORMAT_NULL)SETERRQ(MACRO_COMM,1,"mesh format not given on command line.");
-
   ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"mesh file not given on command line.");
-
   ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"input file not given.");
+  ierr = PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set); CHKERRQ(ierr); 
+  if(set == PETSC_FALSE){
+    PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
+    ierr_1 = 1;
+    goto end_mac_1;
+  }
+  if(dim==2){
+    nvoi=3;
+  }
+  else if(dim==3){
+    nvoi=6;
+  }
+  else{
+    PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
+    ierr_1 = 1;
+    goto end_mac_1;
+  }
+
   /*
      flow execution variables
   */
@@ -98,6 +114,7 @@ int main(int argc, char **argv)
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
 
+
   /* 
      Stablish a new local communicator
   */
@@ -105,8 +122,11 @@ int main(int argc, char **argv)
   ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
   ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
   ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
+
   
+end_mac_1:
   ierr = PetscFinalize();CHKERRQ(ierr);
+  if(ierr_1) goto end_mac;
 
   /*
      Set PETSc communicator to MACRO_COMM
@@ -216,7 +236,12 @@ int main(int argc, char **argv)
   ierr = parse_function(MACRO_COMM, input_n);CHKERRQ(ierr); 
   ierr = macro_parse_boundary(MACRO_COMM, input_n);CHKERRQ(ierr); 
   ierr = set_id_on_material_and_boundary(MACRO_COMM);CHKERRQ(ierr); 
-  ierr = CheckPhysicalID();CHKERRQ(ierr);
+  ierr = CheckPhysicalID();
+  if(ierr){
+    ierr = PetscPrintf(MACRO_COMM,"Problem determing materials on mesh elements\n");
+    goto end_mac;
+  }
+  
   ierr = read_boundary(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = mac_init_boundary(MACRO_COMM, &boundary_list);
 
@@ -381,12 +406,15 @@ int main(int argc, char **argv)
       time_step ++;
     }
   }
+
+end_mac:
   /*
      Stop signal to micro if it is coupled
   */
   if(flag_coupling){
     ierr = mac_send_signal(WORLD_COMM, MIC_END); CHKERRQ(ierr);
   }
+
 
   /*
      Free Memory and close things

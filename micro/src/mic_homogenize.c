@@ -15,7 +15,7 @@ int micro_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double 
   double vol = -1.0, vol_tot = -1.0, stress_aux[6], strain_aux[6];
   register double wp_eff;
 
-  for(i=0;i<6;i++){
+  for(i=0;i<nvoi;i++){
     strain_aux[i] = stress_aux[i] = 0.0;
   }
   vol = 0.0;
@@ -28,26 +28,26 @@ int micro_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double 
 
     // calculate <ElemResidue> by numerical integration
     for(gp=0;gp<ngp;gp++){
-      memset(stress_gp,0.0,6*sizeof(double));
+      memset(stress_gp,0.0,nvoi*sizeof(double));
       get_dsh(gp, npe, coor_elm, dsh, &detj);
       GetDsDe( e, disp_elm, DsDe );
       wp_eff = detj*wp[gp];
-      for(i=0;i<6;i++){
-	for(k=0;k<6;k++){
+      for(i=0;i<nvoi;i++){
+	for(k=0;k<nvoi;k++){
 	  stress_gp[i] += DsDe[i][k]*strain_mac[k];
 	}
       }
-      for(i=0;i<6;i++){
+      for(i=0;i<nvoi;i++){
 	stress_aux[i] += stress_gp[i] * wp_eff;
 	strain_aux[i] += strain_mac[i] * wp_eff;
       }
       vol += wp_eff;
     }
   }
-  ierr = MPI_Allreduce(stress_aux, stress_ave, 6, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
-  ierr = MPI_Allreduce(strain_aux, strain_ave, 6, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Allreduce(stress_aux, stress_ave, nvoi, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Allreduce(strain_aux, strain_ave, nvoi, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
   ierr = MPI_Allreduce(&vol, &vol_tot, 1, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
-  for(i=0;i<6;i++){
+  for(i=0;i<nvoi;i++){
     stress_ave[i] /= vol_tot;
     strain_ave[i] /= vol_tot;
   }

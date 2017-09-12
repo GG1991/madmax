@@ -14,12 +14,13 @@ NM=4
     -options_left 0
 }
 
-function struct_fiber {
+function struct_fiber_2d {
 
-NM=4
+NM=1
 ./mpirun -np $NM ../../macro/macro \
-    -input ex1.spu \
-    -mesh ../../meshes/cube_fiber/struct_fiber.msh \
+    -input ex1_2d.spu \
+    -mesh ../../meshes/cube_fiber/struct_fiber_2d_5_5.msh \
+    -dim 2 \
     -mesh_gmsh \
     -ksp_type cg \
     -ksp_rtol 1.0e-13 \
@@ -46,5 +47,5 @@ NM=1
     -options_left 0
 }
 
-#struct_fiber
+#struct_fiber_2d
 #struct_fiber_homog

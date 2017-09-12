@@ -109,11 +109,10 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input )
 /****************************************************************************************************/
 int CheckPhysicalID(void)
 {
-
-  /* Checks if all the elements of <PhysicalID>
-   * have their correspondent material in <material_list>
+  /* 
+     Checks if all the elements of <PhysicalID>
+     have their correspondent material in <material_list>
    */
-
   int e;
 
   node_list_t *pm;
@@ -124,7 +123,9 @@ int CheckPhysicalID(void)
       if( ((material_t*)pm->data)->GmshID == PhysicalID[e] ) break;
       pm = pm->next;
     }
-    if(!pm) return 1;
+    if(!pm){
+      return 1;
+    }
   }
 
   return 0;

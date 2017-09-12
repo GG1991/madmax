@@ -24,13 +24,8 @@ int mac_alloc(MPI_Comm MACRO_COMM)
 
   int rank, nproc, ierr, nlocal, ntotal;
 
-  if(flag_reactions == PETSC_TRUE){
-    nlocal = 3*nmynods + 3*nmybcnods;
-    ntotal = 3*NTotalNod+ 3*nallbcnods;
-  }else{
-    nlocal = 3*nmynods;
-    ntotal = 3*NTotalNod;
-  }
+  nlocal = dim*nmynods;
+  ntotal = dim*NTotalNod;
 
   MPI_Comm_size(MACRO_COMM, &nproc);
   MPI_Comm_rank(MACRO_COMM, &rank);
@@ -53,17 +48,17 @@ int mac_alloc(MPI_Comm MACRO_COMM)
      and VecCreate() are used with the same communicator.
    */
   int i, d, *ghostsIndex;
-  ghostsIndex = malloc(nghost*3* sizeof(int));
+  ghostsIndex = malloc(nghost*dim* sizeof(int));
 
   for(i=0;i<nghost;i++){
-    for(d=0;d<3;d++){
-      ghostsIndex[i*3+d] = loc2petsc[nmynods + i]*3+d;
+    for(d=0;d<dim;d++){
+      ghostsIndex[i*dim+d] = loc2petsc[nmynods + i]*dim+d;
     }
   }
 
   //  ierr = VecCreate(comm,x);CHKERRQ(ierr);
   //  ierr = VecSetSizes(x,nmynods,NTotalNod);CHKERRQ(ierr);
-  ierr = VecCreateGhost(MACRO_COMM, nmynods*3, NTotalNod*3, nghost*3, ghostsIndex, &x); CHKERRQ(ierr);
+  ierr = VecCreateGhost(MACRO_COMM, nmynods*dim, NTotalNod*dim, nghost*dim, ghostsIndex, &x); CHKERRQ(ierr);
   ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
   ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
 
@@ -76,16 +71,16 @@ int mac_alloc(MPI_Comm MACRO_COMM)
    */
   int Istart, Iend;
   ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
-  if( Istart != StartIndexRank[rank_mac]*3 )
+  if( Istart != StartIndexRank[rank_mac]*dim )
     SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
       
   if(rank_mac<nproc_mac-1){
-    if( Iend != StartIndexRank[rank_mac+1]*3 ){
+    if( Iend != StartIndexRank[rank_mac+1]*dim ){
       SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
     }
   }
   else{
-    if( Iend != NTotalNod*3 ){
+    if( Iend != NTotalNod*dim ){
       SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
     }
   }
