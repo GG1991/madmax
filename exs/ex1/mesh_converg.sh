@@ -92,7 +92,7 @@ do
 	}
       }
       printf "\n";
-    }' micro.out >> convergence_const_cube_fiber.dat
+    }' micro.out >> convergence_const.dat
 
     awk -v i_awk=$i '
     /stress_ave/ {
@@ -102,10 +102,54 @@ do
       }
       printf "\n";
       exit;
-    }' micro.out >> convergence_stress_cube_fiber.dat
+    }' micro.out >> convergence_stress.dat
 
 done
 }
 
-cube_2d
-cube_fiber_2d
+function rve_size_fiber_2d {
+NM=1
+
+for i in $(seq 1 8); do
+
+./mpirun -np $NM ../../micro/micro \
+    -input ex1_2d.spu \
+    -mesh "../../meshes/cube_fiber/struct_fiber_2d_"$i"_"$i".msh" \
+    -dim 2 \
+    -mesh_gmsh \
+    -pc_type lu \
+    -options_left 0 \
+    -log_trace micro_trace \
+    -homo_ld \
+    -print_vtu > micro.out
+    #-fiber_cilin 0.4 \
+
+    awk -v i_awk=$i '
+    /Constitutive/ {
+      printf "%d ",i_awk;
+      for(j=0;j<6;j++){
+	getline;
+	for(i=1;i<=6;i++){
+	  printf "%e ",$i;
+	}
+      }
+      printf "\n";
+    }' micro.out >> convergence_const.dat
+
+    awk -v i_awk=$i '
+    /stress_ave/ {
+      printf "%d ",i_awk;
+      for(i=1;i<=6;i++){
+	printf "%e ",$(i+2);
+      }
+      printf "\n";
+      exit;
+    }' micro.out >> convergence_stress.dat
+
+done
+
+}
+
+#cube_2d
+#cube_fiber_2d
+#rve_size_fiber_2d

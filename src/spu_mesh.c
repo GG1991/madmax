@@ -466,23 +466,23 @@ int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
      Note> No MPI communicator is need here
    */
 
-  FILE   *fm;
-
-  int    total;
-  int    i, d, n; 
-  int    ln;                // line counter
-  int    ntag;              // ntag to read gmsh element conectivities
-  int    GmshIDToSearch; 
-  int    NodeToSearch; 
-  int    *pNodeFound; 
-  int    NPE;
-
-  char   buf[NBUF];   
-  char   *data;
-
+  FILE         *fm;
+  int          total;
+  int          i, d, n, ln;
+  int          ntag;
+  int          GmshIDToSearch; 
+  int          NodeToSearch; 
+  int          *pNodeFound; 
+  int          NPE;
+  char         buf[NBUF];   
+  char         *data;
   node_list_t  *pBound;
 
-  fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
+  fm = fopen(mesh_n,"r"); 
+  if(!fm){
+    PetscPrintf(PROBLEM_COMM,"file %s not found\n",mesh_n);
+    return 1;
+  }
   /*
      Ahora hay que completar la lista <Nods>
    */
@@ -574,9 +574,7 @@ int read_boundary_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
 {
 
   FILE   *fm_sizes, *fm_bound, *fm_onbound;
-
   int    i=0, bound_tot=-1, id_to_search=-1, node=-1, *pnod=NULL; 
-
   char   buf[NBUF], file_name_sizes[NBUF], file_name_bound[NBUF], file_name_onbound[NBUF], *data;
 
   node_list_t  *pBound;
@@ -587,7 +585,7 @@ int read_boundary_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
   */
   strcpy(file_name_sizes,mesh_n);
   strcat(file_name_sizes,"_SIZES.alya");
-  fm_sizes = fopen(file_name_sizes,"r"); if(!fm_sizes)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name_sizes);
+  fm_sizes = fopen(file_name_sizes,"r"); if(!fm_sizes)SETERRQ1(PROBLEM_COMM,1,"file %s not found\n",file_name_sizes);
   while(fgets(buf,NBUF,fm_sizes)!=NULL){
     data=strtok(buf," \n");
     if(!strcmp(data,"BOUNDARIES=")){
@@ -751,7 +749,11 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
-  fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
+  fm = fopen(mesh_n,"r");
+  if(!fm){
+    PetscPrintf(PROBLEM_COMM,"file %s not found\n",mesh_n);
+    return 1;
+  }
 
   coord = malloc( nallnods*dim * sizeof(double));
 
@@ -827,7 +829,6 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 /****************************************************************************************************/
 int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
 {
-
   /* 
      Info>   Reads the coordinates of the mesh
 
@@ -837,14 +838,11 @@ int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
 
      Output>
      int  * coord      > nodes' coordinates
-
    */
 
   FILE  *fm;
-
   int   i, c, d; 
   int   rank, nproc;
-
   char  buf[NBUF], file_name[NBUF], *data;
 
   MPI_Comm_size(PROBLEM_COMM, &nproc);
@@ -856,7 +854,7 @@ int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
   */
   strcpy(file_name,mesh_n);
   strcat(file_name,"_SIZES.alya");
-  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found\n",file_name);
   while(fgets(buf,NBUF,fm)!=NULL){
     data=strtok(buf," \n");
     if(!strcmp(data,"NODAL_POINTS=")){
@@ -993,7 +991,11 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
-  fm = fopen(mesh_n,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",mesh_n);
+  fm = fopen(mesh_n,"r");
+  if(!fm){
+    PetscPrintf(PROBLEM_COMM,"file %s not found\n",mesh_n);
+    return 1;
+  }
 
   /**************************************************/
   /*  count the total number of volumetric elements 
@@ -1173,7 +1175,7 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   */
   strcpy(file_name,mesh_n);
   strcat(file_name,"_SIZES.alya");
-  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found\n",file_name);
   while(fgets(buf,NBUF,fm)!=NULL){
     data=strtok(buf," \n");
     if(!strcmp(data,"ELEMENTS=")){
@@ -1211,7 +1213,7 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
    */    
   strcpy(file_name,mesh_n);
   strcat(file_name,"_TYPES.alya");
-  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found\n",file_name);
   if(fgets(buf,NBUF,fm) == NULL) return 1;
 
   for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
@@ -1245,7 +1247,7 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   */
   strcpy(file_name,mesh_n);
   strcat(file_name,"_ELEMENTS.alya");
-  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found\n",file_name);
   if(!fgets(buf,NBUF,fm)) SETERRQ1(PROBLEM_COMM,1,"error format at file %s trying to read ELEMENTS",file_name);
 
   for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
@@ -1275,7 +1277,7 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   */
   strcpy(file_name,mesh_n);
   strcat(file_name,"_MATERIALS.alya");
-  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found\n",file_name);
 
   if(!fgets(buf,NBUF,fm)) SETERRQ1(PROBLEM_COMM,1,"error format in %s trying to read ELEMENTS",file_name);
 
@@ -1424,7 +1426,7 @@ int read_physical_entities_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
 
   strcpy(file_name,mesh_n);
   strcat(file_name,".codes.alya");
-  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
+  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found\n",file_name);
 
   while(fgets(buf,NBUF,fm)!=NULL)
   {

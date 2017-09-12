@@ -186,7 +186,10 @@ end_micro_1:
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Reading mesh elements\n");
-  ierr = read_mesh_elmv(MICRO_COMM, myname, mesh_n, mesh_f);CHKERRQ(ierr);
+  ierr = read_mesh_elmv(MICRO_COMM, myname, mesh_n, mesh_f);
+  if(ierr){
+    goto end_micro;
+  }
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
