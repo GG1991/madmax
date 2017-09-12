@@ -71,11 +71,17 @@ int mac_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 
     mac_boundary = ((boundary_t *)pBound->data)->bvoid;
     kind = mac_boundary->kind;
-
-    if(kind==0)                  { ndir_pn = 0; nneu_pn = 3;}
-    if(kind==1||kind==2||kind==4){ ndir_pn = 1; nneu_pn = 2;}
-    if(kind==3||kind==5||kind==6){ ndir_pn = 2; nneu_pn = 1;}
-    if(kind==7)                  { ndir_pn = 3; nneu_pn = 0;}
+    if(dim==2){
+      if(kind==0)                  { ndir_pn = 0; nneu_pn = 2;}
+      if(kind==1||kind==2)         { ndir_pn = 1; nneu_pn = 1;}
+      if(kind==3)                  { ndir_pn = 2; nneu_pn = 0;}
+    }
+    else if(dim==3){
+      if(kind==0)                  { ndir_pn = 0; nneu_pn = 3;}
+      if(kind==1||kind==2||kind==4){ ndir_pn = 1; nneu_pn = 2;}
+      if(kind==3||kind==5||kind==6){ ndir_pn = 2; nneu_pn = 1;}
+      if(kind==7)                  { ndir_pn = 3; nneu_pn = 0;}
+    }
 
     mac_boundary->nnod     = numnodes;
     mac_boundary->nods     = malloc(numnodes * sizeof(int));
@@ -98,35 +104,24 @@ int mac_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list)
 
       p = bsearch(&NodeOrig, mynods, nmynods, sizeof(int), cmpfunc); 
       if(!p){
-	SETERRQ2(PROBLEM_COMM,1,
-	    "A boundary node (%d) seems now to not belong to this process (rank:%d)",NodeOrig,rank);
+	return 1;
       }
 
       NodeLocal  = p - mynods;           // Local numeration
       NodeGlobal = loc2petsc[NodeLocal]; // PETSc numeration
       bc_kinds[NodeLocal] = kind;
 
-      for(d=0;d<3;d++){
+      for(d=0;d<dim;d++){
 	if( (kind & (1<<d)) == (1<<d) ){ /* Dirichlet */
-	  mac_boundary->dir_idx[DirCount] = NodeGlobal*3 + d; DirCount++;
+	  mac_boundary->dir_idx[DirCount] = NodeGlobal*dim + d; DirCount++;
 	}
 	else{ /* Neumann */
-	  mac_boundary->neu_idx[NeuCount] = NodeGlobal*3 + d; NeuCount++;
+	  mac_boundary->neu_idx[NeuCount] = NodeGlobal*dim + d; NeuCount++;
 	}
       }
       n++;
       pn = pn->next;
-      //list_delfirst( &(((boundary_t *)pBound->data)->Nods) ) ; 
     }
-
-    //if(((boundary_t*)pBound->data)->Nods.head) // simple check 
-    //SETERRQ(PROBLEM_COMM,1,"It's seems that there some more nodes in the list.");
-
-    //list_clear(&(((boundary_t *)pBound->data)->Nods)); 
-
-    /* completamos el <bvoid> */
-    //    ((boundary_t *)pBound->data)->bvoid = malloc(sizeof(mac_boundary_t));
-    //    memcpy(((boundary_t *)pBound->data)->bvoid, &mac_boundary, sizeof(mac_boundary_t)); 
 
     pBound = pBound->next;
   }
@@ -224,7 +219,6 @@ int macro_parse_boundary(MPI_Comm PROBLEM_COMM, char *input)
 
       if(!strcmp(data,"$EndBoundary")){
 	CHKERRQ(!flag_start_boundary);
-	//      PetscPrintf(*PROBLEM_COMM, "# of boundaries found in %s : %d\n", input, boundary_list.sizelist);
 	return 0;
       }
     }
@@ -279,7 +273,7 @@ int MacroSetDisplacementOnBoundary( double time, Vec *x )
     neu_val       = mac_boundary->neu_val;
     ofs_neu       = ofs_dir = 0;
 
-    for(d=0;d<3;d++){
+    for(d=0;d<dim;d++){
       /* Barremos primero las dirección x -> y -> z */
       switch(d){
 	case 0:
