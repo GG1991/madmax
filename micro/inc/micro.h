@@ -32,7 +32,6 @@ Vec  b1;
    indeces for specifying boundary conditions
 */
 
-double LX, LY, LZ;
 int *index_x0_ux, *index_x0_uy, *index_x0_uz, nnods_x0; 
 int *index_y0_ux, *index_y0_uy, *index_y0_uz, nnods_y0; 
 int *index_z0_ux, *index_z0_uy, *index_z0_uz, nnods_z0; 

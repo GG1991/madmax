@@ -84,8 +84,13 @@ bool flag_reactions;
 /*
    Cilindrical Fiber in quad Matrix
 */
+double LX, LY, LZ;
 int    flag_fiber_cilin;
+int    nx_fibers;
+int    ny_fibers;
 double fiber_cilin_r;
+double fiber_cilin_center_devi[3];
+double fiber_cilin_vals[4];
 double center_domain[3];
 
 #define FORMAT_NULL        0

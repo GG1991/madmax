@@ -479,16 +479,24 @@ material_t * GetMaterial(int e)
 /****************************************************************************************************/
 int is_inside_fiber_cilin(int e)
 {
-  int    d;
+  int    i, j, d;
   double l=-1, centroid[3];
+  double deviation[2];
   get_centroid(e, centroid);
 
-  l=0.0;
-  for(d=0;d<2;d++){
-    l = l + pow(centroid[d]-center_domain[d],2);
+  for(i=0;i<nx_fibers;i++){
+    for(j=0;j<ny_fibers;j++){
+      l=0.0;
+      deviation[0] = fiber_cilin_center_devi[0] -LX/2 +(LX/nx_fibers)/2 + i*(LX/nx_fibers);
+      deviation[1] = fiber_cilin_center_devi[1] -LY/2 +(LY/ny_fibers)/2 + j*(LY/ny_fibers);
+      for(d=0;d<2;d++){
+	l = l + pow(centroid[d]-(center_domain[d]+deviation[d]),2);
+      }
+      l = sqrt(l);
+      if (l<=fiber_cilin_r) return 1;
+    }
   }
-  l = sqrt(l);
-  return (l<=fiber_cilin_r) ? 1:0;
+  return 0;
 }
 /****************************************************************************************************/
 int get_centroid(int e, double centroid[3])

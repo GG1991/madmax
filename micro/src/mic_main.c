@@ -29,9 +29,9 @@ static char help[] =
 int main(int argc, char **argv)
 {
 
-  int ierr, ierr_1=0;
-  char *myname = strdup("micro");
-  char vtkfile_n[NBUF];
+  int        i,ierr, ierr_1=0;
+  char       *myname = strdup("micro");
+  char       vtkfile_n[NBUF];
   PetscBool  set;
 
   WORLD_COMM = MPI_COMM_WORLD;
@@ -117,9 +117,34 @@ int main(int argc, char **argv)
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
 
   /*Fiber in the middle */
+  int  nval;
   flag_fiber_cilin = 0;
-  ierr = PetscOptionsGetReal(NULL, NULL, "-fiber_cilin", &fiber_cilin_r, &set); CHKERRQ(ierr); 
-  if(set==PETSC_TRUE) flag_fiber_cilin=1;
+  ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
+  if(set==PETSC_FALSE) nx_fibers = 1;
+  ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
+  if(set==PETSC_FALSE) ny_fibers = 1;
+  nval = 4;
+  ierr = PetscOptionsGetRealArray(NULL, NULL, "-fiber_cilin", fiber_cilin_vals, &nval,&set);
+  if(set==PETSC_TRUE) {
+    flag_fiber_cilin=1;
+    fiber_cilin_r=fiber_cilin_vals[0];
+    if(nval==1){
+      for(i=0;i<dim;i++){
+	fiber_cilin_center_devi[i]=0.0;
+      }
+    }
+    else if(nval==0){
+      PetscPrintf(MPI_COMM_SELF,"-fiber_cilin specified with no argument\n");
+      ierr_1 = 1;
+      goto end_micro_1;
+    }
+    else{
+      for(i=0;i<nval;i++){
+	fiber_cilin_center_devi[i]=fiber_cilin_vals[1+i];
+      }
+    }
+  }
+  /*Fiber in the middle */
 
   /* 
      Stablish a new local communicator
@@ -347,7 +372,7 @@ end_micro_1:
        e4 = (  0 0 0 0 0 0 0.005   )
        e5 = (  0 0 0 0 0 0 0 0.005 )
      */
-    int i, j;
+    int j;
     double strain_mac[6];
 
     memset(ttensor,0.0,36*sizeof(double));

@@ -1,5 +1,5 @@
-lc=1.5;
-N = N_m4;
+lc = lc_m4;
+N  = N_m4;
 
 Point(1) = {-lc,-lc,-lc,0.1};
 Point(2) = {lc,-lc,-lc,0.1};
