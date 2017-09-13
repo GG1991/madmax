@@ -10,10 +10,11 @@
 
 int micro_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
-  int    i, k, e, gp, ngp, npe, ierr;
-  double coor_elm[8][3], dsh[8][3], detj, *wp = NULL, stress_gp[6], DsDe[6][6], disp_elm[8*3];
-  double vol = -1.0, vol_tot = -1.0, stress_aux[6], strain_aux[6];
-  register double wp_eff;
+  int      i, k, e, gp, ngp, npe, ierr;
+  double   coor_elm[8][3], dsh[8][3], detj;
+  double   *wp = NULL, stress_gp[6], DsDe[6][6], disp_elm[8*3];
+  double   vol = -1.0, vol_tot = -1.0, stress_aux[6], strain_aux[6];
+  double   wp_eff;
 
   for(i=0;i<nvoi;i++){
     strain_aux[i] = stress_aux[i] = 0.0;
@@ -26,11 +27,11 @@ int micro_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double 
     GetElemCoord(&eind[eptr[e]], npe, coor_elm);
     GetWeight(npe, &wp);
 
-    // calculate <ElemResidue> by numerical integration
     for(gp=0;gp<ngp;gp++){
-      memset(stress_gp,0.0,nvoi*sizeof(double));
+      memset(stress_gp, 0.0, nvoi*sizeof(double));
       get_dsh(gp, npe, coor_elm, dsh, &detj);
-      GetDsDe( e, disp_elm, DsDe );
+      detj = fabs(detj);
+      GetDsDe(e, disp_elm, DsDe);
       wp_eff = detj*wp[gp];
       for(i=0;i<nvoi;i++){
 	for(k=0;k<nvoi;k++){
@@ -38,7 +39,7 @@ int micro_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double 
 	}
       }
       for(i=0;i<nvoi;i++){
-	stress_aux[i] += stress_gp[i] * wp_eff;
+	stress_aux[i] += stress_gp[i]  * wp_eff;
 	strain_aux[i] += strain_mac[i] * wp_eff;
       }
       vol += wp_eff;
@@ -293,16 +294,28 @@ int micro_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_av
   int ierr;
 
   if(homo.type==HOMO_TAYLOR){
-    ierr = micro_homogenize_taylor(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
+    ierr = micro_homogenize_taylor(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    if(ierr){
+      return 1;
+    }
   }
   else if(homo.type==LD){
-    ierr = micro_homogenize_linear(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
+    ierr = micro_homogenize_linear(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    if(ierr){
+      return 1;
+    }
   }
   else if(homo.type==HOMO_LINEAR_HEXA){
-    ierr = micro_homogenize_linear_hexa(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
+    ierr = micro_homogenize_linear_hexa(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    if(ierr){
+      return 1;
+    }
   }
   else if(homo.type==LD_LAGRAN_SEQ){
-    ierr = mic_homogenize_ld_lagran(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
+    ierr = mic_homogenize_ld_lagran(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    if(ierr){
+      return 1;
+    }
   }
   else{
     return 1;

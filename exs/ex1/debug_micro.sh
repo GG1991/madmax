@@ -57,8 +57,10 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
   -pc_type lu \
   -options_left 0 \
   -log_trace micro_trace \
-  -homo_ld \
-  -fiber_cilin 1.5 \
+  -homo_taylor \
+  -fiber_cilin 0.4,-0.0,+0.0 \
+  -fiber_nx 2 \
+  -fiber_ny 2 \
   -print_vtu
 }
 

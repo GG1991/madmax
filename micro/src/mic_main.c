@@ -394,11 +394,11 @@ end_micro_1:
 	ttensor[j*nvoi+i] = stress_ave[j] / strain_ave[i];
       }
 
-      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){ 
+      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU) && (homo.type!=HOMO_TAYLOR)){ 
 	strain = malloc(nelm*nvoi*sizeof(double));
 	stress = malloc(nelm*nvoi*sizeof(double));
 	energy = malloc(nelm*sizeof(double));
-	ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
+	ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
 	if(flag_print & (1<<PRINT_VTK)){ 
 	  sprintf(vtkfile_n,"%s_exp%d_%d.vtk",myname,i,rank_mic);
@@ -406,7 +406,7 @@ end_micro_1:
 	}
 	if(flag_print & (1<<PRINT_VTU)){ 
 	  sprintf(vtkfile_n,"%s_exp%d",myname,i);
-	  ierr = write_vtu(MICRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);CHKERRQ(ierr);
+	  ierr = write_vtu(MICRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);
 	}
 	free(stress); free(strain); free(energy);
       }

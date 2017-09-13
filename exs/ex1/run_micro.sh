@@ -28,8 +28,10 @@ NM=1
     -mesh_gmsh \
     -pc_type lu \
     -options_left 0 \
-    -homo_ld \
-    -fiber_cilin 0.4 \
+    -homo_taylor \
+    -fiber_cilin 0.4,-0.0,+0.0 \
+    -fiber_nx 1 \
+    -fiber_ny 1 \
     -print_vtu
 }
 
@@ -98,7 +100,7 @@ NM=1
     -pc_type lu \
     -options_left 0 \
     -log_trace micro_trace \
-    -homo_lu \
+    -homo_taylor \
     -print_vtu
 }
 
@@ -115,7 +117,7 @@ NM=1
     -pc_type lu \
     -options_left 0 \
     -log_trace micro_trace \
-    -homo_ld \
+    -homo_taylor \
     -print_vtu
 }
 
