@@ -85,7 +85,7 @@ int main(int argc, char **argv)
   if(set == PETSC_FALSE){
     PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
     ierr_1 = 1;
-    goto end_micro_1;
+    goto end_mic_1;
   }
   if(dim==2){
     nvoi=3;
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
   else{
     PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
     ierr_1 = 1;
-    goto end_micro_1;
+    goto end_mic_1;
   }
 
   /*
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     else if(nval==0){
       PetscPrintf(MPI_COMM_SELF,"-fiber_cilin specified with no argument\n");
       ierr_1 = 1;
-      goto end_micro_1;
+      goto end_mic_0;
     }
     else{
       for(i=0;i<nval;i++){
@@ -155,9 +155,9 @@ int main(int argc, char **argv)
   ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
   ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
   
-end_micro_1:
+end_mic_0:
   ierr = PetscFinalize();CHKERRQ(ierr);
-  if(ierr_1) goto end_micro_2;
+  if(ierr_1) goto end_mic_2;
 
   /*
      Set PETSc communicator to MICRO_COMM
@@ -176,7 +176,7 @@ end_micro_1:
   if(nproc_mic > 1 && homo.type==LD_LAGRAN_SEQ){
     PetscPrintf(MICRO_COMM,"Homogenization set is : Linear Displacements with Lagrangian BC,"
 	" it can be only executed in sequential\n");
-    goto end_micro;
+    goto end_mic_1;
   }
 
   FileOutputStructures = NULL;
@@ -213,7 +213,7 @@ end_micro_1:
     PetscPrintf(MICRO_COMM,"Reading mesh elements\n");
   ierr = read_mesh_elmv(MICRO_COMM, myname, mesh_n, mesh_f);
   if(ierr){
-    goto end_micro;
+    goto end_mic_1;
   }
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
 
@@ -260,18 +260,27 @@ end_micro_1:
     ierr = spu_vtk_partition( vtkfile_n, &MICRO_COMM );
   }
 
-  /*
-     Read materials, physical entities, boundaries from input and mesh file
-  */
   ierr = list_init(&physical_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
   ierr = list_init(&boundary_list, sizeof(boundary_t), NULL);CHKERRQ(ierr);
-  /*
-     Read materials and functions from input
-  */
-  ierr = parse_material(MICRO_COMM, input_n);CHKERRQ(ierr);
-  ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f); if(ierr) goto end_micro;
-  ierr = mic_parse_boundary(MICRO_COMM, input_n);if(ierr) goto end_micro;
-  ierr = set_id_on_material_and_boundary(MICRO_COMM); if(ierr) goto end_micro;
+
+  /* Read materials  */
+  ierr = parse_material(MICRO_COMM, input_n);
+  if(ierr){
+    ierr = PetscPrintf(MICRO_COMM,"Problem parsing materials from input file\n");
+    goto end_mic_1;
+  }
+  /* Read Physical entities */
+  ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f);
+  if(ierr){
+    ierr = PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
+    goto end_mic_1;
+  }
+  ierr = mic_parse_boundary(MICRO_COMM, input_n);
+  if(ierr){
+    ierr = PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
+    goto end_mic_1;
+  }
+  ierr = set_id_on_material_and_boundary(MICRO_COMM);
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
   ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = mic_init_boundary(MICRO_COMM, &boundary_list );CHKERRQ(ierr);
@@ -421,7 +430,7 @@ end_micro_1:
 
   }
 
-end_micro:
+end_mic_1:
 
   if(!flag_coupling){
     PetscPrintf(MICRO_COMM,
@@ -432,7 +441,7 @@ end_micro:
 
   ierr = PetscFinalize();
 
-end_micro_2:
+end_mic_2:
   ierr = MPI_Finalize();
 
 
