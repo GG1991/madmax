@@ -79,7 +79,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
   return 0;
 }   
 /****************************************************************************************************/
-int SpuVTKPlot_Displ_Strain_Stress(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strain, double *Stress)
+int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strain, double *Stress)
 {
   /* 
      Plots in ASCII VTK > 

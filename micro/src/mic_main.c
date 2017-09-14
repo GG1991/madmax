@@ -107,7 +107,11 @@ int main(int argc, char **argv)
   if(set==PETSC_TRUE) homo_type = TAYLOR;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_unif_strains",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
-  if(homo_type==0)SETERRQ(MICRO_COMM,1,"no homogenization option specified");
+  if(homo_type==0){
+    PetscPrintf(MPI_COMM_SELF,"no homogenization option specified\n");
+    ierr_1 = 1;
+    goto end_mic_0;
+  }
 
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
@@ -120,7 +124,8 @@ int main(int argc, char **argv)
   ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
-  /* Fiber in the middle */
+  //**************************************************
+  // Fiber in the middle
   flag_fiber_cilin = 0;
   ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
   if(set==PETSC_FALSE) nx_fibers = 1;
@@ -147,7 +152,7 @@ int main(int argc, char **argv)
       }
     }
   }
-  /*Fiber in the middle */
+  //**************************************************
 
   /* 
      Stablish a new local communicator
@@ -175,12 +180,6 @@ end_mic_0:
 	"  MICRO: STANDALONE \n"
 	"--------------------------------------------------\n");
   }
-
-//  if(nproc_mic > 1 && homo_type==LD_LAGRAN_SEQ){
-//    PetscPrintf(MICRO_COMM,"Homogenization set is : Linear Displacements with Lagrangian BC,"
-//	" it can be only executed in sequential\n");
-//    goto end_mic_1;
-//  }
 
   file_out = NULL;
   if(rank_mic==0) file_out = fopen("micro_structures.dat","w");
@@ -414,7 +413,7 @@ end_mic_0:
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
 	if(flag_print & (1<<PRINT_VTK)){ 
 	  sprintf(vtkfile_n,"%s_exp%d_%d.vtk",myname,i,rank_mic);
-	  ierr = SpuVTKPlot_Displ_Strain_Stress(MICRO_COMM, vtkfile_n, &x, strain, stress);
+	  ierr = write_vtk(MICRO_COMM, vtkfile_n, &x, strain, stress);
 	}
 	if(flag_print & (1<<PRINT_VTU)){ 
 	  sprintf(vtkfile_n,"%s_exp%d",myname,i);

@@ -315,7 +315,7 @@ end_mac_0:
        It is test. Sends a calculating strain to micro and obtain the stress
     */
     for(i=0;i<6;i++){
-      memset(strain_mac,0.0,6*sizeof(double));
+      memset(strain_mac,0.0,nvoi*sizeof(double));
       strain_mac[i] = 0.005;
       ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
       ierr = mac_send_strain(WORLD_COMM, strain_mac);CHKERRQ(ierr);
@@ -421,7 +421,7 @@ end_mac_0:
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
 	if(flag_print & (1<<PRINT_VTK)){ 
 	  sprintf(vtkfile_n,"%s_t_%d_%d.vtk",myname,time_step,rank_mac);
-	  ierr = SpuVTKPlot_Displ_Strain_Stress(MACRO_COMM, vtkfile_n, &x, strain, stress);
+	  ierr = write_vtk(MACRO_COMM, vtkfile_n, &x, strain, stress);
 	}
 	if(flag_print & (1<<PRINT_VTU)){ 
 	  sprintf(vtkfile_n,"%s_t_%d",myname,time_step);
