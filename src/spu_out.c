@@ -186,21 +186,26 @@ int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strai
 /****************************************************************************************************/
 int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain, double *stress, double *energy)
 {
-  FILE   *fm;
-  int    rank, nproc, ierr; 
-  int    i, d, ns;
-  char   file_name[NBUF];
-  double *xvalues;
-  Vec    xlocal;
+
+  FILE    *fm;
+  int     rank, nproc, ierr; 
+  int     i, d, ns;
+  char    file_name[NBUF];
+  double  *xvalues;
+  Vec     xlocal;
 
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
-  if(dim==2){
-    ns = 4;
-  }
-  else if(dim==3){
-    ns = 9;
+  switch(dim){
+    case 2:
+      ns = 4;
+      break;
+    case 3:
+      ns = 9;
+      break;
+    default:
+      return 1;
   }
  
   /* 
@@ -251,7 +256,11 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   }
 
   sprintf(file_name,"%s_%d.vtu",name,rank);
-  fm = fopen(file_name,"w"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s could not be opened",file_name);
+  fm = fopen(file_name,"w"); 
+  if(!fm){
+    PetscPrintf(PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
+    return 1;
+  }
 
   fprintf(fm, 
       "<?xml version=\"1.0\"?>\n"
@@ -345,7 +354,8 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
    */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"bc_kinds\" NumberOfComponents=\"1\" format=\"ascii\" >\n");
   for(i=0;i<nmynods;i++){
-    fprintf(fm, "%d ", bc_kinds[i]);
+    //    fprintf(fm, "%d ", bc_kinds[i]);
+    fprintf(fm, "%d ", -1);
   }
   for(i=0;i<nghost;i++){
     fprintf(fm, "%d ", -1);

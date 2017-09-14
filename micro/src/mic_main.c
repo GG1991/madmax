@@ -418,6 +418,10 @@ end_mic_0:
 	if(flag_print & (1<<PRINT_VTU)){ 
 	  sprintf(vtkfile_n,"%s_exp%d",myname,i);
 	  ierr = write_vtu(MICRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);
+	  if(ierr){
+	    PetscPrintf(MICRO_COMM,"Problem writing vtu file\n");
+	    goto end_mic_1;
+	  }
 	}
 	free(stress); free(strain); free(energy);
       }
