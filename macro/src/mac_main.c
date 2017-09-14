@@ -1,5 +1,4 @@
 /*
-
    MACRO main function
 
    Program for solving the displacement field inside a solid 
@@ -7,7 +6,6 @@
 
    Author> Guido Giuntoli
    Date> 28-07-2017
-
  */
 
 static char help[] = 
@@ -89,7 +87,7 @@ int main(int argc, char **argv)
   if(set == PETSC_FALSE){
     PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
     ierr_1 = 1;
-    goto end_mac_1;
+    goto end_mac_0;
   }
   if(dim==2){
     nvoi=3;
@@ -100,7 +98,7 @@ int main(int argc, char **argv)
   else{
     PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
     ierr_1 = 1;
-    goto end_mac_1;
+    goto end_mac_0;
   }
 
   /*
@@ -124,9 +122,9 @@ int main(int argc, char **argv)
   ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
 
   
-end_mac_1:
+end_mac_0:
   ierr = PetscFinalize();CHKERRQ(ierr);
-  if(ierr_1) goto end_mac;
+  if(ierr_1) goto end_mac_2;
 
   /*
      Set PETSc communicator to MACRO_COMM
@@ -226,20 +224,41 @@ end_mac_1:
     ierr = spu_vtk_partition( vtkfile_n, &MACRO_COMM );CHKERRQ(ierr);
   }
 
-  /*
-     Read materials, physical entities, boundaries from input and mesh file
-  */
   ierr = list_init(&physical_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
   ierr = list_init(&function_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
-  ierr = parse_material(MACRO_COMM, input_n);CHKERRQ(ierr);
-  ierr = read_physical_entities(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
-  ierr = parse_function(MACRO_COMM, input_n);CHKERRQ(ierr); 
-  ierr = macro_parse_boundary(MACRO_COMM, input_n);CHKERRQ(ierr); 
-  ierr = set_id_on_material_and_boundary(MACRO_COMM);CHKERRQ(ierr); 
+  /* Read materials  */
+  ierr = parse_material(MACRO_COMM, input_n);
+  if(ierr){
+    ierr = PetscPrintf(MACRO_COMM,"Problem parsing materials from input file\n");
+    goto end_mac_1;
+  }
+  /* Read Physical entities */
+  ierr = read_physical_entities(MACRO_COMM, mesh_n, mesh_f);
+  if(ierr){
+    ierr = PetscPrintf(MACRO_COMM,"Problem parsing physical entities from mesh file\n");
+    goto end_mac_1;
+  }
+  /* Read functions */
+  ierr = parse_function(MACRO_COMM, input_n);
+  if(ierr){
+    ierr = PetscPrintf(MACRO_COMM,"Problem parsing functions from input file\n");
+    goto end_mac_1;
+  }
+  /* Read boundaries */
+  ierr = macro_parse_boundary(MACRO_COMM, input_n);
+  if(ierr){
+    ierr = PetscPrintf(MACRO_COMM,"Problem reading boundaries from input file\n");
+    goto end_mac_1;
+  }
+  ierr = set_id_on_material_and_boundary(MACRO_COMM);
+  if(ierr){
+    ierr = PetscPrintf(MACRO_COMM,"Problem determing ids on materials and boundaries\n");
+    goto end_mac_1;
+  }
   ierr = CheckPhysicalID();
   if(ierr){
-    ierr = PetscPrintf(MACRO_COMM,"Problem determing materials on mesh elements\n");
-    goto end_mac;
+    ierr = PetscPrintf(MACRO_COMM,"Problem checking physical ids\n");
+    goto end_mac_1;
   }
   
   ierr = read_boundary(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
@@ -407,7 +426,7 @@ end_mac_1:
     }
   }
 
-end_mac:
+end_mac_1:
   /*
      Stop signal to micro if it is coupled
   */
@@ -435,6 +454,8 @@ end_mac:
       "--------------------------------------------------\n");
 
   ierr = PetscFinalize();
+
+end_mac_2:
   ierr = MPI_Finalize();
 
   return 0;
