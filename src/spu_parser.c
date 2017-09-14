@@ -7,7 +7,7 @@
 
 #include "sputnik.h"
 
-int parse_material(MPI_Comm PROBLEM_COMM, char * input )
+int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 {
   /*
      Parse the materials of the problem
@@ -21,11 +21,17 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input )
      $end_materials
    */
 
-  FILE   *file = fopen(input,"r"); if(!file) return 1;
-  char   buf[NBUF], *data;
-  int    ln = 0, flag_start_material = 0;
+  FILE         *file; 
+  char         buf[NBUF], *data;
+  int          ln=0;
+  int          flag_start_material=0;
+  material_t   material;
 
-  material_t material;
+  file = fopen(input,"r");
+  if(!file){
+    PetscPrintf(PETSC_COMM_WORLD,"input file %s not found.\n", input);
+    return 1;
+  }
 
   list_init(&material_list, sizeof(material_t), NULL); 
 
@@ -64,14 +70,20 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input )
 
 	      // módulo de young
 	      data = strtok(NULL," \n");
-	      if(!data)SETERRQ1(PROBLEM_COMM,1,"bad format on %s",input);
-	      if(strncmp(data,"E=",2))SETERRQ(PROBLEM_COMM,1,"<E=<value>> expected");
+	      if(!data)return 1;
+	      if(strncmp(data,"E=",2)){
+		PetscPrintf(PETSC_COMM_WORLD,"<E=<value>> expected\n", input);
+		return 1;
+	      }
 	      ((type_00*)material.type)->young = atof(&data[2]);
 
 	      // módulo de poisson
 	      data = strtok(NULL," \n");
-	      if(!data)SETERRQ1(PROBLEM_COMM,1,"bad format on %s",input);
-	      if(strncmp(data,"v=",2))SETERRQ(PROBLEM_COMM,1,"<v=<value>> expected");
+	      if(!data) return 1;
+	      if(strncmp(data,"v=",2)){
+		PetscPrintf(PETSC_COMM_WORLD,"<v=<value>> expected\n", input);
+		return 1;
+	      }
 	      ((type_00*)material.type)->poisson = atof(&data[2]);
 
 	      // calculamos parametros derivados
@@ -89,22 +101,21 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input )
 	    else{
 	      SETERRQ1(PROBLEM_COMM,1,"material type %s not valid.",data);
 	    }
-	    // lo insertamos en la lista 
 	    list_insertlast(&material_list, &material);
 	  }
 	}
-      } // inside $Materials
+      } 
 
       if(!strcmp(data,"$EndMaterials")){
-	if(!flag_start_material)
-	  SETERRQ(PROBLEM_COMM,1,"$EndMaterials detected without $Materials above.");
+	if(!flag_start_material){
+	  return 1;
+	}
 	fclose(file);
 	return 0;
       }
-    } // data != NULL
+    } 
   }
-  // any $Material found
-  SETERRQ(PROBLEM_COMM,1,"$Materials section not found on input file."); 
+  return 1;
 }
 /****************************************************************************************************/
 int CheckPhysicalID(void)
@@ -136,22 +147,25 @@ int parse_function(MPI_Comm PROBLEM_COMM, char *input )
   /*
      Parse the functions of the problem
      
-     Searchs for keywords>
-
      $Function
      <fnum> <inter> <n>
      x1 y1
      x2 y2
-     ...
-     xn yn
      $EndFunction
    */
 
-  FILE   *file = fopen(input,"r"); if(!file) return 1;
+  FILE   *file;
   char   buf[NBUF], *data;
-  int    ln=0, n, flag_start_function=0;
+  int    ln=0, n;
+  int    flag_start_function=0;
+  f1d_t  f1d;
 
-  f1d_t f1d;
+  file = fopen(input,"r");
+  if(!file){
+    PetscPrintf(PETSC_COMM_WORLD,"input file %s not found.\n", input);
+    return 1;
+  }
+
   list_init(&function_list, sizeof(f1d_t), NULL);
 
   while(fgets(buf,NBUF,file) != NULL)
@@ -162,18 +176,18 @@ int parse_function(MPI_Comm PROBLEM_COMM, char *input )
     if(data){
       if(!strcmp(data,"$Function")){
         
-	if(flag_start_function)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
+	if(flag_start_function)return 1;
 	flag_start_function=1;
 	fgets(buf,NBUF,file); ln ++;
 
 	// <fnum>
 	data = strtok(buf," \n");
-	if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
+	if(!data)return 1;
 	f1d.fnum = atoi(data);
 
 	// <inter> 
 	data = strtok(NULL," \n");
-	if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
+	if(!data)return 1;
 
 	if(!strcmp(data,"INTER1")){
 	    f1d.inter = INTER1 ;
@@ -194,21 +208,20 @@ int parse_function(MPI_Comm PROBLEM_COMM, char *input )
 	  if(n >= f1d.n) break;
 
 	  data = strtok(buf," \n");
-	  if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
+	  if(!data)return 1;
 	  f1d.x[n] = atof(data);
 
 	  data = strtok(NULL," \n");
-	  if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
+	  if(!data)return 1;
 	  f1d.y[n] = atof(data);
 	  n++;
 	}
 	data = strtok(buf," \n");
-	if(!data)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
+	if(!data)return 1;
 
 	if(strcmp(data,"$EndFunction"))return 1;
-	// si llegamos hasta acá esta todo 0K lo insertamos en la lista 
 	list_insertlast(&function_list, &f1d);
-      } // inside $Function
+      } 
 
       if(!strcmp(data,"$EndFunction")){
 	if(!flag_start_function)SETERRQ1(PROBLEM_COMM,1,"format error on %s",input);
