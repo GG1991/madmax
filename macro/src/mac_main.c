@@ -25,10 +25,10 @@ static char help[] =
 int main(int argc, char **argv)
 {
 
-  int  ierr, ierr_1=0;
-  char *myname = strdup("macro");
-  char vtkfile_n[NBUF];
-  double t0=0.0, tf, dt;
+  int        ierr, ierr_1=0;
+  char       *myname = strdup("macro");
+  char       vtkfile_n[NBUF];
+  double     t0=0.0, tf, dt;
   PetscBool  set;
 
   WORLD_COMM = MPI_COMM_WORLD;
@@ -92,13 +92,22 @@ int main(int argc, char **argv)
   switch(dim){
     case 2:
       nvoi=3;
+      break;
     case 3:
       nvoi=6;
+      break;
     default:
       PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
       ierr_1 = 1;
       goto end_mac_1;
   }
+  /*
+     Solver Options
+  */
+  ierr = PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
+  if(set==PETSC_FALSE) nr_max_its=5;
+  ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
+  if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
   /*
      flow execution variables
@@ -289,12 +298,12 @@ end_mac_0:
   /*
      Begin time dependent loop
   */
-  int    i, j, nr_its = -1, kspits = -1;
-  int    time_step = 0;
-  double t = t0;
-  double norm = -1.0, NormTol = 1.0e-8, NRMaxIts = 3, kspnorm = -1.0;
-  double strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
-  double stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  int      i, j, nr_its = -1, kspits = -1;
+  int      time_step = 0;
+  double   t = t0;
+  double   norm = -1.0, kspnorm = -1.0;
+  double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
+  double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
   // Initial condition <x> = 0
   ierr = VecZeroEntries(x);CHKERRQ(ierr);
@@ -350,8 +359,8 @@ end_mac_0:
 	 If the Residual Norm is bigger than <NormTol>
 	 we should iterate
        */
-      nr_its = 0; norm = 2*NormTol;
-      while( nr_its < NRMaxIts && norm > NormTol )
+      nr_its = 0; norm = 2*nr_norm_tol;
+      while( nr_its < nr_max_its && norm > nr_norm_tol )
       {
 	/*
 	   Assemblying Residual
@@ -368,7 +377,7 @@ end_mac_0:
 	ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
 	ierr = VecScale(b,-1.0); CHKERRQ(ierr);
 	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-	if( !(norm > NormTol) )break;
+	if( norm < nr_norm_tol )break;
 	/*
 	   Assemblying Jacobian
 	 */

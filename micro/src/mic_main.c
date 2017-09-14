@@ -90,8 +90,10 @@ int main(int argc, char **argv)
   switch(dim){
     case 2:
       nvoi=3;
+      break;
     case 3:
       nvoi=6;
+      break;
     default:
       PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
       ierr_1 = 1;
@@ -116,6 +118,13 @@ int main(int argc, char **argv)
 
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
+  /*
+     Solver Options
+  */
+  ierr = PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
+  if(set==PETSC_FALSE) nr_max_its=5;
+  ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
+  if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
   /*Fiber in the middle */
   int  nval;

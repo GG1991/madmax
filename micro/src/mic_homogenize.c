@@ -62,12 +62,12 @@ int micro_homogenize_linear(MPI_Comm MICRO_COMM, double strain_mac[6], double st
      ub = E . x
   */
 
-  int    ierr, nr_its=-1, max_its=6;
+  int    ierr, nr_its=-1;
   int    nnods_bc, *nods_bc;
   int    i, d, k;
   int    *ix_loc, *ix_glo;
   double *ub;
-  double norm_tol=1.0e-8, norm=2*norm_tol;
+  double norm=2*nr_norm_tol;
   double strain_matrix[3][3];
   double *x_arr, *b_arr;
 
@@ -110,7 +110,7 @@ int micro_homogenize_linear(MPI_Comm MICRO_COMM, double strain_mac[6], double st
   }
   ierr = VecRestoreArray(x, &x_arr);CHKERRQ(ierr);
 
-  while( nr_its < max_its && norm > norm_tol )
+  while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
     ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
     ierr = VecGetArray(b, &b_arr);CHKERRQ(ierr);
@@ -125,7 +125,7 @@ int micro_homogenize_linear(MPI_Comm MICRO_COMM, double strain_mac[6], double st
     ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
     PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
 
-    if( !(norm > norm_tol) )break;
+    if( !(norm > nr_norm_tol) )break;
 
     ierr = assembly_jacobian_sd(&A);
     ierr = MatZeroRowsColumns(A, nnods_bc*dim, ix_glo, 1.0, NULL, NULL); CHKERRQ(ierr);
@@ -171,8 +171,8 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
 
      the "f" contains fa and fb mixed depending on the node numeration
   */
-  int    ierr, nr_its=-1, max_its=6, nnods_bc, i, d, k, n_loc, *ixb;
-  double norm_tol=1.0e-8, norm=2*norm_tol, ub, strain_matrix[3][3], *x_arr, *b_arr;
+  int    ierr, nr_its=-1, nnods_bc, i, d, k, n_loc, *ixb;
+  double nr_norm_tol=1.0e-8, norm=2*nr_norm_tol, ub, strain_matrix[3][3], *x_arr, *b_arr;
 
   if(dim==2){
     strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[2];
@@ -199,7 +199,7 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
     }
   }
 
-  while( nr_its < max_its && norm > norm_tol )
+  while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
 
     /* internal forces */
@@ -223,7 +223,7 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
 
     ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
     PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
-    if( !(norm > norm_tol) ) break;
+    if( !(norm > nr_norm_tol) ) break;
     ierr = VecScale(b,-1.0); CHKERRQ(ierr);
 
     /* Tangent matrix 
@@ -508,19 +508,17 @@ int micro_homogenize_linear_hexa(MPI_Comm MICRO_COMM, double strain_mac[6], doub
      Performs linear homogenization of the RVE cell acording to <strain_mac[6]>
    */
 
-  int ierr, nr_its = -1; 
-  //  int kspits = -1;
-  double norm = -1.0, norm_tol = 1.0e-8, max_its = 3; 
-  //  double ksp_norm = -1.0;
+  int    ierr, nr_its = -1; 
+  double norm = -1.0; 
 
   ierr = micro_apply_bc_linear_hexa(strain_mac, &x, &A, &b, SET_DISPLACE);CHKERRQ(ierr);
 
-  while( nr_its < max_its && norm > norm_tol )
+  while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
     ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
     ierr = micro_apply_bc_linear_hexa(strain_mac, &x, &A, &b, SET_RESIDUAL);CHKERRQ(ierr);
     ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-    if( !(norm > norm_tol) )break;
+    if( !(norm > nr_norm_tol) )break;
     ierr = VecScale(b,-1.0); CHKERRQ(ierr);
     ierr = assembly_jacobian_sd(&A);
     ierr = micro_apply_bc_linear_hexa(strain_mac, &x, &A, &b, SET_JACOBIAN);CHKERRQ(ierr);
