@@ -89,16 +89,15 @@ int main(int argc, char **argv)
     ierr_1 = 1;
     goto end_mac_0;
   }
-  if(dim==2){
-    nvoi=3;
-  }
-  else if(dim==3){
-    nvoi=6;
-  }
-  else{
-    PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
-    ierr_1 = 1;
-    goto end_mac_0;
+  switch(dim){
+    case 2:
+      nvoi=3;
+    case 3:
+      nvoi=6;
+    default:
+      PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
+      ierr_1 = 1;
+      goto end_mac_1;
   }
 
   /*

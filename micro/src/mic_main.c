@@ -87,16 +87,15 @@ int main(int argc, char **argv)
     ierr_1 = 1;
     goto end_mic_1;
   }
-  if(dim==2){
-    nvoi=3;
-  }
-  else if(dim==3){
-    nvoi=6;
-  }
-  else{
-    PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
-    ierr_1 = 1;
-    goto end_mic_1;
+  switch(dim){
+    case 2:
+      nvoi=3;
+    case 3:
+      nvoi=6;
+    default:
+      PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
+      ierr_1 = 1;
+      goto end_mic_1;
   }
 
   /*
@@ -112,6 +111,8 @@ int main(int argc, char **argv)
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear_hexa",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo.type=HOMO_LINEAR_HEXA;
   if(homo.type==0)SETERRQ(MICRO_COMM,1,"no homogenization option specified");
+  ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
+  if(set==PETSC_FALSE) nx_fibers = 1;
 
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
