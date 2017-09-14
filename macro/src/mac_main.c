@@ -57,6 +57,7 @@ int main(int argc, char **argv)
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
+
   /*
      Coupling Options
   */
@@ -146,8 +147,8 @@ end_mac_0:
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
       "--------------------------------------------------\n");
 
-  FileOutputStructures = NULL;
-  if(rank_mac==0) FileOutputStructures = fopen("macro_structures.dat","w");
+  file_out = NULL;
+  if(rank_mac==0) file_out = fopen("macro_structures.dat","w");
 
 #if defined(PETSC_USE_LOG)
   ierr = PetscLogEventRegister("Read_Elems_of_Mesh"    ,PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);CHKERRQ(ierr);
@@ -446,7 +447,7 @@ end_mac_1:
   /*
      Free Memory and close things
   */
-  if(rank_mac==0) fclose(FileOutputStructures); 
+  if(rank_mac==0) fclose(file_out); 
 
   list_clear(&material_list);
   list_clear(&physical_list);

@@ -16,8 +16,8 @@ static char help[] =
 "It has the capability of being couple with MACRO.\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
-"-homo_ld : homogenization using linear displacements\n"
-"-homo_ld_l_seq : homogenization using Lagrange multipliers in sequencial\n"
+"-homo_taylor : homogenization using taylor approach\n"
+"-homo_unif_strains : homogenization using uniform strains approach\n"
 "-print_petsc\n"
 "-print_vtk\n"
 "-print_part\n"
@@ -29,7 +29,8 @@ static char help[] =
 int main(int argc, char **argv)
 {
 
-  int        i,ierr, ierr_1=0;
+  int        i, ierr, ierr_1=0;
+  int        nval;
   char       *myname = strdup("micro");
   char       vtkfile_n[NBUF];
   PetscBool  set;
@@ -100,24 +101,17 @@ int main(int argc, char **argv)
       goto end_mic_1;
   }
 
-  /*
-     Homogenization Options
-  */
-  homo.type=0;
+  /* Homogenization Options */
+  homo_type=0;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo.type=HOMO_TAYLOR;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_ld",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo.type=LD;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_ld_l_seq",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo.type=LD_LAGRAN_SEQ;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_linear_hexa",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo.type=HOMO_LINEAR_HEXA;
-  if(homo.type==0)SETERRQ(MICRO_COMM,1,"no homogenization option specified");
-  ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
-  if(set==PETSC_FALSE) nx_fibers = 1;
+  if(set==PETSC_TRUE) homo_type = TAYLOR;
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_unif_strains",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
+  if(homo_type==0)SETERRQ(MICRO_COMM,1,"no homogenization option specified");
 
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
+
   /*
      Solver Options
   */
@@ -126,8 +120,7 @@ int main(int argc, char **argv)
   ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
-  /*Fiber in the middle */
-  int  nval;
+  /* Fiber in the middle */
   flag_fiber_cilin = 0;
   ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
   if(set==PETSC_FALSE) nx_fibers = 1;
@@ -183,14 +176,14 @@ end_mic_0:
 	"--------------------------------------------------\n");
   }
 
-  if(nproc_mic > 1 && homo.type==LD_LAGRAN_SEQ){
-    PetscPrintf(MICRO_COMM,"Homogenization set is : Linear Displacements with Lagrangian BC,"
-	" it can be only executed in sequential\n");
-    goto end_mic_1;
-  }
+//  if(nproc_mic > 1 && homo_type==LD_LAGRAN_SEQ){
+//    PetscPrintf(MICRO_COMM,"Homogenization set is : Linear Displacements with Lagrangian BC,"
+//	" it can be only executed in sequential\n");
+//    goto end_mic_1;
+//  }
 
-  FileOutputStructures = NULL;
-  if(rank_mic==0) FileOutputStructures = fopen("micro_structures.dat","w");
+  file_out = NULL;
+  if(rank_mic==0) file_out = fopen("micro_structures.dat","w");
 
 #if defined(PETSC_USE_LOG)
   ierr = PetscLogEventRegister("Read_Elems_of_Mesh"    ,PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);CHKERRQ(ierr);
@@ -292,9 +285,9 @@ end_mic_0:
   }
   ierr = set_id_on_material_and_boundary(MICRO_COMM);
   ierr = CheckPhysicalID(); CHKERRQ(ierr);
-  ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
-  ierr = mic_init_boundary(MICRO_COMM, &boundary_list );CHKERRQ(ierr);
-  ierr = mic_init_homo();CHKERRQ(ierr);
+
+  /* Read boundary */
+  ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);
 
   /*
      Allocate matrices & vectors
@@ -356,7 +349,7 @@ end_mic_0:
 	  /*
 	     Performs the micro homogenization
 	  */
-	  ierr = micro_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
+	  ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
 	  /*
 	     Send Stress
 	  */
@@ -398,7 +391,7 @@ end_mic_0:
     for(i=0;i<nvoi;i++){
 
       memset(strain_mac,0.0,nvoi*sizeof(double));strain_mac[i]=0.005;
-      ierr = micro_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+      ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
 
       ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");CHKERRQ(ierr);
       for(j=0;j<nvoi;j++){
@@ -413,7 +406,7 @@ end_mic_0:
 	ttensor[j*nvoi+i] = stress_ave[j] / strain_ave[i];
       }
 
-      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU) && (homo.type!=HOMO_TAYLOR)){ 
+      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){
 	strain = malloc(nelm*nvoi*sizeof(double));
 	stress = malloc(nelm*nvoi*sizeof(double));
 	energy = malloc(nelm*sizeof(double));
@@ -448,6 +441,8 @@ end_mic_1:
 	"  MICRO: FINISH COMPLETE\n"
 	"--------------------------------------------------\n");
   }
+
+  if(rank_mic==0) fclose(file_out); 
 
   ierr = PetscFinalize();
 

@@ -23,7 +23,7 @@ int mic_alloc(MPI_Comm MICRO_COMM)
 
    */
 
-  if(homo.type==LD){
+  if(homo_type==UNIF_STRAINS || homo_type==TAYLOR){
 
     int rank, nproc, ierr, nlocal, ntotal;
 
@@ -55,25 +55,6 @@ int mic_alloc(MPI_Comm MICRO_COMM)
     ierr = VecDuplicate(x,&b1);CHKERRQ(ierr);
 
     free(ghostsIndex);
-
-  }else if(homo.type==LD_LAGRAN_SEQ){
-
-    /*
-       Linear displacements with Lagrangian Multiplier approach
-     */
-
-    int n,ierr;
-
-    n = (nmynods + ((homog_ld_lagran_t*)homo.st)->nnods_bc) * dim;
-
-    ierr = MatCreateSeqAIJ(MICRO_COMM,n,n,177,PETSC_NULL,&A);CHKERRQ(ierr);
-    ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
-    ierr = MatSetFromOptions(A);CHKERRQ(ierr);
-
-    ierr = VecCreateSeq(MICRO_COMM, n, &x);CHKERRQ(ierr);
-    ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
-    ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
-    ierr = VecDuplicate(x,&b1);CHKERRQ(ierr);
 
   }
 

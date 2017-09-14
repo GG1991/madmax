@@ -97,12 +97,12 @@ double   center_domain[3];
 #define FORMAT_GMSH        1
 #define FORMAT_ALYA        2
 
-int mesh_f;                   // Mesh format number
+int       mesh_f;                   // Mesh format number
 
 // Time measurement
 
 FILE      *time_fl;
-FILE      *FileOutputStructures;
+FILE      *file_out;
 double    t0,t1;
 double    *time_vec;
 
