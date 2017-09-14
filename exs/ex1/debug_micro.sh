@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#break_mic=( 'mic_main.c:121' ) 
+#break_mic=( 'mic_main.c:xx' ) 
 #break_mic=( 'spu_mesh.c:xx' ) 
 #break_mic=( 'micmic.c:xx' ) 
 #break_mic=( 'mic_alloc.c:xx' ) 
-break_mic=( 'spu_assembly.c:505' ) 
+#break_mic=( 'spu_assembly.c:xx' ) 
 #break_mic=( 'mic_boundary.c:xx' ) 
 
 # BREAKPOINTS
@@ -15,11 +15,7 @@ do
 done
 exopt_mic+="-ex 'r'"
 
-gdbcomm_mic="gdb $exopt_mic --args  ../../micro/micro "
-gdbcomm_mic+=" -mesh ../../meshes/cube_unif/cube.msh"
-
-
-function debug_valgrind {
+function valgrind {
 eval ./mpirun -np $NM valgrind --log-file=\"valgrind.out\" --leak-check=full ../../micro/micro \
        -input ex1.spu                         \
        -mesh ../../meshes/cube_unif/cube.msh  \
@@ -65,23 +61,6 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
 }
 
 # 23-08-2017
-# Cube with cilindrical hole in the middle
-function cube_hole_2d {
-NM=1
-
-eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
-  -input ex1_2d.spu \
-  -mesh ../../meshes/cube_hole/cube_hole_2d.msh \
-  -dim 2 \
-  -mesh_gmsh \
-  -pc_type lu \
-  -options_left 0 \
-  -log_trace micro_trace \
-  -homo_ld \
-  -print_vtu
-}
-
-# 23-08-2017
 # Cube with cilindrical fiber in the middle
 function cube_fiber {
 NM=1
@@ -98,27 +77,7 @@ eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
   -print_vtu
 }
 
-# 07-09-2017
-# Cube 2D
-# Linear Displacements with Lagrangian BC
-# this technique is sequencial only
-function cube_2d_ld_seq {
-NM=1  
-
-eval ./mpirun -np $NM xterm -e gdb "$exopt_mic" -q --args ../../micro/micro \
-  -input ex1_2d.spu \
-  -mesh ../../meshes/cube_unif/cube_2d.msh \
-  -dim 2 \
-  -mesh_gmsh \
-  -pc_type lu  \
-  -options_left 0 \
-  -homo_ld \
-  -log_trace micro_trace \
-  -print_vtu \
-  -print_petsc
-  #-homo_ld_seq \
-}
-
-cube_2d
+#valgrind
+#barbero
+#cube_2d
 #cube_fiber
-#cube_hole_2d
