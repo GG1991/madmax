@@ -74,18 +74,6 @@ sym_3[]=Symmetry {-1, 0, 0, lx} {
   Duplicata { Surface{surf_m,surf_f,sym_1[0],sym_1[1],sym_2[0],sym_2[1],sym_2[2],sym_2[3]}; }
 };
 
-
-//
-// Physical Entities
-//
-//Physical Volume("MATRIX") = {7, 5, 13, 15, 3, 1, 9, 11};
-//Physical Volume("FIBER") = {8, 6, 4, 2, 10, 12, 16, 14};
-//Physical Surface("X0") = {127, 205};
-//Physical Surface("X1") = {361, 283};
-//Physical Surface("Y0") = {88, 244};
-//Physical Surface("Y1") = {166, 322};
-//Physical Surface("Z0") = {20, 53, 62, 44, 35, 8, 11, 29, 34, 25, 58, 67, 49, 40, 10, 16};
-//Physical Surface("Z1") = {323, 362, 284, 245, 89, 128, 206, 167, 184, 223, 145, 106, 262, 301, 379, 340};
 Physical Surface("FIBER")  = {34, 25, 10, 40, 16, 58, 49, 67};
 Physical Surface("MATRIX") = {29, 20, 53, 62, 44, 35, 8, 11};
 Physical Line("X0") = {15, 33};

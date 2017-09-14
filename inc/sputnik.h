@@ -78,20 +78,20 @@ int nvoi;      //  number of voigt components (3 if dim=2, 6 if dim=3)
 #define PRINT_VTKPART      4
 #define PRINT_ALL          8
 
-int  flag_print;
-bool flag_reactions;
+int      flag_print;
+bool     flag_reactions;
 
 /*
    Cilindrical Fiber in quad Matrix
 */
-double LX, LY, LZ;
-int    flag_fiber_cilin;
-int    nx_fibers;
-int    ny_fibers;
-double fiber_cilin_r;
-double fiber_cilin_center_devi[3];
-double fiber_cilin_vals[4];
-double center_domain[3];
+double   LX, LY, LZ;
+int      flag_fiber_cilin;
+int      nx_fibers;
+int      ny_fibers;
+double   fiber_cilin_r;
+double   fiber_cilin_center_devi[3];
+double   fiber_cilin_vals[4];
+double   center_domain[3];
 
 #define FORMAT_NULL        0
 #define FORMAT_GMSH        1
@@ -101,10 +101,15 @@ int mesh_f;                   // Mesh format number
 
 // Time measurement
 
-FILE   *time_fl;
-FILE   *FileOutputStructures;
-double t0,t1;
-double *time_vec;
+FILE      *time_fl;
+FILE      *FileOutputStructures;
+double    t0,t1;
+double    *time_vec;
+
+// Solver options
+
+int       nr_max_its;
+double    nr_norm_tol;
 
 // Structures to save de mesh on CSR format 
 
