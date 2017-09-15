@@ -20,6 +20,7 @@
 
 #define MIC_END            1
 #define MAC2MIC_STRAIN     2
+#define C_HOMO             3
 
 /*
    This structure represents a Gauss points
@@ -99,21 +100,19 @@ KSP           ksp;                  // linear solver context
 
 double  *stress, *strain, *energy;  // Averange strain, stress and energy on each element
 
-/*
-   Common functions
-*/
-
+/* Coloring */
 int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM);
+
+/* Send and Receive functions */
 int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal);
 int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6]);
 int mic_send_strain(MPI_Comm WORLD_COMM, double strain[6]);
 int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6]);
-int mic_sent_ttensor(MPI_Comm WORLD_COMM, double ttensor[36]);
+int mic_send_c_homo(MPI_Comm WORLD_COMM, double *c_homo);
 
 int mac_send_signal(MPI_Comm WORLD_COMM, int signal);
 int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6]);
 int mac_recv_stress(MPI_Comm WORLD_COMM, double stress[6]);
-
-int mac_calc_homo_cij(double homo_cij[36]);
+int mac_recv_c_homo(MPI_Comm WORLD_COMM, double *c_homo);
 
 #endif
