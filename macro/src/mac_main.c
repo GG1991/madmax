@@ -22,10 +22,11 @@ int main(int argc, char **argv)
 {
 
   int        ierr, ierr_1=0;
-  char       *myname = strdup("macro");
   char       vtkfile_n[NBUF];
   double     t0=0.0, tf, dt;
   PetscBool  set;
+
+  myname = strdup("macro");
 
   WORLD_COMM = MPI_COMM_WORLD;
   ierr = MPI_Init(&argc, &argv);
@@ -312,16 +313,19 @@ end_mac_0:
   if(flag_testcomm == TESTCOMM_STRAIN){
 
     /* TEST> Sends a calculating strain to micro and obtain the stress */
-    for(i=0;i<6;i++){
-      memset(strain_mac,0.0,nvoi*sizeof(double));
+    for(i=0;i<nvoi;i++){
+      for(j=0;j<nvoi;j++){
+	strain_mac[j] = 0.0;
+      }
       strain_mac[i] = 0.005;
       ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
       ierr = mac_send_strain(WORLD_COMM, strain_mac);CHKERRQ(ierr);
       ierr = mac_recv_stress(WORLD_COMM, stress_mac);CHKERRQ(ierr);
       ierr = PetscPrintf(MACRO_COMM,"\nstress_ave = ");CHKERRQ(ierr);
-      for(j=0;j<6;j++)
-	ierr = PetscPrintf(MACRO_COMM,"%e ",stress_mac[j]);CHKERRQ(ierr);
-      ierr = PetscPrintf(MACRO_COMM,"\n");CHKERRQ(ierr);
+      for(j=0;j<nvoi;j++){
+	ierr = PetscPrintf(MACRO_COMM,"%e ",stress_mac[j]);
+      }
+      ierr = PetscPrintf(MACRO_COMM,"\n");
     }
 
   }
@@ -329,19 +333,9 @@ end_mac_0:
 
     /* MULTIESCALE */
 
-    if(macmic.type==COUP_1){
-      ierr = PetscPrintf(MACRO_COMM,"\ncalculating homo_cij\n", time_step, t);CHKERRQ(ierr);
-      ierr = mac_calc_homo_cij(((mac_coup_1_t*)macmic.coup)->homo_cij);
-      for(i=0;i<6;i++){
-	for(j=0;j<6;j++){
-	  ierr = PetscPrintf(MACRO_COMM,"%e ",((mac_coup_1_t*)macmic.coup)->homo_cij[i*6+j]);
-	}ierr = PetscPrintf(MACRO_COMM,"\n");CHKERRQ(ierr);
-      }ierr = PetscPrintf(MACRO_COMM,"\n");CHKERRQ(ierr);
-    }
+    while( t < (tf + 1.0e-10) ){
 
-    while( t < (tf + 1.0e-10)){
-
-      ierr = PetscPrintf(MACRO_COMM, "\nTime step %3d %e seg\n", time_step, t);
+      ierr = PetscPrintf(MACRO_COMM, "time step %3d %e seg\n", time_step, t);
 
       /* Setting Displacement on Dirichlet Indeces on <x> */
       ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);

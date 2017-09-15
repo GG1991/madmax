@@ -31,23 +31,24 @@ int main(int argc, char **argv)
 
   int        i, ierr, ierr_1=0;
   int        nval;
-  char       *myname = strdup("micro");
   char       vtkfile_n[NBUF];
   PetscBool  set;
+
+  myname = strdup("micro");
 
   WORLD_COMM = MPI_COMM_WORLD;
   ierr = MPI_Init(&argc, &argv);
   ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
   ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
+
   /* 
      We start PETSc before coloring here for using command line reading tools only
      Then we finalize it
   */
   PETSC_COMM_WORLD = WORLD_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
-  /*
-     Printing Options
-  */
+
+  /* Printing Options */
   flag_print = 0;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
@@ -59,9 +60,8 @@ int main(int argc, char **argv)
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
-  /*
-     Coupling Options
-  */
+
+  /* Coupling Options */
   flag_coupling = PETSC_FALSE;
   ierr = PetscOptionsHasName(NULL,NULL,"-coupl",&set);CHKERRQ(ierr);
   macmic.type = 0;
@@ -69,9 +69,8 @@ int main(int argc, char **argv)
     flag_coupling = PETSC_TRUE;
     macmic.type = COUP_1;
   }
-  /*
-     Mesh and Input Options
-  */
+
+  /* Mesh and Input Options */
   mesh_f = FORMAT_NULL;
   ierr = PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
@@ -123,9 +122,7 @@ int main(int argc, char **argv)
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
 
-  /*
-     Solver Options
-  */
+  /* Solver Options */
   ierr = PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
   if(set==PETSC_FALSE) nr_max_its=5;
   ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
@@ -161,11 +158,14 @@ int main(int argc, char **argv)
   }
   //**************************************************
 
-  /* 
-     Stablish a new local communicator
-   */
+  /* Stablish a new local communicator */
   color = MICRO;
   ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM); /* color can change */
+  if(ierr){
+    ierr_1 = 1;
+    PetscPrintf(MICRO_COMM,"micro: problem during coloring\n");
+    goto end_mic_0;
+  }
 
   ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
   ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
@@ -192,17 +192,17 @@ end_mic_0:
   if(rank_mic==0) file_out = fopen("micro_structures.dat","w");
 
 #if defined(PETSC_USE_LOG)
-  ierr = PetscLogEventRegister("Read_Elems_of_Mesh"    ,PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Partition_Mesh"        ,PETSC_VIEWER_CLASSID,&EVENT_PART_MESH);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Calculate_Ghosts_Nodes",PETSC_VIEWER_CLASSID,&EVENT_CALC_GHOSTS);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Reenumerates_Nodes"    ,PETSC_VIEWER_CLASSID,&EVENT_REENUMERATE);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Read_Coordinates"      ,PETSC_VIEWER_CLASSID,&EVENT_READ_COORD);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Init_Gauss_Points"     ,PETSC_VIEWER_CLASSID,&EVENT_INIT_GAUSS);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Allocate_Mat_and_Vec"  ,PETSC_VIEWER_CLASSID,&EVENT_ALLOC_MATVEC);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Set_Displ_on_Bou "     ,PETSC_VIEWER_CLASSID,&EVENT_SET_DISP_BOU);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Assembly_Jacobian"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_JAC);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Assembly_Residual"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("Solve_Linear_System"   ,PETSC_VIEWER_CLASSID,&EVENT_SOLVE_SYSTEM);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("Read_Elems_of_Mesh"    ,PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);
+  ierr = PetscLogEventRegister("Partition_Mesh"        ,PETSC_VIEWER_CLASSID,&EVENT_PART_MESH);
+  ierr = PetscLogEventRegister("Calculate_Ghosts_Nodes",PETSC_VIEWER_CLASSID,&EVENT_CALC_GHOSTS);
+  ierr = PetscLogEventRegister("Reenumerates_Nodes"    ,PETSC_VIEWER_CLASSID,&EVENT_REENUMERATE);
+  ierr = PetscLogEventRegister("Read_Coordinates"      ,PETSC_VIEWER_CLASSID,&EVENT_READ_COORD);
+  ierr = PetscLogEventRegister("Init_Gauss_Points"     ,PETSC_VIEWER_CLASSID,&EVENT_INIT_GAUSS);
+  ierr = PetscLogEventRegister("Allocate_Mat_and_Vec"  ,PETSC_VIEWER_CLASSID,&EVENT_ALLOC_MATVEC);
+  ierr = PetscLogEventRegister("Set_Displ_on_Bou "     ,PETSC_VIEWER_CLASSID,&EVENT_SET_DISP_BOU);
+  ierr = PetscLogEventRegister("Assembly_Jacobian"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_JAC);
+  ierr = PetscLogEventRegister("Assembly_Residual"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);
+  ierr = PetscLogEventRegister("Solve_Linear_System"   ,PETSC_VIEWER_CLASSID,&EVENT_SOLVE_SYSTEM);
 #endif
 
   /*

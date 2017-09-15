@@ -63,6 +63,7 @@ typedef struct _physical_t{
    SPUTNIK global variables
 *****************************************************************************************************/
 
+char         *myname;
 char         input_n[NBUF];            // Input file name
 
 MPI_Comm     WORLD_COMM;
@@ -71,10 +72,10 @@ PetscViewer  viewer;
 int          reason;
 char         reason_s[64];
 
-int rank_wor;  //  rank on world comm
-int nproc_wor; //  # of processes (WORLD_COMM)
-int dim;       //  problem dimensions 
-int nvoi;      //  number of voigt components (3 if dim=2, 6 if dim=3)
+int          rank_wor;                          //  rank on world comm
+int          nproc_wor;                         //  # of processes (WORLD_COMM)
+int          dim;                               //  problem dimensions 
+int          nvoi;                              //  number of voigt components (3 if dim=2, 6 if dim=3)
 
 #define PRINT_PETSC        0
 #define PRINT_VTK          1
@@ -82,38 +83,38 @@ int nvoi;      //  number of voigt components (3 if dim=2, 6 if dim=3)
 #define PRINT_VTKPART      4
 #define PRINT_ALL          8
 
-int      flag_print;
-bool     flag_reactions;
+int         flag_print;
+bool        flag_reactions;
 
 /*
    Cilindrical Fiber in quad Matrix
 */
-double   LX, LY, LZ;
-int      flag_fiber_cilin;
-int      nx_fibers;
-int      ny_fibers;
-double   fiber_cilin_r;
-double   fiber_cilin_center_devi[3];
-double   fiber_cilin_vals[4];
-double   center_domain[3];
+double      LX, LY, LZ;
+int         flag_fiber_cilin;
+int         nx_fibers;
+int         ny_fibers;
+double      fiber_cilin_r;
+double      fiber_cilin_center_devi[3];
+double      fiber_cilin_vals[4];
+double      center_domain[3];
 
 #define FORMAT_NULL        0
 #define FORMAT_GMSH        1
 #define FORMAT_ALYA        2
 
-int       mesh_f;                   // Mesh format number
+int          mesh_f;                   // Mesh format number
 
 // Time measurement
 
-FILE      *time_fl;
-FILE      *file_out;
-double    t0,t1;
-double    *time_vec;
+FILE         *time_fl;
+FILE         *file_out;
+double       t0,t1;
+double       *time_vec;
 
 // Solver options
 
-int       nr_max_its;
-double    nr_norm_tol;
+int          nr_max_its;
+double       nr_norm_tol;
 
 // Structures to save de mesh on CSR format 
 
@@ -217,7 +218,7 @@ int assembly_residual_sd(Vec *x, Vec *b);
 int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);
 int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8]);
 int GetWeight(int npe, double **wp);
-int GetDsDe(int npe, double *ElemDisp, double DsDe[6][6]);
+int get_c(int e, double strain[6], double c[6][6]);
 material_t * GetMaterial(int e);
 int GetElemenDispls( int e, double *x, double *elem_disp );
 int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *energy);
