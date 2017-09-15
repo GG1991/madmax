@@ -13,20 +13,26 @@ int assembly_jacobian_sd(Mat *J)
 {
   /* Assembly the Jacobian for Small Deformation approach */
 
-  int      i, j, k, l, e, gp, ngp, npe;
-  int      PETScIdx[8*3];
-  int      ierr;
-  double   ElemCoord[8][3];
-  double   dsh[8][3];
-  double   detj;
-  double   Ke[8*3 * 8*3];
-  double   B[6][3*8];
-  double   DsDe[6][6];
-  double   *wp = NULL;
-  double   ElemDispls[8*3];
-  double   wp_eff;
+  int         i, j, k, l, e, gp, ngp, npe;
+  int         PETScIdx[8*3];
+  int         ierr;
+  double      ElemCoord[8][3];
+  double      dsh[8][3];
+  double      detj;
+  double      Ke[8*3*8*3];
+  double      B[6][3*8], strain_gp[6];
+  double      c[6][6];
+  double      *wp = NULL;
+  double      ElemDispls[8*3];
+  double      wp_eff;
+  double      *xvalues;
+  Vec         xlocal;
 
   ierr = MatZeroEntries(*J);CHKERRQ(ierr);
+
+  /* Local representation of <x> with ghost padding */
+  ierr = VecGhostGetLocalForm(x,&xlocal); CHKERRQ(ierr);
+  ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
 
   for(e=0;e<nelm;e++){
     npe = eptr[e+1]-eptr[e];
@@ -34,22 +40,34 @@ int assembly_jacobian_sd(Mat *J)
     GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
     GetWeight(npe, &wp);
+    GetElemenDispls(e, xvalues, ElemDispls);
 
     // calculate <Ke> by numerical integration
     memset(Ke, 0.0, (npe*dim*npe*dim)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
-      get_dsh(gp, npe, ElemCoord, dsh, &detj);
+      ierr = get_dsh(gp, npe, ElemCoord, dsh, &detj);
       detj = fabs(detj);
-      GetB( npe, dsh, B );
-      GetDsDe( e, ElemDispls, DsDe );
+      ierr = GetB(npe, dsh, B);
+
+      for(i=0;i<nvoi;i++){
+	strain_gp[i] = 0.0;
+	for(k=0;k<npe*dim;k++){
+	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
+	}
+      }
+      ierr = get_c(e, strain_gp, c);
+      if(ierr){
+	PetscPrintf(PETSC_COMM_WORLD, "%s: problem calculating constitutive tensor\n",myname);
+	return 1; 
+      }
 
       wp_eff = detj * wp[gp];
       for(i=0;i<npe*dim;i++){
 	for(j=0;j<npe*dim;j++){
 	  for(k=0;k<nvoi;k++){
 	    for(l=0;l<nvoi;l++){
-	      Ke[i*npe*dim+j] = Ke[i*npe*dim+j] + B[k][i] * DsDe[k][l] * B[l][j] * wp_eff;
+	      Ke[i*npe*dim+j] = Ke[i*npe*dim+j] + B[k][i] * c[k][l] * B[l][j] * wp_eff;
 	    }
 	  }
 	}
@@ -58,6 +76,7 @@ int assembly_jacobian_sd(Mat *J)
     }
     ierr = MatSetValues(*J, npe*dim, PETScIdx, npe*dim, PETScIdx, Ke, ADD_VALUES);CHKERRQ(ierr);
   }
+  VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
 
   /* communication between processes */
   ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -91,7 +110,7 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
   ierr = VecGhostUpdateBegin(*x_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(*x_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostGetLocalForm(*x_old,&xlocal); CHKERRQ(ierr);
-  ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr); CHKERRQ(ierr);
+  ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
 
   for(e=0;e<nelm;e++){
 
@@ -115,16 +134,20 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
     }
     for(gp=0;gp<ngp;gp++){
 
-      get_dsh(gp, npe, ElemCoord, dsh, &detj);
+      ierr = get_dsh(gp, npe, ElemCoord, dsh, &detj);
       detj = fabs(detj);
-      GetB(npe, dsh, B );
-      GetDsDe(e, ElemDispls, DsDe );
+      ierr = GetB(npe, dsh, B );
 
       for(i=0;i<nvoi;i++){
 	strain_gp[i] = 0.0;
 	for(k=0;k<npe*dim;k++){
 	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
+      }
+      ierr = get_c(e, strain_gp, DsDe);
+      if(ierr){
+	PetscPrintf(PETSC_COMM_WORLD, "%s: problem calculating constitutive tensor\n",myname);
+	return 1; 
       }
 
       if(material->typeID==MICRO){
@@ -134,7 +157,7 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
 	/* send instruction to micro */
 	ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);
 	if(ierr){
-	  ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending signal MAC2MIC_STRAIN to micro\n");
+	  PetscPrintf(PETSC_COMM_WORLD, "%s: problem sending signal MAC2MIC_STRAIN to micro\n",myname);
 	  return 1;
 	}
 	/* send strain to micro */
@@ -227,25 +250,25 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
 
     for(gp=0;gp<ngp;gp++){
       
-      memset(strain_gp,0.0,nvoi*sizeof(double));
-      memset(stress_gp,0.0,nvoi*sizeof(double));
       energy_gp = 0.0;
 
       get_dsh(gp, npe, ElemCoord, dsh, &detj);
       detj = fabs(detj);
       GetB( npe, dsh, B );
-      GetDsDe( e, ElemDispls, DsDe );
-      wp_eff = detj*wp[gp];
+      wp_eff = detj * wp[gp];
 
       for(i=0;i<nvoi;i++){
+	strain_gp[i] = 0.0;
 	for(k=0;k<npe*dim;k++){
-	  strain_gp[i] += B[i][k]*ElemDispls[k];
+	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
+      get_c(e, strain_gp, DsDe);
 
       for(i=0;i<nvoi;i++){
+	stress_gp[i] = 0.0;
 	for(k=0;k<nvoi;k++){
-	  stress_gp[i] += DsDe[i][k]*strain_gp[k];
+	  stress_gp[i] = stress_gp[i] + DsDe[i][k] * strain_gp[k];
 	}
       }
       for(k=0;k<nvoi;k++){
@@ -333,24 +356,23 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
 
     for(gp=0;gp<ngp;gp++){
 
-      memset(strain_gp, 0.0, nvoi*sizeof(double));
-      memset(stress_gp, 0.0, nvoi*sizeof(double));
-
       get_dsh(gp, npe, ElemCoord, dsh, &detj);
       detj = fabs(detj);
       GetB( npe, dsh, B );
-      GetDsDe( e, ElemDispls, DsDe );
       wp_eff = detj*wp[gp];
 
       for(i=0;i<nvoi;i++){
+	strain_gp[i] = 0.0;
 	for(k=0;k<npe*dim;k++){
-	  strain_gp[i] += B[i][k]*ElemDispls[k];
+	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
+      get_c( e, ElemDispls, DsDe);
 
       for(i=0;i<nvoi;i++){
+	stress_gp[i] = 0.0;
 	for(k=0;k<nvoi;k++){
-	  stress_gp[i] += DsDe[i][k]*strain_gp[k];
+	  stress_gp[i] = stress_gp[i] + DsDe[i][k] * strain_gp[k];
 	}
       }
 
@@ -393,17 +415,19 @@ int GetElemenDispls(int e, double *x, double *ElemDispls )
   return 0;
 }
 /****************************************************************************************************/
-int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
+int get_c(int e, double strain[6], double c[6][6] )
 {
-  /*  
-      Calculates constitutive tensor
-      according to the element type
-   */
-  double la, mu, poi, you; 
-  int i, j;
+  /*  Calculates constitutive tensor */
+
+  double  la, mu, poi, you; 
+  double  c_homo[36];
+  int     i, j, ierr;
 
   material_t *material = GetMaterial(e);
-  if(!material) SETERRQ1(PETSC_COMM_SELF,1,"material with physical_id %d not found",PhysicalID[e]);
+  if(!material){
+    PetscPrintf(PETSC_COMM_WORLD,"material with physical_id %d not found",PhysicalID[e]);
+    return 1;
+  }
 
   switch(material->typeID){
 
@@ -420,33 +444,51 @@ int GetDsDe( int e, double *ElemDisp, double DsDe[6][6] )
 	/*
 	   Plane Strain
 	*/
-	DsDe[0][0]=1.0; DsDe[0][1]=poi; DsDe[0][2]=0.0;
-	DsDe[1][0]=poi; DsDe[1][1]=1.0; DsDe[1][2]=0.0;
-	DsDe[2][0]=0.0; DsDe[2][1]=0.0; DsDe[2][2]=(1-poi)/2;
+	c[0][0]=1.0; c[0][1]=poi; c[0][2]=0.0;
+	c[1][0]=poi; c[1][1]=1.0; c[1][2]=0.0;
+	c[2][0]=0.0; c[2][1]=0.0; c[2][2]=(1-poi)/2;
 	for(i=0;i<3;i++){
 	  for(j=0;j<3;j++){
-	    DsDe[i][j] = DsDe[i][j] * you/(1-pow(poi,2));
+	    c[i][j] = c[i][j] * you/(1-pow(poi,2));
 	  }
 	}
       }
       else if(dim==3){
-	DsDe[0][0]=la+2*mu ;DsDe[0][1]=la      ;DsDe[0][2]=la      ;DsDe[0][3]=0.0; DsDe[0][4]=0.0; DsDe[0][5]=0.0;
-	DsDe[1][0]=la      ;DsDe[1][1]=la+2*mu ;DsDe[1][2]=la      ;DsDe[1][3]=0.0; DsDe[1][4]=0.0; DsDe[1][5]=0.0;
-	DsDe[2][0]=la      ;DsDe[2][1]=la      ;DsDe[2][2]=la+2*mu ;DsDe[2][3]=0.0; DsDe[2][4]=0.0; DsDe[2][5]=0.0;
-	DsDe[3][0]=0.0     ;DsDe[3][1]=0.0     ;DsDe[3][2]=0.0     ;DsDe[3][3]=mu ; DsDe[3][4]=0.0; DsDe[3][5]=0.0;
-	DsDe[4][0]=0.0     ;DsDe[4][1]=0.0     ;DsDe[4][2]=0.0     ;DsDe[4][3]=0.0; DsDe[4][4]=mu ; DsDe[4][5]=0.0;
-	DsDe[5][0]=0.0     ;DsDe[5][1]=0.0     ;DsDe[5][2]=0.0     ;DsDe[5][3]=0.0; DsDe[5][4]=0.0; DsDe[5][5]=mu ;
+	c[0][0]=la+2*mu ;c[0][1]=la      ;c[0][2]=la      ;c[0][3]=0.0; c[0][4]=0.0; c[0][5]=0.0;
+	c[1][0]=la      ;c[1][1]=la+2*mu ;c[1][2]=la      ;c[1][3]=0.0; c[1][4]=0.0; c[1][5]=0.0;
+	c[2][0]=la      ;c[2][1]=la      ;c[2][2]=la+2*mu ;c[2][3]=0.0; c[2][4]=0.0; c[2][5]=0.0;
+	c[3][0]=0.0     ;c[3][1]=0.0     ;c[3][2]=0.0     ;c[3][3]=mu ; c[3][4]=0.0; c[3][5]=0.0;
+	c[4][0]=0.0     ;c[4][1]=0.0     ;c[4][2]=0.0     ;c[4][3]=0.0; c[4][4]=mu ; c[4][5]=0.0;
+	c[5][0]=0.0     ;c[5][1]=0.0     ;c[5][2]=0.0     ;c[5][3]=0.0; c[5][4]=0.0; c[5][5]=mu ;
       }
 
       break;
 
     case MICRO:
 
-      if(macmic.type==COUP_1){
-	for(i=0;i<6;i++){
-	  for(j=0;j<6;j++){
-	    DsDe[i][j]=((mac_coup_1_t*)macmic.coup)->homo_cij[i*6+j];
-	  }
+
+      /* send instruction to micro */
+      ierr = mac_send_signal(WORLD_COMM, C_HOMO);
+      if(ierr){
+	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending signal C_HOMO to micro\n");
+	return 1;
+      }
+      /* send strain to micro */
+      ierr = mac_send_strain(WORLD_COMM, strain);
+      if(ierr){
+	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending strain to micro\n");
+	return 1;
+      }
+      /* recv stress from micro */
+      ierr = mac_recv_c_homo(WORLD_COMM, c_homo);
+      if(ierr){
+	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem receiving c_homo from micro\n");
+	return 1;
+      }
+
+      for(i=0;i<nvoi;i++){
+	for(j=0;j<nvoi;j++){
+	  c[i][j] = c_homo[i*nvoi+j];
 	}
       }
 
