@@ -11,24 +11,20 @@
 
 int assembly_jacobian_sd(Mat *J)
 {
-  /*    
-	Assembly the Jacobian for Small Deformation
-	approach.
-   */
+  /* Assembly the Jacobian for Small Deformation approach */
 
-  int     i, j, k, l, e, gp, ngp, npe;
-  int     PETScIdx[8*3];
-  int     ierr;
-  double  ElemCoord[8][3];
-  double  dsh[8][3];
-  double  detj;
-  double  Ke[8*3 * 8*3];
-  double  B[6][3*8];
-  double  DsDe[6][6];
-  double  *wp = NULL;
-  double  ElemDispls[8*3];
-
-  register double wp_eff;
+  int      i, j, k, l, e, gp, ngp, npe;
+  int      PETScIdx[8*3];
+  int      ierr;
+  double   ElemCoord[8][3];
+  double   dsh[8][3];
+  double   detj;
+  double   Ke[8*3 * 8*3];
+  double   B[6][3*8];
+  double   DsDe[6][6];
+  double   *wp = NULL;
+  double   ElemDispls[8*3];
+  double   wp_eff;
 
   ierr = MatZeroEntries(*J);CHKERRQ(ierr);
 
@@ -40,7 +36,6 @@ int assembly_jacobian_sd(Mat *J)
     GetWeight(npe, &wp);
 
     // calculate <Ke> by numerical integration
-
     memset(Ke, 0.0, (npe*dim*npe*dim)*sizeof(double));
     for(gp=0;gp<ngp;gp++){
 
@@ -73,10 +68,7 @@ int assembly_jacobian_sd(Mat *J)
 /****************************************************************************************************/
 int assembly_residual_sd(Vec *x_old, Vec *Residue)
 {
-  /*
-     Assembly the Residual for Small Deformation
-     approach.
-   */
+  /* Assembly the Residual for Small Deformation approach */
 
   int         i, k, e, gp, ngp, npe;
   int         PETScIdx[8*3];
@@ -90,15 +82,11 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
   double      *wp = NULL;
   double      ElemDispls[8*3];
   double      *xvalues;
-
+  double      wp_eff;
   Vec         xlocal;
   material_t  *material;
 
-  register double wp_eff;
-
-  /* 
-     Local representation of <x> with ghost padding
-  */
+  /* Local representation of <x> with ghost padding */
   ierr = VecZeroEntries(*Residue); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(*x_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(*x_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -108,49 +96,76 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
   for(e=0;e<nelm;e++){
 
     material = GetMaterial(e);
-    if(!material) SETERRQ1(PETSC_COMM_SELF,1,"material with physical_id %d not found",PhysicalID[e]);
+    if(!material){
+      ierr = PetscPrintf(PETSC_COMM_WORLD, "material with physical_id %d not found\n",PhysicalID[e]);
+      return 1;
+    }
 
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
-    GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
+    GetPETScIndeces(&eind[eptr[e]], npe, loc2petsc, PETScIdx);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
     GetWeight(npe, &wp);
     GetElemenDispls(e, xvalues, ElemDispls);
 
     // calculate <ElemResidue> by numerical integration
 
-    memset(Re, 0.0, (npe*dim)*sizeof(double));
+    for(i=0;i<npe*dim;i++){
+      Re[i] = 0.0;
+    }
     for(gp=0;gp<ngp;gp++){
 
-      memset(strain_gp, 0.0, nvoi*sizeof(double));
-      memset(stress_gp, 0.0, nvoi*sizeof(double));
       get_dsh(gp, npe, ElemCoord, dsh, &detj);
       detj = fabs(detj);
-      GetB( npe, dsh, B );
-      GetDsDe( e, ElemDispls, DsDe );
+      GetB(npe, dsh, B );
+      GetDsDe(e, ElemDispls, DsDe );
 
       for(i=0;i<nvoi;i++){
+	strain_gp[i] = 0.0;
 	for(k=0;k<npe*dim;k++){
-	  strain_gp[i] += B[i][k]*ElemDispls[k];
+	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
 
       if(material->typeID==MICRO){
-	ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
-	ierr = mac_send_strain(WORLD_COMM, strain_gp);CHKERRQ(ierr);
-	ierr = mac_recv_stress(WORLD_COMM, stress_gp);CHKERRQ(ierr);
+
+	/* calculate stress using localization+homogenization */
+
+	/* send instruction to micro */
+	ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);
+	if(ierr){
+	  ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending signal MAC2MIC_STRAIN to micro\n");
+	  return 1;
+	}
+	/* send strain to micro */
+	ierr = mac_send_strain(WORLD_COMM, strain_gp);
+	if(ierr){
+	  ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending strain to micro\n");
+	  return 1;
+	}
+	/* recv stress from micro */
+	ierr = mac_recv_stress(WORLD_COMM, stress_gp);
+	if(ierr){
+	  ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem receiving stress from micro\n");
+	  return 1;
+	}
+
       }else{
+
+	/* calculate stress using constitutive laws */
 	for(i=0;i<nvoi;i++){
+	  stress_gp[i] = 0.0;
 	  for(k=0;k<nvoi;k++){
-	    stress_gp[i] += DsDe[i][k]*strain_gp[k];
+	    stress_gp[i] = stress_gp[i] + DsDe[i][k] * strain_gp[k];
 	  }
 	}
+
       }
 
       wp_eff = detj * wp[gp];
       for(i=0;i<npe*dim;i++){
 	for(k=0;k<nvoi;k++){
-	  Re[i] += B[k][i]*stress_gp[k] * wp_eff;
+	  Re[i] = Re[i] + B[k][i] * stress_gp[k] * wp_eff;
 	}
       }
 

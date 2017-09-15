@@ -309,11 +309,9 @@ end_mac_0:
   // Initial condition <x> = 0
   ierr = VecZeroEntries(x);CHKERRQ(ierr);
 
-  if(flag_testcomm == TESTCOMM_STRAIN)
-  {
-    /*
-       It is test. Sends a calculating strain to micro and obtain the stress
-    */
+  if(flag_testcomm == TESTCOMM_STRAIN){
+
+    /* TEST> Sends a calculating strain to micro and obtain the stress */
     for(i=0;i<6;i++){
       memset(strain_mac,0.0,nvoi*sizeof(double));
       strain_mac[i] = 0.005;
@@ -325,29 +323,27 @@ end_mac_0:
 	ierr = PetscPrintf(MACRO_COMM,"%e ",stress_mac[j]);CHKERRQ(ierr);
       ierr = PetscPrintf(MACRO_COMM,"\n");CHKERRQ(ierr);
     }
+
   }
   else{
-    /*
-       It is real calculation
-    */
+
+    /* MULTIESCALE */
 
     if(macmic.type==COUP_1){
       ierr = PetscPrintf(MACRO_COMM,"\ncalculating homo_cij\n", time_step, t);CHKERRQ(ierr);
       ierr = mac_calc_homo_cij(((mac_coup_1_t*)macmic.coup)->homo_cij);
       for(i=0;i<6;i++){
 	for(j=0;j<6;j++){
-	  ierr = PetscPrintf(MACRO_COMM,"%e ",((mac_coup_1_t*)macmic.coup)->homo_cij[i*6+j]);CHKERRQ(ierr);
+	  ierr = PetscPrintf(MACRO_COMM,"%e ",((mac_coup_1_t*)macmic.coup)->homo_cij[i*6+j]);
 	}ierr = PetscPrintf(MACRO_COMM,"\n");CHKERRQ(ierr);
       }ierr = PetscPrintf(MACRO_COMM,"\n");CHKERRQ(ierr);
     }
 
-    while( t < (tf + 1.0e-10))
-    {
-      ierr = PetscPrintf(MACRO_COMM, "\nTime step %3d %e seg\n", time_step, t);CHKERRQ(ierr);
+    while( t < (tf + 1.0e-10)){
 
-      /*
-	 Setting Displacement on Dirichlet Indeces on <x>
-       */
+      ierr = PetscPrintf(MACRO_COMM, "\nTime step %3d %e seg\n", time_step, t);
+
+      /* Setting Displacement on Dirichlet Indeces on <x> */
       ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
       ierr = MacroSetDisplacementOnBoundary( t, &x);
       if( flag_print & (1<<PRINT_PETSC) ){
@@ -356,19 +352,18 @@ end_mac_0:
       }
       ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
 
-      /*
-	 If the Residual Norm is bigger than <NormTol>
-	 we should iterate
-       */
       nr_its = 0; norm = 2*nr_norm_tol;
       while( nr_its < nr_max_its && norm > nr_norm_tol )
       {
-	/*
-	   Assemblying Residual
-	 */
+
+	/* Assemblying residual */
 	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MACRO_COMM, "Assembling Residual ");
-	ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
+	ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");
+	ierr = assembly_residual_sd( &x, &b);
+	if(ierr){
+	  ierr = PetscPrintf(MACRO_COMM, "problem assembling residual\n");
+	  goto end_mac_1;
+	}
 	ierr = MacroSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
 	if( flag_print & (1<<PRINT_PETSC) ){
 	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
@@ -378,10 +373,10 @@ end_mac_0:
 	ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
 	ierr = VecScale(b,-1.0); CHKERRQ(ierr);
 	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+
 	if( norm < nr_norm_tol )break;
-	/*
-	   Assemblying Jacobian
-	 */
+
+	/* Assemblying Jacobian */
 	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
 	ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
 	ierr = assembly_jacobian_sd(&A);
@@ -391,11 +386,10 @@ end_mac_0:
 	  ierr = MatView(A,viewer); CHKERRQ(ierr);
 	}
 	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-	/*
-	   Solving Problem
-	 */
+
+	/* Solving Problem */
 	ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MACRO_COMM, "Solving Linear System ");
+	ierr = PetscPrintf(MACRO_COMM, "Solving Linear System\n ");
 	ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
 	ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
 	ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
@@ -419,15 +413,15 @@ end_mac_0:
 	    strcpy(reason_s, "I DONT KNOW");
 	    break;
 	}
-	ierr = PetscPrintf(MACRO_COMM,"Iterations %D Norm %e reason %s",kspits, kspnorm, reason_s);
+	ierr = PetscPrintf(MACRO_COMM,"kspits %D kspnorm %e kspreason %s\n",kspits, kspnorm, reason_s);
 	ierr = PetscLogEventEnd(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
 
 	nr_its ++;
       }
 
       if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){ 
-	strain = malloc(nelm*6*sizeof(double));
-	stress = malloc(nelm*6*sizeof(double));
+	strain = malloc(nelm*nvoi*sizeof(double));
+	stress = malloc(nelm*nvoi*sizeof(double));
 	energy = malloc(nelm*sizeof(double));
 	ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
@@ -448,17 +442,17 @@ end_mac_0:
   }
 
 end_mac_1:
-  /*
-     Stop signal to micro if it is coupled
-  */
+
+  /* Stop signal to micro if it is coupled */
   if(flag_coupling){
-    ierr = mac_send_signal(WORLD_COMM, MIC_END); CHKERRQ(ierr);
+    ierr = mac_send_signal(WORLD_COMM, MIC_END);
+    if(ierr){
+      ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
+      return 1;
+    }
   }
 
-
-  /*
-     Free Memory and close things
-  */
+  /* Free Memory and close things */
   if(rank_mac==0) fclose(file_out); 
 
   list_clear(&material_list);
