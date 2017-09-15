@@ -96,7 +96,6 @@ PetscBool    flag_coupling;
 Mat           A;                    // Jacobian Matrix          
 Vec           x, dx, b;             // Vectors unknowns and RHS 
 KSP           ksp;                  // linear solver context    
-int           reason;
 
 double  *stress, *strain, *energy;  // Averange strain, stress and energy on each element
 

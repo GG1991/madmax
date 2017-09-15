@@ -367,7 +367,7 @@ end_mac_0:
 	   Assemblying Residual
 	 */
 	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MACRO_COMM, "Assembling Residual ");CHKERRQ(ierr);
+	ierr = PetscPrintf(MACRO_COMM, "Assembling Residual ");
 	ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
 	ierr = MacroSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
 	if( flag_print & (1<<PRINT_PETSC) ){
@@ -407,7 +407,19 @@ end_mac_0:
 	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
 	  ierr = VecView(x,viewer); CHKERRQ(ierr);
 	}
-	ierr = PetscPrintf(MACRO_COMM,"Iterations %D Norm %e reason %d\n",kspits, kspnorm, reason);CHKERRQ(ierr);
+
+	switch(reason){
+	  case KSP_CONVERGED_RTOL:
+	    strcpy(reason_s, "RTOL");
+	    break;
+	  case KSP_CONVERGED_ATOL:
+	    strcpy(reason_s, "ATOL");
+	    break;
+	  default :
+	    strcpy(reason_s, "I DONT KNOW");
+	    break;
+	}
+	ierr = PetscPrintf(MACRO_COMM,"Iterations %D Norm %e reason %s",kspits, kspnorm, reason_s);
 	ierr = PetscLogEventEnd(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
 
 	nr_its ++;
@@ -425,7 +437,7 @@ end_mac_0:
 	}
 	if(flag_print & (1<<PRINT_VTU)){ 
 	  sprintf(vtkfile_n,"%s_t_%d",myname,time_step);
-	  ierr = write_vtu(MACRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);CHKERRQ(ierr);
+	  ierr = write_vtu(MACRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);
 	}
 	free(stress); free(strain); free(energy);
       }

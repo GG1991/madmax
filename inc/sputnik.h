@@ -68,6 +68,8 @@ char         input_n[NBUF];            // Input file name
 MPI_Comm     WORLD_COMM;
 MPI_Status   status;
 PetscViewer  viewer;
+int          reason;
+char         reason_s[64];
 
 int rank_wor;  //  rank on world comm
 int nproc_wor; //  # of processes (WORLD_COMM)
