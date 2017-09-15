@@ -28,6 +28,8 @@
 #define PARMETIS_KWAY       3
 #define PARMETIS_MESHKWAY   4
 
+int partition_algorithm;
+
 #if defined(PETSC_USE_LOG)
   PetscLogStage stages[3];
   PetscLogEvent EVENT_READ_MESH_ELEM,
@@ -113,15 +115,16 @@ double    nr_norm_tol;
 
 // Structures to save de mesh on CSR format 
 
-char mesh_n[NBUF];           // Mesh file name
+char      mesh_n[NBUF];           // Mesh file name
 
-int *part;
-int *elmdist;                // number of elements inside each procesor
-int nelm;                    // # of local elements
-int *eptr;                   // list of indeces of nodes inside eind
-int *eind;                   // list of nodes for elem "i" is between 
-                             // eind[eptr[i]] eind[eptr[i+1]] (not including)
-int *PhysicalID;             // element property number
+int      *part;
+int      *elmdist;                // number of elements inside each procesor
+int      nelm;                    // # of local elements
+int      *eptr;                   // list of indeces of nodes inside eind
+int      *eind;                   // list of nodes for elem "i" is between 
+                                  // eind[eptr[i]] eind[eptr[i+1]] (not including)
+int      *PhysicalID;             // element property number
+double   *elmv_centroid;
 
 int *StartIndexRank;
 int *allnods;                // all nodes including mynods and ghost
@@ -169,7 +172,7 @@ int read_boundary(MPI_Comm PROBLEM_COMM, char *mesh_n,int mesh_f);
 int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n);
 int read_boundary_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n);
 
-int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm);
+int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid);
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *PhysicalID,
     int *npe_swi, int *eind_swi, int *PhysicalID_swi,
