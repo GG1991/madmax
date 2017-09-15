@@ -10,7 +10,7 @@
 #include "sputnik.h"
 #include "parmetis.h"
 
-int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid, int algorithm)
+int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, FILE *time_fl, char *myname, double *centroid)
 {
 
   /*
@@ -39,8 +39,8 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
   idx_t      options[3];       // (inp) option parameters
   idx_t      edgecut;          // (out) number of edges cut of the partition
 
-  MPI_Comm_size(*comm, &nproc);
-  MPI_Comm_rank(*comm, &rank);
+  MPI_Comm_size(*PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(*PROBLEM_COMM, &rank);
 
   nelm = elmdist[rank+1] - elmdist[rank];
 
@@ -74,198 +74,200 @@ int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *cent
 
   //**************************************************
 
-  if(algorithm == PARMETIS_GEOMKWAY){
+  if(partition_algorithm == PARMETIS_GEOMKWAY){
 
   }
-  else if(algorithm == PARMETIS_GEOM){
+  else if(partition_algorithm == PARMETIS_GEOM){
+    /* uses the space-filling curve algorithm */ 
+    ParMETIS_V3_PartGeom(elmdist, &dim, (real_t*)elmv_centroid, part, PROBLEM_COMM);
 
   }
-  else if(algorithm == PARMETIS_KWAY){
+  else if(partition_algorithm == PARMETIS_KWAY){
 
   }
-  else if(algorithm == PARMETIS_MESHKWAY){
+  else if(partition_algorithm == PARMETIS_MESHKWAY){
 
     // Performe the partition with no weights
     ParMETIS_V3_PartMeshKway (
 	elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
 	&ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
-	options, &edgecut, part, comm );
+	options, &edgecut, part, PROBLEM_COMM );
 
-
-    /* 
-       Graph distribution
-
-       First we create an array "npe" that follows
-       the same function as eptr but is a global 
-       reference 
-
-       eptr = [ 0 3 5 8 9 ]
-       npe  = [ 3 2 3 1 ]    (npe[i] = eptr[i+1] - eptr[i])
-
-       Then vectors are switched acording to "part"
-       we create npe_swi, eind_swi, npe_swi_size
-
-       We do MPI_Alltoall of : "npe_swi_size"  ->  "npe_size_new"
-       "eind_swi_size" ->  "eind_size_new"
-
-       we free and reallocate memory for : "npe" using "npe_size" 
-       "eind" using "eind_size" 
-
-     */
-
-    int *eind_swi, *eind_swi_size, *eind_size_new;
-    int *npe_swi, *npe_swi_size, *npe_size_new;         
-    int *PhysicalID_swi;
-    int *npe;
-
-    npe = malloc(nelm*sizeof(int));
-    for(i=0;i<nelm;i++){
-      npe[i] = eptr[i+1] - eptr[i];
-    }
-
-    eind_swi       = malloc(eptr[nelm]*sizeof(int)); 
-    npe_swi        = malloc(nelm*sizeof(int)); 
-    PhysicalID_swi = malloc(nelm*sizeof(int)); 
-    eind_swi_size  = malloc(nproc*sizeof(int)); 
-    npe_swi_size   = malloc(nproc*sizeof(int)); 
-    eind_size_new  = malloc(nproc*sizeof(int)); 
-    npe_size_new   = malloc(nproc*sizeof(int)); 
-
-    // swap "npe" and "eind"
-    ierr = swap_vectors_SCR( part, nproc, nelm, 
-	npe, eptr, eind, PhysicalID,
-	npe_swi, eind_swi, PhysicalID_swi,
-	npe_swi_size, eind_swi_size );CHKERRQ(ierr);
-
-
-    ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, *comm);CHKERRQ(ierr);
-    ierr = MPI_Alltoall(eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *comm);CHKERRQ(ierr);
-
-    // free & reallocate memory for "npe" & "eind"
-    int npe_size_new_tot = 0, eind_size_new_tot = 0;
-
-    for(i=0;i<nproc;i++){
-      npe_size_new_tot += npe_size_new[i];
-      eind_size_new_tot += eind_size_new[i];
-    }
-    nelm = npe_size_new_tot;
-
-    free(npe);
-    free(eptr);
-    free(eind);
-    free(PhysicalID);
-
-    npe  = malloc(nelm*sizeof(int));
-    eptr = malloc((nelm+1)*sizeof(int));
-    eind = malloc(eind_size_new_tot * sizeof(int));
-    PhysicalID = malloc(nelm * sizeof(int));
-
-    /* 
-       performe the MPI_Alltoall operation for calculating "npe" & "eind"
-
-       for "npe"
-       sdispls = npe_swi_size
-       rdispls = npe_size_new
-
-       for "eind"
-       sdispls = eind_swi_size
-       rdispls = eind_size_new
-     */
-
-    int *sdispls, *rdispls;
-
-    sdispls = malloc(nproc*sizeof(int)); 
-    rdispls = malloc(nproc*sizeof(int)); 
-
-    for(i=0;i<nproc;i++){
-      sdispls[i] = 0;
-      for(j=0;j<i;j++){
-	sdispls[i] += npe_swi_size[j];
-      }
-    }
-    for(i=0;i<nproc;i++){
-      rdispls[i] = 0;
-      for(j=0;j<i;j++){
-	rdispls[i] += npe_size_new[j];
-      }
-    }
-
-    ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
-	npe, npe_size_new, rdispls, MPI_INT, *comm);CHKERRQ(ierr);
-
-    ierr = MPI_Alltoallv(PhysicalID_swi, npe_swi_size, sdispls, MPI_INT, 
-	PhysicalID, npe_size_new, rdispls, MPI_INT, *comm);CHKERRQ(ierr);
-
-    // rebuild "eptr"
-    eptr[0] = 0;
-    for(i=0;i<nelm;i++){
-      eptr[i+1] = eptr[i] + npe[i];
-    }
-
-    for(i=0;i<nproc;i++){
-      sdispls[i] = 0;
-      for(j=0;j<i;j++){
-	sdispls[i] += eind_swi_size[j];
-      }
-    }
-    for(i=0;i<nproc;i++){
-      rdispls[i] = 0;
-      for(j=0;j<i;j++){
-	rdispls[i] += eind_size_new[j];
-      }
-    }
-
-    ierr = MPI_Alltoallv(eind_swi, eind_swi_size, sdispls, MPI_INT, 
-	eind, eind_size_new, rdispls, MPI_INT, *comm);
-
-    if(flag_print & (1<<PRINT_ALL)){
-      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
-
-      printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
-      for(i=0;i<nproc;i++){
-	printf("%8d ",npe_swi_size[i]);
-      }
-      printf("\n");
-
-      printf("%-6s r%2d %-20s :", myname, rank, "eind_swi_size");
-      for(i=0;i<nproc;i++){
-	printf("%8d ",eind_swi_size[i]);
-      }
-      printf("\n");
-
-      printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
-
-      printf("%-6s r%2d %-20s : ", myname, rank, "eind");
-      for(i=0;i<eptr[nelm];i++){
-	printf("%3d ",eind[i]);
-      }
-      printf("\n");
-
-      printf("%-6s r%2d %-20s :", myname, rank, "npe_size_new");
-      for(i=0;i<nproc;i++){
-	printf("%8d ",npe_size_new[i]);
-      }
-      printf("\n");
-
-      printf("%-6s r%2d %-20s :", myname, rank, "eind_size_new");
-      for(i=0;i<nproc;i++){
-	printf("%8d ",eind_size_new[i]);
-      }
-      printf("\n");
-    }
-    free(eind_swi);
-    free(npe_swi);
-    free(npe_swi_size);
-    free(npe_size_new);
-    free(eind_swi_size);
-    free(eind_size_new);
-    free(sdispls);
-    free(rdispls);
-    free(PhysicalID_swi);
   }
   else{
     return 1;
   }
+
+  /* 
+     Graph distribution
+
+     First we create an array "npe" that follows
+     the same function as eptr but is a global 
+     reference 
+
+     eptr = [ 0 3 5 8 9 ]
+     npe  = [ 3 2 3 1 ]    (npe[i] = eptr[i+1] - eptr[i])
+
+     Then vectors are switched acording to "part"
+     we create npe_swi, eind_swi, npe_swi_size
+
+     We do MPI_Alltoall of : "npe_swi_size"  ->  "npe_size_new"
+     "eind_swi_size" ->  "eind_size_new"
+
+     we free and reallocate memory for : "npe" using "npe_size" 
+     "eind" using "eind_size" 
+
+   */
+
+  int *eind_swi, *eind_swi_size, *eind_size_new;
+  int *npe_swi, *npe_swi_size, *npe_size_new;         
+  int *PhysicalID_swi;
+  int *npe;
+
+  npe = malloc(nelm*sizeof(int));
+  for(i=0;i<nelm;i++){
+    npe[i] = eptr[i+1] - eptr[i];
+  }
+
+  eind_swi       = malloc(eptr[nelm]*sizeof(int)); 
+  npe_swi        = malloc(nelm*sizeof(int)); 
+  PhysicalID_swi = malloc(nelm*sizeof(int)); 
+  eind_swi_size  = malloc(nproc*sizeof(int)); 
+  npe_swi_size   = malloc(nproc*sizeof(int)); 
+  eind_size_new  = malloc(nproc*sizeof(int)); 
+  npe_size_new   = malloc(nproc*sizeof(int)); 
+
+  // swap "npe" and "eind"
+  ierr = swap_vectors_SCR( part, nproc, nelm, 
+      npe, eptr, eind, PhysicalID,
+      npe_swi, eind_swi, PhysicalID_swi,
+      npe_swi_size, eind_swi_size );CHKERRQ(ierr);
+
+
+  ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Alltoall(eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
+
+  // free & reallocate memory for "npe" & "eind"
+  int npe_size_new_tot = 0, eind_size_new_tot = 0;
+
+  for(i=0;i<nproc;i++){
+    npe_size_new_tot += npe_size_new[i];
+    eind_size_new_tot += eind_size_new[i];
+  }
+  nelm = npe_size_new_tot;
+
+  free(npe);
+  free(eptr);
+  free(eind);
+  free(PhysicalID);
+
+  npe  = malloc(nelm*sizeof(int));
+  eptr = malloc((nelm+1)*sizeof(int));
+  eind = malloc(eind_size_new_tot * sizeof(int));
+  PhysicalID = malloc(nelm * sizeof(int));
+
+  /* 
+     performe the MPI_Alltoall operation for calculating "npe" & "eind"
+
+     for "npe"
+     sdispls = npe_swi_size
+     rdispls = npe_size_new
+
+     for "eind"
+     sdispls = eind_swi_size
+     rdispls = eind_size_new
+   */
+
+  int *sdispls, *rdispls;
+
+  sdispls = malloc(nproc*sizeof(int)); 
+  rdispls = malloc(nproc*sizeof(int)); 
+
+  for(i=0;i<nproc;i++){
+    sdispls[i] = 0;
+    for(j=0;j<i;j++){
+      sdispls[i] += npe_swi_size[j];
+    }
+  }
+  for(i=0;i<nproc;i++){
+    rdispls[i] = 0;
+    for(j=0;j<i;j++){
+      rdispls[i] += npe_size_new[j];
+    }
+  }
+
+  ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
+      npe, npe_size_new, rdispls, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
+
+  ierr = MPI_Alltoallv(PhysicalID_swi, npe_swi_size, sdispls, MPI_INT, 
+      PhysicalID, npe_size_new, rdispls, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
+
+  // rebuild "eptr"
+  eptr[0] = 0;
+  for(i=0;i<nelm;i++){
+    eptr[i+1] = eptr[i] + npe[i];
+  }
+
+  for(i=0;i<nproc;i++){
+    sdispls[i] = 0;
+    for(j=0;j<i;j++){
+      sdispls[i] += eind_swi_size[j];
+    }
+  }
+  for(i=0;i<nproc;i++){
+    rdispls[i] = 0;
+    for(j=0;j<i;j++){
+      rdispls[i] += eind_size_new[j];
+    }
+  }
+
+  ierr = MPI_Alltoallv(eind_swi, eind_swi_size, sdispls, MPI_INT, 
+      eind, eind_size_new, rdispls, MPI_INT, *PROBLEM_COMM);
+
+  if(flag_print & (1<<PRINT_ALL)){
+    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
+
+    printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
+    for(i=0;i<nproc;i++){
+      printf("%8d ",npe_swi_size[i]);
+    }
+    printf("\n");
+
+    printf("%-6s r%2d %-20s :", myname, rank, "eind_swi_size");
+    for(i=0;i<nproc;i++){
+      printf("%8d ",eind_swi_size[i]);
+    }
+    printf("\n");
+
+    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
+
+    printf("%-6s r%2d %-20s : ", myname, rank, "eind");
+    for(i=0;i<eptr[nelm];i++){
+      printf("%3d ",eind[i]);
+    }
+    printf("\n");
+
+    printf("%-6s r%2d %-20s :", myname, rank, "npe_size_new");
+    for(i=0;i<nproc;i++){
+      printf("%8d ",npe_size_new[i]);
+    }
+    printf("\n");
+
+    printf("%-6s r%2d %-20s :", myname, rank, "eind_size_new");
+    for(i=0;i<nproc;i++){
+      printf("%8d ",eind_size_new[i]);
+    }
+    printf("\n");
+  }
+  free(eind_swi);
+  free(npe_swi);
+  free(npe_swi_size);
+  free(npe_size_new);
+  free(eind_swi_size);
+  free(eind_size_new);
+  free(sdispls);
+  free(rdispls);
+  free(PhysicalID_swi);
   free(ubvec);
   free(tpwgts);
 
@@ -1077,10 +1079,11 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
      ya podemos allocar el vector "eptr" su dimension es :
      número de elementos locales + 1 = nelm + 1
    */
-  nelm = elmdist[rank+1] - elmdist[rank];
-  eptr = malloc( (nelm + 1) * sizeof(int));
-  PhysicalID = malloc( nelm * sizeof(int));
-  part = malloc(nelm * sizeof(int));
+  nelm           = elmdist[rank+1] - elmdist[rank];
+  eptr           = malloc( (nelm + 1) * sizeof(int));
+  elmv_centroid  = malloc( nelm * dim * sizeof(double));
+  PhysicalID     = malloc( nelm * sizeof(int));
+  part           = malloc(nelm * sizeof(int));
   //
   /**************************************************/
 
@@ -1147,6 +1150,58 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   }
   //
   /**************************************************/
+
+  /**************************************************/
+  /*
+     We read the all the nodes coordinates and calculate 
+     the element centroids <elmv_centroid>
+   */
+  int    nnods;
+  double *coord;
+  rewind(fm);
+  while(fgets(buf,NBUF,fm)!=NULL){
+
+    data=strtok(buf," \n");
+
+    if(strcmp(data,"$Nodes")==0){
+      /* leemos el numero total */
+      fgets(buf,NBUF,fm);
+      data  = strtok(buf," \n");
+      nnods = atoi(data);
+      coord = malloc(nnods*dim*sizeof(double));
+
+      for(i=0; i<nnods; i++){
+	fgets(buf,NBUF,fm); 
+	data=strtok(buf," \n");
+	for(d=0;d<dim;d++){
+	  data=strtok(NULL," \n");
+	  coord[i*dim+d] = atof(data);
+	}
+      }
+      break;
+    }
+    ln ++;
+  }
+
+  double centroid[3];
+  for(i=0; i<nelm; i++){
+    npe = eptr[i+1] - eptr[i];
+    for(d=0;d<dim;d++){
+      centroid[d] = 0.0;
+    }
+    for(n=0; n<npe; n++){
+      for(d=0;d<dim;d++){
+	centroid[d] += coord[(eind[eptr[i]+n]-1)*dim + d];
+      }
+    }
+    for(d=0;d<dim;d++){
+      elmv_centroid[d] = centroid[d] / npe;
+    }
+  }
+  free(coord);
+  //
+  /**************************************************/
+  fclose(fm);
 
   return 0;   
 }

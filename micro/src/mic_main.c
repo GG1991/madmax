@@ -100,6 +100,13 @@ int main(int argc, char **argv)
       ierr_1 = 1;
       goto end_mic_1;
   }
+  
+  /* Mesh partition algorithms */
+  partition_algorithm = PARMETIS_MESHKWAY;
+  ierr = PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_MESHKWAY;
+  ierr = PetscOptionsHasName(NULL,NULL,"-part_geom",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_GEOM;
 
   /* Homogenization Options */
   homo_type=0;
@@ -227,7 +234,7 @@ end_mic_0:
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
-  ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );CHKERRQ(ierr);
+  ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
   /*

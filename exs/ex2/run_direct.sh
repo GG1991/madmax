@@ -12,12 +12,14 @@ NM=1
     -ksp_type cg \
     -ksp_rtol 1.0e-13 \
     -print_vtu \
+    -part_geom \
     -nr_norm_tol 1.0e-6 \
     -nr_max_its 2 \
     -tf 2.0 \
     -dt 1.0 \
     -options_left 0
 
+    #-part_meshkway \
     #-pc_type lu \
     #-ksp_type cg \
     #-ksp_rtol 1.0e-13 \

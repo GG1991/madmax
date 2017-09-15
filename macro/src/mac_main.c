@@ -11,14 +11,10 @@
 static char help[] = 
 "MACRO MULTISCALE CODE\n"
 "Solves the displacement field inside a solid structure. \n"
-"It has the capability of being couple with MICRO, a code for solving and RVE problem.n\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
-"-print_petsc\n"
-"-print_vtk\n"
-"-print_part\n"
-"-print_vtu\n"
-"-print_all\n";
+"-print_petsc prints petsc structures on files such as Mat and Vec objects\n"
+"-print_vtu prints solutions on .vtu and .pvtu files\n";
 
 #include "macro.h"
 
@@ -102,17 +98,13 @@ int main(int argc, char **argv)
       ierr_1 = 1;
       goto end_mac_1;
   }
-  /*
-     Solver Options
-  */
+  /* Solver Options */
   ierr = PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
   if(set==PETSC_FALSE) nr_max_its=5;
   ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
-  /*
-     flow execution variables
-  */
+  /* flow execution variables */
   ierr = PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);CHKERRQ(ierr);
   if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"-tf not given.");
   ierr = PetscOptionsGetReal(NULL,NULL,"-dt",&dt,&set);CHKERRQ(ierr);
@@ -120,6 +112,14 @@ int main(int argc, char **argv)
 
   ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
   flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
+
+  /* Mesh partition algorithms */
+  partition_algorithm = PARMETIS_MESHKWAY;
+  ierr = PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_MESHKWAY;
+  ierr = PetscOptionsHasName(NULL,NULL,"-part_geom",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_GEOM;
+
 
 
   /* 
@@ -201,7 +201,7 @@ end_mac_0:
   */
   ierr = PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
-  ierr = part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL, PARMETIS_MESHKWAY );CHKERRQ(ierr);
+  ierr = part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
   /*
