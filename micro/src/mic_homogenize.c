@@ -12,7 +12,7 @@ int mic_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double st
 {
   int      i, k, e, gp, ngp, npe, ierr;
   double   coor_elm[8][3], dsh[8][3], detj;
-  double   *wp = NULL, stress_gp[6], DsDe[6][6], disp_elm[8*3];
+  double   *wp = NULL, stress_gp[6], DsDe[6][6];
   double   vol = -1.0, vol_tot = -1.0, stress_aux[6], strain_aux[6];
   double   wp_eff;
 
@@ -31,7 +31,7 @@ int mic_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double st
       memset(stress_gp, 0.0, nvoi*sizeof(double));
       get_dsh(gp, npe, coor_elm, dsh, &detj);
       detj = fabs(detj);
-      GetDsDe(e, disp_elm, DsDe);
+      get_c(e, strain_mac, DsDe);
       wp_eff = detj*wp[gp];
       for(i=0;i<nvoi;i++){
 	for(k=0;k<nvoi;k++){
