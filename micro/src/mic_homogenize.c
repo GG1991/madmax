@@ -313,7 +313,7 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
   return 0;
 }
 /****************************************************************************************************/
-int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double *c_homo)
+int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36])
 {
 
   /* 
@@ -322,18 +322,20 @@ int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double *c_homo)
   de gauss en la macro escala entonces es eficiente almacenar c_homo_linear
   */
 
-  int ierr;
+  int i, ierr;
 
   if(flag_linear_micro){
 
     if(first_time_c_homo_lineal_ask){
-      ierr = mic_calc_c_homo_lineal(MICRO_COMM, strain_mac, c_homo_lineal);
+      ierr = mic_calc_c_homo_lineal(MICRO_COMM, c_homo_lineal);
       if(ierr){
 	return 1;
       }
       first_time_c_homo_lineal_ask = 0;
     }
-    c_homo = c_homo_lineal;
+    for(i=0;i<nvoi*nvoi;i++){
+      c_homo[i] = c_homo_lineal[i];
+    }
 
   }
   else{
@@ -342,12 +344,14 @@ int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double *c_homo)
   return 0;
 }
 /****************************************************************************************************/
-int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo_lineal[36])
+int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36])
 {
 
-  int      i, j;
-  int      ierr;
-  double   strain[6], strain_ave[6], stress_ave[6];
+  int       i, j;
+  int       ierr;
+  double    strain[6];
+  double    strain_ave[6];
+  double    stress_ave[6];
 
   for(i=0;i<nvoi*nvoi;i++){
     c_homo_lineal[i]=0.0;
@@ -355,8 +359,8 @@ int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double strain_mac[6], double c_h
 
   for(i=0;i<nvoi;i++){
 
-    for(i=0;i<nvoi;i++){
-      strain[i]=0.0;
+    for(j=0;j<nvoi;j++){
+      strain[j]=0.0;
     }
     strain[i]=0.005;
 
