@@ -335,7 +335,7 @@ end_mac_0:
 
     while( t < (tf + 1.0e-10) ){
 
-      ierr = PetscPrintf(MACRO_COMM, "time step %3d %e seg\n", time_step, t);
+      ierr = PetscPrintf(MACRO_COMM,"\ntime step %3d %e seg\n", time_step, t);
 
       /* Setting Displacement on Dirichlet Indeces on <x> */
       ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
