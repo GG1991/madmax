@@ -13,7 +13,7 @@
    Internal Variables on Gauss Points are going to be saved on 
    this vector
 */
-double          *gauss_param_d;
+double       *gauss_param_d;
 
 /*
    Variables Send by <macro>
@@ -27,10 +27,11 @@ int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 #define UNIF_STRAINS 2
 
 int          homo_type;
+int          flag_linear_micro; // 1 if all materials in micro are linear 0 otherwise
 
-Mat  J; // extended matrix for lagrange multipliers boundary setting
-Vec  xe, re; // extended distributed vectors for lagrange multipliers boundary setting
-Vec  b1;
+Mat          J; // extended matrix for lagrange multipliers boundary setting
+Vec          xe, re; // extended distributed vectors for lagrange multipliers boundary setting
+Vec          b1;
 
 /*****************************************************************************************************
    MICRO function definitions

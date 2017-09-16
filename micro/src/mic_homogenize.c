@@ -315,6 +315,7 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
 /****************************************************************************************************/
 int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36])
 {
+
   return 0;
 }
 /****************************************************************************************************/

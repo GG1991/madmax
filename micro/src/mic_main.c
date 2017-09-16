@@ -35,6 +35,7 @@ int main(int argc, char **argv)
   PetscBool  set;
 
   myname = strdup("micro");
+  flag_linear_micro = 0;
 
   WORLD_COMM = MPI_COMM_WORLD;
   ierr = MPI_Init(&argc, &argv);
@@ -208,9 +209,9 @@ end_mic_0:
   /*
      Register various stages for profiling
   */
-  ierr = PetscLogStageRegister("Read Mesh Elements",&stages[0]);CHKERRQ(ierr);
-  ierr = PetscLogStageRegister("Linear System 1",&stages[1]);CHKERRQ(ierr);
-  ierr = PetscLogStageRegister("Linear System 2",&stages[2]);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("Read Mesh Elements",&stages[0]);
+  ierr = PetscLogStageRegister("Linear System 1",&stages[1]);
+  ierr = PetscLogStageRegister("Linear System 2",&stages[2]);
 
   /*
      read mesh
@@ -234,7 +235,7 @@ end_mic_0:
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
-  ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL);CHKERRQ(ierr);
+  ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL);
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -243,7 +244,7 @@ end_mic_0:
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
-  ierr = calculate_ghosts(&MICRO_COMM, myname);CHKERRQ(ierr);
+  ierr = calculate_ghosts(&MICRO_COMM, myname);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -252,7 +253,7 @@ end_mic_0:
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-  ierr = reenumerate_PETSc(MICRO_COMM);CHKERRQ(ierr);
+  ierr = reenumerate_PETSc(MICRO_COMM);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -261,7 +262,7 @@ end_mic_0:
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Reading Coordinates\n");
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
-  ierr = read_mesh_coord(MICRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
+  ierr = read_mesh_coord(MICRO_COMM, mesh_n, mesh_f);
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
   if(flag_print & (1<<PRINT_VTKPART)){
@@ -319,7 +320,7 @@ end_mic_0:
   /*
      micro main coupling loop
    */
-  double strain_mac[6], strain_ave[6], stress_ave[6], ttensor[36];
+  double strain_mac[6], strain_ave[6], stress_ave[6], c_homo[36];
 
   ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);
   ierr = PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);
@@ -342,21 +343,24 @@ end_mic_0:
     int signal=-1;
 
     while(signal!=MIC_END){
-      ierr = mic_recv_signal(WORLD_COMM, &signal);CHKERRQ(ierr);
+
+      /* Receive instruction */
+      ierr = mic_recv_signal(WORLD_COMM, &signal);
 
       switch(signal){
 
 	case MAC2MIC_STRAIN:
 
 	  /* Wait for strain */
-	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);CHKERRQ(ierr);
+	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);
 	  /* Performs the micro homogenization */
-	  ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
+	  ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
 	  /* Send Stress */
-	  ierr = mic_send_stress(WORLD_COMM, stress_ave);CHKERRQ(ierr);
+	  ierr = mic_send_stress(WORLD_COMM, stress_ave);
 	  break;
 
 	case C_HOMO:
+	  ierr = mic_calc_c_homo(MICRO_COMM, strain_mac, c_homo);
 	  break;
 
 	case MIC_END:
@@ -394,7 +398,7 @@ end_mic_0:
     int j;
     double strain_mac[6];
 
-    memset(ttensor,0.0,36*sizeof(double));
+    memset(c_homo,0.0,36*sizeof(double));
     for(i=0;i<nvoi;i++){
 
       memset(strain_mac,0.0,nvoi*sizeof(double));strain_mac[i]=0.005;
@@ -410,7 +414,7 @@ end_mic_0:
       }
       ierr = PetscPrintf(MICRO_COMM,"\n");
       for(j=0;j<nvoi;j++){
-	ttensor[j*nvoi+i] = stress_ave[j] / strain_ave[i];
+	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
       }
 
       if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){
@@ -438,7 +442,7 @@ end_mic_0:
     ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");
     for(i=0;i<nvoi;i++){
       for(j=0;j<nvoi;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*nvoi+j])>1.0)?ttensor[i*nvoi+j]:0.0);
+	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(c_homo[i*nvoi+j])>1.0)?c_homo[i*nvoi+j]:0.0);
       }
       ierr = PetscPrintf(MICRO_COMM,"\n");
     }

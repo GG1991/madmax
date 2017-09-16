@@ -8,13 +8,12 @@
 NM=1
 Nm=1
 
-function multiscale {
-
 m4 -Dlx_m4=30 -DNx_m4=2 ../../meshes/cube_fiber/struct_homog_2d.geo.m4 > struct_homog_2d.geo
-gmsh -2 struct_homog_2d.geo 
+gmsh -2 struct_homog_2d.geo > /tmp/null
 
 ./mpirun \
     -np $NM ../../macro/macro \
+    -coupl \
     -input ex2.spu \
     -mesh_gmsh \
     -mesh struct_homog_2d.msh \
@@ -26,9 +25,10 @@ gmsh -2 struct_homog_2d.geo
     -nr_max_its 2 \
     -tf 1.0 \
     -dt 1.0 \
-    -options_left 0
+    -options_left 0 \
 : \
     -np $Nm ../../micro/micro \
+    -coupl \
     -input ex2.spu \
     -mesh_gmsh \
     -mesh cube_fiber_2d.msh \
@@ -40,14 +40,10 @@ gmsh -2 struct_homog_2d.geo
     -nr_norm_tol 1.0e-6 \
     -nr_max_its 2 \
     -options_left 0
-
-    #-part_meshkway \
-    #-pc_type lu \
-    #-ksp_type cg \
-    #-ksp_rtol 1.0e-13 \
-    #-log_trace macro_trace \
-    #-ksp_monitor_true_residual \
-
-}
-
-multiscale
+#
+#    #-part_meshkway \
+#    #-pc_type lu \
+#    #-ksp_type cg \
+#    #-ksp_rtol 1.0e-13 \
+#    #-log_trace macro_trace \
+#    #-ksp_monitor_true_residual \

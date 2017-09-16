@@ -118,6 +118,15 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
   return 1;
 }
 /****************************************************************************************************/
+int is_linear_material(int material)
+{
+  switch(material){
+    case TYPE00:
+      return 1;
+  }
+  return 0;
+}
+/****************************************************************************************************/
 int CheckPhysicalID(void)
 {
   /* 
