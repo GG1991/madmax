@@ -292,7 +292,8 @@ end_mic_0:
     goto end_mic_1;
   }
   ierr = set_id_on_material_and_boundary(MICRO_COMM);
-  ierr = CheckPhysicalID(); CHKERRQ(ierr);
+  ierr = CheckPhysicalID();
+  ierr = mic_check_linear_material();
 
   /* Read boundary */
   ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);
