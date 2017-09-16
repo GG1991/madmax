@@ -40,9 +40,7 @@ int main(int argc, char **argv)
   PETSC_COMM_WORLD = WORLD_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
-  /*
-     Printing Options
-  */
+  /* Printing Options */
   flag_print = 0;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
@@ -55,9 +53,7 @@ int main(int argc, char **argv)
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
 
-  /*
-     Coupling Options
-  */
+  /* Coupling Options */
   flag_coupling = PETSC_FALSE;
   ierr = PetscOptionsHasName(NULL,NULL,"-coupl",&set);CHKERRQ(ierr);
   macmic.type = 0;
@@ -68,9 +64,8 @@ int main(int argc, char **argv)
   flag_testcomm  = TESTCOMM_NULL;
   ierr = PetscOptionsHasName(NULL,NULL,"-testcomm",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_testcomm  = TESTCOMM_STRAIN;
-  /*
-     Mesh and Input Options
-  */
+
+  /* Mesh and Input Options */
   mesh_f = FORMAT_NULL;
   ierr = PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
@@ -123,11 +118,14 @@ int main(int argc, char **argv)
 
 
 
-  /* 
-     Stablish a new local communicator
-  */
+  /* Stablish a new local communicator */
   color = MACRO;
   ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
+  if(ierr){
+    ierr_1=1;
+    goto end_mac_0;
+  }
+
   ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
   ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
 

@@ -60,8 +60,10 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
     }
   }
 
-  if(flag_coupling == true && (nproc_mic_tot==0 || nproc_mac_tot==0))
-      SETERRQ(PETSC_COMM_WORLD,1,"SPUTNIK: Want to coupling executing ONLY ONE code.");
+  if(flag_coupling == true && (nproc_mic_tot==0 || nproc_mac_tot==0)){
+    PetscPrintf(PETSC_COMM_WORLD,"-coupl activated but there is only one code in execution\n");
+    return 1;
+  }
 
 
   if(flag_coupling == false){
@@ -73,7 +75,7 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
   else if(macmic->type == COUP_1){
 
     if(nproc_mic_tot % nproc_mac_tot != 0){
-      printf("mod(nproc_mic_tot,nproc_mac_tot) = %d\n",nproc_mic_tot % nproc_mac_tot);
+      PetscPrintf(PETSC_COMM_WORLD,"mod(nproc_mic_tot,nproc_mac_tot) = %d\n",nproc_mic_tot % nproc_mac_tot);
       return 1;
     }
     mic_nproc_group = nproc_mic_tot / nproc_mac_tot;
