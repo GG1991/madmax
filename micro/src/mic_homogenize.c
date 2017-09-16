@@ -31,7 +31,7 @@ int mic_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double st
       memset(stress_gp, 0.0, nvoi*sizeof(double));
       get_dsh(gp, npe, coor_elm, dsh, &detj);
       detj = fabs(detj);
-      get_c(e, strain_mac, DsDe);
+      get_c(e, gp, strain_mac, DsDe);
       wp_eff = detj*wp[gp];
       for(i=0;i<nvoi;i++){
 	for(k=0;k<nvoi;k++){
@@ -313,9 +313,45 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
   return 0;
 }
 /****************************************************************************************************/
-int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36])
+int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double *c_homo)
 {
 
+  if(flag_linear_micro){
+    // this is micro made of linear materials
+    c_homo = c_homo_lineal;
+  }
   return 0;
 }
 /****************************************************************************************************/
+int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double strain_mac[6], double *c_homo_lineal)
+{
+
+  int      i, j;
+  int      ierr;
+  double   strain[6], strain_ave[6], stress_ave[6];
+
+  for(i=0;i<nvoi*nvoi;i++){
+    c_homo_lineal[i]=0.0;
+  }
+
+  for(i=0;i<nvoi;i++){
+
+    memset(strain_mac,0.0,nvoi*sizeof(double));strain_mac[i]=0.005;
+    for(i=0;i<nvoi*nvoi;i++){
+      strain[i]=0.0;
+    }
+    strain[i]=0.005;
+
+    ierr = mic_homogenize(MICRO_COMM, strain, strain_ave, stress_ave);
+    if(ierr){
+      return 1;
+    }
+
+    for(j=0;j<nvoi;j++){
+      c_homo_lineal[j*nvoi+i] = stress_ave[j] / strain_ave[i];
+    }
+
+  }
+
+  return 0;
+}

@@ -56,7 +56,7 @@ int assembly_jacobian_sd(Mat *J)
 	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
-      ierr = get_c(e, strain_gp, c);
+      ierr = get_c(e, gp, strain_gp, c);
       if(ierr){
 	PetscPrintf(PETSC_COMM_WORLD, "%s: problem calculating constitutive tensor\n",myname);
 	return 1; 
@@ -144,7 +144,7 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
 	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
-      ierr = get_c(e, strain_gp, DsDe);
+      ierr = get_c(e, gp, strain_gp, DsDe);
       if(ierr){
 	PetscPrintf(PETSC_COMM_WORLD, "%s: problem calculating constitutive tensor\n",myname);
 	return 1; 
@@ -263,7 +263,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
 	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
-      get_c(e, strain_gp, DsDe);
+      get_c(e, gp, strain_gp, DsDe);
 
       for(i=0;i<nvoi;i++){
 	stress_gp[i] = 0.0;
@@ -367,7 +367,7 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
 	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
-      get_c( e, ElemDispls, DsDe);
+      get_c(e, gp, ElemDispls, DsDe);
 
       for(i=0;i<nvoi;i++){
 	stress_gp[i] = 0.0;
@@ -415,7 +415,7 @@ int GetElemenDispls(int e, double *x, double *ElemDispls )
   return 0;
 }
 /****************************************************************************************************/
-int get_c(int e, double strain[6], double c[6][6] )
+int get_c(int e, int gp, double strain[6], double c[6][6] )
 {
   /*  Calculates constitutive tensor */
 
@@ -466,19 +466,27 @@ int get_c(int e, double strain[6], double c[6][6] )
 
     case MICRO:
 
-
       /* send instruction to micro */
       ierr = mac_send_signal(WORLD_COMM, C_HOMO);
       if(ierr){
 	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending signal C_HOMO to micro\n");
 	return 1;
       }
+
       /* send strain to micro */
       ierr = mac_send_strain(WORLD_COMM, strain);
       if(ierr){
 	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending strain to micro\n");
 	return 1;
       }
+
+      /* send macro_gp to micro */
+      ierr = mac_send_strain(WORLD_COMM, strain);
+      if(ierr){
+	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending strain to micro\n");
+	return 1;
+      }
+
       /* recv stress from micro */
       ierr = mac_recv_c_homo(WORLD_COMM, c_homo);
       if(ierr){

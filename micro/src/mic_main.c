@@ -332,13 +332,9 @@ end_mic_0:
     /*
        COUPLING EXECUTION
 
-       In this mode <micro> is used to homogenize RVE properties 
-       and send them to <macro> program
-
        1) waits instruction 
        2) execute instruction
        3) finish if instruction = SIGNAL_MICRO_END  
-
      */
     int signal=-1;
 
@@ -350,17 +346,23 @@ end_mic_0:
       switch(signal){
 
 	case MAC2MIC_STRAIN:
-
 	  /* Wait for strain */
 	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);
-	  /* Performs the micro homogenization */
+	  /* Performs the micro localization + homogenization */
 	  ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
 	  /* Send Stress */
 	  ierr = mic_send_stress(WORLD_COMM, stress_ave);
 	  break;
 
 	case C_HOMO:
+	  /* Wait for strain */
+	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);
+	  /* Wait for macro_gp number */
+	  ierr = mic_recv_macro_gp(WORLD_COMM, &macro_gp);
+	  /* Calculates C homogenized */
 	  ierr = mic_calc_c_homo(MICRO_COMM, strain_mac, c_homo);
+	  /* Send C homogenized */
+	  ierr = mic_send_c_homo(WORLD_COMM, c_homo);
 	  break;
 
 	case MIC_END:

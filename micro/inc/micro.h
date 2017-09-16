@@ -28,6 +28,8 @@ int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 
 int          homo_type;
 int          flag_linear_micro; // 1 if all materials in micro are linear 0 otherwise
+int          macro_gp;
+double       *c_homo_lineal;
 
 Mat          J; // extended matrix for lagrange multipliers boundary setting
 Vec          xe, re; // extended distributed vectors for lagrange multipliers boundary setting

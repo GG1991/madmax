@@ -218,7 +218,7 @@ int assembly_residual_sd(Vec *x, Vec *b);
 int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);
 int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8]);
 int GetWeight(int npe, double **wp);
-int get_c(int e, double strain[6], double c[6][6]);
+int get_c(int e, int gp, double strain[6], double c[6][6]);
 material_t * GetMaterial(int e);
 int GetElemenDispls( int e, double *x, double *elem_disp );
 int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *energy);
