@@ -55,3 +55,5 @@ int mic_homogenize_taylor(MPI_Comm COMM, double strain_mac[6], double strain_ave
 int mic_homogenize_unif_strain(MPI_Comm COMM, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
 int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int voigt2mat(double voigt[6], double matrix[3][3]);
+
+int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]);
