@@ -341,30 +341,31 @@ end_mic_0:
      */
     int signal=-1;
 
-    while(signal!=MIC_END)
-    {
+    while(signal!=MIC_END){
       ierr = mic_recv_signal(WORLD_COMM, &signal);CHKERRQ(ierr);
 
-      switch(signal)
-      {
+      switch(signal){
+
 	case MAC2MIC_STRAIN:
-	  /*
-	     Wait for strain
-	  */
+
+	  /* Wait for strain */
 	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);CHKERRQ(ierr);
-	  /*
-	     Performs the micro homogenization
-	  */
+	  /* Performs the micro homogenization */
 	  ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);CHKERRQ(ierr);
-	  /*
-	     Send Stress
-	  */
+	  /* Send Stress */
 	  ierr = mic_send_stress(WORLD_COMM, stress_ave);CHKERRQ(ierr);
 	  break;
+
+	case C_HOMO:
+	  break;
+
 	case MIC_END:
 	  break;
+
 	default:
-	  SETERRQ(MICRO_COMM,1,"can no identify recv signal.");
+	  PetscPrintf(MICRO_COMM,"MICRO:signal %d not identified\n",signal);
+	  goto end_mic_1;
+
       }
     }
   }
@@ -399,15 +400,15 @@ end_mic_0:
       memset(strain_mac,0.0,nvoi*sizeof(double));strain_mac[i]=0.005;
       ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
 
-      ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");CHKERRQ(ierr);
+      ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
       for(j=0;j<nvoi;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);CHKERRQ(ierr);
+	ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
       }
-      ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");CHKERRQ(ierr);
+      ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");
       for(j=0;j<nvoi;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);CHKERRQ(ierr);
+	ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
       }
-      ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+      ierr = PetscPrintf(MICRO_COMM,"\n");
       for(j=0;j<nvoi;j++){
 	ttensor[j*nvoi+i] = stress_ave[j] / strain_ave[i];
       }
@@ -434,12 +435,14 @@ end_mic_0:
       }
 
     }
-    ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");CHKERRQ(ierr);
+    ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");
     for(i=0;i<nvoi;i++){
       for(j=0;j<nvoi;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*nvoi+j])>1.0)?ttensor[i*nvoi+j]:0.0);CHKERRQ(ierr);
-      }ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
-    }ierr = PetscPrintf(MICRO_COMM,"\n");CHKERRQ(ierr);
+	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(ttensor[i*nvoi+j])>1.0)?ttensor[i*nvoi+j]:0.0);
+      }
+      ierr = PetscPrintf(MICRO_COMM,"\n");
+    }
+    ierr = PetscPrintf(MICRO_COMM,"\n");
 
   }
 
