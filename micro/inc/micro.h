@@ -29,10 +29,11 @@ int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 int          homo_type;
 int          flag_linear_micro; // 1 if all materials in micro are linear 0 otherwise
 int          macro_gp;
-double       *c_homo_lineal;
+int          first_time_c_homo_lineal_ask;
+double       c_homo_lineal[36];
 
-Mat          J; // extended matrix for lagrange multipliers boundary setting
-Vec          xe, re; // extended distributed vectors for lagrange multipliers boundary setting
+Mat          J;                // extended matrix for lagrange multipliers boundary setting
+Vec          xe, re;           // extended distributed vectors for lagrange multipliers boundary setting
 Vec          b1;
 
 /*****************************************************************************************************
@@ -60,3 +61,4 @@ int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double s
 int voigt2mat(double voigt[6], double matrix[3][3]);
 
 int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]);
+int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo_lineal[36]);

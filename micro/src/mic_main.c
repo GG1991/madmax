@@ -36,6 +36,7 @@ int main(int argc, char **argv)
 
   myname = strdup("micro");
   flag_linear_micro = 0;
+  first_time_c_homo_lineal_ask = 1;
 
   WORLD_COMM = MPI_COMM_WORLD;
   ierr = MPI_Init(&argc, &argv);
