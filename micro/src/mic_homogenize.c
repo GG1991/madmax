@@ -123,7 +123,8 @@ int mic_homogenize_unif_strains(MPI_Comm MICRO_COMM, double strain_mac[6], doubl
     ierr = VecScale(b,-1.0); CHKERRQ(ierr);
 
     ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-    PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
 
     if( !(norm > nr_norm_tol) )break;
 

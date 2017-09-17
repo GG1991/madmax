@@ -144,11 +144,6 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
 	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
-      ierr = get_c(e, gp, strain_gp, DsDe);
-      if(ierr){
-	PetscPrintf(PETSC_COMM_WORLD, "%s: problem calculating constitutive tensor\n",myname);
-	return 1; 
-      }
 
       if(material->typeID==MICRO){
 
@@ -174,6 +169,12 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
 	}
 
       }else{
+
+	ierr = get_c(e, gp, strain_gp, DsDe);
+	if(ierr){
+	  PetscPrintf(PETSC_COMM_WORLD, "%s: problem calculating constitutive tensor\n",myname);
+	  return 1; 
+	}
 
 	/* calculate stress using constitutive laws */
 	for(i=0;i<nvoi;i++){
