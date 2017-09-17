@@ -115,5 +115,6 @@ int mac_send_signal(MPI_Comm WORLD_COMM, int signal);
 int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6]);
 int mac_recv_stress(MPI_Comm WORLD_COMM, double stress[6]);
 int mac_recv_c_homo(MPI_Comm WORLD_COMM, double c_homo[36]);
+int mac_send_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp);
 
 #endif

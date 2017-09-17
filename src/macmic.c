@@ -268,6 +268,26 @@ int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6])
   }
   return 0;
 }
+/***************************************************************************************************/
+int mac_send_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp)
+{
+  /* 
+     sends macro_gp number to micro.
+     The processes will wait here until they receive the signal 
+   */
+
+  int ierr, remote_rank;
+
+  if(macmic.type == COUP_1){
+    remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
+    ierr = MPI_Ssend(macro_gp, 1, MPI_INT, remote_rank, 0, WORLD_COMM);
+    if(ierr)return 1;
+  }
+  else{
+    return 1;
+  }
+  return 0;
+}
 /****************************************************************************************************/
 int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6])
 {

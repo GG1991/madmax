@@ -317,9 +317,9 @@ int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]
 {
 
   /* 
-  Si la micro estructura está integramente conformada por materiales
-  lineales entonces este tensor será siempre el mismo para cada punto 
-  de gauss en la macro escala entonces es eficiente almacenar c_homo_linear
+     Si la micro estructura está integramente conformada por materiales
+     lineales entonces este tensor será siempre el mismo para cada punto 
+     de gauss en la macro escala entonces es eficiente almacenar c_homo_linear
   */
 
   int i, ierr;

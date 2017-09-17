@@ -399,7 +399,7 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
   return 0;
 }
 /****************************************************************************************************/
-int GetElemenDispls(int e, double *x, double *ElemDispls )
+int GetElemenDispls(int e, double *x, double *ElemDispls)
 {
 
   int  d, n, npe;
@@ -415,14 +415,16 @@ int GetElemenDispls(int e, double *x, double *ElemDispls )
   return 0;
 }
 /****************************************************************************************************/
-int get_c(int e, int gp, double strain[6], double c[6][6] )
+int get_c(int e, int gp, double strain[6], double c[6][6])
 {
   /*  Calculates constitutive tensor */
 
   double  la, mu, poi, you; 
   double  c_homo[36];
   int     i, j, ierr;
+  int     macro_gp;
 
+  macro_gp = e*8+gp;
   material_t *material = GetMaterial(e);
   if(!material){
     PetscPrintf(PETSC_COMM_WORLD,"material with physical_id %d not found",PhysicalID[e]);
@@ -481,13 +483,13 @@ int get_c(int e, int gp, double strain[6], double c[6][6] )
       }
 
       /* send macro_gp to micro */
-      ierr = mac_send_strain(WORLD_COMM, strain);
+      ierr = mac_send_macro_gp(WORLD_COMM, &macro_gp);
       if(ierr){
-	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending strain to micro\n");
+	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending macro_gp to micro\n");
 	return 1;
       }
 
-      /* recv stress from micro */
+      /* recv c_homo from micro */
       ierr = mac_recv_c_homo(WORLD_COMM, c_homo);
       if(ierr){
 	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem receiving c_homo from micro\n");
