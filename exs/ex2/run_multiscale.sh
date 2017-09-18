@@ -8,7 +8,7 @@
 NM=1
 Nm=1
 
-m4 -Dlx_m4=30 -DNx_m4=2 ../../meshes/cube_fiber/struct_homog_2d.geo.m4 > struct_homog_2d.geo
+m4 -Dlx_m4=30 -DNx_m4=11 ../../meshes/cube_fiber/struct_homog_2d.geo.m4 > struct_homog_2d.geo
 gmsh -2 struct_homog_2d.geo > /tmp/null
 
 ./mpirun \
@@ -22,7 +22,7 @@ gmsh -2 struct_homog_2d.geo > /tmp/null
     -print_vtu \
     -part_geom \
     -nr_norm_tol 1.0e-6 \
-    -nr_max_its 2 \
+    -nr_max_its 3 \
     -tf 1.0 \
     -dt 1.0 \
     -options_left 0 \
@@ -34,13 +34,12 @@ gmsh -2 struct_homog_2d.geo > /tmp/null
     -mesh cube_fiber_2d.msh \
     -dim 2 \
     -pc_type lu \
-    -print_vtu \
     -part_geom \
-    -homo_taylor \
-    -nr_norm_tol 1.0e-6 \
-    -nr_max_its 2 \
+    -homo_unif_strains \
+    -nr_norm_tol 1.0e-8 \
+    -nr_max_its 3 \
     -options_left 0
-#
+#    #xterm -e gdb --args
 #    #-part_meshkway \
 #    #-pc_type lu \
 #    #-ksp_type cg \

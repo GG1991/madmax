@@ -50,19 +50,6 @@ int main(int argc, char **argv)
   PETSC_COMM_WORLD = WORLD_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
-  /* Printing Options */
-  flag_print = 0;
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTK);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
-
   /* Coupling Options */
   flag_coupling = PETSC_FALSE;
   ierr = PetscOptionsHasName(NULL,NULL,"-coupl",&set);CHKERRQ(ierr);
@@ -183,6 +170,19 @@ end_mic_0:
   PETSC_COMM_WORLD = MICRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
   
+  /* Printing Options */
+  flag_print = 0;
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTK);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
+
   if(!flag_coupling){
     PetscPrintf(MICRO_COMM,
 	"--------------------------------------------------\n"
@@ -418,7 +418,12 @@ end_mic_0:
       }
       ierr = PetscPrintf(MICRO_COMM,"\n");
       for(j=0;j<nvoi;j++){
-	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
+	if(i>=dim){
+	  c_homo[j*nvoi+i] = stress_ave[j] / (0.5*strain_ave[i]);
+	}
+	else{
+	  c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
+	}
       }
 
       if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){
@@ -451,6 +456,35 @@ end_mic_0:
       ierr = PetscPrintf(MICRO_COMM,"\n");
     }
     ierr = PetscPrintf(MICRO_COMM,"\n");
+
+    /*
+       Experiment to test if the homogenization with <strain_mac>
+       gives the same <stress_ave> than doing <c_homo>*<strain_mac>
+     */
+
+    strain_mac[0] = 0.01; strain_mac[1] = -0.02; strain_mac[2] = +0.03;
+    strain_mac[3] = 0.01; strain_mac[4] = -0.02; strain_mac[5] = +0.03;
+    ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
+    for(j=0;j<nvoi;j++){
+      ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
+    }
+    ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");
+    for(j=0;j<nvoi;j++){
+      ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
+    }
+    for(i=0;i<nvoi;i++){
+      stress_ave[i] = 0.0;
+      for(j=0;j<nvoi;j++){
+	stress_ave[i] +=  c_homo[i*nvoi+j] * strain_mac[j];
+      }
+    }
+    ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");
+    for(j=0;j<nvoi;j++){
+      ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
+    }
+    ierr = PetscPrintf(MICRO_COMM," (c_homo*strain_mac)\n");
+
 
   }
 

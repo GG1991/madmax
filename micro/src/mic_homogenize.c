@@ -371,7 +371,12 @@ int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36])
     }
 
     for(j=0;j<nvoi;j++){
-      c_homo_lineal[j*nvoi+i] = stress_ave[j] / strain_ave[i];
+      if(i>=dim){
+	c_homo_lineal[j*nvoi+i] = stress_ave[j] / (0.5*strain_ave[i]);
+      }
+      else{
+	c_homo_lineal[j*nvoi+i] = stress_ave[j] / strain_ave[i];
+      }
     }
 
   }

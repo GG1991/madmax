@@ -40,19 +40,6 @@ int main(int argc, char **argv)
   PETSC_COMM_WORLD = WORLD_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
-  /* Printing Options */
-  flag_print = 0;
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTK);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
-
   /* Coupling Options */
   flag_coupling = PETSC_FALSE;
   ierr = PetscOptionsHasName(NULL,NULL,"-coupl",&set);CHKERRQ(ierr);
@@ -138,6 +125,20 @@ end_mac_0:
   */
   PETSC_COMM_WORLD = MACRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+
+  /* Printing Options */
+  flag_print = 0;
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTK);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
+  ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
+
 
   PetscPrintf(MACRO_COMM,
       "--------------------------------------------------\n"
@@ -335,11 +336,7 @@ end_mac_0:
 
       /* Setting Displacement on Dirichlet Indeces on <x> */
       ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-      ierr = MacroSetDisplacementOnBoundary( t, &x);
-      if( flag_print & (1<<PRINT_PETSC) ){
-	ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-	ierr = VecView(x,viewer); CHKERRQ(ierr);
-      }
+      ierr = MacroSetDisplacementOnBoundary(t, &x);
       ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
 
       nr_its = 0; norm = 2*nr_norm_tol;
@@ -349,16 +346,12 @@ end_mac_0:
 	/* Assemblying residual */
 	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
 	ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");
-	ierr = assembly_residual_sd( &x, &b);
+	ierr = assembly_residual_sd(&x, &b);
 	if(ierr){
 	  ierr = PetscPrintf(MACRO_COMM, "problem assembling residual\n");
 	  goto end_mac_1;
 	}
-	ierr = MacroSetBoundaryOnResidual( &b ); CHKERRQ(ierr);
-	if( flag_print & (1<<PRINT_PETSC) ){
-	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
-	  ierr = VecView(b,viewer); CHKERRQ(ierr);
-	}
+	ierr = MacroSetBoundaryOnResidual(&b); CHKERRQ(ierr);
 	ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
 	ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
 	ierr = VecScale(b,-1.0); CHKERRQ(ierr);
@@ -371,10 +364,6 @@ end_mac_0:
 	ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
 	ierr = assembly_jacobian_sd(&A);
 	ierr = MacroSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
-	if( flag_print & (1<<PRINT_PETSC) ){
-	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
-	  ierr = MatView(A,viewer); CHKERRQ(ierr);
-	}
 	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
 
 	/* Solving Problem */
@@ -384,13 +373,7 @@ end_mac_0:
 	ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
 	ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
 	ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
-	ierr = VecAXPY( x, 1.0, dx); CHKERRQ(ierr);
-	if( flag_print == PRINT_PETSC ){
-	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
-	  ierr = VecView(dx,viewer); CHKERRQ(ierr);
-	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-	  ierr = VecView(x,viewer); CHKERRQ(ierr);
-	}
+	ierr = VecAXPY(x, 1.0, dx); CHKERRQ(ierr);
 
 	switch(reason){
 	  case KSP_CONVERGED_RTOL:
@@ -406,6 +389,17 @@ end_mac_0:
 	ierr = PetscPrintf(MACRO_COMM,"kspits %D kspnorm %e kspreason %s\n",kspits, kspnorm, reason_s);
 	ierr = PetscLogEventEnd(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
 
+	if(flag_print & (1<<PRINT_PETSC)){
+	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
+	  ierr = MatView(A,viewer); CHKERRQ(ierr);
+	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
+	  ierr = VecView(b,viewer); CHKERRQ(ierr);
+	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
+	  ierr = VecView(dx,viewer); CHKERRQ(ierr);
+	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
+	  ierr = VecView(x,viewer); CHKERRQ(ierr);
+	}
+
 	nr_its ++;
       }
 
@@ -413,7 +407,7 @@ end_mac_0:
 	strain = malloc(nelm*nvoi*sizeof(double));
 	stress = malloc(nelm*nvoi*sizeof(double));
 	energy = malloc(nelm*sizeof(double));
-	ierr = assembly_residual_sd( &x, &b);CHKERRQ(ierr);
+	ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
 	if(flag_print & (1<<PRINT_VTK)){ 
 	  sprintf(vtkfile_n,"%s_t_%d_%d.vtk",myname,time_step,rank_mac);

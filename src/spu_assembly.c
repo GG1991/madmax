@@ -35,6 +35,7 @@ int assembly_jacobian_sd(Mat *J)
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
 
   for(e=0;e<nelm;e++){
+
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
     GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
@@ -43,7 +44,9 @@ int assembly_jacobian_sd(Mat *J)
     GetElemenDispls(e, xvalues, ElemDispls);
 
     // calculate <Ke> by numerical integration
-    memset(Ke, 0.0, (npe*dim*npe*dim)*sizeof(double));
+    for(i=0;i<npe*dim*npe*dim;i++){
+      Ke[i]=0.0;
+    }
     for(gp=0;gp<ngp;gp++){
 
       ierr = get_dsh(gp, npe, ElemCoord, dsh, &detj);
@@ -85,7 +88,7 @@ int assembly_jacobian_sd(Mat *J)
   return 0;
 }
 /****************************************************************************************************/
-int assembly_residual_sd(Vec *x_old, Vec *Residue)
+int assembly_residual_sd(Vec *x, Vec *b)
 {
   /* Assembly the Residual for Small Deformation approach */
 
@@ -100,16 +103,16 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
   double      DsDe[6][6];
   double      *wp = NULL;
   double      ElemDispls[8*3];
-  double      *xvalues;
   double      wp_eff;
+  double      *xvalues;
   Vec         xlocal;
   material_t  *material;
 
   /* Local representation of <x> with ghost padding */
-  ierr = VecZeroEntries(*Residue); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(*x_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(*x_old,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostGetLocalForm(*x_old,&xlocal); CHKERRQ(ierr);
+  ierr = VecZeroEntries(*b); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(*x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(*x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostGetLocalForm(*x,&xlocal); CHKERRQ(ierr);
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
 
   for(e=0;e<nelm;e++){
@@ -194,13 +197,13 @@ int assembly_residual_sd(Vec *x_old, Vec *Residue)
       }
 
     }
-    ierr = VecSetValues(*Residue, npe*dim, PETScIdx, Re, ADD_VALUES);CHKERRQ(ierr);
+    ierr = VecSetValues(*b, npe*dim, PETScIdx, Re, ADD_VALUES);CHKERRQ(ierr);
   }
   VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
 
   /* communication between processes */
-  ierr = VecAssemblyBegin(*Residue);CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(*Residue);CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(*b);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(*b);CHKERRQ(ierr);
   return 0;
 
 }
