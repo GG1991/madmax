@@ -12,4 +12,4 @@ NM=1
     -homo_unif_strains \
     -print_vtu
 
-#./mpirun -np $NM xterm -e gdb --args ../../micro/micro \
+#-np $NM xterm -e gdb --args

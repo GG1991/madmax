@@ -351,7 +351,7 @@ end_mic_0:
 	  /* Wait for strain */
 	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);
 	  /* Performs the micro localization + homogenization */
-	  ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+	  ierr = mic_calc_stress_ave(MICRO_COMM, strain_mac, strain_ave, stress_ave);
 	  /* Send Stress */
 	  ierr = mic_send_stress(WORLD_COMM, stress_ave);
 	  break;

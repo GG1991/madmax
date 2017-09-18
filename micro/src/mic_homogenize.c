@@ -384,6 +384,41 @@ int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36])
   return 0;
 }
 /****************************************************************************************************/
+int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
+{
+
+  /* 
+     Si la micro estructura está integramente conformada por materiales
+     lineales entonces este tensor será siempre el mismo para cada punto 
+     de gauss en la macro escala entonces es eficiente almacenar c_homo_linear
+  */
+
+  int i, j, ierr;
+
+  if(flag_linear_micro){
+
+    for(i=0;i<nvoi;i++){
+      stress_ave[i] = 0.0;
+      strain_ave[i] = strain_mac[i];
+      for(j=0;j<nvoi;j++){
+	stress_ave[i] += c_homo_lineal[i*nvoi+j] * strain_mac[j];
+      }
+    }
+    return 0;
+
+  }
+  else{
+
+    ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    if(ierr){
+      return 1;
+    }
+    return 0;
+
+  }
+  return 0;
+}
+/****************************************************************************************************/
 int mic_check_linear_material(void)
 {
 

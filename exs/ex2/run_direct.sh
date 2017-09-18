@@ -8,13 +8,13 @@ NM=1
     -dim 2 \
     -mesh_gmsh \
     -ksp_type cg \
-    -ksp_rtol 1.0e-8 \
+    -ksp_rtol 1.0e-12 \
     -pc_type jacobi \
     -print_vtu \
     -part_geom \
     -nr_norm_tol 1.0e-6 \
     -nr_max_its 2 \
-    -tf 2.0 \
+    -tf 1.0 \
     -dt 1.0 \
     -options_left 0
 

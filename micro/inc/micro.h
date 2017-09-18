@@ -60,6 +60,7 @@ int mic_homogenize_unif_strain(MPI_Comm COMM, double strain_bc[6], double strain
 int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int voigt2mat(double voigt[6], double matrix[3][3]);
 
+int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]);
 int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36]);
 int mic_check_linear_material(void);
