@@ -66,14 +66,14 @@ def getPtsCoord( _Obj, _T ):
 #----------------------------------------------------------------# 
 #----------------------------------------------------------------# 
 
-fin   = "macro_t_1.pvtu"
+fin   = "direct/macro_t_1.pvtu"
 PVTU  = XMLPartitionedUnstructuredGridReader(FileName=fin)
 KEYs  = PVTU.GetPointDataInformation().keys()
 Times = np.array(PVTU.TimestepValues)
 
 PlotOverLine1 = PlotOverLine( Input=PVTU, guiName="PlotOverLine1", Source="High Resolution Line Source" )
-PlotOverLine1.Source.Point2 = [30.0, 30.0, 0.0]
-PlotOverLine1.Source.Point1 = [30.0, 0.0, 0.0]
+PlotOverLine1.Source.Point2 = [30.0, 16.5, 0.0]
+PlotOverLine1.Source.Point1 = [0.0 , 16.5, 0.0]
 PlotOverLine1.UpdatePipeline()
 
 key   = "residual"
@@ -82,12 +82,46 @@ Res   = getPtsData( PlotOverLine1, key )
 key   = "displ"
 Displ = getPtsData( PlotOverLine1, key )
 
+key   = "energy"
+Ene   = getPtsData( PlotOverLine1, key )
+
 key = "arc_length"
 leng = getPtsData( PlotOverLine1, key )
 
-aux = np.zeros( (leng.shape[0],3) )
+aux = np.zeros( (leng.shape[0],4) )
+aux[:,3] = Ene[:]
 aux[:,2] = Res[:,0]
 aux[:,1] = Displ[:,0]
 aux[:,0] = leng 
 
-np.savetxt("data.dat", aux )
+np.savetxt("direct.dat", aux )
+
+fin   = "unif_strains/macro_t_1.pvtu"
+PVTU  = XMLPartitionedUnstructuredGridReader(FileName=fin)
+KEYs  = PVTU.GetPointDataInformation().keys()
+Times = np.array(PVTU.TimestepValues)
+
+PlotOverLine1 = PlotOverLine( Input=PVTU, guiName="PlotOverLine1", Source="High Resolution Line Source" )
+PlotOverLine1.Source.Point2 = [30.0, 16.5, 0.0]
+PlotOverLine1.Source.Point1 = [0.0 , 16.5, 0.0]
+PlotOverLine1.UpdatePipeline()
+
+key   = "residual"
+Res   = getPtsData( PlotOverLine1, key )
+
+key   = "displ"
+Displ = getPtsData( PlotOverLine1, key )
+
+key   = "energy"
+Ene   = getPtsData( PlotOverLine1, key )
+
+key = "arc_length"
+leng = getPtsData( PlotOverLine1, key )
+
+aux = np.zeros( (leng.shape[0],4) )
+aux[:,3] = Ene[:]
+aux[:,2] = Res[:,0]
+aux[:,1] = Displ[:,0]
+aux[:,0] = leng 
+
+np.savetxt("unif_strains.dat", aux )

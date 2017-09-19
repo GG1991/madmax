@@ -72,8 +72,8 @@ int mic_homogenize_unif_strains(MPI_Comm MICRO_COMM, double strain_mac[6], doubl
   double *x_arr, *b_arr;
 
   if(dim==2){
-    strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[2];
-    strain_matrix[1][0]=strain_mac[2]; strain_matrix[1][1]=strain_mac[1];
+    strain_matrix[0][0]=strain_mac[0]    ; strain_matrix[0][1]=strain_mac[2]*0.5;
+    strain_matrix[1][0]=strain_mac[2]*0.5; strain_matrix[1][1]=strain_mac[1]    ;
   }
   else if(dim==3){
     strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[3]; strain_matrix[0][2]=strain_mac[5];
@@ -371,12 +371,7 @@ int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36])
     }
 
     for(j=0;j<nvoi;j++){
-      if(i>=dim){
-	c_homo_lineal[j*nvoi+i] = stress_ave[j] / (0.5*strain_ave[i]);
-      }
-      else{
-	c_homo_lineal[j*nvoi+i] = stress_ave[j] / strain_ave[i];
-      }
+      c_homo_lineal[j*nvoi+i] = stress_ave[j] / strain_ave[i];
     }
 
   }

@@ -258,7 +258,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
 
       get_dsh(gp, npe, ElemCoord, dsh, &detj);
       detj = fabs(detj);
-      GetB( npe, dsh, B );
+      GetB(npe, dsh, B );
       wp_eff = detj * wp[gp];
 
       for(i=0;i<nvoi;i++){
@@ -285,7 +285,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
       }
       energy_ave    += energy_gp * wp_eff;
 
-      vol += detj*wp[gp];
+      vol += wp_eff;
     }
     for(i=0;i<nvoi;i++){
       strain[e*nvoi+i] = strain_ave[i] / vol; 

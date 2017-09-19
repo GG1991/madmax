@@ -418,12 +418,7 @@ end_mic_0:
       }
       ierr = PetscPrintf(MICRO_COMM,"\n");
       for(j=0;j<nvoi;j++){
-	if(i>=dim){
-	  c_homo[j*nvoi+i] = stress_ave[j] / (0.5*strain_ave[i]);
-	}
-	else{
-	  c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
-	}
+	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
       }
 
       if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){
