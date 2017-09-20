@@ -244,8 +244,10 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 	  "<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\"/>\n",ns);
     fprintf(fm, 
 	"<PDataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\"/>\n");
-    fprintf(fm, 
-	"<PDataArray type=\"Float64\" Name=\"energy_interp\" NumberOfComponents=\"1\"/>\n");
+    if(energy_interp!=NULL){
+      fprintf(fm, 
+	  "<PDataArray type=\"Float64\" Name=\"energy_interp\" NumberOfComponents=\"1\"/>\n");
+    }
     fprintf(fm, 
 	"</PCellData>\n"); 
     for(i=0;i<nproc;i++){
@@ -423,12 +425,14 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   fprintf(fm,"</DataArray>\n");
 
   /* <energy_interp> */
-  fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy_interp\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for (i=0;i<nelm;i++){
-    fprintf(fm, "%lf ", energy_interp[i]);
+  if(energy_interp!=NULL){
+    fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy_interp\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+    for (i=0;i<nelm;i++){
+      fprintf(fm, "%lf ", energy_interp[i]);
+    }
+    fprintf(fm,"\n");
+    fprintf(fm,"</DataArray>\n");
   }
-  fprintf(fm,"\n");
-  fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,
       "</CellData>\n"

@@ -142,11 +142,11 @@ end_mac_0:
 
   /* Structured Grid Interp */
   ierr = PetscOptionsGetInt(NULL, NULL, "-nx_interp", &nx_interp, &set);
-  if(set==PETSC_FALSE) nx_interp=1;
+  if(set==PETSC_FALSE) nx_interp=2;
   ierr = PetscOptionsGetInt(NULL, NULL, "-ny_interp", &ny_interp, &set);
-  if(set==PETSC_FALSE) ny_interp=1;
+  if(set==PETSC_FALSE) ny_interp=2;
   ierr = PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
-  if(set==PETSC_FALSE) nz_interp=1;
+  if(set==PETSC_FALSE) nz_interp=2;
 
 
   PetscPrintf(MACRO_COMM,
