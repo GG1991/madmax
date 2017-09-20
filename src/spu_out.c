@@ -11,6 +11,7 @@
 #define   VTK_6N_PRISM      13
 
 #include "sputnik.h"
+#include "macmic.h"
 
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
 {
@@ -242,7 +243,10 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
     fprintf(fm,
 	  "<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\"/>\n",ns);
     fprintf(fm, 
-	"<PDataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\"/>\n"
+	"<PDataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\"/>\n");
+    fprintf(fm, 
+	"<PDataArray type=\"Float64\" Name=\"energy_interp\" NumberOfComponents=\"1\"/>\n");
+    fprintf(fm, 
 	"</PCellData>\n"); 
     for(i=0;i<nproc;i++){
       sprintf(file_name,"%s_%d",name,i);
@@ -329,9 +333,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
   fprintf(fm,"</DataArray>\n");
 
-  /*
-     <residual>
-   */
+  /* <residual> */
   ierr = VecGhostUpdateBegin(*b,INSERT_VALUES,SCATTER_FORWARD);
   ierr = VecGhostUpdateEnd(*b,INSERT_VALUES,SCATTER_FORWARD);
   ierr = VecGhostGetLocalForm(*b,&xlocal);
@@ -349,9 +351,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
   fprintf(fm,"</DataArray>\n");
 
-  /*
-     <bc_kinds>
-   */
+  /* <bc_kinds> */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"bc_kinds\" NumberOfComponents=\"1\" format=\"ascii\" >\n");
   for(i=0;i<nmynods;i++){
     //    fprintf(fm, "%d ", bc_kinds[i]);
@@ -366,9 +366,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 
   fprintf(fm,"<CellData>\n");
 
-  /*
-     <part>
-   */
+  /* <part> */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for (i=0;i<nelm;i++){
     fprintf(fm,"%d ",rank);  
@@ -376,9 +374,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
-  /*
-     <strain>
-   */
+  /* <strain> */
   if(dim==2){
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"4\" format=\"ascii\">\n");
     for (i=0;i<nelm;i++){
@@ -398,9 +394,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   }
   fprintf(fm,"</DataArray>\n");
 
-  /*
-     <stress>
-   */
+  /* <stress> */
   if(dim==2){
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"4\" format=\"ascii\">\n");
     for (i=0;i<nelm;i++){
@@ -420,12 +414,18 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   }
   fprintf(fm,"</DataArray>\n");
 
-  /*
-     <stress>
-   */
+  /* <energy> */
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for (i=0;i<nelm;i++){
     fprintf(fm, "%lf ", energy[i]);
+  }
+  fprintf(fm,"\n");
+  fprintf(fm,"</DataArray>\n");
+
+  /* <energy_interp> */
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy_interp\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+  for (i=0;i<nelm;i++){
+    fprintf(fm, "%lf ", energy_interp[i]);
   }
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");

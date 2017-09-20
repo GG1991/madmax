@@ -604,6 +604,29 @@ int get_elem_coor(int e, double elem_coor[8][3])
   return 0;
 }
 /****************************************************************************************************/
+int get_elem_vol(int e, double *vol)
+{
+  int    gp, npe, ngp;
+  double elem_coor[8][3];
+  double *wp;
+  double dsh[8][3];
+  double detj;
+
+  npe = eptr[e+1]-eptr[e];
+  ngp = npe;
+
+  GetElemCoord(&eind[eptr[e]], npe, elem_coor);
+  GetWeight(npe, &wp);
+
+  *vol = 0;
+  for(gp=0;gp<ngp;gp++){
+    get_dsh(gp, npe, elem_coor, dsh, &detj);
+    detj = fabs(detj);
+    *vol += detj*wp[gp];
+  }
+  return 0;
+}
+/****************************************************************************************************/
 int GetWeight(int npe, double **wp)
 {
   *wp = FemGetPointer2Weight(npe, dim);

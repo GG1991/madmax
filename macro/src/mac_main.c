@@ -81,11 +81,6 @@ int main(int argc, char **argv)
       ierr_1 = 1;
       goto end_mac_1;
   }
-  /* Solver Options */
-  ierr = PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
-  if(set==PETSC_FALSE) nr_max_its=5;
-  ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
-  if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
   /* flow execution variables */
   ierr = PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);CHKERRQ(ierr);
@@ -138,6 +133,20 @@ end_mac_0:
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
+  
+  /* Solver Options */
+  ierr = PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
+  if(set==PETSC_FALSE) nr_max_its=5;
+  ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
+  if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
+
+  /* Structured Grid Interp */
+  ierr = PetscOptionsGetInt(NULL, NULL, "-nx_interp", &nx_interp, &set);
+  if(set==PETSC_FALSE) nx_interp=1;
+  ierr = PetscOptionsGetInt(NULL, NULL, "-ny_interp", &ny_interp, &set);
+  if(set==PETSC_FALSE) ny_interp=1;
+  ierr = PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
+  if(set==PETSC_FALSE) nz_interp=1;
 
 
   PetscPrintf(MACRO_COMM,
@@ -271,28 +280,23 @@ end_mac_0:
   ierr = read_boundary(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
   ierr = mac_init_boundary(MACRO_COMM, &boundary_list);
 
-  /*
-     Allocate matrices & vectors
-  */ 
+  /* Allocate matrices & vectors */ 
   ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
   ierr = PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");CHKERRQ(ierr);
   ierr = mac_alloc(MACRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     Setting solver options 
-  */
+  /* Setting solver options */
   ierr = KSPCreate(MACRO_COMM,&ksp); CHKERRQ(ierr);
   ierr = KSPSetType(ksp,KSPCG); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
 
-  /*
-     Init Gauss point shapes functions and derivatives
-  */
+  /* Init Gauss point shapes functions and derivatives */
   ierr = PetscLogEventBegin(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
   ierr = fem_inigau(); CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
+
 
   /*
      Begin time dependent loop
@@ -303,6 +307,14 @@ end_mac_0:
   double   norm = -1.0, kspnorm = -1.0;
   double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
   double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  double   limit[6];
+
+  ierr = get_bbox_local_limits(coord, nallnods, &limit[0], &limit[2], &limit[4]);
+  PetscPrintf(MACRO_COMM,"Limit = ");
+  for(i=0;i<6;i++){
+    PetscPrintf(MACRO_COMM,"%lf ",limit[i]);
+  }
+  PetscPrintf(MACRO_COMM,"\n");
 
   // Initial condition <x> = 0
   ierr = VecZeroEntries(x);CHKERRQ(ierr);
@@ -407,8 +419,11 @@ end_mac_0:
 	strain = malloc(nelm*nvoi*sizeof(double));
 	stress = malloc(nelm*nvoi*sizeof(double));
 	energy = malloc(nelm*sizeof(double));
+	energy_interp = malloc(nelm*sizeof(double));
 	ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
+	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
+
 	if(flag_print & (1<<PRINT_VTK)){ 
 	  sprintf(vtkfile_n,"%s_t_%d_%d.vtk",myname,time_step,rank_mac);
 	  ierr = write_vtk(MACRO_COMM, vtkfile_n, &x, strain, stress);

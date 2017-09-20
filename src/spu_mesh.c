@@ -2337,6 +2337,123 @@ int get_bbox_limit_lengths(MPI_Comm PROBLEM_COMM, double *coord, int n, double *
   return 0;
 }
 /****************************************************************************************************/
+int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], int nx, int ny)
+{
+  double   x0 = limit[0];
+  double   x1 = limit[1];
+  double   y0 = limit[2];
+  double   y1 = limit[3];
+  int      nnod = nx*ny;
+  int      nex = (nx-1);
+  int      ney = (ny-1);
+  double   dx = (x1-x0)/nex;
+  double   dy = (y1-y0)/ney;
+  int      nelm = nex*ney;
+  int      npe = 4;
+  int      i, j, e, n;
+
+  *eind = malloc(nelm*npe*sizeof(int));
+  *eptr = malloc((nelm+1)*sizeof(int));
+  *coor = malloc(nnod*2*sizeof(double));
+
+  for(i=0;i<nex;i++){
+    for(j=0;j<ney;j++){
+      e = i*nex + j;
+      (*eptr)[e+0]     = ( e + 0 )*npe;
+      (*eptr)[e+1]     = ( e + 1 )*npe;
+      (*eind)[e*npe+0] = j   + i*nx;
+      (*eind)[e*npe+1] = j+1 + i*nx;
+      (*eind)[e*npe+2] = j+1 + (i+1)*nx;
+      (*eind)[e*npe+3] = j   + (i+1)*nx;
+    }
+  }
+  for(i=0;i<nx;i++){
+    for(j=0;j<ny;j++){
+      n = i*nx + j;
+      (*coor)[n*2+0] = x0 + dx*j; 
+      (*coor)[n*2+1] = y0 + dy*i; 
+    }
+  }
+
+  return 0;
+}
+/****************************************************************************************************/
+int interpolate_structured_2d(double limit[2], int nx, int ny, double *field, double *var_interp)
+{
+  /*
+     <field> size should be <nelm>
+  */
+  int      e, es;
+  double   x0 = limit[0];
+  double   x1 = limit[1];
+  double   y0 = limit[2];
+  double   y1 = limit[3];
+  int      nex = (nx-1);
+  int      ney = (ny-1);
+  int      nelm_s = nex*ney;
+  double   dx = (x1-x0)/nex;
+  double   dy = (y1-y0)/ney;
+  double   centroid[2];
+  double   vol;
+  double   *var_interp_struct;
+
+  var_interp_struct = calloc(nelm_s,sizeof(double));
+
+  for(e=0;e<nelm;e++){
+    get_centroid(e, centroid);
+    get_element_structured_2d(centroid, limit, nx, ny, &es);
+    get_elem_vol(e, &vol);
+    var_interp_struct[es] = var_interp_struct[es] + field[e]*vol;
+  }
+  for(e=0;e<nelm;e++){
+    get_centroid(e, centroid);
+    get_element_structured_2d(centroid, limit, nx, ny, &es);
+    var_interp[e] = var_interp_struct[es] / (dx*dy);
+  }
+
+  return 0;
+}
+/****************************************************************************************************/
+int get_element_structured_2d(double centroid[2], double limit[4], int nx, int ny, int *es)
+{
+  double   x0 = limit[0];
+  double   x1 = limit[1];
+  double   y0 = limit[2];
+  double   y1 = limit[3];
+  int      nex = (nx-1);
+  int      ney = (ny-1);
+  int      i, j;
+  double   dx = (x1-x0)/nex;
+  double   dy = (y1-y0)/ney;
+  double   x_min;
+  double   x_max;
+  double   y_min;
+  double   y_max;
+
+  j=0;
+  while(j<nex){
+    x_min = x0 + dx*j;
+    x_max = x0 + dx*(j+1);
+    if(x_min < centroid[0] && centroid[0] < x_max){
+      break;
+    }
+    j++;
+  }
+
+  i=0;
+  while(i<ney){
+    y_min = y0 + dy*i;
+    y_max = y0 + dy*(i+1);
+    if(y_min < centroid[1] && centroid[1] < y_max){
+      break;
+    }
+    i++;
+  }
+
+  *es = i*nex + j;
+  return 0;
+}
+/****************************************************************************************************/
 int cmpfunc (const void * a, const void * b)
 {
   return ( *(int*)a - *(int*)b );

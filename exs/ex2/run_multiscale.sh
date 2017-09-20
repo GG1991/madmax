@@ -35,7 +35,7 @@ gmsh -2 struct_homog_2d.geo > /tmp/null
     -dim 2 \
     -pc_type lu \
     -part_geom \
-    -homo_unif_strains \
+    -homo_taylor \
     -nr_norm_tol 1.0e-8 \
     -nr_max_its 3 \
     -options_left 0

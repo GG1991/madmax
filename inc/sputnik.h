@@ -86,9 +86,7 @@ int          nvoi;                              //  number of voigt components (
 int         flag_print;
 bool        flag_reactions;
 
-/*
-   Cilindrical Fiber in quad Matrix
-*/
+/* Cilindrical Fiber in quad Matrix */
 double      LX, LY, LZ;
 int         flag_fiber_cilin;
 int         nx_fibers;
@@ -97,6 +95,12 @@ double      fiber_cilin_r;
 double      fiber_cilin_center_devi[3];
 double      fiber_cilin_vals[4];
 double      center_domain[3];
+
+/* Interpolation over structured grids */
+int         nx_interp;
+int         ny_interp;
+int         nz_interp;
+
 
 #define FORMAT_NULL        0
 #define FORMAT_GMSH        1
@@ -118,30 +122,30 @@ double       nr_norm_tol;
 
 // Structures to save de mesh on CSR format 
 
-char      mesh_n[NBUF];           // Mesh file name
+char         mesh_n[NBUF];           // Mesh file name
 
-int      *part;
-int      *elmdist;                // number of elements inside each procesor
-int      nelm;                    // # of local elements
-int      *eptr;                   // list of indeces of nodes inside eind
-int      *eind;                   // list of nodes for elem "i" is between 
-                                  // eind[eptr[i]] eind[eptr[i+1]] (not including)
-int      *PhysicalID;             // element property number
-double   *elmv_centroid;
+int          *part;
+int          *elmdist;                // number of elements inside each procesor
+int          nelm;                    // # of local elements
+int          *eptr;                   // list of indeces of nodes inside eind
+int          *eind;                   // list of nodes for elem "i" is between 
+                                      // eind[eptr[i]] eind[eptr[i+1]] (not including)
+int          *PhysicalID;             // element property number
+double       *elmv_centroid;
 
-int *StartIndexRank;
-int *allnods;                // all nodes including mynods and ghost
-int nallnods;                // <nmynods> + <nghost>
-int *mynods;                 // Original (gmsh) numbers of my nodes
-int nmynods;                 // Number of <mynods> 
-int *ghost;                  // Original numbers of my ghosts nodes
-int nghost;                  // Number of my ghost nodes
-int NTotalNod;               // Number of total nodes in the mesh
+int          *StartIndexRank;
+int          *allnods;                // all nodes including mynods and ghost
+int          nallnods;                // <nmynods> + <nghost>
+int          *mynods;                 // Original (gmsh) numbers of my nodes
+int          nmynods;                 // Number of <mynods> 
+int          *ghost;                  // Original numbers of my ghosts nodes
+int          nghost;                  // Number of my ghost nodes
+int          NTotalNod;               // Number of total nodes in the mesh
 
-double *coord;               // nodes' coordinates
+double       *coord;                  // nodes' coordinates
 
-int *loc2petsc;              // array of size <nmynods>+<nghost>
-                             // returns the position in PETSc matrix & vectors
+int          *loc2petsc;              // array of size <nmynods>+<nghost>
+                                      // returns the position in PETSc matrix & vectors
 
 // List of different utilities
 list_t function_list;
@@ -199,6 +203,9 @@ int set_id_on_material_and_boundary(MPI_Comm PROBLEM_COMM);
 int get_bbox_limit_lengths(MPI_Comm PROBLEM_COMM, double *coord, int n, double *lx, double *ly, double *lz);
 int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z);
 int get_domain_center(MPI_Comm PROBLEM_COMM, double *coord, int n, double center[3]);
+int interpolate_structured_2d(double limit[2], int nx, int ny, double *field, double *var_interp);
+int get_element_structured_2d(double centroid[2], double limit[4], int nx, int ny, int *es);
+int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], int nx, int ny);
 
 // spu_out.c
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );
@@ -226,6 +233,7 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
 int get_elem_coor(int e, double elem_coor[8][3]);
 int is_inside_fiber_cilin(int e);
 int get_centroid(int e, double centroid[3]);
+int get_elem_vol(int e, double *vol);
 
 // spu_util.c
 int get_nods_bc(int **nods, int *nnods);

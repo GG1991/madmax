@@ -393,8 +393,8 @@ int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain
   if(flag_linear_micro){
 
     for(i=0;i<nvoi;i++){
-      stress_ave[i] = 0.0;
       strain_ave[i] = strain_mac[i];
+      stress_ave[i] = 0.0;
       for(j=0;j<nvoi;j++){
 	stress_ave[i] += c_homo_lineal[i*nvoi+j] * strain_mac[j];
       }

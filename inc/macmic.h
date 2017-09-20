@@ -99,6 +99,7 @@ Vec           x, dx, b;             // Vectors unknowns and RHS
 KSP           ksp;                  // linear solver context    
 
 double  *stress, *strain, *energy;  // Averange strain, stress and energy on each element
+double  *energy_interp;  
 
 /* Coloring */
 int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM);
