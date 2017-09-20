@@ -40,8 +40,6 @@ def getPtsData( _Obj, _Prop=None, _fname=None, _T=-1.0):
     return Data
 
 #----------------------------------------------------------------# 
-
-#----------------------------------------------------------------# 
 def getPtsCoord( _Obj, _T ):
     from paraview.numpy_support import vtk_to_numpy
 
@@ -64,16 +62,15 @@ def getPtsCoord( _Obj, _T ):
     return np.array(Pts)
 
 #----------------------------------------------------------------# 
-#----------------------------------------------------------------# 
-
 fin   = "direct/macro_t_1.pvtu"
 PVTU  = XMLPartitionedUnstructuredGridReader(FileName=fin)
 KEYs  = PVTU.GetPointDataInformation().keys()
 Times = np.array(PVTU.TimestepValues)
 
 PlotOverLine1 = PlotOverLine( Input=PVTU, guiName="PlotOverLine1", Source="High Resolution Line Source" )
-PlotOverLine1.Source.Point2 = [30.0, 16.5, 0.0]
-PlotOverLine1.Source.Point1 = [0.0 , 16.5, 0.0]
+PlotOverLine1.Source.Point2 = [30.0, 15.0, 0.0]
+PlotOverLine1.Source.Point1 = [0.0 , 15.0, 0.0]
+PlotOverLine1.Source.Resolution = 1000
 PlotOverLine1.UpdatePipeline()
 
 key   = "residual"
@@ -101,22 +98,22 @@ PVTU  = XMLPartitionedUnstructuredGridReader(FileName=fin)
 KEYs  = PVTU.GetPointDataInformation().keys()
 Times = np.array(PVTU.TimestepValues)
 
-PlotOverLine1 = PlotOverLine( Input=PVTU, guiName="PlotOverLine1", Source="High Resolution Line Source" )
-PlotOverLine1.Source.Point2 = [30.0, 16.5, 0.0]
-PlotOverLine1.Source.Point1 = [0.0 , 16.5, 0.0]
-PlotOverLine1.UpdatePipeline()
+PlotOverLine2 = PlotOverLine( Input=PVTU, guiName="PlotOverLine2", Source="High Resolution Line Source" )
+PlotOverLine2.Source.Point2 = [30.0, 15.0, 0.0]
+PlotOverLine2.Source.Point1 = [0.0 , 15.0, 0.0]
+PlotOverLine2.UpdatePipeline()
 
 key   = "residual"
-Res   = getPtsData( PlotOverLine1, key )
+Res   = getPtsData( PlotOverLine2, key )
 
 key   = "displ"
-Displ = getPtsData( PlotOverLine1, key )
+Displ = getPtsData( PlotOverLine2, key )
 
 key   = "energy"
-Ene   = getPtsData( PlotOverLine1, key )
+Ene   = getPtsData( PlotOverLine2, key )
 
 key = "arc_length"
-leng = getPtsData( PlotOverLine1, key )
+leng = getPtsData( PlotOverLine2, key )
 
 aux = np.zeros( (leng.shape[0],4) )
 aux[:,3] = Ene[:]

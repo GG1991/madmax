@@ -16,6 +16,9 @@ NM=1
     -nr_max_its 2 \
     -tf 1.0 \
     -dt 1.0 \
+    -nx_interp 11 \
+    -ny_interp 11 \
+    -nz_interp 11 \
     -options_left 0
 
     #-part_meshkway \
