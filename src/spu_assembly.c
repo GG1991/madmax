@@ -59,7 +59,7 @@ int assembly_jacobian_sd(Mat *J)
 	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
-      ierr = get_c(e, gp, strain_gp, c);
+      ierr = get_c(NULL, e, gp, strain_gp, c);
       if(ierr){
 	PetscPrintf(PETSC_COMM_WORLD, "%s: problem calculating constitutive tensor\n",myname);
 	return 1; 
@@ -106,7 +106,7 @@ int assembly_residual_sd(Vec *x, Vec *b)
   double      wp_eff;
   double      *xvalues;
   Vec         xlocal;
-  material_t  *material;
+  material_t  *mat = NULL;
 
   /* Local representation of <x> with ghost padding */
   ierr = VecZeroEntries(*b); CHKERRQ(ierr);
@@ -117,8 +117,8 @@ int assembly_residual_sd(Vec *x, Vec *b)
 
   for(e=0;e<nelm;e++){
 
-    material = GetMaterial(e);
-    if(!material){
+    ierr = get_mat_from_elem(e, mat);
+    if(!mat){
       ierr = PetscPrintf(PETSC_COMM_WORLD, "material with physical_id %d not found\n",PhysicalID[e]);
       return 1;
     }
@@ -148,7 +148,7 @@ int assembly_residual_sd(Vec *x, Vec *b)
 	}
       }
 
-      if(material->typeID==MICRO){
+      if(mat->typeID==MICRO){
 
 	/* calculate stress using localization+homogenization */
 
@@ -173,7 +173,7 @@ int assembly_residual_sd(Vec *x, Vec *b)
 
       }else{
 
-	ierr = get_c(e, gp, strain_gp, DsDe);
+	ierr = get_c(NULL, e, gp, strain_gp, DsDe);
 	if(ierr){
 	  PetscPrintf(PETSC_COMM_WORLD, "%s: problem calculating constitutive tensor\n",myname);
 	  return 1; 
@@ -267,7 +267,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
 	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
-      get_c(e, gp, strain_gp, DsDe);
+      get_c(NULL, e, gp, strain_gp, DsDe);
 
       for(i=0;i<nvoi;i++){
 	stress_gp[i] = 0.0;
@@ -371,7 +371,7 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
 	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
 	}
       }
-      get_c(e, gp, ElemDispls, DsDe);
+      get_c(NULL, e, gp, ElemDispls, DsDe);
 
       for(i=0;i<nvoi;i++){
 	stress_gp[i] = 0.0;
@@ -419,32 +419,42 @@ int GetElemenDispls(int e, double *x, double *ElemDispls)
   return 0;
 }
 /****************************************************************************************************/
-int get_c(int e, int gp, double strain[6], double c[6][6])
+int get_c(const char *name, int e, int gp, double strain[6], double c[6][6])
 {
   /*  Calculates constitutive tensor */
 
-  double  la, mu, poi, you; 
-  double  c_homo[36];
-  int     i, j, ierr;
-  int     macro_gp;
+  int         i, j, ierr;
+  int         macro_gp;
+  material_t  *mat = NULL;
+  double      la, mu, poi, you; 
+  double      c_homo[36];
 
-  macro_gp = e*8+gp;
-  material_t *material = GetMaterial(e);
-  if(!material){
-    PetscPrintf(PETSC_COMM_WORLD,"material with physical_id %d not found",PhysicalID[e]);
-    return 1;
+  if(name!=NULL){
+    ierr = get_mat_from_name(name, mat);
+    if(!mat){
+      PetscPrintf(PETSC_COMM_WORLD,"material with name %s not found",name);
+      return 1;
+    }
+  }
+  else{
+    macro_gp = e*8+gp;
+    ierr = get_mat_from_elem(e, mat);
+    if(!mat){
+      PetscPrintf(PETSC_COMM_WORLD,"material of element %d and id %d not found", e, PhysicalID[e]);
+      return 1;
+    }
   }
 
-  switch(material->typeID){
+  switch(mat->typeID){
 
     case TYPE00:
       /* 
 	 Elástico lineal 
        */
-      la = ((type_00*)material->type)->lambda;
-      mu = ((type_00*)material->type)->mu;
-      poi = ((type_00*)material->type)->poisson;
-      you = ((type_00*)material->type)->young;
+      la  = ((type_00*)mat->type)->lambda;
+      mu  = ((type_00*)mat->type)->mu;
+      poi = ((type_00*)mat->type)->poisson;
+      you = ((type_00*)mat->type)->young;
 
       if(dim==2){
 	/*
@@ -515,22 +525,19 @@ int get_c(int e, int gp, double strain[6], double c[6][6])
   return 0;
 }
 /****************************************************************************************************/
-material_t * GetMaterial(int e)
+int get_mat_from_elem(int e, material_t *mat)
 {
   /* 
-     Search in the <material_list> if for the one
-     that has <GmshIDToSearch>
-     this is normally done except if one of the 
-     following options it is activated
      -fiber_middle <radious>
    */
-  int         id;
-  node_list_t *pn;
+  int          id;
+  node_list_t  *pn;
 
   pn = material_list.head;
-  while(pn)
-  {
+  while(pn){
+
     if(flag_fiber_cilin){
+      /* fiber in the middle */
       if(is_inside_fiber_cilin(e)){
 	if(!strcmp(((material_t*)pn->data)->name,"FIBER")) break;
       }
@@ -539,13 +546,41 @@ material_t * GetMaterial(int e)
       }
     }
     else{
+      /* normal case */
       id = PhysicalID[e];
       if( ((material_t*)pn->data)->GmshID == id ) break;
     }
     pn = pn->next;
   }
-  if(!pn) return NULL;
-  return (material_t*)pn->data;
+  if(!pn){
+    PetscPrintf(PETSC_COMM_WORLD, "%s: problem finding material from element %d\n", myname, e);
+    return 1;
+  }
+
+  mat = (material_t*)pn->data;
+
+  return 0;
+}
+/****************************************************************************************************/
+int get_mat_from_name(char *name, material_t *mat)
+{
+  /* 
+   */
+  node_list_t  *pn;
+
+  pn = material_list.head;
+  while(pn){
+    if(!strcmp(((material_t*)pn->data)->name,name)) break;
+    pn = pn->next;
+  }
+  if(!pn){
+    PetscPrintf(PETSC_COMM_WORLD, "%s: problem finding material from name %s\n", myname, name);
+    return 1;
+  }
+
+  mat = (material_t*)pn->data;
+
+  return 0;
 }
 /****************************************************************************************************/
 int is_inside_fiber_cilin(int e)

@@ -8,49 +8,62 @@
 
 #include "micro.h"
 
-int mic_homogenize_taylor(MPI_Comm PROBLEM_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
+int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
-  int      i, k, e, gp, ngp, npe, ierr;
-  double   coor_elm[8][3], dsh[8][3], detj;
-  double   *wp = NULL, stress_gp[6], DsDe[6][6];
-  double   vol = -1.0, vol_tot = -1.0, stress_aux[6], strain_aux[6];
-  double   wp_eff;
+  /* 
+     This work only if inclusion names starts with FIBER and matrix name start with MATRIX
+     we assume only on kind of them 
+    
+     This kind of homogenization do not need to perform 3 (dim=2) or 6 (dim=3) experiments
+  */
+  int          i, j, e, ierr;
+  double       c_i[6][6];
+  double       c_m[6][6];
+  double       c[6][6];
+  double       vol_i = 0.0, vol_ia = 0.0;  // inclusion volume
+  double       vol_m = 0.0, vol_ma = 0.0;  // matrix volume
+  double       vol_t = 0.0;  // total volume
+  double       vol_e = 0.0;  // element volume
+  material_t   *mat = NULL; 
 
-  for(i=0;i<nvoi;i++){
-    strain_aux[i] = stress_aux[i] = 0.0;
+  if(first_time_homo){
+    for(e=0;e<nelm;e++){
+
+      ierr = get_mat_from_elem(e, mat);
+      ierr = get_elem_vol(e, &vol_e);
+      if(!strncmp(mat->name,"FIBER",5)){
+	vol_ia += vol_e;
+      }
+      else if(!strncmp(mat->name,"MATRIX",6)){
+	vol_ma += vol_e;
+      }
+      else{
+	PetscPrintf(MICRO_COMM,
+	"not possible to compute a Taylor homogenization with a material of type\n",mat->name);
+	return 1;
+      }
+
+    }
+    ierr = MPI_Allreduce(&vol_i, &vol_ia, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM);CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&vol_m, &vol_ma, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM);CHKERRQ(ierr);
+    vol_t = vol_i + vol_m;
+    vi = vol_i / vol_t; // inclusion fraction
+    vm = vol_m / vol_t; // matrix fraction
   }
-  vol = 0.0;
-  for(e=0;e<nelm;e++){
-
-    npe = eptr[e+1]-eptr[e];
-    ngp = npe;
-    GetElemCoord(&eind[eptr[e]], npe, coor_elm);
-    GetWeight(npe, &wp);
-
-    for(gp=0;gp<ngp;gp++){
-      memset(stress_gp, 0.0, nvoi*sizeof(double));
-      get_dsh(gp, npe, coor_elm, dsh, &detj);
-      detj = fabs(detj);
-      get_c(e, gp, strain_mac, DsDe);
-      wp_eff = detj*wp[gp];
-      for(i=0;i<nvoi;i++){
-	for(k=0;k<nvoi;k++){
-	  stress_gp[i] += DsDe[i][k]*strain_mac[k];
-	}
-      }
-      for(i=0;i<nvoi;i++){
-	stress_aux[i] += stress_gp[i]  * wp_eff;
-	strain_aux[i] += strain_mac[i] * wp_eff;
-      }
-      vol += wp_eff;
+  get_c("FIBER" , 0, 0, strain_mac, c_i);  //returns c_i of FIBER
+  get_c("MATRIX", 0, 0, strain_mac, c_m);  //returns c_m of MATRIX
+ 
+  for(i=0;i<nvoi;i++){
+    for(j=0;j<nvoi;j++){
+      c[i][j] = vi * c_i[i][j] + vm * c_m[i][j];
     }
   }
-  ierr = MPI_Allreduce(stress_aux, stress_ave, nvoi, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
-  ierr = MPI_Allreduce(strain_aux, strain_ave, nvoi, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
-  ierr = MPI_Allreduce(&vol, &vol_tot, 1, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
   for(i=0;i<nvoi;i++){
-    stress_ave[i] /= vol_tot;
-    strain_ave[i] /= vol_tot;
+    strain_ave[i] = strain_mac[i];
+    stress_ave[i] = 0.0;
+    for(j=0;j<nvoi;j++){
+      stress_ave[i] += c[i][j] * strain_mac[j];
+    }
   }
 
   return 0;
