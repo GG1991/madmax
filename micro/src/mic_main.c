@@ -408,6 +408,9 @@ end_mic_0:
 
       memset(strain_mac,0.0,nvoi*sizeof(double)); strain_mac[i]=0.005;
       ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+      if(ierr){
+	goto end_mic_1;
+      }
 
       ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
       for(j=0;j<nvoi;j++){

@@ -117,7 +117,7 @@ int assembly_residual_sd(Vec *x, Vec *b)
 
   for(e=0;e<nelm;e++){
 
-    ierr = get_mat_from_elem(e, mat);
+    ierr = get_mat_from_elem(e, &mat);
     if(!mat){
       ierr = PetscPrintf(PETSC_COMM_WORLD, "material with physical_id %d not found\n",PhysicalID[e]);
       return 1;
@@ -430,7 +430,7 @@ int get_c(const char *name, int e, int gp, double strain[6], double c[6][6])
   double      c_homo[36];
 
   if(name!=NULL){
-    ierr = get_mat_from_name(name, mat);
+    ierr = get_mat_from_name(name, &mat);
     if(!mat){
       PetscPrintf(PETSC_COMM_WORLD,"material with name %s not found",name);
       return 1;
@@ -438,7 +438,7 @@ int get_c(const char *name, int e, int gp, double strain[6], double c[6][6])
   }
   else{
     macro_gp = e*8+gp;
-    ierr = get_mat_from_elem(e, mat);
+    ierr = get_mat_from_elem(e, &mat);
     if(!mat){
       PetscPrintf(PETSC_COMM_WORLD,"material of element %d and id %d not found", e, PhysicalID[e]);
       return 1;
@@ -525,7 +525,7 @@ int get_c(const char *name, int e, int gp, double strain[6], double c[6][6])
   return 0;
 }
 /****************************************************************************************************/
-int get_mat_from_elem(int e, material_t *mat)
+int get_mat_from_elem(int e, material_t **mat)
 {
   /* 
      -fiber_middle <radious>
@@ -557,12 +557,12 @@ int get_mat_from_elem(int e, material_t *mat)
     return 1;
   }
 
-  mat = (material_t*)pn->data;
+  *mat = (material_t*)pn->data;
 
   return 0;
 }
 /****************************************************************************************************/
-int get_mat_from_name(char *name, material_t *mat)
+int get_mat_from_name(const char *name, material_t **mat)
 {
   /* 
    */
@@ -578,7 +578,7 @@ int get_mat_from_name(char *name, material_t *mat)
     return 1;
   }
 
-  mat = (material_t*)pn->data;
+  *mat = (material_t*)pn->data;
 
   return 0;
 }

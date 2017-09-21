@@ -29,7 +29,7 @@ int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double stra
   if(first_time_homo){
     for(e=0;e<nelm;e++){
 
-      ierr = get_mat_from_elem(e, mat);
+      ierr = get_mat_from_elem(e, &mat);
       ierr = get_elem_vol(e, &vol_e);
       if(!strncmp(mat->name,"FIBER",5)){
 	vol_ia += vol_e;
