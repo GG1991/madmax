@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 
   myname = strdup("micro");
   flag_linear_micro = 0;
-  first_time_c_homo_lineal_ask = 1;
+  first_time_homo = 1;
   energy_interp = NULL;
 
   WORLD_COMM = MPI_COMM_WORLD;
@@ -406,7 +406,7 @@ end_mic_0:
     memset(c_homo,0.0,36*sizeof(double));
     for(i=0;i<nvoi;i++){
 
-      memset(strain_mac,0.0,nvoi*sizeof(double));strain_mac[i]=0.005;
+      memset(strain_mac,0.0,nvoi*sizeof(double)); strain_mac[i]=0.005;
       ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
 
       ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");

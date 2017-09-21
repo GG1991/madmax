@@ -15,9 +15,7 @@
 */
 double       *gauss_param_d;
 
-/*
-   Variables Send by <macro>
-*/
+/* Variables Send by <macro> */
 
 MPI_Comm     MICRO_COMM;
 int          rank_mic;          //  rank on macro comm
@@ -26,10 +24,14 @@ int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 #define TAYLOR       1
 #define UNIF_STRAINS 2
 
+/* Taylor homogenization variables */
+
+double       vi; // volumetric fraction of inclusions
+
 int          homo_type;
 int          flag_linear_micro; // 1 if all materials in micro are linear 0 otherwise
 int          macro_gp;
-int          first_time_c_homo_lineal_ask;
+int          first_time_homo;
 double       c_homo_lineal[36];
 
 Mat          J;                // extended matrix for lagrange multipliers boundary setting

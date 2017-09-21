@@ -128,7 +128,9 @@ int mic_homogenize_unif_strains(MPI_Comm MICRO_COMM, double strain_mac[6], doubl
 
     if( !(norm > nr_norm_tol) )break;
 
-    ierr = assembly_jacobian_sd(&A);
+    if(first_time_homo || !flag_linear_micro){
+      ierr = assembly_jacobian_sd(&A);
+    }
     ierr = MatZeroRowsColumns(A, nnods_bc*dim, ix_glo, 1.0, NULL, NULL); CHKERRQ(ierr);
     ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
 
@@ -309,7 +311,7 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
     default:
       return 1;
   }
-  
+  if(first_time_homo) first_time_homo = 0;
 
   return 0;
 }
@@ -327,12 +329,11 @@ int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]
 
   if(flag_linear_micro){
 
-    if(first_time_c_homo_lineal_ask){
+    if(first_time_homo){
       ierr = mic_calc_c_homo_lineal(MICRO_COMM, c_homo_lineal);
       if(ierr){
 	return 1;
       }
-      first_time_c_homo_lineal_ask = 0;
     }
     for(i=0;i<nvoi*nvoi;i++){
       c_homo[i] = c_homo_lineal[i];
