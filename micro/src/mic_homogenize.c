@@ -44,8 +44,8 @@ int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double stra
       }
 
     }
-    ierr = MPI_Allreduce(&vol_i, &vol_ia, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM);CHKERRQ(ierr);
-    ierr = MPI_Allreduce(&vol_m, &vol_ma, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM);CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&vol_ia, &vol_i, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM);CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&vol_ma, &vol_m, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM);CHKERRQ(ierr);
     vol_t = vol_i + vol_m;
     vi = vol_i / vol_t; // inclusion fraction
     vm = vol_m / vol_t; // matrix fraction
