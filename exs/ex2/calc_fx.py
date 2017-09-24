@@ -11,7 +11,7 @@ import vtk2numpy as vn
 
 aux = np.zeros( (2,4) )
 
-fin   = "direct/macro_t_1.pvtu"
+fin   = "run_1/direct/macro_t_1.pvtu"
 PVTU  = XMLPartitionedUnstructuredGridReader(FileName=fin)
 KEYs  = PVTU.GetPointDataInformation().keys()
 KEYs  = PVTU.GetCellDataInformation().keys()
@@ -37,7 +37,7 @@ fx_direct = np.trapz(stress[:,0],leng)
 
 #----------------------------------------------------------------# 
 
-fin   = "unifst/macro_t_1.pvtu"
+fin   = "run_1/unifst/macro_t_1.pvtu"
 PVTU  = XMLPartitionedUnstructuredGridReader(FileName=fin)
 
 PlotOverLine2 = PlotOverLine( Input=PVTU, guiName="PlotOverLine2", Source="High Resolution Line Source" )
@@ -59,7 +59,7 @@ fx_unifst = np.trapz(stress[:,0],leng)
 
 #----------------------------------------------------------------# 
 
-fin   = "taylor/macro_t_1.pvtu"
+fin   = "run_1/taylor/macro_t_1.pvtu"
 PVTU  = XMLPartitionedUnstructuredGridReader(FileName=fin)
 Times = np.array(PVTU.TimestepValues)
 
@@ -83,7 +83,7 @@ fx_taylor = np.trapz(stress[:,0],leng)
 aux[0,0] = 0.0      ; aux[0,1] = 0.0      ; aux[0,2] = 0.0      ; aux[0,3] = 0.0
 aux[1,0] = disp0    ; aux[1,1] = fx_direct; aux[1,2] = fx_unifst; aux[1,3] = fx_taylor
 
-np.savetxt("run_1.dat", aux )
+np.savetxt("run_1/run_1.dat", aux )
 
 print "k_direct = ", fx_direct/disp0       
 print "k_unifst = ", fx_unifst/disp0 

@@ -7,6 +7,9 @@
 # 3) multiscale with unifst assumtion calculation saved on unifst/
 #
 
+if ! [ -d "run_1" ]; then
+  mkdir run_1
+fi
 
 #---------------------------------------------------------------------
 
@@ -32,12 +35,12 @@ Nm=1
     -nz_interp 11 \
     -options_left 0
 
-if [ -d "direct" ]; then
-  rm -f direct/*
+if [ -d "run_1/direct" ]; then
+  rm -f run_1/direct/*
 else
-  mkdir direct
+  mkdir run_1/direct
 fi
-mv macro_* direct/.
+mv macro_* run_1/direct/.
 
 #---------------------------------------------------------------------
 
@@ -73,12 +76,12 @@ Nm=1
     -nr_max_its 3 \
     -options_left 0
 
-if [ -d "taylor" ]; then
-  rm -f taylor/*
+if [ -d "run_1/taylor" ]; then
+  rm -f run_1/taylor/*
 else
-  mkdir taylor
+  mkdir run_1/taylor
 fi
-mv macro_* taylor/.
+mv macro_* run_1/taylor/.
 
 #---------------------------------------------------------------------
 
@@ -114,11 +117,11 @@ Nm=1
     -nr_max_its 3 \
     -options_left 0
 
-if [ -d "unifst" ]; then
-  rm -f unifst/*
+if [ -d "run_1/unifst" ]; then
+  rm -f run_1/unifst/*
 else
-  mkdir unifst
+  mkdir run_1/unifst
 fi
-mv macro_* unifst/.
+mv macro_* run_1/unifst/.
 
 
