@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in $(seq 2 10); do
+for i in $(seq 2 20); do
 
   echo "doing mesh $i x $i"
   m4 -Dn_m4=$i homog.geo.m4 > homog.geo
