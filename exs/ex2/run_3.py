@@ -9,12 +9,12 @@ import vtk2numpy as vn
 
 #----------------------------------------------------------------# 
 
-fx = np.zeros( (19,2) )
+fx = np.zeros( (14,2) )
 
-for i in range(2,21):
+for i in range(2,16):
     
     print "case ", i
-    fin   = 'run_2/homog_'+`i`+'/macro_t_1.pvtu'
+    fin   = 'run_3/rve_'+`i`+'/macro_t_1.pvtu'
     PVTU  = XMLPartitionedUnstructuredGridReader(FileName=fin)
     KEYs  = PVTU.GetPointDataInformation().keys()
     KEYs  = PVTU.GetCellDataInformation().keys()
@@ -39,4 +39,4 @@ for i in range(2,21):
     fx[i-2,0] = i
     fx[i-2,1] = np.trapz(stress[:,0],leng)
 	
-np.savetxt("run_2/run_2.dat", fx)
+np.savetxt("run_3/run_3.dat", fx)
