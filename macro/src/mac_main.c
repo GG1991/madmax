@@ -198,7 +198,10 @@ end_mac_0:
 
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
   ierr = PetscPrintf(MACRO_COMM,"Reading mesh elements\n");CHKERRQ(ierr);
-  ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);CHKERRQ(ierr);
+  ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
+  if(ierr){
+    goto end_mac_1;
+  }
   ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
@@ -208,7 +211,10 @@ end_mac_0:
   */
   ierr = PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
-  ierr = part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL);CHKERRQ(ierr);
+  ierr = part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL);
+  if(ierr){
+    goto end_mac_1;
+  }
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -216,7 +222,10 @@ end_mac_0:
   */
   ierr = PetscPrintf(MACRO_COMM,"Calculating Ghost Nodes\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
-  ierr = calculate_ghosts(&MACRO_COMM, myname);CHKERRQ(ierr);
+  ierr = calculate_ghosts(&MACRO_COMM, myname);
+  if(ierr){
+    goto end_mac_1;
+  }
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -224,7 +233,10 @@ end_mac_0:
   */
   ierr = PetscPrintf(MACRO_COMM,"Reenumering nodes\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
-  ierr = reenumerate_PETSc(MACRO_COMM);CHKERRQ(ierr);
+  ierr = reenumerate_PETSc(MACRO_COMM);
+  if(ierr){
+    goto end_mac_1;
+  }
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
   /*
@@ -232,7 +244,10 @@ end_mac_0:
   */
   ierr = PetscPrintf(MACRO_COMM,"Reading Coordinates\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
-  ierr = read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
+  ierr = read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);
+  if(ierr){
+    goto end_mac_1;
+  }
   ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
   if( flag_print & (1<<PRINT_VTKPART)){
@@ -283,7 +298,7 @@ end_mac_0:
   /* Allocate matrices & vectors */ 
   ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
   ierr = PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");CHKERRQ(ierr);
-  ierr = mac_alloc(MACRO_COMM);CHKERRQ(ierr);
+  ierr = mac_alloc(MACRO_COMM);
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
   /* Setting solver options */
@@ -294,7 +309,7 @@ end_mac_0:
 
   /* Init Gauss point shapes functions and derivatives */
   ierr = PetscLogEventBegin(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
-  ierr = fem_inigau(); CHKERRQ(ierr);
+  ierr = fem_inigau();
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
 
