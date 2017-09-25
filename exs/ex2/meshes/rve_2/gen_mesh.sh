@@ -2,7 +2,7 @@
 
 N=11
 
-for i in $(seq 1 5); do
+for i in $(seq 1 15); do
 
   n=$(echo "$i*$N"| bc)
   echo "doing mesh $n x $n size $l x $l"
