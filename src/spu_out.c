@@ -11,7 +11,6 @@
 #define   VTK_6N_PRISM      13
 
 #include "sputnik.h"
-#include "macmic.h"
 
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
 {

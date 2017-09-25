@@ -3,7 +3,6 @@
 *****************************************************************************************************/
 
 #include "sputnik.h"
-#include "macmic.h"  /* Routines inside sputinik that are common for <macro> and <micro> only */
 
 #define TESTCOMM_NULL   -1
 #define TESTCOMM_STRAIN  1

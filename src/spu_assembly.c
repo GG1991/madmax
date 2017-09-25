@@ -7,7 +7,6 @@
  */
 
 #include "sputnik.h"
-#include "macmic.h"
 
 int assembly_jacobian_sd(Mat *J)
 {

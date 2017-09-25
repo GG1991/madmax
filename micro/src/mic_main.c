@@ -121,10 +121,6 @@ int main(int argc, char **argv)
   //**************************************************
   // Fiber in the middle
   flag_fiber_cilin = 0;
-  ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
-  if(set==PETSC_FALSE) nx_fibers = 1;
-  ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
-  if(set==PETSC_FALSE) ny_fibers = 1;
   nval = 4;
   ierr = PetscOptionsGetRealArray(NULL, NULL, "-fiber_cilin", fiber_cilin_vals, &nval,&set);
   if(set==PETSC_TRUE) {
@@ -146,6 +142,10 @@ int main(int argc, char **argv)
       }
     }
   }
+  ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
+  if(set==PETSC_FALSE) nx_fibers = 1;
+  ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
+  if(set==PETSC_FALSE) ny_fibers = 1;
   //**************************************************
 
   /* Stablish a new local communicator */

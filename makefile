@@ -38,8 +38,7 @@ DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
 	       ${DEP_DIR}/fun.h \
 	       ${DEP_DIR}/material.h
 
-DEPS_MACMIC =  ${DEP_DIR}/macmic.h \
-	       ${MAC_INC_DIR}/macro.h \
+DEPS_MACMIC =  ${MAC_INC_DIR}/macro.h \
 	       ${MIC_INC_DIR}/micro.h \
 	       ${DEP_DIR}/sputnik.h
 
@@ -51,7 +50,7 @@ SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o \
            $(SPU_OBJ_DIR)/spu_out.o \
            $(SPU_OBJ_DIR)/spu_assembly.o \
            $(SPU_OBJ_DIR)/spu_util.o \
-           $(SPU_OBJ_DIR)/macmic.o    
+           $(SPU_OBJ_DIR)/spu_comm.o    
 
 MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o \
            ${MAC_OBJ_DIR}/mac_alloc.o \

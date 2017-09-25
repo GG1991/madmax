@@ -6,7 +6,6 @@
 
  */
 
-#include "macmic.h"
 #include "micro.h"
 #include "macro.h"
 
