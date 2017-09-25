@@ -6,3 +6,20 @@ Mixing theory and Linear displacement homogenization
 approach.
 
 
+meshes:
+
+
+direct : macroscopic structured grid with all details of fiber
+         and matrix
+
+homoge : macroscopic structured grid for multiscale calculation
+
+
+rve_1 : non-structured grid of matrix + fiber with different
+        refinements
+
+rve_2 : structured grids of rve cells with different refinements
+
+
+rve_3 : structured grids of rve cells with different refinements
+        and different sizes (proportional)

@@ -41,7 +41,7 @@ for i in $(seq 2 15); do
     -coupl \
     -input ex2.spu \
     -mesh_gmsh \
-    -mesh meshes/rve/rve_$i.msh \
+    -mesh meshes/rve_1/rve_$i.msh \
     -dim 2 \
     -pc_type lu \
     -part_geom \
