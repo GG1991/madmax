@@ -8,11 +8,11 @@
 NM=1
 Nm=1
 
+if ! [ -d "run_3" ]; then
+  mkdir run_3
+fi
+
 for i in $(seq 2 15); do
-  
-    if ! [ -d "run_3" ]; then
-      mkdir run_3
-    fi
     
     if [ -d "run_3/rve_$i" ]; then
       rm -f run_3/rve_$i/*
