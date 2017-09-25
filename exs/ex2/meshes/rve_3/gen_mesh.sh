@@ -1,9 +1,9 @@
 #!/bin/bash
 
-N=11
+N=21
 L=3.0
 
-for i in $(seq 1 5); do
+for i in $(seq 1 10); do
 
   n=$(echo "$i*$N"| bc)
   l=$(echo "$i*$L"| bc)
