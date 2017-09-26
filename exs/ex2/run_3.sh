@@ -1,6 +1,6 @@
 #!/bin/bash
 # 
-#  Simulations to calculate the convergence of the macro-mesh 
+#  Simulations to calculate the convergence of the micro-mesh 
 #  with multiscale calculations
 #
 

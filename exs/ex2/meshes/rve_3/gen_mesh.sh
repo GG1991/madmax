@@ -1,6 +1,6 @@
 #!/bin/bash
 
-N=21
+N=41
 L=3.0
 
 for i in $(seq 1 10); do
