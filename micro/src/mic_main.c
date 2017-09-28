@@ -16,7 +16,8 @@ static char help[] =
 "It has the capability of being couple with MACRO.\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
-"-homo_taylor : homogenization using taylor approach\n"
+"-homo_taylor_1     : c =  vi ci + vm cm\n"
+"-homo_taylor_2     : c = (vi ci^-1 + vm cm^-1)^-1\n"
 "-homo_unif_strains : homogenization using uniform strains approach\n"
 "-fiber_cilin <r,dx,dy,dz>\n"
 "-fiber_nx <nx>\n"
@@ -63,6 +64,29 @@ int main(int argc, char **argv)
     macmic.type = COUP_1;
   }
 
+  /* Stablish a new local communicator */
+  color = MICRO;
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM); /* color can change */
+  if(ierr){
+    ierr_1 = 1;
+    PetscPrintf(MICRO_COMM,"micro: problem during coloring\n");
+    goto end_mic_0;
+  }
+
+  ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
+  ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
+  
+end_mic_0:
+  ierr = PetscFinalize();CHKERRQ(ierr);
+  if(ierr_1) goto end_mic_2;
+
+  /*
+     Set PETSc communicator to MICRO_COMM
+     and start again
+   */
+  PETSC_COMM_WORLD = MICRO_COMM;
+  ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+
   /* Mesh and Input Options */
   mesh_f = FORMAT_NULL;
   ierr = PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
@@ -92,7 +116,7 @@ int main(int argc, char **argv)
       ierr_1 = 1;
       goto end_mic_1;
   }
-  
+
   /* Mesh partition algorithms */
   partition_algorithm = PARMETIS_MESHKWAY;
   ierr = PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);CHKERRQ(ierr);
@@ -112,17 +136,13 @@ int main(int argc, char **argv)
     goto end_mic_0;
   }
 
-  ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
-  flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
-
   /* Solver Options */
   ierr = PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
   if(set==PETSC_FALSE) nr_max_its=5;
   ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
-  //**************************************************
-  // Fiber in the middle
+  /* Fiber in the middle */
   flag_fiber_cilin = 0;
   nval = 4;
   ierr = PetscOptionsGetRealArray(NULL, NULL, "-fiber_cilin", fiber_cilin_vals, &nval,&set);
@@ -149,31 +169,7 @@ int main(int argc, char **argv)
   if(set==PETSC_FALSE) nx_fibers = 1;
   ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
   if(set==PETSC_FALSE) ny_fibers = 1;
-  //**************************************************
 
-  /* Stablish a new local communicator */
-  color = MICRO;
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM); /* color can change */
-  if(ierr){
-    ierr_1 = 1;
-    PetscPrintf(MICRO_COMM,"micro: problem during coloring\n");
-    goto end_mic_0;
-  }
-
-  ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
-  ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
-  
-end_mic_0:
-  ierr = PetscFinalize();CHKERRQ(ierr);
-  if(ierr_1) goto end_mic_2;
-
-  /*
-     Set PETSc communicator to MICRO_COMM
-     and start again
-   */
-  PETSC_COMM_WORLD = MICRO_COMM;
-  ierr = PetscInitialize(&argc,&argv,(char*)0,help);
-  
   /* Printing Options */
   flag_print = 0;
   ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
@@ -186,6 +182,7 @@ end_mic_0:
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
+  //**************************************************
 
   if(!flag_coupling){
     PetscPrintf(MICRO_COMM,
