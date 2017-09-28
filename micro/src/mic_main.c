@@ -215,9 +215,7 @@ end_mic_0:
   ierr = PetscLogStageRegister("Linear System 1",&stages[1]);
   ierr = PetscLogStageRegister("Linear System 2",&stages[2]);
 
-  /*
-     read mesh
-  */    
+  /* read mesh */    
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
@@ -231,36 +229,28 @@ end_mic_0:
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
-  /*
-     Partition the mesh
-   */
+  /* Partition the mesh */
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
   ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL);
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     Calculate <*ghosts> and <nghosts> 
-   */
+  /* Calculate <*ghosts> and <nghosts> */
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
   ierr = calculate_ghosts(&MICRO_COMM, myname);
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     Reenumerate Nodes
-   */
+  /* Reenumerate Nodes */
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
   ierr = reenumerate_PETSc(MICRO_COMM);
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     Coordinate Reading
-  */
+  /* Coordinate Reading */
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Reading Coordinates\n");
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
@@ -299,30 +289,22 @@ end_mic_0:
   /* Read boundary */
   ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);
 
-  /*
-     Allocate matrices & vectors
-  */ 
+  /* Allocate matrices & vectors */ 
   ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
   ierr = mic_alloc(MICRO_COMM);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     Setting solver options 
-  */
+  /* Setting solver options */
   ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
 
-  /*
-     Init Gauss point shapes functions and derivatives
-  */
+  /* Init Gauss point shapes functions and derivatives */
   ierr = PetscLogEventBegin(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
   ierr = fem_inigau(); CHKERRQ(ierr);
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     micro main coupling loop
-   */
+  /* micro main coupling loop */
   double strain_mac[6], strain_ave[6], stress_ave[6], c_homo[36];
 
   ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);
