@@ -74,7 +74,7 @@ int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double stra
     for(i = 0; i < nvoi; ++i){
       for(j = 0; j < nvoi; ++j){
 	c_ia[i*nvoi + j] = c_i[i][j];
-	c_ma[i*nvoi + j] = c_i[i][j];
+	c_ma[i*nvoi + j] = c_m[i][j];
       }
     }
     
@@ -102,7 +102,7 @@ int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double stra
       }
     }
     for(i = 0; i < nvoi*nvoi; ++i){
-      c_a[i*nvoi+j] = vi * c_ii[i] + vm * c_mi[i];
+      c_a[i] = vi * c_ii[i] + vm * c_mi[i];
     }
 
     m  = gsl_matrix_view_array(c_a ,nvoi,nvoi);
