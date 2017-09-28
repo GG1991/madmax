@@ -53,10 +53,71 @@ int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double stra
   get_c("FIBER" , 0, 0, strain_mac, c_i);  //returns c_i of FIBER
   get_c("MATRIX", 0, 0, strain_mac, c_m);  //returns c_m of MATRIX
  
-  for(i=0;i<nvoi;i++){
-    for(j=0;j<nvoi;j++){
-      c[i][j] = vi * c_i[i][j] + vm * c_m[i][j];
+  if(homo_type==TAYLOR1){
+    for(i=0;i<nvoi;i++){
+      for(j=0;j<nvoi;j++){
+	c[i][j] = vi * c_i[i][j] + vm * c_m[i][j];
+      }
     }
+  }
+  else if(homo_type==TAYLOR2){
+
+    int              s;
+    double           c_ia[36], c_ma[36]; // matrices in array
+    double           c_ii[36], c_mi[36]; // inverted matrices
+    double           c_a[36] , c_ai[36];
+    gsl_matrix_view  m, mi;
+    gsl_permutation  *p;
+
+    p  = gsl_permutation_alloc(nvoi);
+
+    for(i = 0; i < nvoi; ++i){
+      for(j = 0; j < nvoi; ++j){
+	c_ia[i*nvoi + j] = c_i[i][j];
+	c_ma[i*nvoi + j] = c_i[i][j];
+      }
+    }
+    
+    m  = gsl_matrix_view_array(c_ia,nvoi,nvoi);
+    mi = gsl_matrix_view_array(c_ii,nvoi,nvoi);
+    
+    gsl_linalg_LU_decomp (&m.matrix, p, &s);    
+    gsl_linalg_LU_invert (&m.matrix, p, &mi.matrix);
+    
+    for(i = 0; i < nvoi; ++i){
+      for(j = 0; j < nvoi; ++j){
+	c_ii[i*nvoi+j] = gsl_matrix_get(&mi.matrix,i,j);
+      }
+    }
+
+    m  = gsl_matrix_view_array(c_ma,nvoi,nvoi);
+    mi = gsl_matrix_view_array(c_mi,nvoi,nvoi);
+    
+    gsl_linalg_LU_decomp (&m.matrix, p, &s);    
+    gsl_linalg_LU_invert (&m.matrix, p, &mi.matrix);
+    
+    for(i = 0; i < nvoi; ++i){
+      for(j = 0; j < nvoi; ++j){
+	c_mi[i*nvoi+j] = gsl_matrix_get(&mi.matrix,i,j);
+      }
+    }
+    for(i = 0; i < nvoi*nvoi; ++i){
+      c_a[i*nvoi+j] = vi * c_ii[i] + vm * c_mi[i];
+    }
+
+    m  = gsl_matrix_view_array(c_a ,nvoi,nvoi);
+    mi = gsl_matrix_view_array(c_ai,nvoi,nvoi);
+    
+    gsl_linalg_LU_decomp (&m.matrix, p, &s);    
+    gsl_linalg_LU_invert (&m.matrix, p, &mi.matrix);
+    
+    for(i = 0; i < nvoi; ++i){
+      for(j = 0; j < nvoi; ++j){
+	c[i][j] = gsl_matrix_get(&mi.matrix,i,j);
+      }
+    }
+     
+    gsl_permutation_free (p);
   }
   for(i=0;i<nvoi;i++){
     strain_ave[i] = strain_mac[i];

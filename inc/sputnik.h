@@ -12,6 +12,7 @@
 #include "fem.h"
 #include "material.h"
 #include "boundary.h"
+#include <gsl/gsl_linalg.h>
 
 #ifndef SPUTNIK_H
 #define SPUTNIK_H

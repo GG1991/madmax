@@ -82,7 +82,8 @@ PARMETIS_INC = -I${PARMETIS_DIR}/include \
 PARMETIS_HEA = ${PARMETIS_DIR}/include/parmetis.h ${PARMETIS_DIR}/metis/include/metis.h
 
 LDFLAG = ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis/libparmetis.a \
-         ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libmetis/libmetis.a 
+         ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libmetis/libmetis.a       \
+	 -lgsl -lgslcblas 
 
 INC = -I${DEP_DIR}
 

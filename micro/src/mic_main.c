@@ -409,7 +409,7 @@ end_mic_0:
 	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
       }
 
-      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){
+      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU) && homo_type==UNIF_STRAINS){
 	strain = malloc(nelm*nvoi*sizeof(double));
 	stress = malloc(nelm*nvoi*sizeof(double));
 	energy = malloc(nelm*sizeof(double));
