@@ -23,7 +23,7 @@ int mic_alloc(MPI_Comm MICRO_COMM)
 
    */
 
-  if(homo_type==UNIF_STRAINS || homo_type==TAYLOR){
+  if(homo_type==UNIF_STRAINS){
 
     int rank, nproc, ierr, nlocal, ntotal;
 

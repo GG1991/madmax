@@ -305,24 +305,19 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
    */
   int ierr;
 
-  switch(homo_type){
+  if(homo_type==TAYLOR1 || homo_type==TAYLOR2){
 
-    case TAYLOR:
-      ierr = mic_homogenize_taylor(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-      if(ierr){
-	return 1;
-      }
-      break;
-
-    case UNIF_STRAINS:
-      ierr = mic_homogenize_unif_strains(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-      if(ierr){
-	return 1;
-      }
-      break;
-
-    default:
+    ierr = mic_homogenize_taylor(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    if(ierr){
       return 1;
+    }
+  }
+  else if(homo_type==UNIF_STRAINS){
+
+    ierr = mic_homogenize_unif_strains(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    if(ierr){
+      return 1;
+    }
   }
   if(first_time_homo) first_time_homo = 0;
 
