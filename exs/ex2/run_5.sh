@@ -21,7 +21,7 @@ Nm=1
 
 ./mpirun -np $NM ../../macro/macro \
     -input ex2.spu \
-    -mesh meshes/direct/direct.msh \
+    -mesh meshes/direct_2/direct.msh \
     -dim 2 \
     -mesh_gmsh \
     -ksp_type cg \
@@ -38,12 +38,12 @@ Nm=1
     -nz_interp 11 \
     -options_left 0
 
-if [ -d "run_1/direct" ]; then
-  rm -f run_1/direct/*
+if [ -d "run_5/direct" ]; then
+  rm -f run_5/direct/*
 else
-  mkdir run_1/direct
+  mkdir run_5/direct
 fi
-mv macro_* run_1/direct/.
+mv macro_* run_5/direct/.
 
 }
 
@@ -185,7 +185,7 @@ mv macro_* run_5/unifst_1/.
 
 #---------------------------------------------------------------------
 
-#direct
+direct
 taylor_1
 taylor_2
 unifst_1

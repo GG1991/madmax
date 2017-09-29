@@ -4,8 +4,8 @@
 
 Geometry.CopyMeshingMethod = 1;
 
-lx=1.5;
-ly=1.5;
+lx=3.0;
+ly=3.0;
 Nx = 20;
 Ny = 5;
 
