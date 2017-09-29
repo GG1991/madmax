@@ -1,7 +1,7 @@
 #!/bin/bash
 
-NX=5
-NY=5
+NX=10
+NY=10
 file="struct_tr_"$NX"_"$NY".geo"
 cp fiber_tr_2d.geo $file
 
