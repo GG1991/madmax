@@ -39,15 +39,10 @@ Line Loop(15) = {10, -5, -4, -3};
 Plane Surface(16) = {15};
 Transfinite Line {2, 3, 1, 7, 6, 5} = Ny Using Progression 1;
 Transfinite Line {4, 10, 9, 8}      = Nx Using Progression 1;
-Transfinite Surface {16};
-Transfinite Surface {14};
-Transfinite Surface {12};
+Transfinite Surface {12,14,16};
 
 Recombine Surface {16, 14, 12};
 
-Physical Line("Y0") = {4};
-Physical Line("Y1") = {8};
-Physical Line("X0") = {3, 2, 1};
-Physical Line("X1") = {5, 6, 7};
-Physical Surface("FIBER")  = {14};
-Physical Surface("MATRIX") = {12, 16};
+Physical Surface("FIBER_0")  = {14};
+Physical Surface("MATRIX_0") = {12, 16};
+
