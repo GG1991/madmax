@@ -31,3 +31,4 @@ Physical Line("Y0") = {3};
 Physical Line("Y1") = {1};
 Physical Line("X0") = {4};
 Physical Line("X1") = {2};
+Physical Point("P00") = {1};
