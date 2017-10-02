@@ -3,8 +3,8 @@
 # 4 simulations of a 2D rve with a fiber transversal to the plane
 #
 # 1) direct calculation saved on direct/
-# 2) multiscale with taylor_1 assumtion calculation saved on taylor_1/
-# 3) multiscale with taylor_2 assumtion calculation saved on taylor_2/
+# 2) multiscale with taylor_s assumtion calculation saved on taylor_s/
+# 3) multiscale with taylor_p assumtion calculation saved on taylor_p/
 # 4) multiscale with unifst assumtion calculation saved on unifst/
 #
 
@@ -49,7 +49,7 @@ mv macro_* run_6/direct/.
 
 #---------------------------------------------------------------------
 
-function taylor_1 {
+function taylor_s {
 
 NM=1
 Nm=1
@@ -78,23 +78,23 @@ Nm=1
     -dim 2 \
     -pc_type lu \
     -part_geom \
-    -homo_taylor_1 \
+    -homo_taylor_s \
     -nr_norm_tol 1.0e-8 \
     -nr_max_its 3 \
     -options_left 0
 
-if [ -d "run_6/taylor_1" ]; then
-  rm -f run_6/taylor_1/*
+if [ -d "run_6/taylor_s" ]; then
+  rm -f run_6/taylor_s/*
 else
-  mkdir run_6/taylor_1
+  mkdir run_6/taylor_s
 fi
-mv macro_* run_6/taylor_1/.
+mv macro_* run_6/taylor_s/.
 
 }
 
 #---------------------------------------------------------------------
 
-function taylor_2 {
+function taylor_p {
 
 NM=1
 Nm=1
@@ -123,24 +123,24 @@ Nm=1
     -dim 2 \
     -pc_type lu \
     -part_geom \
-    -homo_taylor_2 \
+    -homo_taylor_p \
     -nr_norm_tol 1.0e-8 \
     -nr_max_its 3 \
     -options_left 0
 
-if [ -d "run_6/taylor_2" ]; then
-  rm -f run_6/taylor_2/*
+if [ -d "run_6/taylor_p" ]; then
+  rm -f run_6/taylor_p/*
 else
-  mkdir run_6/taylor_2
+  mkdir run_6/taylor_p
 fi
-mv macro_* run_6/taylor_2/.
+mv macro_* run_6/taylor_p/.
 
 }
 
 
 #---------------------------------------------------------------------
 
-function unifst_1 {
+function unifst {
 
 NM=1
 Nm=1
@@ -169,23 +169,23 @@ Nm=1
     -dim 2 \
     -pc_type lu \
     -part_geom \
-    -homo_unif_strains \
+    -homo_us \
     -nr_norm_tol 1.0e-8 \
     -nr_max_its 3 \
     -options_left 0
 
-if [ -d "run_6/unifst_1" ]; then
-  rm -f run_6/unifst_1/*
+if [ -d "run_6/unifst" ]; then
+  rm -f run_6/unifst/*
 else
-  mkdir run_6/unifst_1
+  mkdir run_6/unifst
 fi
-mv macro_* run_6/unifst_1/.
+mv macro_* run_6/unifst/.
 
 }
 
 #---------------------------------------------------------------------
 
 direct
-taylor_1
-taylor_2
-unifst_1
+taylor_s
+taylor_p
+unifst
