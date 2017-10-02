@@ -20,8 +20,8 @@ MPI_Comm     MICRO_COMM;
 int          rank_mic;          //  rank on macro comm
 int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 
-#define TAYLOR1      1
-#define TAYLOR2      2
+#define TAYLOR_S     1
+#define TAYLOR_P     2
 #define UNIF_STRAINS 3
 
 /* Taylor homogenization variables */

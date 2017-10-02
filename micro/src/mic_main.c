@@ -16,9 +16,9 @@ static char help[] =
 "It has the capability of being couple with MACRO.\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
-"-homo_taylor_1     : c =  vi ci + vm cm\n"
-"-homo_taylor_2     : c = (vi ci^-1 + vm cm^-1)^-1\n"
-"-homo_unif_strains : homogenization using uniform strains approach\n"
+"-homo_taylor_s     : c =  vi ci + vm cm            (serial)\n"
+"-homo_taylor_p     : c = (vi ci^-1 + vm cm^-1)^-1  (parallel)\n"
+"-homo_us           : homogenization using uniform strains approach\n"
 "-fiber_cilin <r,dx,dy,dz>\n"
 "-fiber_nx <nx>\n"
 "-fiber_ny <ny>\n"
@@ -126,11 +126,11 @@ end_mic_0:
 
   /* Homogenization Options */
   homo_type=0;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor_1",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo_type = TAYLOR1;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor_2",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo_type = TAYLOR2;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_unif_strains",&set);CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor_s",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) homo_type = TAYLOR_S;
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor_p",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) homo_type = TAYLOR_P;
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_us",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
   if(homo_type==0){
     PetscPrintf(MPI_COMM_SELF,"no homogenization option specified\n");
