@@ -45,7 +45,7 @@ for i in $(seq 2 20); do
     -dim 2 \
     -pc_type lu \
     -part_geom \
-    -homo_taylor \
+    -homo_unif_strains \
     -nr_norm_tol 1.0e-8 \
     -nr_max_its 3 \
     -options_left 0 > macro_$i.out

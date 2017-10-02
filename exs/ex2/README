@@ -5,14 +5,34 @@ the accuracy of multi-sacale calculation using
 Mixing theory and Linear displacement homogenization
 approach.
 
+scripts:
+
+run_1    : runs 4 cases with frontal fibers
+           a) direct 
+           b) homogenization uniform strains
+           c) taylor parallel
+           d) taylor serial
+
+run_5    : runs 4 cases with transversal fibers with Dirichlet b.c. on X
+           a) direct 
+           b) homogenization uniform strains
+           c) taylor parallel
+           d) taylor serial
+
+run_6    : runs 4 cases with transversal fibers with Dirichlet b.c. on Y
+           a) direct 
+           b) homogenization uniform strains
+           c) taylor parallel
+           d) taylor serial
+
 
 meshes:
 
 
-direct   : macroscopic structured grid with all details of fiber
-           and matrix
+direct_1 : macroscopic structured 2d grid of frontal fibers and matrix
 
-direct_2 : macroscopic structured 2d grid of transversal fiber structure
+
+direct_2 : macroscopic structured 2d grid of transversal fiber and matrix
 
 
 homoge   : macroscopic structured grid for multiscale calculation
