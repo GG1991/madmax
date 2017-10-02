@@ -53,14 +53,14 @@ int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double stra
   get_c("FIBER" , 0, 0, strain_mac, c_i);  //returns c_i of FIBER
   get_c("MATRIX", 0, 0, strain_mac, c_m);  //returns c_m of MATRIX
  
-  if(homo_type==TAYLOR_S){
+  if(homo_type==TAYLOR_P){
     for(i=0;i<nvoi;i++){
       for(j=0;j<nvoi;j++){
 	c[i][j] = vi * c_i[i][j] + vm * c_m[i][j];
       }
     }
   }
-  else if(homo_type==TAYLOR_P){
+  else if(homo_type==TAYLOR_S){
 
     int              s;
     double           c_ia[36], c_ma[36]; // matrices in array
@@ -366,7 +366,7 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
    */
   int ierr;
 
-  if(homo_type==TAYLOR_S || homo_type==TAYLOR_P){
+  if(homo_type==TAYLOR_P || homo_type==TAYLOR_S){
 
     ierr = mic_homogenize_taylor(MICRO_COMM, strain_mac, strain_ave, stress_ave);
     if(ierr){

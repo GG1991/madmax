@@ -126,10 +126,10 @@ end_mic_0:
 
   /* Homogenization Options */
   homo_type=0;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor_s",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) homo_type = TAYLOR_S;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor_p",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo_type = TAYLOR_P;
+  ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor_s",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) homo_type = TAYLOR_S;
   ierr = PetscOptionsHasName(NULL,NULL,"-homo_us",&set);CHKERRQ(ierr);
   if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
   if(homo_type==0){
