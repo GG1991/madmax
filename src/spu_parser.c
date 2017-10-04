@@ -127,10 +127,10 @@ int is_linear_material(int material)
   return 0;
 }
 /****************************************************************************************************/
-int CheckPhysicalID(void)
+int check_elm_id(void)
 {
   /* 
-     Checks if all the elements of <PhysicalID>
+     Checks if all the elements of <elm_id>
      have their correspondent material in <material_list>
    */
   int e;
@@ -140,7 +140,7 @@ int CheckPhysicalID(void)
   for(e=0;e<nelm;e++){
     pm = material_list.head;
     while(pm){
-      if( ((material_t*)pm->data)->GmshID == PhysicalID[e] ) break;
+      if( ((material_t*)pm->data)->GmshID == elm_id[e] ) break;
       pm = pm->next;
     }
     if(!pm){

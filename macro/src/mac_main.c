@@ -286,7 +286,7 @@ end_mac_0:
     ierr = PetscPrintf(MACRO_COMM,"Problem determing ids on materials and boundaries\n");
     goto end_mac_1;
   }
-  ierr = CheckPhysicalID();
+  ierr = check_elm_id();
   if(ierr){
     ierr = PetscPrintf(MACRO_COMM,"Problem checking physical ids\n");
     goto end_mac_1;

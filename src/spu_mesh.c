@@ -121,7 +121,7 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, FILE *time_fl, char *myname, doub
 
   int *eind_swi, *eind_swi_size, *eind_size_new;
   int *npe_swi, *npe_swi_size, *npe_size_new;         
-  int *PhysicalID_swi;
+  int *elm_id_swi;
   int *npe;
 
   npe = malloc(nelm*sizeof(int));
@@ -131,7 +131,7 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, FILE *time_fl, char *myname, doub
 
   eind_swi       = malloc(eptr[nelm]*sizeof(int)); 
   npe_swi        = malloc(nelm*sizeof(int)); 
-  PhysicalID_swi = malloc(nelm*sizeof(int)); 
+  elm_id_swi = malloc(nelm*sizeof(int)); 
   eind_swi_size  = malloc(nproc*sizeof(int)); 
   npe_swi_size   = malloc(nproc*sizeof(int)); 
   eind_size_new  = malloc(nproc*sizeof(int)); 
@@ -139,8 +139,8 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, FILE *time_fl, char *myname, doub
 
   // swap "npe" and "eind"
   ierr = swap_vectors_SCR( part, nproc, nelm, 
-      npe, eptr, eind, PhysicalID,
-      npe_swi, eind_swi, PhysicalID_swi,
+      npe, eptr, eind, elm_id,
+      npe_swi, eind_swi, elm_id_swi,
       npe_swi_size, eind_swi_size );CHKERRQ(ierr);
 
 
@@ -159,12 +159,12 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, FILE *time_fl, char *myname, doub
   free(npe);
   free(eptr);
   free(eind);
-  free(PhysicalID);
+  free(elm_id);
 
   npe  = malloc(nelm*sizeof(int));
   eptr = malloc((nelm+1)*sizeof(int));
   eind = malloc(eind_size_new_tot * sizeof(int));
-  PhysicalID = malloc(nelm * sizeof(int));
+  elm_id = malloc(nelm * sizeof(int));
 
   /* 
      performe the MPI_Alltoall operation for calculating "npe" & "eind"
@@ -199,8 +199,8 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, FILE *time_fl, char *myname, doub
   ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
       npe, npe_size_new, rdispls, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
 
-  ierr = MPI_Alltoallv(PhysicalID_swi, npe_swi_size, sdispls, MPI_INT, 
-      PhysicalID, npe_size_new, rdispls, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Alltoallv(elm_id_swi, npe_swi_size, sdispls, MPI_INT, 
+      elm_id, npe_size_new, rdispls, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
 
   // rebuild "eptr"
   eptr[0] = 0;
@@ -267,7 +267,7 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, FILE *time_fl, char *myname, doub
   free(eind_size_new);
   free(sdispls);
   free(rdispls);
-  free(PhysicalID_swi);
+  free(elm_id_swi);
   free(ubvec);
   free(tpwgts);
 
@@ -334,8 +334,8 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
 }
 /****************************************************************************************************/
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
-    int *eptr, int *eind, int *PhysicalID,
-    int *npe_swi, int *eind_swi, int *PhysicalID_swi,
+    int *eptr, int *eind, int *elm_id,
+    int *npe_swi, int *eind_swi, int *elm_id_swi,
     int *npe_size, int *eind_size )
 {
   /*
@@ -345,13 +345,13 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
     
      swap        = [ 0 2 1 0 ] (swap will be generally the "part" array)
      npe         = [ 3 2 3 1 ]             
-     PhysicalID  = [ 0 0 1 2 ]             
+     elm_id  = [ 0 0 1 2 ]             
      eind        = [ 3 2 0 | 1 2 | 1 0 1 |3 ]
        
      swap operation with swap_vectors_CSR 
       
      npe_swi     = [ 3 1 3 2 ]
-     PhysicalID  = [ 0 2 1 0 ]
+     elm_id  = [ 0 2 1 0 ]
      eind_swi    = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]
     
      Notes>
@@ -366,8 +366,8 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
 
   if(n==0) return 0;
 
-  if(!npe || !eind || !PhysicalID ||
-      !eind_swi || !npe_swi || !PhysicalID_swi || 
+  if(!npe || !eind || !elm_id ||
+      !eind_swi || !npe_swi || !elm_id_swi || 
       !npe_size || !eind_size){
     return 1;
   }
@@ -382,7 +382,7 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
 
 	// swap npe
 	npe_swi[j] = npe[e];
-	PhysicalID_swi[j] = PhysicalID[e];
+	elm_id_swi[j] = elm_id[e];
 	j ++;
 
 	// swap eind
@@ -518,7 +518,7 @@ int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 	  NPE = gmsh_npe(atoi(data));
 	  data=strtok(NULL," \n");
 	  ntag = atoi(data);
-	  // read the GmshID (or the same as PhysicalID for volumes)
+	  // read the GmshID (or the same as elm_id for volumes)
 	  data = strtok(NULL," \n");
 	  GmshIDToSearch = atoi(data);
 
@@ -1082,7 +1082,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   nelm           = elmdist[rank+1] - elmdist[rank];
   eptr           = malloc( (nelm + 1) * sizeof(int));
   elmv_centroid  = malloc( nelm * dim * sizeof(double));
-  PhysicalID     = malloc( nelm * sizeof(int));
+  elm_id     = malloc( nelm * sizeof(int));
   part           = malloc(nelm * sizeof(int));
   //
   /**************************************************/
@@ -1130,9 +1130,9 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
     if(npe<0) SETERRQ1(PROBLEM_COMM,1,"element type %d not recognized",atoi(data));
     data=strtok(NULL," \n");
     ntag = atoi(data);
-    // we read the PhysicalID
+    // we read the elm_id
     data = strtok(NULL," \n");
-    PhysicalID[i] = atoi(data);
+    elm_id[i] = atoi(data);
     d = 1;
     while(d<ntag){
       data = strtok(NULL," \n");
@@ -1254,7 +1254,7 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
 
   nelm = elmdist[rank+1] - elmdist[rank];
   eptr = malloc( (nelm + 1) * sizeof(int));
-  PhysicalID = malloc( nelm * sizeof(int));
+  elm_id = malloc( nelm * sizeof(int));
   part = malloc(nelm * sizeof(int));
   //
   /**************************************************/
@@ -1344,8 +1344,8 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
     if(!fgets(buf,NBUF,fm)) SETERRQ1(PROBLEM_COMM,1,"error format at file %s trying to read ELEMENTS",file_name);
     data = strtok(buf," \n");
     data = strtok(NULL," \n");
-    if(!data)SETERRQ1(PROBLEM_COMM,1,"error format in %s trying to read PhysicalID",file_name);
-    PhysicalID[i] = atoi(data);
+    if(!data)SETERRQ1(PROBLEM_COMM,1,"error format in %s trying to read elm_id",file_name);
+    elm_id[i] = atoi(data);
   }
   fclose(fm);
   //

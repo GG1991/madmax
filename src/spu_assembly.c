@@ -118,7 +118,7 @@ int assembly_residual_sd(Vec *x, Vec *b)
 
     ierr = get_mat_from_elem(e, &mat);
     if(!mat){
-      ierr = PetscPrintf(PETSC_COMM_WORLD, "material with physical_id %d not found\n",PhysicalID[e]);
+      ierr = PetscPrintf(PETSC_COMM_WORLD, "material with physical_id %d not found\n",elm_id[e]);
       return 1;
     }
 
@@ -439,7 +439,7 @@ int get_c(const char *name, int e, int gp, double strain[6], double c[6][6])
     macro_gp = e*8+gp;
     ierr = get_mat_from_elem(e, &mat);
     if(!mat){
-      PetscPrintf(PETSC_COMM_WORLD,"material of element %d and id %d not found", e, PhysicalID[e]);
+      PetscPrintf(PETSC_COMM_WORLD,"material of element %d and id %d not found", e, elm_id[e]);
       return 1;
     }
   }
@@ -546,7 +546,7 @@ int get_mat_from_elem(int e, material_t **mat)
     }
     else{
       /* normal case */
-      id = PhysicalID[e];
+      id = elm_id[e];
       if( ((material_t*)pn->data)->GmshID == id ) break;
     }
     pn = pn->next;

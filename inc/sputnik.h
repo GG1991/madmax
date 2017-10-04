@@ -131,7 +131,7 @@ int          nelm;                    // # of local elements
 int          *eptr;                   // list of indeces of nodes inside eind
 int          *eind;                   // list of nodes for elem "i" is between 
                                       // eind[eptr[i]] eind[eptr[i+1]] (not including)
-int          *PhysicalID;             // element property number
+int          *elm_id;             // element property number
 double       *elmv_centroid;
 
 int          *StartIndexRank;
@@ -248,7 +248,7 @@ double  *energy_interp;
 // spu_parser.c (common rutines for parser inputs files from MACRO and MICRO)
 int spu_parse_scheme( char *input );
 int parse_material(MPI_Comm PROBLEM_COMM, char *input);
-int CheckPhysicalID(void);
+int check_elm_id(void);
 int parse_function(MPI_Comm PROBLEM_COMM, char *input);
 int StrBin2Dec(char *str);
 
@@ -271,8 +271,8 @@ int read_boundary_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n);
 
 int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid);
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
-    int *eptr, int *eind, int *PhysicalID,
-    int *npe_swi, int *eind_swi, int *PhysicalID_swi,
+    int *eptr, int *eind, int *elm_id,
+    int *npe_swi, int *eind_swi, int *elm_id_swi,
     int *cuts_npe, int *cuts_eind );
 int CSR_give_pointer( int e, int *npe, int *eind, int *p);
 int clean_vector_qsort(int n, int *input, int **output, int *not_rep);

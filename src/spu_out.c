@@ -241,6 +241,8 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 	  "<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\"/>\n",ns);
     fprintf(fm,
 	  "<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\"/>\n",ns);
+    fprintf(fm,
+	  "<PDataArray type=\"Int32\" Name=\"elm_id\" NumberOfComponents=\"1\"/>\n");
     fprintf(fm, 
 	"<PDataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\"/>\n");
     if(energy_interp!=NULL){
@@ -413,6 +415,15 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
     }
     fprintf(fm,"\n");
   }
+  fprintf(fm,"</DataArray>\n");
+
+  /* <elm_id> */
+  fprintf(fm,
+      "<DataArray type=\"Int32\" Name=\"elm_id\" NumberOfComponents=\"1\" >\n");
+  for (i=0;i<nelm;i++){
+    fprintf(fm, "%d ", elm_id[i]);
+  }
+  fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
   /* <energy> */
