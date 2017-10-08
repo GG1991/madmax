@@ -4,6 +4,7 @@
 
 #include "petscksp.h"
 #include "petscsys.h"
+#include "slepceps.h"
 #include "list.h"
 #include "stdbool.h"
 #include "stdio.h"

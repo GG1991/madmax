@@ -48,9 +48,9 @@ int main(int argc, char **argv)
     flag_coupling = PETSC_TRUE;
     macmic.type = COUP_1;
   }
-  flag_testcomm  = TESTCOMM_NULL;
+  flag_mode  = NORMAL;
   ierr = PetscOptionsHasName(NULL,NULL,"-testcomm",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_testcomm  = TESTCOMM_STRAIN;
+  if(set == PETSC_TRUE) flag_mode = TEST_COMM;
 
   /* Mesh and Input Options */
   mesh_f = FORMAT_NULL;
@@ -184,16 +184,12 @@ end_mac_0:
 	"--------------------------------------------------\n");
   }
 
-  /*
-     Register various stages for profiling
-  */
+  /* Register various stages for profiling */
   ierr = PetscLogStageRegister("Read Mesh Elements",&stages[0]);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("Linear System 1",&stages[1]);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("Linear System 2",&stages[2]);CHKERRQ(ierr);
 
-  /*
-     read mesh
-  */    
+  /* read mesh */    
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
   ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
@@ -206,9 +202,7 @@ end_mac_0:
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
-  /*
-     partition the mesh
-  */
+  /* partition the mesh */
   ierr = PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
   ierr = part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL);
@@ -217,9 +211,7 @@ end_mac_0:
   }
   ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     Calculate <*ghosts> and <nghosts> 
-  */
+  /* Calculate <*ghosts> and <nghosts> */
   ierr = PetscPrintf(MACRO_COMM,"Calculating Ghost Nodes\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
   ierr = calculate_ghosts(&MACRO_COMM, myname);
@@ -228,9 +220,7 @@ end_mac_0:
   }
   ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     Reenumerate Nodes
-  */
+  /* Reenumerate Nodes */
   ierr = PetscPrintf(MACRO_COMM,"Reenumering nodes\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
   ierr = reenumerate_PETSc(MACRO_COMM);
@@ -239,9 +229,7 @@ end_mac_0:
   }
   ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
-  /*
-     Coordinate Reading
-  */
+  /* Coordinate Reading */
   ierr = PetscPrintf(MACRO_COMM,"Reading Coordinates\n");CHKERRQ(ierr);
   ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
   ierr = read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);
@@ -312,16 +300,8 @@ end_mac_0:
   ierr = fem_inigau();
   ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
-
-  /*
-     Begin time dependent loop
-  */
   int      i, j, nr_its = -1, kspits = -1;
-  int      time_step = 0;
-  double   t = t0;
   double   norm = -1.0, kspnorm = -1.0;
-  double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
-  double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   double   limit[6];
 
   ierr = get_bbox_local_limits(coord, nallnods, &limit[0], &limit[2], &limit[4]);
@@ -334,7 +314,10 @@ end_mac_0:
   // Initial condition <x> = 0
   ierr = VecZeroEntries(x);CHKERRQ(ierr);
 
-  if(flag_testcomm == TESTCOMM_STRAIN){
+  if(flag_mode == TEST_COMM){
+
+    double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
+    double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     /* TEST> Sends a calculating strain to micro and obtain the stress */
     for(i=0;i<nvoi;i++){
@@ -353,9 +336,15 @@ end_mac_0:
     }
 
   }
-  else{
+  else if(flag_mode == EIGENSYSTEM){
 
-    /* MULTIESCALE */
+  }
+  else if(flag_mode == NORMAL){
+
+    /* Begin time dependent loop */
+    
+    double   t = t0;
+    int      time_step = 0;
 
     while( t < (tf + 1.0e-10) ){
 

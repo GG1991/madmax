@@ -4,10 +4,11 @@
 
 #include "sputnik.h"
 
-#define TESTCOMM_NULL   -1
-#define TESTCOMM_STRAIN  1
+#define NORMAL      1
+#define EIGENSYSTEM 2
+#define TEST_COMM   3
 
-int    flag_testcomm;
+int    flag_mode;
 
 /*****************************************************************************************************
    MACRO global variables 

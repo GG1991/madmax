@@ -125,11 +125,6 @@ ${MIC_OBJ_DIR}/%.o: ${MIC_SRC_DIR}/%.c ${DEPS} $(DEPS_MACMIC)
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	
 	@echo ">>> "$@
 
-##############################
-# LIST.O
-obj/list.o: src/list.c inc/list.h 
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	-I./inc
-
 vars:
 	@echo "DEPS = " ${DEPS}
 	@echo "INC = " ${INC}
@@ -141,5 +136,6 @@ vars:
 clean_:	    
 	rm -f obj/* macro/obj/* micro/obj/* macro/macro micro/micro
 
-include ${PETSC_DIR}/lib/petsc/conf/variables	
-include ${PETSC_DIR}/lib/petsc/conf/rules
+#include ${PETSC_DIR}/lib/petsc/conf/variables	
+#include ${PETSC_DIR}/lib/petsc/conf/rules
+include ${SLEPC_DIR}/lib/slepc/conf/slepc_common
