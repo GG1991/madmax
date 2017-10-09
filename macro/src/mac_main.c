@@ -342,6 +342,7 @@ end_mac_0:
   else if(flag_mode == EIGENSYSTEM){
 
     int   nlocal, ntotal;
+    EPS   eps;
 
     nlocal = dim * nmynods;
     ntotal = dim * ntotnod;
@@ -354,6 +355,18 @@ end_mac_0:
     ierr = MatSetOption(M,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
     ierr = assembly_mass(&M);
+    if(ierr){
+      ierr = PetscPrintf(MACRO_COMM, "problem assembling mass matrix\n");
+      goto end_mac_1;
+    }
+
+    ierr = EPSCreate(PETSC_COMM_WORLD,&eps);CHKERRQ(ierr);
+    ierr = EPSSetOperators(eps,A,NULL);CHKERRQ(ierr);
+    ierr = EPSSetProblemType(eps,EPS_HEP);CHKERRQ(ierr);
+    ierr = EPSSetFromOptions(eps);CHKERRQ(ierr);
+
+    ierr = EPSSolve(eps);CHKERRQ(ierr);
+
 
   }
   else if(flag_mode == NORMAL){

@@ -83,6 +83,7 @@ PARMETIS_HEA = ${PARMETIS_DIR}/include/parmetis.h ${PARMETIS_DIR}/metis/include/
 
 LDFLAG = ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis/libparmetis.a \
          ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libmetis/libmetis.a       \
+         ${HOME}/libs/slepc-3.7.4/arch-linux-opt/lib/libslepc.so.3.7.4            \
 	 -lgsl -lgslcblas 
 
 INC = -I${DEP_DIR}
