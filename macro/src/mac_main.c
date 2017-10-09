@@ -381,13 +381,26 @@ end_mac_0:
       dir_idx = mac_boundary->dir_idx;
       ndir = mac_boundary->ndir;
       ierr = MatZeroRowsColumns(M, ndir, dir_idx, 1.0, NULL, NULL); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(A, ndir, dir_idx, 0.0, NULL, NULL); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(A, ndir, dir_idx, 1.0, NULL, NULL); CHKERRQ(ierr);
       pBound = pBound->next;
     }
     ierr = MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
     ierr = MatAssemblyEnd(M, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
     ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+    if(flag_print & (1<<PRINT_PETSC)){
+      ierr = PetscViewerASCIIOpen(MACRO_COMM,"M.dat",&viewer); CHKERRQ(ierr);
+      ierr = MatView(M,viewer); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
+      ierr = MatView(A,viewer); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
+      ierr = VecView(b,viewer); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
+      ierr = VecView(dx,viewer); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
+      ierr = VecView(x,viewer); CHKERRQ(ierr);
+    }
 
     ierr = EPSCreate(PETSC_COMM_WORLD,&eps);CHKERRQ(ierr);
     ierr = EPSSetOperators(eps,M,A);CHKERRQ(ierr);
@@ -399,6 +412,21 @@ end_mac_0:
 
     ierr = PetscPrintf(MACRO_COMM, "omega = %e\n",omega);
 
+    if(flag_print & (1<<PRINT_VTU)){ 
+      strain = malloc(nelm*nvoi*sizeof(double));
+      stress = malloc(nelm*nvoi*sizeof(double));
+      energy = malloc(nelm*sizeof(double));
+      energy_interp = malloc(nelm*sizeof(double));
+      ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
+      ierr = calc_strain_stress_energy(&x, strain, stress, energy);
+      ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
+
+      if(flag_print & (1<<PRINT_VTU)){ 
+	sprintf(vtkfile_n,"%s_eigen",myname);
+	ierr = write_vtu(MACRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);
+      }
+      free(stress); free(strain); free(energy);
+    }
 
   }
   else if(flag_mode == NORMAL){
