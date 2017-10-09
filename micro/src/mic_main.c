@@ -313,6 +313,7 @@ end_mic_0:
   ierr = PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);
   ierr = get_domain_center(MICRO_COMM, coord, nmynods, center_domain);
   ierr = PetscPrintf(MICRO_COMM,"center = %e %e %e\n",center_domain[0],center_domain[1],center_domain[2]);
+  ierr = calc_rho(MICRO_COMM, &rho);
 
   if(flag_coupling){
 
@@ -350,6 +351,11 @@ end_mic_0:
 	  ierr = mic_calc_c_homo(MICRO_COMM, strain_mac, c_homo);
 	  /* Send C homogenized */
 	  ierr = mic_send_c_homo(WORLD_COMM, c_homo);
+	  break;
+
+	case RHO:
+	  /* Send rho homogenized */
+	  ierr = mic_send_rho(WORLD_COMM, &rho);
 	  break;
 
 	case MIC_END:

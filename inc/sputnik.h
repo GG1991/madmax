@@ -312,7 +312,7 @@ int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);
 
 // spu_assembly.c
 int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex);
-int GetElemCoord(int *LocalNod, int n, double elem_coor[8][3]);
+int get_elm_coor(int *LocalNod, int n, double elem_coor[8][3]);
 int assembly_jacobian_sd(Mat *J);
 int assembly_residual_sd(Vec *x, Vec *b);
 int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double *DetJac);
@@ -322,9 +322,10 @@ int get_c(const char *name, int e, int gp, double strain[6], double c[6][6]);
 int get_rho(const char *name, int e, double *rho);
 int get_mat_from_elem(int e, material_t **mat);
 int get_mat_from_name(const char *name, material_t **mat);
-int GetElemenDispls( int e, double *x, double *elem_disp );
+int get_elm_disp( int e, double *x, double *elem_disp );
 int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *energy);
 int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6]);
+int calc_rho(MPI_Comm PROBLEM_COMM, double *rho);
 int get_elem_coor(int e, double elem_coor[8][3]);
 int is_inside_fiber_cilin(int e);
 int get_centroid(int e, double centroid[3]);
@@ -344,6 +345,7 @@ int mic_recv_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp);
 int mic_send_strain(MPI_Comm WORLD_COMM, double strain[6]);
 int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6]);
 int mic_send_c_homo(MPI_Comm WORLD_COMM, double c_homo[36]);
+int mic_send_rho(MPI_Comm WORLD_COMM, double *rho);
 
 int mac_send_signal(MPI_Comm WORLD_COMM, int signal);
 int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6]);

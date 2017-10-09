@@ -34,6 +34,7 @@ int          flag_linear_micro; // 1 if all materials in micro are linear 0 othe
 int          macro_gp;
 int          first_time_homo;
 double       c_homo_lineal[36];
+double       rho;
 
 Mat          J;                // extended matrix for lagrange multipliers boundary setting
 Vec          xe, re;           // extended distributed vectors for lagrange multipliers boundary setting

@@ -15,14 +15,14 @@ int assembly_jacobian_sd(Mat *J)
   int         i, j, k, l, e, gp, ngp, npe;
   int         index[8*3];
   int         ierr;
-  double      ElemCoord[8][3];
+  double      elm_coor[8][3];
   double      dsh[8][3];
   double      detj;
   double      Ke[8*3*8*3];
   double      B[6][3*8], strain_gp[6];
   double      c[6][6];
   double      *wp = NULL;
-  double      ElemDispls[8*3];
+  double      elm_disp[8*3];
   double      wp_eff;
   double      *xvalues;
   Vec         xlocal;
@@ -38,9 +38,9 @@ int assembly_jacobian_sd(Mat *J)
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
     GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, index);
-    GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
+    get_elm_coor(&eind[eptr[e]], npe, elm_coor);
     GetWeight(npe, &wp);
-    GetElemenDispls(e, xvalues, ElemDispls);
+    get_elm_disp(e, xvalues, elm_disp);
 
     // calculate <Ke> by numerical integration
     for(i=0;i<npe*dim*npe*dim;i++){
@@ -48,14 +48,14 @@ int assembly_jacobian_sd(Mat *J)
     }
     for(gp=0;gp<ngp;gp++){
 
-      ierr = get_dsh(gp, npe, ElemCoord, dsh, &detj);
+      ierr = get_dsh(gp, npe, elm_coor, dsh, &detj);
       detj = fabs(detj);
       ierr = GetB(npe, dsh, B);
 
       for(i=0;i<nvoi;i++){
 	strain_gp[i] = 0.0;
 	for(k=0;k<npe*dim;k++){
-	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
+	  strain_gp[i] = strain_gp[i] + B[i][k] * elm_disp[k];
 	}
       }
       ierr = get_c(NULL, e, gp, strain_gp, c);
@@ -105,7 +105,7 @@ int assembly_mass(Mat *M)
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
     GetPETScIndeces(&eind[eptr[e]], npe, loc2petsc, index);
-    GetElemCoord(&eind[eptr[e]], npe, elm_coor);
+    get_elm_coor(&eind[eptr[e]], npe, elm_coor);
     GetWeight(npe, &wp);
 
     // calculate <Ke> by numerical integration
@@ -147,14 +147,14 @@ int assembly_residual_sd(Vec *x, Vec *b)
   int         i, k, e, gp, ngp, npe;
   int         index[8*3];
   int         ierr;
-  double      ElemCoord[8][3];
+  double      elm_coor[8][3];
   double      dsh[8][3];
   double      detj;
   double      Re[8*3];
   double      B[6][3*8], stress_gp[6], strain_gp[6];
   double      DsDe[6][6];
   double      *wp = NULL;
-  double      ElemDispls[8*3];
+  double      elm_disp[8*3];
   double      wp_eff;
   double      *xvalues;
   Vec         xlocal;
@@ -178,9 +178,9 @@ int assembly_residual_sd(Vec *x, Vec *b)
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
     GetPETScIndeces(&eind[eptr[e]], npe, loc2petsc, index);
-    GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
+    get_elm_coor(&eind[eptr[e]], npe, elm_coor);
     GetWeight(npe, &wp);
-    GetElemenDispls(e, xvalues, ElemDispls);
+    get_elm_disp(e, xvalues, elm_disp);
 
     // calculate <ElemResidue> by numerical integration
 
@@ -189,14 +189,14 @@ int assembly_residual_sd(Vec *x, Vec *b)
     }
     for(gp=0;gp<ngp;gp++){
 
-      ierr = get_dsh(gp, npe, ElemCoord, dsh, &detj);
+      ierr = get_dsh(gp, npe, elm_coor, dsh, &detj);
       detj = fabs(detj);
       ierr = GetB(npe, dsh, B );
 
       for(i=0;i<nvoi;i++){
 	strain_gp[i] = 0.0;
 	for(k=0;k<npe*dim;k++){
-	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
+	  strain_gp[i] = strain_gp[i] + B[i][k] * elm_disp[k];
 	}
       }
 
@@ -268,13 +268,13 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
   int    i, k, e, gp, ngp, npe;
   int    ierr;
 
-  double ElemCoord[8][3];
+  double elm_coor[8][3];
   double dsh[8][3];
   double detj;
   double B[6][3*8], stress_gp[6], strain_gp[6], energy_gp, stress_ave[6], strain_ave[6], energy_ave;
   double DsDe[6][6];
   double *wp = NULL;
-  double ElemDispls[8*3];
+  double elm_disp[8*3];
   double *xvalues;
   double vol = -1.0;
 
@@ -295,9 +295,9 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
 
-    GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
+    get_elm_coor(&eind[eptr[e]], npe, elm_coor);
     GetWeight(npe, &wp);
-    GetElemenDispls( e, xvalues, ElemDispls );
+    get_elm_disp( e, xvalues, elm_disp );
 
     vol = 0.0;
     memset(strain_ave,0.0,nvoi*sizeof(double));
@@ -308,7 +308,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
       
       energy_gp = 0.0;
 
-      get_dsh(gp, npe, ElemCoord, dsh, &detj);
+      get_dsh(gp, npe, elm_coor, dsh, &detj);
       detj = fabs(detj);
       GetB(npe, dsh, B );
       wp_eff = detj * wp[gp];
@@ -316,7 +316,7 @@ int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *en
       for(i=0;i<nvoi;i++){
 	strain_gp[i] = 0.0;
 	for(k=0;k<npe*dim;k++){
-	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
+	  strain_gp[i] = strain_gp[i] + B[i][k] * elm_disp[k];
 	}
       }
       get_c(NULL, e, gp, strain_gp, DsDe);
@@ -367,13 +367,13 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
   int    ierr;
   int    nproc, rank;
 
-  double ElemCoord[8][3];
+  double elm_coor[8][3];
   double dsh[8][3];
   double detj;
   double B[6][3*8], stress_gp[6], strain_gp[6];
   double DsDe[6][6];
   double *wp = NULL;
-  double ElemDispls[8*3];
+  double elm_disp[8*3];
   double *xvalues;
   double vol = -1.0, vol_tot = -1.0;
   double stress_aux[6];
@@ -404,15 +404,15 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
 
-    GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
+    get_elm_coor(&eind[eptr[e]], npe, elm_coor);
     GetWeight(npe, &wp);
-    GetElemenDispls( e, xvalues, ElemDispls );
+    get_elm_disp( e, xvalues, elm_disp );
 
     // calculate <ElemResidue> by numerical integration
 
     for(gp=0;gp<ngp;gp++){
 
-      get_dsh(gp, npe, ElemCoord, dsh, &detj);
+      get_dsh(gp, npe, elm_coor, dsh, &detj);
       detj = fabs(detj);
       GetB( npe, dsh, B );
       wp_eff = detj*wp[gp];
@@ -420,10 +420,10 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
       for(i=0;i<nvoi;i++){
 	strain_gp[i] = 0.0;
 	for(k=0;k<npe*dim;k++){
-	  strain_gp[i] = strain_gp[i] + B[i][k] * ElemDispls[k];
+	  strain_gp[i] = strain_gp[i] + B[i][k] * elm_disp[k];
 	}
       }
-      get_c(NULL, e, gp, ElemDispls, DsDe);
+      get_c(NULL, e, gp, elm_disp, DsDe);
 
       for(i=0;i<nvoi;i++){
 	stress_gp[i] = 0.0;
@@ -455,7 +455,49 @@ int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], 
   return 0;
 }
 /****************************************************************************************************/
-int GetElemenDispls(int e, double *x, double *ElemDispls)
+int calc_rho(MPI_Comm PROBLEM_COMM, double *rho)
+{
+
+  int    e, gp, ngp, npe, ierr;
+  double elm_coor[8][3], dsh[8][3], detj, *wp=NULL, wp_eff;
+  double vol = -1.0, vol_tot = -1.0;
+  double rho_gp, rho_a;
+
+  vol = 0.0;
+
+  for(e=0;e<nelm;e++){
+
+    npe = eptr[e+1]-eptr[e];
+    ngp = npe;
+
+    get_elm_coor(&eind[eptr[e]], npe, elm_coor);
+    GetWeight(npe, &wp);
+
+    // calculate <ElemResidue> by numerical integration
+
+    for(gp=0;gp<ngp;gp++){
+
+      get_dsh(gp, npe, elm_coor, dsh, &detj);
+      detj = fabs(detj);
+      wp_eff = detj*wp[gp];
+
+      get_rho(NULL, e, &rho_gp);
+      rho_a += rho_gp * wp_eff;
+
+      vol += wp_eff;
+    }
+
+  }
+
+  ierr = MPI_Allreduce(&rho_a, rho, 1, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Allreduce(&vol, &vol_tot, 1, MPI_DOUBLE, MPI_SUM, PROBLEM_COMM);CHKERRQ(ierr);
+
+  *rho = *rho / vol_tot;
+
+  return 0;
+}
+/****************************************************************************************************/
+int get_elm_disp(int e, double *x, double *elm_disp)
 {
 
   int  d, n, npe;
@@ -464,7 +506,7 @@ int GetElemenDispls(int e, double *x, double *ElemDispls)
   for(n=0;n<npe;n++){
     for(d=0;d<dim;d++){
       // para usar VecGetValues usamos la numeracion global
-      ElemDispls[n*dim+d] = x[eind[eptr[e]+n]*dim+d];
+      elm_disp[n*dim+d] = x[eind[eptr[e]+n]*dim+d];
     }
   }
   
@@ -759,7 +801,7 @@ int get_elem_vol(int e, double *vol)
   npe = eptr[e+1]-eptr[e];
   ngp = npe;
 
-  GetElemCoord(&eind[eptr[e]], npe, elem_coor);
+  get_elm_coor(&eind[eptr[e]], npe, elem_coor);
   GetWeight(npe, &wp);
 
   *vol = 0;
@@ -856,7 +898,7 @@ int GetPETScIndeces(int *LocalNod, int npe, int *local2PETSc, int *PETScIndex)
   return 0;
 }
 /****************************************************************************************************/
-int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3])
+int get_elm_coor(int *LocalNod, int n, double elm_coor[8][3])
 {
   /*
       Returns the coordinates of the vertex of that element
@@ -866,7 +908,7 @@ int GetElemCoord(int *LocalNod, int n, double ElemCoord[8][3])
 
   for(i=0;i<n;i++){
     for(d=0;d<dim;d++){
-      ElemCoord[i][d] = coord[ LocalNod[i]*dim + d ];
+      elm_coor[i][d] = coord[ LocalNod[i]*dim + d ];
     }
   }
 

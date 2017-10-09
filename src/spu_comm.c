@@ -327,6 +327,25 @@ int mic_send_strain(MPI_Comm WORLD_COMM, double strain[6])
   return 0;
 }
 /****************************************************************************************************/
+int mic_send_rho(MPI_Comm WORLD_COMM, double *rho)
+{
+  /* Sends to macro leader the averange rho */
+  int ierr, remote_rank;
+
+  if(macmic.type == COUP_1){
+    if(((mic_coup_1_t*)macmic.coup)->im_leader){
+      // only the micro leader sends the stress
+      remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
+      ierr = MPI_Ssend(rho, 1, MPI_DOUBLE, remote_rank, 0, WORLD_COMM); 
+      if(ierr)return 1;
+    }
+  }
+  else{
+    return 1;
+  }
+  return 0;
+}
+/****************************************************************************************************/
 int mac_recv_stress(MPI_Comm WORLD_COMM, double stress[6])
 {
   /* The processes will wait here until they receive the stress */
