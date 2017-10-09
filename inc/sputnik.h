@@ -235,7 +235,8 @@ PetscBool    flag_coupling;
 
 /* Matrices and vectors */
 
-Mat           A;                    // Jacobian Matrix          
+Mat           A;                    // Jacobian matrix          
+Mat           M;                    // Mass matrix
 Vec           x, dx, b;             // Vectors unknowns and RHS 
 KSP           ksp;                  // linear solver context    
 

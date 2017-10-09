@@ -341,17 +341,17 @@ end_mac_0:
   }
   else if(flag_mode == EIGENSYSTEM){
 
-    int nlocal, ntotal;
+    int   nlocal, ntotal;
 
     nlocal = dim * nmynods;
     ntotal = dim * ntotnod;
 
-    ierr = MatCreate(MACRO_COMM,&A);CHKERRQ(ierr);
-    ierr = MatSetSizes(A,nlocal,nlocal,ntotal,ntotal);CHKERRQ(ierr);
-    ierr = MatSetFromOptions(A);CHKERRQ(ierr);
-    ierr = MatSeqAIJSetPreallocation(A,117,NULL);CHKERRQ(ierr);
-    ierr = MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);CHKERRQ(ierr);
-    ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+    ierr = MatCreate(MACRO_COMM,&M);CHKERRQ(ierr);
+    ierr = MatSetSizes(M,nlocal,nlocal,ntotal,ntotal);CHKERRQ(ierr);
+    ierr = MatSetFromOptions(M);CHKERRQ(ierr);
+    ierr = MatSeqAIJSetPreallocation(M,117,NULL);CHKERRQ(ierr);
+    ierr = MatMPIAIJSetPreallocation(M,117,NULL,117,NULL);CHKERRQ(ierr);
+    ierr = MatSetOption(M,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
   }
   else if(flag_mode == NORMAL){
