@@ -25,7 +25,7 @@ int mac_alloc(MPI_Comm MACRO_COMM)
   int rank, nproc, ierr, nlocal, ntotal;
 
   nlocal = dim*nmynods;
-  ntotal = dim*NTotalNod;
+  ntotal = dim*ntotnod;
 
   MPI_Comm_size(MACRO_COMM, &nproc);
   MPI_Comm_rank(MACRO_COMM, &rank);
@@ -57,8 +57,8 @@ int mac_alloc(MPI_Comm MACRO_COMM)
   }
 
   //  ierr = VecCreate(comm,x);CHKERRQ(ierr);
-  //  ierr = VecSetSizes(x,nmynods,NTotalNod);CHKERRQ(ierr);
-  ierr = VecCreateGhost(MACRO_COMM, nmynods*dim, NTotalNod*dim, nghost*dim, ghostsIndex, &x); CHKERRQ(ierr);
+  //  ierr = VecSetSizes(x,nmynods,ntotnod);CHKERRQ(ierr);
+  ierr = VecCreateGhost(MACRO_COMM, nmynods*dim, ntotnod*dim, nghost*dim, ghostsIndex, &x); CHKERRQ(ierr);
   ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
   ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
 
@@ -80,7 +80,7 @@ int mac_alloc(MPI_Comm MACRO_COMM)
     }
   }
   else{
-    if( Iend != NTotalNod*dim ){
+    if( Iend != ntotnod*dim ){
       SETERRQ(MACRO_COMM,1,"error on indeces set for matrix and vector.");
     }
   }

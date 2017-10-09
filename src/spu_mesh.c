@@ -778,7 +778,7 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
       fgets(buf,NBUF,fm);
       offset += strlen(buf); 
       data  = strtok(buf," \n");
-      NTotalNod = atoi(data);
+      ntotnod = atoi(data);
 
       //
       // leemos todos los nodos en <mynods>
@@ -796,8 +796,8 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 	}
 	c++;
       }
-      if(c>NTotalNod){
-	printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
+      if(c>ntotnod){
+	printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", ntotnod, mesh_n, c);
 	return 1;
       }
       break;
@@ -821,8 +821,8 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
     }
     c++;
   }
-  if(c>NTotalNod){
-    printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", NTotalNod, mesh_n, c);
+  if(c>ntotnod){
+    printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", ntotnod, mesh_n, c);
     return 1;
   }
   fclose(fm);
@@ -861,7 +861,7 @@ int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
     data=strtok(buf," \n");
     if(!strcmp(data,"NODAL_POINTS=")){
       data=strtok(NULL," \n");
-      NTotalNod = atoi(data);
+      ntotnod = atoi(data);
       break;
     }
   }

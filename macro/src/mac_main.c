@@ -251,18 +251,21 @@ end_mac_0:
     ierr = PetscPrintf(MACRO_COMM,"Problem parsing materials from input file\n");
     goto end_mac_1;
   }
+
   /* Read Physical entities */
   ierr = read_physical_entities(MACRO_COMM, mesh_n, mesh_f);
   if(ierr){
     ierr = PetscPrintf(MACRO_COMM,"Problem parsing physical entities from mesh file\n");
     goto end_mac_1;
   }
+
   /* Read functions */
   ierr = parse_function(MACRO_COMM, input_n);
   if(ierr){
     ierr = PetscPrintf(MACRO_COMM,"Problem parsing functions from input file\n");
     goto end_mac_1;
   }
+
   /* Read boundaries */
   ierr = macro_parse_boundary(MACRO_COMM, input_n);
   if(ierr){
@@ -337,6 +340,18 @@ end_mac_0:
 
   }
   else if(flag_mode == EIGENSYSTEM){
+
+    int nlocal, ntotal;
+
+    nlocal = dim * nmynods;
+    ntotal = dim * ntotnod;
+
+    ierr = MatCreate(MACRO_COMM,&A);CHKERRQ(ierr);
+    ierr = MatSetSizes(A,nlocal,nlocal,ntotal,ntotal);CHKERRQ(ierr);
+    ierr = MatSetFromOptions(A);CHKERRQ(ierr);
+    ierr = MatSeqAIJSetPreallocation(A,117,NULL);CHKERRQ(ierr);
+    ierr = MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);CHKERRQ(ierr);
+    ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
   }
   else if(flag_mode == NORMAL){

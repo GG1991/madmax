@@ -142,7 +142,7 @@ int          *mynods;                 // Original (gmsh) numbers of my nodes
 int          nmynods;                 // Number of <mynods> 
 int          *ghost;                  // Original numbers of my ghosts nodes
 int          nghost;                  // Number of my ghost nodes
-int          NTotalNod;               // Number of total nodes in the mesh
+int          ntotnod;               // Number of total nodes in the mesh
 
 double       *coord;                  // nodes' coordinates
 

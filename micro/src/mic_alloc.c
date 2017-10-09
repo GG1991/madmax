@@ -28,7 +28,7 @@ int mic_alloc(MPI_Comm MICRO_COMM)
     int rank, nproc, ierr, nlocal, ntotal;
 
     nlocal = dim*nmynods;
-    ntotal = dim*NTotalNod;
+    ntotal = dim*ntotnod;
 
     MPI_Comm_size(MICRO_COMM, &nproc);
     MPI_Comm_rank(MICRO_COMM, &rank);
@@ -49,7 +49,7 @@ int mic_alloc(MPI_Comm MICRO_COMM)
       }
     }
 
-    ierr = VecCreateGhost(MICRO_COMM, nmynods*dim, NTotalNod*dim, nghost*dim, ghostsIndex, &x); CHKERRQ(ierr);
+    ierr = VecCreateGhost(MICRO_COMM, nmynods*dim, ntotnod*dim, nghost*dim, ghostsIndex, &x); CHKERRQ(ierr);
     ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
     ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
     ierr = VecDuplicate(x,&b1);CHKERRQ(ierr);
