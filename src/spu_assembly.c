@@ -121,10 +121,10 @@ int assembly_mass(Mat *M)
       ierr = get_rho(NULL, e, &rho_gp);
 
       wp_eff = detj * wp[gp];
-      for(i=0;i<npe;i++){
-	for(j=0;j<npe;j++){
-	  for(d=0;d<dim;d++){
-	    Me[i*npe*dim+j] = Me[i*npe*dim+j] + rho_gp * sh[i][gp] * sh[j][gp] * wp_eff;
+      for(d=0;d<dim;d++){
+	for(i=0;i<npe;i++){
+	  for(j=0;j<npe;j++){
+	    Me[ i*dim + j*dim + (d*npe + d) ] += rho_gp * sh[i][gp] * sh[j][gp] * wp_eff;
 	  }
 	}
       }
@@ -475,7 +475,7 @@ int get_rho(const char *name, int e, double *rho)
 {
   /*  Calculates constitutive tensor */
 
-  int         i, j, ierr;
+  int         ierr;
   material_t  *mat = NULL;
 
   if(name!=NULL){
