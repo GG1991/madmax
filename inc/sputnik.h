@@ -163,6 +163,7 @@ int          color;
 #define MIC_END            1
 #define MAC2MIC_STRAIN     2
 #define C_HOMO             3
+#define RHO                4
 
 /*
    This structure represents a Gauss points
@@ -318,6 +319,7 @@ int get_dsh(int gp, int npe, double coor[8][3], double ShapeDerivs[8][3], double
 int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8]);
 int GetWeight(int npe, double **wp);
 int get_c(const char *name, int e, int gp, double strain[6], double c[6][6]);
+int get_rho(const char *name, int e, double *rho);
 int get_mat_from_elem(int e, material_t **mat);
 int get_mat_from_name(const char *name, material_t **mat);
 int GetElemenDispls( int e, double *x, double *elem_disp );
@@ -327,6 +329,7 @@ int get_elem_coor(int e, double elem_coor[8][3]);
 int is_inside_fiber_cilin(int e);
 int get_centroid(int e, double centroid[3]);
 int get_elem_vol(int e, double *vol);
+int assembly_mass(Mat *M);
 
 // spu_util.c
 int get_nods_bc(int **nods, int *nnods);
@@ -345,6 +348,7 @@ int mic_send_c_homo(MPI_Comm WORLD_COMM, double c_homo[36]);
 int mac_send_signal(MPI_Comm WORLD_COMM, int signal);
 int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6]);
 int mac_recv_stress(MPI_Comm WORLD_COMM, double stress[6]);
+int mac_recv_rho(MPI_Comm WORLD_COMM, double *rho);
 int mac_recv_c_homo(MPI_Comm WORLD_COMM, double c_homo[36]);
 int mac_send_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp);
 

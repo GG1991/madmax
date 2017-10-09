@@ -13,7 +13,7 @@ int assembly_jacobian_sd(Mat *J)
   /* Assembly the Jacobian for Small Deformation approach */
 
   int         i, j, k, l, e, gp, ngp, npe;
-  int         PETScIdx[8*3];
+  int         index[8*3];
   int         ierr;
   double      ElemCoord[8][3];
   double      dsh[8][3];
@@ -37,7 +37,7 @@ int assembly_jacobian_sd(Mat *J)
 
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
-    GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, PETScIdx);
+    GetPETScIndeces( &eind[eptr[e]], npe, loc2petsc, index);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
     GetWeight(npe, &wp);
     GetElemenDispls(e, xvalues, ElemDispls);
@@ -76,7 +76,7 @@ int assembly_jacobian_sd(Mat *J)
       }
 
     }
-    ierr = MatSetValues(*J, npe*dim, PETScIdx, npe*dim, PETScIdx, Ke, ADD_VALUES);CHKERRQ(ierr);
+    ierr = MatSetValues(*J, npe*dim, index, npe*dim, index, Ke, ADD_VALUES);CHKERRQ(ierr);
   }
   VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
 
@@ -87,12 +87,65 @@ int assembly_jacobian_sd(Mat *J)
   return 0;
 }
 /****************************************************************************************************/
+int assembly_mass(Mat *M)
+{
+  /* Assembly the Jacobian for Small Deformation approach */
+
+  int         i, j, d, e, gp, ngp, npe, ierr;
+  int         index[8*3];
+  double      elm_coor[8][3];
+  double      dsh[8][3], **sh = NULL, *wp = NULL, detj, wp_eff;
+  double      Me[8*3*8*3];
+  double      rho_gp;
+
+  ierr = MatZeroEntries(*M);CHKERRQ(ierr);
+
+  for(e=0;e<nelm;e++){
+
+    npe = eptr[e+1]-eptr[e];
+    ngp = npe;
+    GetPETScIndeces(&eind[eptr[e]], npe, loc2petsc, index);
+    GetElemCoord(&eind[eptr[e]], npe, elm_coor);
+    GetWeight(npe, &wp);
+
+    // calculate <Ke> by numerical integration
+    for(i=0;i<npe*dim*npe*dim;i++){
+      Me[i]=0.0;
+    }
+
+    for(gp=0;gp<ngp;gp++){
+
+      ierr = get_dsh(gp, npe, elm_coor, dsh, &detj);
+      detj = fabs(detj);
+
+      ierr = get_rho(NULL, e, &rho_gp);
+
+      wp_eff = detj * wp[gp];
+      for(i=0;i<npe;i++){
+	for(j=0;j<npe;j++){
+	  for(d=0;d<dim;d++){
+	    Me[i*npe*dim+j] = Me[i*npe*dim+j] + rho_gp * sh[i][gp] * sh[j][gp] * wp_eff;
+	  }
+	}
+      }
+
+    }
+    ierr = MatSetValues(*M, npe*dim, index, npe*dim, index, Me, ADD_VALUES);CHKERRQ(ierr);
+  }
+
+  /* communication between processes */
+  ierr = MatAssemblyBegin(*M, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(*M, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+  return 0;
+}
+/****************************************************************************************************/
 int assembly_residual_sd(Vec *x, Vec *b)
 {
   /* Assembly the Residual for Small Deformation approach */
 
   int         i, k, e, gp, ngp, npe;
-  int         PETScIdx[8*3];
+  int         index[8*3];
   int         ierr;
   double      ElemCoord[8][3];
   double      dsh[8][3];
@@ -124,7 +177,7 @@ int assembly_residual_sd(Vec *x, Vec *b)
 
     npe = eptr[e+1]-eptr[e];
     ngp = npe;
-    GetPETScIndeces(&eind[eptr[e]], npe, loc2petsc, PETScIdx);
+    GetPETScIndeces(&eind[eptr[e]], npe, loc2petsc, index);
     GetElemCoord(&eind[eptr[e]], npe, ElemCoord);
     GetWeight(npe, &wp);
     GetElemenDispls(e, xvalues, ElemDispls);
@@ -196,7 +249,7 @@ int assembly_residual_sd(Vec *x, Vec *b)
       }
 
     }
-    ierr = VecSetValues(*b, npe*dim, PETScIdx, Re, ADD_VALUES);CHKERRQ(ierr);
+    ierr = VecSetValues(*b, npe*dim, index, Re, ADD_VALUES);CHKERRQ(ierr);
   }
   VecRestoreArray(xlocal,&xvalues); CHKERRQ(ierr);
 
@@ -415,6 +468,63 @@ int GetElemenDispls(int e, double *x, double *ElemDispls)
     }
   }
   
+  return 0;
+}
+/****************************************************************************************************/
+int get_rho(const char *name, int e, double *rho)
+{
+  /*  Calculates constitutive tensor */
+
+  int         i, j, ierr;
+  material_t  *mat = NULL;
+
+  if(name!=NULL){
+    ierr = get_mat_from_name(name, &mat);
+    if(!mat){
+      PetscPrintf(PETSC_COMM_WORLD,"material with name %s not found",name);
+      return 1;
+    }
+  }
+  else{
+    ierr = get_mat_from_elem(e, &mat);
+    if(!mat){
+      PetscPrintf(PETSC_COMM_WORLD,"material of element %d and id %d not found", e, elm_id[e]);
+      return 1;
+    }
+  }
+
+  switch(mat->typeID){
+
+    case TYPE00:
+      /* 
+	 Elástico lineal 
+       */
+      *rho  = ((type_00*)mat->type)->rho;
+      break;
+
+    case MICRO:
+
+      /* send instruction to micro */
+      ierr = mac_send_signal(WORLD_COMM, RHO);
+      if(ierr){
+	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending signal RHO to micro\n");
+	return 1;
+      }
+
+      /* recv rho from micro */
+      ierr = mac_recv_rho(WORLD_COMM, rho);
+      if(ierr){
+	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem receiving rho from micro\n");
+	return 1;
+      }
+
+      break;
+
+    default:
+      break;
+
+  }
+
   return 0;
 }
 /****************************************************************************************************/

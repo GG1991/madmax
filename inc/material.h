@@ -34,6 +34,7 @@ typedef struct _type_00{
   double poisson;
   double lambda;
   double mu;
+  double rho;
 
 }type_00;
 

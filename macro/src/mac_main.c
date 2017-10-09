@@ -353,6 +353,8 @@ end_mac_0:
     ierr = MatMPIAIJSetPreallocation(M,117,NULL,117,NULL);CHKERRQ(ierr);
     ierr = MatSetOption(M,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
+    ierr = assembly_mass(&M);
+
   }
   else if(flag_mode == NORMAL){
 
