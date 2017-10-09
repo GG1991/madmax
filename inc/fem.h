@@ -27,6 +27,7 @@ int FemInvertJac3D(double jac[3][3],double ijac[3][3],double *det);
 int fem_trans_dsh(int dim, double ijac[3][3],int nsh,int gp,double ***ShapeDerivsMaster,double ShapeDerivs[8][3]);
 double *** FemGetPointer2ShapeDerivsMaster(int npe, int dim);
 double * FemGetPointer2Weight(int npe, int dim);
+int fem_get_sh(int npe, int dim, double ***sh);
 
 // Segment 2 nodes
 double **xp_segm_2;

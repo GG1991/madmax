@@ -116,6 +116,7 @@ int assembly_mass(Mat *M)
     for(gp=0;gp<ngp;gp++){
 
       ierr = get_dsh(gp, npe, elm_coor, dsh, &detj);
+      ierr = fem_get_sh(npe, dim, &sh);
       detj = fabs(detj);
 
       ierr = get_rho(NULL, e, &rho_gp);
@@ -124,7 +125,7 @@ int assembly_mass(Mat *M)
       for(d=0;d<dim;d++){
 	for(i=0;i<npe;i++){
 	  for(j=0;j<npe;j++){
-	    Me[ i*dim + j*dim + (d*npe + d) ] += rho_gp * sh[i][gp] * sh[j][gp] * wp_eff;
+	    Me[ (i*dim)*(npe*dim) + j*dim + (d*dim*npe + d) ] += rho_gp * sh[i][gp] * sh[j][gp] * wp_eff;
 	  }
 	}
       }

@@ -83,7 +83,7 @@ PARMETIS_HEA = ${PARMETIS_DIR}/include/parmetis.h ${PARMETIS_DIR}/metis/include/
 
 LDFLAG = ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis/libparmetis.a \
          ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libmetis/libmetis.a       \
-         ${HOME}/libs/slepc-3.7.4/arch-linux-opt/lib/libslepc.so.3.7.4            \
+         ${HOME}/libs/slepc-3.7.4/arch-linux-opt/lib/libslepc.so                  \
 	 -lgsl -lgslcblas 
 
 INC = -I${DEP_DIR}
@@ -99,31 +99,31 @@ all: ${MAC_DIR}/macro ${MIC_DIR}/micro
 ##############################
 # MACRO
 ${MAC_DIR}/macro: ${MAC_OBJ} ${SPU_OBJ} 
-	gcc -o ${MAC_DIR}/macro $^ ${PETSC_KSP_LIB} -lm ${LDFLAG}
+	gcc -o ${MAC_DIR}/macro $^ ${PETSC_KSP_LIB} -lm ${LDFLAG} ${SLEPC_EPS_LIB}
 	@echo "MACRO great :) !" 
 
 ##############################
 # MICRO
 ${MIC_DIR}/micro: ${MIC_OBJ} ${SPU_OBJ} 
-	gcc -o ${MIC_DIR}/micro $^ ${PETSC_KSP_LIB} -lm ${LDFLAG}
+	gcc -o ${MIC_DIR}/micro $^ ${PETSC_KSP_LIB} -lm ${LDFLAG} ${SLEPC_EPS_LIB}
 	@echo "MICRO great :) !" 
 
 ##############################
 # SPUTNIK OBJECTS (do not work)
-${SPU_OBJ_DIR}/%.o: ${SPU_SRC_DIR}/%.c ${DEPS_SPUTNIK} ${PARMETIS_HEA}
+${SPU_OBJ_DIR}/%.o: ${SPU_SRC_DIR}/%.c ${DEPS_SPUTNIK} ${PARMETIS_HEA} ${SLEPC_EPS_LIB}
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 
 	@echo ">>> "$@
 
 ##############################
 # MACRO OBJECTS
 ${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c $(DEPS_MACMIC)
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	${SLEPC_EPS_LIB}
 	@echo ">>> "$@
 
 ##############################
 # MICRO OBJECTS
 ${MIC_OBJ_DIR}/%.o: ${MIC_SRC_DIR}/%.c ${DEPS} $(DEPS_MACMIC)
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	
+	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	${SLEPC_EPS_LIB}
 	@echo ">>> "$@
 
 vars:

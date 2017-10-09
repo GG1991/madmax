@@ -49,16 +49,46 @@ int main(int argc, char **argv)
     flag_coupling = PETSC_TRUE;
     macmic.type = COUP_1;
   }
+
+  /* Stablish a new local communicator */
+  color = MACRO;
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
+  if(ierr){
+    ierr_1=1;
+    goto end_mac_0;
+  }
+
+  ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
+  ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
+  
+end_mac_0:
+  ierr = PetscFinalize();CHKERRQ(ierr);
+  if(ierr_1) goto end_mac_2;
+
+  /*
+     Set PETSc communicator to MACRO_COMM
+     and start again
+  */
+  PETSC_COMM_WORLD = MACRO_COMM;
+  //  ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+  ierr = SlepcInitialize(&argc,&argv,(char*)0,help);
+
+  PetscPrintf(MACRO_COMM,
+      "--------------------------------------------------\n"
+      "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
+      "--------------------------------------------------\n");
+
+  /* execution mode */
   flag_mode  = NORMAL;
   ierr = PetscOptionsHasName(NULL,NULL,"-testcomm",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE){
     flag_mode = TEST_COMM;
-    PetscPrintf(MACRO_COMM,"MACRO MODE : TEST_COMM");
+    PetscPrintf(MACRO_COMM,"MACRO MODE : TEST_COMM\n");
   }
   ierr = PetscOptionsHasName(NULL,NULL,"-eigensys",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE){
     flag_mode = EIGENSYSTEM;
-    PetscPrintf(MACRO_COMM,"MACRO MODE : EIGENSYSTEM");
+    PetscPrintf(MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
   }
 
   /* Mesh and Input Options */
@@ -75,8 +105,7 @@ int main(int argc, char **argv)
   ierr = PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set); CHKERRQ(ierr); 
   if(set == PETSC_FALSE){
     PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
-    ierr_1 = 1;
-    goto end_mac_0;
+    goto end_mac_1;
   }
   switch(dim){
     case 2:
@@ -87,48 +116,9 @@ int main(int argc, char **argv)
       break;
     default:
       PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
-      ierr_1 = 1;
       goto end_mac_1;
   }
 
-  /* flow execution variables */
-  ierr = PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);CHKERRQ(ierr);
-  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"-tf not given.");
-  ierr = PetscOptionsGetReal(NULL,NULL,"-dt",&dt,&set);CHKERRQ(ierr);
-  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"-dt not given.");
-
-  ierr = PetscOptionsHasName(NULL,NULL,"-reactions",&set);CHKERRQ(ierr);
-  flag_reactions = (set==PETSC_TRUE) ? PETSC_TRUE : PETSC_FALSE;
-
-  /* Mesh partition algorithms */
-  partition_algorithm = PARMETIS_MESHKWAY;
-  ierr = PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_MESHKWAY;
-  ierr = PetscOptionsHasName(NULL,NULL,"-part_geom",&set);CHKERRQ(ierr);
-  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_GEOM;
-
-  /* Stablish a new local communicator */
-  color = MACRO;
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
-  if(ierr){
-    ierr_1=1;
-    goto end_mac_0;
-  }
-
-  ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
-  ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
-
-  
-end_mac_0:
-  ierr = PetscFinalize();CHKERRQ(ierr);
-  if(ierr_1) goto end_mac_2;
-
-  /*
-     Set PETSc communicator to MACRO_COMM
-     and start again
-  */
-  PETSC_COMM_WORLD = MACRO_COMM;
-  ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
   /* Printing Options */
   flag_print = 0;
@@ -143,13 +133,13 @@ end_mac_0:
   ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
   
-  /* Solver Options */
-  ierr = PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
+  /* Newton-Raphson solver options */
+  ierr = PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
   if(set==PETSC_FALSE) nr_max_its=5;
   ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
-  /* Structured Grid Interp */
+  /* structured grid interp */
   ierr = PetscOptionsGetInt(NULL, NULL, "-nx_interp", &nx_interp, &set);
   if(set==PETSC_FALSE) nx_interp=2;
   ierr = PetscOptionsGetInt(NULL, NULL, "-ny_interp", &ny_interp, &set);
@@ -157,11 +147,26 @@ end_mac_0:
   ierr = PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
   if(set==PETSC_FALSE) nz_interp=2;
 
+  /* flow execution variables for NORMAL mode */
+  if(flag_mode==NORMAL){
+    ierr = PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);CHKERRQ(ierr);
+    if(set == PETSC_FALSE){
+      PetscPrintf(MPI_COMM_SELF,"-tf not given.\n");
+      goto end_mac_1;
+    }
+    ierr = PetscOptionsGetReal(NULL,NULL,"-dt",&dt,&set);CHKERRQ(ierr);
+    if(set == PETSC_FALSE){
+      PetscPrintf(MPI_COMM_SELF,"-dt not given.\n");
+      goto end_mac_1;
+    }
+  }
 
-  PetscPrintf(MACRO_COMM,
-      "--------------------------------------------------\n"
-      "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
-      "--------------------------------------------------\n");
+  /* Mesh partition algorithms */
+  partition_algorithm = PARMETIS_MESHKWAY;
+  ierr = PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_MESHKWAY;
+  ierr = PetscOptionsHasName(NULL,NULL,"-part_geom",&set);CHKERRQ(ierr);
+  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_GEOM;
 
   file_out = NULL;
   if(rank_mac==0) file_out = fopen("macro_structures.dat","w");
@@ -181,16 +186,10 @@ end_mac_0:
 #endif
 
   if(flag_coupling){
-    PetscPrintf(MACRO_COMM,
-	"--------------------------------------------------\n"
-	"  MACRO: COUPLING \n"
-	"--------------------------------------------------\n");
+    PetscPrintf(MACRO_COMM,"MACRO: COUPLING\n");
   }
   else{
-    PetscPrintf(MACRO_COMM,
-	"--------------------------------------------------\n"
-	"  MACRO: STANDALONE \n"
-	"--------------------------------------------------\n");
+    PetscPrintf(MACRO_COMM,"MACRO: STANDALONE\n");
   }
 
   /* Register various stages for profiling */
@@ -442,7 +441,7 @@ end_mac_0:
 	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
 	ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
 	ierr = assembly_jacobian_sd(&A);
-	ierr = MacroSetBoundaryOnJacobian( &A ); CHKERRQ(ierr);
+	ierr = MacroSetBoundaryOnJacobian(&A); CHKERRQ(ierr);
 	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
 
 	/* Solving Problem */
@@ -534,7 +533,8 @@ end_mac_1:
       "  MACRO: FINISH COMPLETE\n"
       "--------------------------------------------------\n");
 
-  ierr = PetscFinalize();
+  //  ierr = PetscFinalize();
+  ierr = SlepcFinalize();
 
 end_mac_2:
   ierr = MPI_Finalize();

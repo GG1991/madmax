@@ -624,6 +624,49 @@ double *** FemGetPointer2ShapeDerivsMaster(int npe, int dim)
 
 }
 /****************************************************************************************************/
+int fem_get_sh(int npe, int dim, double ***sh)
+{
+
+  switch(dim){
+
+    case 1:
+      return 1;
+
+    case 2:
+
+      switch(npe){
+        case 3:
+          *sh = sh_tria_3;
+          return 0;
+        case 4:
+          *sh = sh_quad_4;
+          return 0;
+        default:
+          return 1;
+      }
+
+    case 3:
+
+      switch(npe){
+        case 4:
+          *sh = sh_tetra_4;
+          return 0;
+        case 6:
+          *sh = sh_prism_6;
+          return 0;
+        case 8:
+          *sh = sh_hexa_8;
+          return 0;
+        default:
+          return 1;
+      }
+
+    default:
+      return 1;
+  }
+
+}
+/****************************************************************************************************/
 double * FemGetPointer2Weight(int npe, int dim)
 {
   switch(dim)
