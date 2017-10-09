@@ -314,6 +314,7 @@ end_mic_0:
   ierr = get_domain_center(MICRO_COMM, coord, nmynods, center_domain);
   ierr = PetscPrintf(MICRO_COMM,"center = %e %e %e\n",center_domain[0],center_domain[1],center_domain[2]);
   ierr = calc_rho(MICRO_COMM, &rho);
+  ierr = PetscPrintf(MICRO_COMM,"density = %e\n", rho);
 
   if(flag_coupling){
 
