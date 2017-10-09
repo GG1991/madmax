@@ -68,6 +68,15 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 	      material.GmshID = -1;
 	      material.type = malloc(sizeof(type_00));
 
+	      // densidad rho
+	      data = strtok(NULL," \n");
+	      if(!data)return 1;
+	      if(strncmp(data,"rho=",4)){
+		PetscPrintf(PETSC_COMM_WORLD,"<rho=<value>> expected\n", input);
+		return 1;
+	      }
+	      ((type_00*)material.type)->rho = atof(&data[4]);
+
 	      // módulo de young
 	      data = strtok(NULL," \n");
 	      if(!data)return 1;
