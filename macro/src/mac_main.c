@@ -13,6 +13,7 @@ static char help[] =
 "Solves the displacement field inside a solid structure. \n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
+"-eigensys : calculates the eigensystem Mx = -(1/omega)Kx\n"
 "-print_petsc prints petsc structures on files such as Mat and Vec objects\n"
 "-print_vtu prints solutions on .vtu and .pvtu files\n";
 
@@ -50,7 +51,15 @@ int main(int argc, char **argv)
   }
   flag_mode  = NORMAL;
   ierr = PetscOptionsHasName(NULL,NULL,"-testcomm",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) flag_mode = TEST_COMM;
+  if(set == PETSC_TRUE){
+    flag_mode = TEST_COMM;
+    PetscPrintf(MACRO_COMM,"MACRO MODE : TEST_COMM");
+  }
+  ierr = PetscOptionsHasName(NULL,NULL,"-eigensys",&set);CHKERRQ(ierr);
+  if(set == PETSC_TRUE){
+    flag_mode = EIGENSYSTEM;
+    PetscPrintf(MACRO_COMM,"MACRO MODE : EIGENSYSTEM");
+  }
 
   /* Mesh and Input Options */
   mesh_f = FORMAT_NULL;
@@ -341,7 +350,8 @@ end_mac_0:
   }
   else if(flag_mode == EIGENSYSTEM){
 
-    int   nlocal, ntotal;
+    int    nlocal, ntotal;
+    double omega;
     EPS   eps;
 
     nlocal = dim * nmynods;
@@ -359,13 +369,36 @@ end_mac_0:
       ierr = PetscPrintf(MACRO_COMM, "problem assembling mass matrix\n");
       goto end_mac_1;
     }
+    ierr = assembly_jacobian_sd(&A);
+
+    int  *dir_idx;
+    int  ndir;
+    node_list_t    *pBound;
+    mac_boundary_t *mac_boundary;
+
+    pBound = boundary_list.head;
+    while(pBound){
+      mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
+      dir_idx = mac_boundary->dir_idx;
+      ndir = mac_boundary->ndir;
+      ierr = MatZeroRowsColumns(M, ndir, dir_idx, 1.0, NULL, NULL); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(A, ndir, dir_idx, 0.0, NULL, NULL); CHKERRQ(ierr);
+      pBound = pBound->next;
+    }
+    ierr = MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(M, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
     ierr = EPSCreate(PETSC_COMM_WORLD,&eps);CHKERRQ(ierr);
-    ierr = EPSSetOperators(eps,A,NULL);CHKERRQ(ierr);
-    ierr = EPSSetProblemType(eps,EPS_HEP);CHKERRQ(ierr);
+    ierr = EPSSetOperators(eps,M,A);CHKERRQ(ierr);
+    ierr = EPSSetProblemType(eps,EPS_GHEP);CHKERRQ(ierr);
     ierr = EPSSetFromOptions(eps);CHKERRQ(ierr);
 
     ierr = EPSSolve(eps);CHKERRQ(ierr);
+    ierr = EPSGetEigenpair(eps,0,&omega,NULL,x,NULL);CHKERRQ(ierr);
+
+    ierr = PetscPrintf(MACRO_COMM, "omega = %e\n",omega);
 
 
   }
