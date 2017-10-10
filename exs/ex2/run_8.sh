@@ -19,12 +19,17 @@ NM=1
     -input ex2.spu \
     -dim 2 \
     -mesh_gmsh \
-    -mesh meshes/homoge/homog_20.msh \
+    -mesh meshes/direct_1/direct.msh \
     -print_vtu \
     -print_petsc \
     -part_geom \
     -eigensys \
+    -eps_nev 1 \
+    -eps_max_it 400 \
     -options_left 0
+
+    #-mesh meshes/homoge/homog_20.msh \
+    #-eps_tol 1.0e-7 \
 
 if [ -d "run_8/direct" ]; then
   rm -f run_8/direct/*

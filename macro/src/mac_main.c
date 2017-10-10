@@ -404,9 +404,10 @@ end_mac_0:
 
     int nev;   // number of request eigenpairs
     int nconv; // number of converged eigenpairs
+    double error;
 
     ierr = EPSCreate(MACRO_COMM,&eps);CHKERRQ(ierr);
-    ierr = EPSSetOperators(eps,A,M);CHKERRQ(ierr);
+    ierr = EPSSetOperators(eps,M,A);CHKERRQ(ierr);
     ierr = EPSSetProblemType(eps,EPS_GHEP);CHKERRQ(ierr);
     ierr = EPSSetFromOptions(eps);CHKERRQ(ierr);
     ierr = EPSGetDimensions(eps,&nev,NULL,NULL);CHKERRQ(ierr);
@@ -419,7 +420,8 @@ end_mac_0:
     for( i = 0 ; i < nev ; i++ ){
 
       ierr = EPSGetEigenpair(eps,i,&omega,NULL,x,NULL);CHKERRQ(ierr);
-      PetscPrintf(MACRO_COMM, "omega %d = %e\n", i, omega);
+      ierr = EPSComputeError(eps,i,EPS_ERROR_RELATIVE,&error);CHKERRQ(ierr);
+      PetscPrintf(MACRO_COMM, "omega %d = %e   error = %e\n", i, omega, error);
 
       if(flag_print & (1<<PRINT_VTU)){ 
 
