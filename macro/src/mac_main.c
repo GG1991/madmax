@@ -402,31 +402,46 @@ end_mac_0:
       ierr = VecView(x,viewer); CHKERRQ(ierr);
     }
 
-    ierr = EPSCreate(PETSC_COMM_WORLD,&eps);CHKERRQ(ierr);
-    ierr = EPSSetOperators(eps,M,A);CHKERRQ(ierr);
+    int nev;   // number of request eigenpairs
+    int nconv; // number of converged eigenpairs
+
+    ierr = EPSCreate(MACRO_COMM,&eps);CHKERRQ(ierr);
+    ierr = EPSSetOperators(eps,A,M);CHKERRQ(ierr);
     ierr = EPSSetProblemType(eps,EPS_GHEP);CHKERRQ(ierr);
     ierr = EPSSetFromOptions(eps);CHKERRQ(ierr);
+    ierr = EPSGetDimensions(eps,&nev,NULL,NULL);CHKERRQ(ierr);
+    PetscPrintf(MACRO_COMM,"Number of requested eigenvalues: %D\n",nev);
 
     ierr = EPSSolve(eps);CHKERRQ(ierr);
-    ierr = EPSGetEigenpair(eps,0,&omega,NULL,x,NULL);CHKERRQ(ierr);
+    ierr = EPSGetConverged(eps,&nconv);CHKERRQ(ierr);
+    PetscPrintf(MACRO_COMM,"Number of converged eigenpairs: %D\n",nconv);
 
-    ierr = PetscPrintf(MACRO_COMM, "omega = %e\n",omega);
+    for( i = 0 ; i < nev ; i++ ){
 
-    if(flag_print & (1<<PRINT_VTU)){ 
-      strain = malloc(nelm*nvoi*sizeof(double));
-      stress = malloc(nelm*nvoi*sizeof(double));
-      energy = malloc(nelm*sizeof(double));
-      energy_interp = malloc(nelm*sizeof(double));
-      ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
-      ierr = calc_strain_stress_energy(&x, strain, stress, energy);
-      ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
+      ierr = EPSGetEigenpair(eps,i,&omega,NULL,x,NULL);CHKERRQ(ierr);
+      PetscPrintf(MACRO_COMM, "omega %d = %e\n", i, omega);
 
       if(flag_print & (1<<PRINT_VTU)){ 
-	sprintf(vtkfile_n,"%s_eigen",myname);
-	ierr = write_vtu(MACRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);
+
+	strain = malloc(nelm*nvoi*sizeof(double));
+	stress = malloc(nelm*nvoi*sizeof(double));
+	energy = malloc(nelm*sizeof(double));
+	energy_interp = malloc(nelm*sizeof(double));
+	ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
+	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
+	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
+
+	if(flag_print & (1<<PRINT_VTU)){ 
+	  sprintf(vtkfile_n,"%s_eigen_%d", myname, i);
+	  ierr = write_vtu(MACRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);
+	}
+	free(stress); free(strain); free(energy);
+
       }
-      free(stress); free(strain); free(energy);
+
     }
+
+    ierr = EPSDestroy(&eps); CHKERRQ(ierr);
 
   }
   else if(flag_mode == NORMAL){
