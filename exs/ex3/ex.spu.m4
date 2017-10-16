@@ -1,6 +1,6 @@
 $Materials
-MATRIX    TYPE00 rho=1.0e6 E=1.0e6  v=0.3
-FIBER     TYPE00 rho=1.0e6 E=1.0e7  v=0.3
+MATRIX    TYPE00 rho=rho_m E=E_m    v=0.3
+FIBER     TYPE00 rho=1.0e6 E=1.0e6  v=0.3
 MATRIX_0  TYPE00 rho=rho_m  E=E_m    v=0.3
 FIBER_0   TYPE00 rho=1.0e6 E=1.0e7  v=0.3
 MATRIX_1  TYPE00 rho=rho_m  E=E_m    v=0.3
