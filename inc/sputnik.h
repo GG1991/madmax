@@ -254,6 +254,7 @@ int parse_material(MPI_Comm PROBLEM_COMM, char *input);
 int check_elm_id(void);
 int parse_function(MPI_Comm PROBLEM_COMM, char *input);
 int StrBin2Dec(char *str);
+int isfloat(char *s);
 
 // spu_mesh.c
 int read_mesh_elmv(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f);

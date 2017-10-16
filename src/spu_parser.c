@@ -75,6 +75,7 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 		PetscPrintf(PETSC_COMM_WORLD,"<rho=<value>> expected\n", input);
 		return 1;
 	      }
+	      if(data[4]=='\0') return 1;
 	      ((type_00*)material.type)->rho = atof(&data[4]);
 
 	      // módulo de young
@@ -84,6 +85,7 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 		PetscPrintf(PETSC_COMM_WORLD,"<E=<value>> expected\n", input);
 		return 1;
 	      }
+	      if(data[2]=='\0') return 1;
 	      ((type_00*)material.type)->young = atof(&data[2]);
 
 	      // módulo de poisson
@@ -93,6 +95,7 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 		PetscPrintf(PETSC_COMM_WORLD,"<v=<value>> expected\n", input);
 		return 1;
 	      }
+	      if(data[2]=='\0') return 1;
 	      ((type_00*)material.type)->poisson = atof(&data[2]);
 
 	      // calculamos parametros derivados
@@ -270,3 +273,33 @@ int StrBin2Dec(char *str)
   return dec;
 }
 /****************************************************************************************************/
+int isfloat(char *s)
+{
+  int i = 0;
+
+  if(!s) return 1;
+
+  if( s[i] == '\0' ) return 1;
+
+  while( s[i] != '\0' && i < strlen(s) ) {
+
+    if (s[i] != 'e' ||
+	s[i] != 'E' ||
+	s[i] != '.' ||
+	s[i] != '0' ||
+	s[i] != '1' ||
+	s[i] != '2' ||
+	s[i] != '3' ||
+	s[i] != '4' ||
+	s[i] != '5' ||
+	s[i] != '6' ||
+	s[i] != '7' ||
+	s[i] != '8' ||
+	s[i] != '9' )
+      return 1;
+
+    i++;
+  }
+
+  return 0;
+}

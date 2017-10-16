@@ -17,36 +17,57 @@ if ! [ -d "run_1" ]; then
   mkdir run_1
 fi
 
+E_m=( 1.0e7 2.0e7 5.0e7 8.0e7 1.0e8 2.0e8 5.0e8 8.0e8 1.0e9 )
+
 #---------------------------------------------------------------------
 
-function direct {
+function direct_1 {
 
 NM=1
 
 #xterm -e gdb --args 
 
-./mpirun -np $NM ../../macro/macro \
-    -input ex2.spu \
-    -dim 2 \
-    -mesh_gmsh \
-    -mesh meshes/direct_1/direct_10.msh \
-    -print_vtu \
-    -part_geom \
-    -eigensys \
-    -eps_nev 1 \
-    -options_left 0 > macro.out
 
-    #-mesh meshes/homoge/homog_20.msh \
-    #-eps_tol 1.0e-7 \
-    #-eps_max_it 400 \
+for i in `seq 1 ${#E_m[@]}`; do
 
-if [ -d "run_8/direct" ]; then
-  rm -f run_1/direct/*
-else
-  mkdir run_1/direct
-fi
-mv macro_* run_1/direct/.
+  m4 -Drho_m=1.0e6 -DE_m=${E_m[$((i-1))]} ex.spu.m4 > ex.spu
+  ./mpirun -np $NM ../../macro/macro \
+      -input ex.spu \
+      -dim 2 \
+      -mesh_gmsh \
+      -mesh meshes/direct_1/direct_10.msh \
+      -print_vtu \
+      -part_geom \
+      -eigensys \
+      -eps_nev 1 \
+      -options_left 0 > macro.out
+  
+      #-mesh meshes/homoge/homog_20.msh \
+      #-eps_tol 1.0e-7 \
+      #-eps_max_it 400 \
 
+  if [ -d "run_1/direct_1_$i" ]; then
+    rm -f run_1/direct_1_$i/*
+  else
+    mkdir run_1/direct_1_$i
+  fi
+  mv macro* ex.spu run_1/direct_1_$i/.
+  echo "run_1/direct_1_$i done"
+
+done
 }
 
-eigensystem
+function ext_direct_1 {
+
+# extract results 
+rm -f omega.dat em.dat run_1/omega_vs_em.dat
+
+for i in `seq 1 ${#E_m[@]}`; do
+ awk '/omega/{print $4}' run_1/direct_1_$i/macro.out >> omega.dat
+ echo ${E_m[$((i-1))]} >> em.dat
+done
+paste em.dat omega.dat > run_1/omega_vs_em.dat
+
+}
+direct_1
+ext_direct_1
