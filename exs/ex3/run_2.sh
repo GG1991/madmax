@@ -6,9 +6,8 @@
 # c) Simulation using parallel mixture theory
 # d) Simulation using serial mixture theory
 #
-# In all the simulation E_i, v_i, v_m remains the same 
-# we vary first  E_m from E_m / E_m_0 = 1 to E_m / E_m_0 = 1000
-# we vary second r_m from m_m / r_m_0 = 1 to r_m / r_m_0 = 1000
+# In all the simulation E_i, v_i, rho_i, v_m, rho_uuremains the same 
+# we vary E_m from E_m / E_m_0 = 1 to E_m / E_m_0 = 1000
 #
 # we print the eigenvalue on screen and we take it with awk
 #
@@ -17,8 +16,8 @@ if ! [ -d "run_2" ]; then
   mkdir run_2
 fi
 
-E_m=( 2.0e5 5.0e5 8.0e5 1.0e6 2.0e6 5.0e6 8.0e6 1.0e7 )
-#E_m=( 2.0e5 5.0e5 8.0e5 1.0e6 2.0e6 5.0e6 8.0e6 1.0e7 2.0e7 5.0e7 8.0e7 1.0e8 )
+E_m=( 2.0e5 5.0e5 8.0e5 1.0e6 2.0e6 5.0e6 8.0e6 1.0e7 2.0e7 5.0e7 8.0e7 1.0e8 \
+2.0e8 5.0e8 )
 nev=3 # number of request eigenvalues
 
 #---------------------------------------------------------------------
