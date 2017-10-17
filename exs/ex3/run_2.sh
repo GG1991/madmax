@@ -13,8 +13,8 @@
 # we print the eigenvalue on screen and we take it with awk
 #
 
-if ! [ -d "run_1" ]; then
-  mkdir run_1
+if ! [ -d "run_2" ]; then
+  mkdir run_2
 fi
 
 E_m=( 2.0e5 5.0e5 8.0e5 1.0e6 2.0e6 5.0e6 8.0e6 1.0e7 )
@@ -33,7 +33,7 @@ for i in `seq 1 ${#E_m[@]}`; do
       -input ex.spu \
       -dim 2 \
       -mesh_gmsh \
-      -mesh meshes/direct_1/direct_10.msh \
+      -mesh meshes/direct_2/direct_10.msh \
       -print_vtu \
       -part_geom \
       -eigensys \
@@ -42,15 +42,14 @@ for i in `seq 1 ${#E_m[@]}`; do
       #-mesh meshes/homoge/homog_20.msh \
       #-eps_tol 1.0e-7 \
       #-eps_max_it 400 \
-      #-eps_view \
 
-  if [ -d "run_1/direct_$i" ]; then
-    rm -f run_1/direct_$i/*
+  if [ -d "run_2/direct_$i" ]; then
+    rm -f run_2/direct_$i/*
   else
-    mkdir run_1/direct_$i
+    mkdir run_2/direct_$i
   fi
-  mv macro* ex.spu run_1/direct_$i/.
-  echo "run_1/direct_$i done"
+  mv macro* ex.spu run_2/direct_$i/.
+  echo "run_2/direct_$i done"
 
 done
 }
@@ -80,7 +79,7 @@ for i in `seq 1 ${#E_m[@]}`; do
       -input ex.spu \
       -dim 2 \
       -mesh_gmsh \
-      -mesh meshes/rve_1/rve_5.msh \
+      -mesh meshes/rve_2/rve_5.msh \
       -part_geom \
       -homo_us \
       -options_left 0 > macro.out
@@ -88,13 +87,13 @@ for i in `seq 1 ${#E_m[@]}`; do
       #-eps_tol 1.0e-7 \
       #-eps_max_it 400 \
 
-  if [ -d "run_1/multi_us_$i" ]; then
-    rm -f run_1/multi_us_$i/*
+  if [ -d "run_2/multi_us_$i" ]; then
+    rm -f run_2/multi_us_$i/*
   else
-    mkdir run_1/multi_us_$i
+    mkdir run_2/multi_us_$i
   fi
-  mv macro* ex.spu run_1/multi_us_$i/.
-  echo "run_1/multi_us_$i done"
+  mv macro* ex.spu run_2/multi_us_$i/.
+  echo "run_2/multi_us_$i done"
 
 done
 }
@@ -124,7 +123,7 @@ for i in `seq 1 ${#E_m[@]}`; do
       -input ex.spu \
       -dim 2 \
       -mesh_gmsh \
-      -mesh meshes/rve_1/rve_5.msh \
+      -mesh meshes/rve_2/rve_9.msh \
       -part_geom \
       -homo_taylor_p \
       -options_left 0 > macro.out
@@ -132,13 +131,13 @@ for i in `seq 1 ${#E_m[@]}`; do
       #-eps_tol 1.0e-7 \
       #-eps_max_it 400 \
 
-  if [ -d "run_1/multi_tp_$i" ]; then
-    rm -f run_1/multi_tp_$i/*
+  if [ -d "run_2/multi_tp_$i" ]; then
+    rm -f run_2/multi_tp_$i/*
   else
-    mkdir run_1/multi_tp_$i
+    mkdir run_2/multi_tp_$i
   fi
-  mv macro* ex.spu run_1/multi_tp_$i/.
-  echo "run_1/multi_tp_$i done"
+  mv macro* ex.spu run_2/multi_tp_$i/.
+  echo "run_2/multi_tp_$i done"
 
 done
 }
@@ -168,7 +167,7 @@ for i in `seq 1 ${#E_m[@]}`; do
       -input ex.spu \
       -dim 2 \
       -mesh_gmsh \
-      -mesh meshes/rve_1/rve_5.msh \
+      -mesh meshes/rve_2/rve_5.msh \
       -part_geom \
       -homo_taylor_s \
       -options_left 0 > macro.out
@@ -176,13 +175,13 @@ for i in `seq 1 ${#E_m[@]}`; do
       #-eps_tol 1.0e-7 \
       #-eps_max_it 400 \
 
-  if [ -d "run_1/multi_ts_$i" ]; then
-    rm -f run_1/multi_ts_$i/*
+  if [ -d "run_2/multi_ts_$i" ]; then
+    rm -f run_2/multi_ts_$i/*
   else
-    mkdir run_1/multi_ts_$i
+    mkdir run_2/multi_ts_$i
   fi
-  mv macro* ex.spu run_1/multi_ts_$i/.
-  echo "run_1/multi_ts_$i done"
+  mv macro* ex.spu run_2/multi_ts_$i/.
+  echo "run_2/multi_ts_$i done"
 
 done
 }
@@ -204,26 +203,26 @@ for v in `seq 1 $nev`; do
  rm -f omega_tp_$v.dat omega_ts_$v.dat omega_direct_$v.dat omega_us_$v.dat 
 
  for i in `seq 1 ${#E_m[@]}`; do
-  sed -n "/omega $((v-1))/p" run_1/direct_$i/macro.out   | awk '{print $4}' >> omega_direct_$v.dat
+  sed -n "/omega $((v-1))/p" run_2/direct_$i/macro.out   | awk '{print $4}' >> omega_direct_$v.dat
  done
  for i in `seq 1 ${#E_m[@]}`; do
-  sed -n "/omega $((v-1))/p" run_1/multi_us_$i/macro.out | awk '{print $4}' >> omega_us_$v.dat
+  sed -n "/omega $((v-1))/p" run_2/multi_us_$i/macro.out | awk '{print $4}' >> omega_us_$v.dat
  done
  for i in `seq 1 ${#E_m[@]}`; do
-  sed -n "/omega $((v-1))/p" run_1/multi_tp_$i/macro.out | awk '{print $4}' >> omega_tp_$v.dat
+  sed -n "/omega $((v-1))/p" run_2/multi_tp_$i/macro.out | awk '{print $4}' >> omega_tp_$v.dat
  done
  for i in `seq 1 ${#E_m[@]}`; do
-  sed -n "/omega $((v-1))/p" run_1/multi_ts_$i/macro.out | awk '{print $4}' >> omega_ts_$v.dat
+  sed -n "/omega $((v-1))/p" run_2/multi_ts_$i/macro.out | awk '{print $4}' >> omega_ts_$v.dat
  done
 
  paste omega_aux.dat omega_direct_$v.dat omega_us_$v.dat omega_tp_$v.dat omega_ts_$v.dat \
  > omega_aux_1.dat ; mv omega_aux_1.dat omega_aux.dat
  
- mv omega_direct_$v.dat omega_us_$v.dat omega_tp_$v.dat omega_ts_$v.dat run_1/.
+ mv omega_direct_$v.dat omega_us_$v.dat omega_tp_$v.dat omega_ts_$v.dat run_2
 
 done
-mv omega_aux.dat run_1/omega_vs_em.dat
-mv em.dat run_1/.
+mv omega_aux.dat run_2/omega_vs_em.dat
+mv em.dat run_2
 
 }
 

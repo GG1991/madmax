@@ -17,6 +17,8 @@
 *.svg
 *.csv
 
+exs/ex3/run_*
+
 null
 
 obj/*.o
@@ -36,7 +38,6 @@ struct*
 *.swp*
 
 utils/
-meshes/
 
 *_trace.*
 mpitests/IS
@@ -47,6 +48,7 @@ mpirun
 # Special files
 ############
 meshes/cube_unif/cube.geo
+meshes/barbero
 exs/ex1/coupling.sh
 exs/ex1/tmpi2
 
