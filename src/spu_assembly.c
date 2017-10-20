@@ -612,12 +612,12 @@ int get_c(const char *name, int e, int gp, double strain[6], double c[6][6])
 	/*
 	   Plane Strain
 	*/
-	c[0][0]=1.0; c[0][1]=poi; c[0][2]=0.0;
-	c[1][0]=poi; c[1][1]=1.0; c[1][2]=0.0;
-	c[2][0]=0.0; c[2][1]=0.0; c[2][2]=(1-poi)/2;
+	c[0][0]=1.0-poi; c[0][1]=poi    ; c[0][2]=0.0        ;
+	c[1][0]=poi    ; c[1][1]=1.0-poi; c[1][2]=0.0        ;
+	c[2][0]=0.0    ; c[2][1]=0.0    ; c[2][2]=(1-2*poi)/2;
 	for(i=0;i<3;i++){
 	  for(j=0;j<3;j++){
-	    c[i][j] = c[i][j] * you/(1-pow(poi,2));
+	    c[i][j] = c[i][j] * you/((1+poi)*(1-2*poi));
 	  }
 	}
       }
