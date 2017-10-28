@@ -232,9 +232,7 @@ int mic_homogenize_unif_strains(MPI_Comm MICRO_COMM, double strain_mac[6], doubl
   return 0;
 }
 /****************************************************************************************************/
-int mic_homog_us(
-    MPI_Comm MICRO_COMM, 
-    double strain_mac[6], double strain_ave[6], double stress_ave[6])
+int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
   /* 
@@ -260,9 +258,10 @@ int mic_homog_us(
     MPI_Comm_size(MICRO_COMM, &nproc);
     MPI_Comm_rank(MICRO_COMM, &rank);
 
-    int nyl = ny / nproc + (ny % nproc > rank)?1:0; // ny for every process
-    int nl  = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;    // local nodes
-    int nnz = (dim==2)? 18:81;                      // nonzeros per row
+    //int nyl = ny / nproc; // ny for every process
+    int nyl = ny / nproc + ((ny % nproc > rank)?1:0); // ny for every process
+    int nl  = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;      // local nodes
+    int nnz = (dim==2)? 18:81;                        // nonzeros per row
 
     MatCreate(MICRO_COMM,&A);
     MatSetSizes(A,nyl*nx*dim,nyl*nx*dim,nn*dim,nn*dim);
@@ -274,8 +273,13 @@ int mic_homog_us(
     int istart, iend;
     MatGetOwnershipRange(A,&istart,&iend);
 
-    int nghost = ( dim == 2 )?nx:nx*nz, *ghost_index;
-    ghost_index = malloc(nx*dim*sizeof(int));
+    int nghost, *ghost_index;;
+    if( nproc == 1 )
+      nghost = 0;
+    else
+      nghost = ( dim == 2 )?nx:nx*nz;
+
+    ghost_index = malloc(nghost*dim*sizeof(int));
 
     int i;
     if( rank == 0 ){

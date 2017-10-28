@@ -46,6 +46,7 @@ int main(int argc, char **argv)
   first_time_homo   = 1;
   energy_interp     = NULL;
   flag_struct_mesh  = false;
+  flag_first_alloc  = true;
 
   WORLD_COMM = MPI_COMM_WORLD;
   MPI_Init(&argc, &argv);
@@ -127,6 +128,7 @@ end_mic_0:
     int    nval_expect;
     int    struct_mesh_n[3];
     double struct_mesh_l[3];
+    nx = ny = nz = 1;
 
     if( dim == 2 ) nval_expect = nval = 2;
     if( dim == 3 ) nval_expect = nval = 3;
@@ -134,13 +136,14 @@ end_mic_0:
     if( set == PETSC_TRUE ){
 
       if( nval != nval_expect ){
-	PetscPrintf(MPI_COMM_SELF,"-struct_mesh should include %d double arguments\n", nval_expect);
+	PetscPrintf(MPI_COMM_SELF,"-struct_n should include %d double arguments\n", nval_expect);
 	ierr_1 = 1;
 	goto end_mic_0;
       }
       nx = struct_mesh_n[0];
       ny = struct_mesh_n[1];
       if( dim == 3 ) nz = struct_mesh_n[2];
+      nn = nx*ny*nz;
 
     }
     else{
@@ -153,22 +156,19 @@ end_mic_0:
     if( set == PETSC_TRUE )
     {
       if( nval != nval_expect ){
-	PetscPrintf(MPI_COMM_SELF,"-struct_size should include %d double arguments\n", nval_expect);
+	PetscPrintf(MPI_COMM_SELF,"-struct_l should include %d double arguments\n", nval_expect);
 	ierr_1 = 1;
 	goto end_mic_0;
       }
-      nx = struct_mesh_n[0];
-      ny = struct_mesh_n[1];
-      if( dim == 3 ) nz = struct_mesh_n[0];
+      lx = struct_mesh_l[0];
+      ly = struct_mesh_l[1];
+      if( dim == 3 ) lz = struct_mesh_l[2];
     }
     else{
 	PetscPrintf(MPI_COMM_SELF,"-struct_l is request\n");
 	ierr_1 = 1;
 	goto end_mic_0;
     }
-    lx = struct_mesh_l[0];
-    ly = struct_mesh_l[1];
-    if( dim == 3 ) lz = struct_mesh_l[2];
   }
 
   /* Homogenization Options */
