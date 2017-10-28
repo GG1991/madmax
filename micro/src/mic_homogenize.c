@@ -232,6 +232,62 @@ int mic_homogenize_unif_strains(MPI_Comm MICRO_COMM, double strain_mac[6], doubl
   return 0;
 }
 /****************************************************************************************************/
+int mic_homogenize_unif_strains_struct(
+    MPI_Comm MICRO_COMM, 
+    double strain_mac[6], double strain_ave[6], double stress_ave[6])
+{
+
+  /* 
+     homogenization routine for structured mesh 
+
+     a) alloc matrix/vector if it is first time
+     b) assembly residue -> evaluate norm
+     c) assembly jacobian
+     d) solve system 
+     e) iterate to b) with NR method
+     f) get average properties
+   */
+  if( flag_first_alloc == true )
+  {
+    flag_first_alloc = false;
+
+    int rank, nproc;
+    int ierr;
+
+    MPI_Comm_size(MICRO_COMM, &nproc);
+    MPI_Comm_rank(MICRO_COMM, &rank);
+
+    int nl  = nn / nproc + (nn % nproc > rank)?1:0; // local nodes
+    int nnz = (dim==2)? 18:81;                      // nonzeros per row
+
+    ierr = MatCreate(MICRO_COMM,&A);CHKERRQ(ierr);
+    ierr = MatSetSizes(A,nl*dim,nl*dim,nn*dim,nn*dim);CHKERRQ(ierr);
+    ierr = MatSetFromOptions(A);CHKERRQ(ierr);
+    ierr = MatSeqAIJSetPreallocation(A,nnz,NULL);CHKERRQ(ierr);
+    ierr = MatMPIAIJSetPreallocation(A,nnz,NULL,nnz,NULL);CHKERRQ(ierr);
+    ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+
+    int i, d, *ghostsIndex;
+    ghostsIndex = malloc(nghost*dim* sizeof(int));
+
+    for(i=0;i<nghost;i++){
+      for(d=0;d<dim;d++){
+	ghostsIndex[i*dim+d] = loc2petsc[nmynods + i]*dim+d;
+      }
+    }
+
+    ierr = VecCreateGhost(MICRO_COMM, nmynods*dim, ntotnod*dim, nghost*dim, ghostsIndex, &x); CHKERRQ(ierr);
+    ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
+    ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
+    ierr = VecDuplicate(x,&b1);CHKERRQ(ierr);
+
+    free(ghostsIndex);
+  }
+
+
+  return 0;
+}
+/****************************************************************************************************/
 int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
   /*
@@ -375,9 +431,14 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
   }
   else if(homo_type==UNIF_STRAINS){
 
-    ierr = mic_homogenize_unif_strains(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-    if(ierr){
-      return 1;
+    if( flag_struct_mesh == true ){
+      ierr = mic_homogenize_unif_strains_struct(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    }
+    else{
+      ierr = mic_homogenize_unif_strains(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+      if(ierr){
+	return 1;
+      }
     }
   }
   if(first_time_homo) first_time_homo = 0;

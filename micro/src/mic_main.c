@@ -24,6 +24,7 @@ static char help[] =
 "-fiber_cilin <r,dx,dy,dz>\n"
 "-fiber_nx <nx>\n"
 "-fiber_ny <ny>\n"
+"-struct_mesh [<nx,ny>] if dim = 2\n"
 "-print_petsc\n"
 "-print_vtk\n"
 "-print_part\n"
@@ -40,15 +41,16 @@ int main(int argc, char **argv)
   char       vtkfile_n[NBUF];
   PetscBool  set;
 
-  myname = strdup("micro");
+  myname            = strdup("micro");
   flag_linear_micro = 0;
-  first_time_homo = 1;
-  energy_interp = NULL;
+  first_time_homo   = 1;
+  energy_interp     = NULL;
+  flag_struct_mesh  = false;
 
   WORLD_COMM = MPI_COMM_WORLD;
-  ierr = MPI_Init(&argc, &argv);
-  ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
-  ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(WORLD_COMM, &nproc_wor);
+  MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
   /* 
      We start PETSc before coloring here for using command line reading tools only
@@ -59,7 +61,7 @@ int main(int argc, char **argv)
 
   /* Coupling Options */
   flag_coupling = PETSC_FALSE;
-  ierr = PetscOptionsHasName(NULL,NULL,"-coupl",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-coupl",&set);
   macmic.type = 0;
   if(set == PETSC_TRUE){
     flag_coupling = PETSC_TRUE;
@@ -89,17 +91,17 @@ end_mic_0:
   PETSC_COMM_WORLD = MICRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
-  /* Mesh and Input Options */
-  mesh_f = FORMAT_NULL;
-  PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
-  PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
-  if(mesh_f == FORMAT_NULL)SETERRQ(MICRO_COMM,1,"mesh format not given on command line.");
-  PetscOptionsGetString(NULL, NULL, "-mesh",mesh_n,128,&set);
-  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"mesh file not given on command line.");
-  PetscOptionsGetString(NULL, NULL, "-input", input_n,128,&set);
-  if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"input file not given.");
+
+  /* 
+     Dimension, mesh and input Options 
+
+     The problem can be execute using the options
+     -struct_mesh <nx,ny> (if dim=2)
+     -struct_size <lx,ly> (if dim=2)
+
+     or given unstructured meshes as gmsh format
+   
+   */
   PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
   if(set == PETSC_FALSE){
     PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
@@ -118,6 +120,67 @@ end_mic_0:
       ierr_1 = 1;
       goto end_mic_1;
   }
+
+  {
+    /* struct mesh */
+
+    int    nval_expect;
+    int    struct_mesh_n[3];
+    double struct_mesh_l[3];
+
+    if( dim == 2 ) nval_expect = nval = 2;
+    if( dim == 3 ) nval_expect = nval = 3;
+    PetscOptionsGetIntArray(NULL, NULL, "-struct_mesh",struct_mesh_n,&nval,&set);
+    flag_struct_mesh  = true;
+    if( set == PETSC_TRUE )
+    {
+      if( nval != nval_expect ){
+	PetscPrintf(MPI_COMM_SELF,"-struct_mesh should include %d double arguments\n", nval_expect);
+	ierr_1 = 1;
+	goto end_mic_0;
+      }
+      nx = struct_mesh_n[0];
+      ny = struct_mesh_n[1];
+      if( dim == 3 ) nz = struct_mesh_n[2];
+    }
+
+    PetscOptionsGetRealArray(NULL, NULL, "-struct_size",struct_mesh_l,&nval,&set);
+    if( set == PETSC_TRUE )
+    {
+      if( nval != nval_expect ){
+	PetscPrintf(MPI_COMM_SELF,"-struct_size should include %d double arguments\n", nval_expect);
+	ierr_1 = 1;
+	goto end_mic_0;
+      }
+      nx = struct_mesh_n[0];
+      ny = struct_mesh_n[1];
+      if( dim == 3 ) nz = struct_mesh_n[0];
+    }
+    else if( flag_struct_mesh == true ){
+	PetscPrintf(MPI_COMM_SELF,"-struct_size should be include because -struct_mesh was specified\n");
+	ierr_1 = 1;
+	goto end_mic_0;
+    }
+    lx = struct_mesh_l[0];
+    ly = struct_mesh_l[1];
+    if( dim == 3 ) lz = struct_mesh_l[2];
+  }
+  if( flag_struct_mesh == false){
+
+    /* mesh from gmsh */
+
+    mesh_f = FORMAT_NULL;
+    PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
+    if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
+    PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
+    if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
+    if(mesh_f == FORMAT_NULL)SETERRQ(MICRO_COMM,1,"mesh format not given on command line.");
+    PetscOptionsGetString(NULL, NULL, "-mesh",mesh_n,128,&set);
+    if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"mesh file not given on command line.");
+    PetscOptionsGetString(NULL, NULL, "-input", input_n,128,&set);
+    if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"input file not given.");
+  }
+
 
   /* Mesh partition algorithms */
   partition_algorithm = PARMETIS_MESHKWAY;
@@ -145,6 +208,11 @@ end_mic_0:
   if(set==PETSC_FALSE) nr_max_its=5;
   PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
+
+  /* 
+     Geometry specifications or material distribution
+     inside the rve
+   */
 
   /* Fiber in the middle */
   flag_fiber_cilin = 0;
@@ -253,106 +321,93 @@ end_mic_0:
   if(rank_mic==0) file_out = fopen("micro_structures.dat","w");
 
 #if defined(PETSC_USE_LOG)
-  ierr = PetscLogEventRegister("Read_Elems_of_Mesh"    ,PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);
-  ierr = PetscLogEventRegister("Partition_Mesh"        ,PETSC_VIEWER_CLASSID,&EVENT_PART_MESH);
-  ierr = PetscLogEventRegister("Calculate_Ghosts_Nodes",PETSC_VIEWER_CLASSID,&EVENT_CALC_GHOSTS);
-  ierr = PetscLogEventRegister("Reenumerates_Nodes"    ,PETSC_VIEWER_CLASSID,&EVENT_REENUMERATE);
-  ierr = PetscLogEventRegister("Read_Coordinates"      ,PETSC_VIEWER_CLASSID,&EVENT_READ_COORD);
-  ierr = PetscLogEventRegister("Init_Gauss_Points"     ,PETSC_VIEWER_CLASSID,&EVENT_INIT_GAUSS);
-  ierr = PetscLogEventRegister("Allocate_Mat_and_Vec"  ,PETSC_VIEWER_CLASSID,&EVENT_ALLOC_MATVEC);
-  ierr = PetscLogEventRegister("Set_Displ_on_Bou "     ,PETSC_VIEWER_CLASSID,&EVENT_SET_DISP_BOU);
-  ierr = PetscLogEventRegister("Assembly_Jacobian"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_JAC);
-  ierr = PetscLogEventRegister("Assembly_Residual"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);
-  ierr = PetscLogEventRegister("Solve_Linear_System"   ,PETSC_VIEWER_CLASSID,&EVENT_SOLVE_SYSTEM);
+  PetscLogEventRegister("ASSEMBLY_JAC",PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_JAC);
+  PetscLogEventRegister("ASSEMBLY_RES",PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);
+  PetscLogEventRegister("SOLVE_SYSTEM",PETSC_VIEWER_CLASSID,&EVENT_SOLVE_SYSTEM);
+  PetscLogEventRegister("ASSEMBLY_JAC",PETSC_VIEWER_CLASSID,&EVENT_INIT);
 #endif
 
-  /*
-     Register various stages for profiling
-  */
-  ierr = PetscLogStageRegister("Read Mesh Elements",&stages[0]);
-  ierr = PetscLogStageRegister("Linear System 1",&stages[1]);
-  ierr = PetscLogStageRegister("Linear System 2",&stages[2]);
+  PetscLogEventBegin(EVENT_INIT,0,0,0,0);
+  if( flag_struct_mesh == false)
+  {
+    /* read mesh */    
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"Reading mesh elements\n");
+    ierr = read_mesh_elmv(MICRO_COMM, myname, mesh_n, mesh_f);
+    if(ierr){
+      goto end_mic_1;
+    }
 
-  /* read mesh */    
-  ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
+    /* Partition the mesh */
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
+    ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL);
 
-  ierr = PetscLogEventBegin(EVENT_INIT,0,0,0,0);CHKERRQ(ierr);
-  if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"Reading mesh elements\n");
-  ierr = read_mesh_elmv(MICRO_COMM, myname, mesh_n, mesh_f);
-  if(ierr){
-    goto end_mic_1;
+    /* Calculate <*ghosts> and <nghosts> */
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
+    ierr = calculate_ghosts(&MICRO_COMM, myname);
+
+    /* Reenumerate Nodes */
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
+    ierr = reenumerate_PETSc(MICRO_COMM);
+
+    /* Coordinate Reading */
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"Reading Coordinates\n");
+    ierr = read_mesh_coord(MICRO_COMM, mesh_n, mesh_f);
+
+    if(flag_print & (1<<PRINT_VTKPART)){
+      sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mic);
+      ierr = spu_vtk_partition( vtkfile_n, &MICRO_COMM );
+    }
+
+    list_init(&physical_list, sizeof(physical_t), NULL);
+    list_init(&boundary_list, sizeof(boundary_t), NULL);
+
+    /* Read Physical entities */
+    ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f);
+    if(ierr){
+      PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
+      goto end_mic_1;
+    }
+    ierr = mic_parse_boundary(MICRO_COMM, input_n);
+    if(ierr){
+      PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
+      goto end_mic_1;
+    }
+    ierr = set_id_on_material_and_boundary(MICRO_COMM);
+    ierr = check_elm_id();
+    ierr = mic_check_linear_material();
+
+    /* Read boundary */
+    ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);
+
+    /* Allocate matrices & vectors */ 
+    ierr = mic_alloc(MICRO_COMM);
+
+    /* Setting solver options */
+    ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
+    ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+    ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
+
+    /* Init Gauss point shapes functions and derivatives */
+    ierr = fem_inigau();
+
+    /* micro main coupling loop */
+
+    ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);
+    PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);
+    ierr = get_domain_center(MICRO_COMM, coord, nmynods, center_domain);
+    PetscPrintf(MICRO_COMM,"center = %e %e %e\n",center_domain[0],center_domain[1],center_domain[2]);
+    ierr = calc_rho(MICRO_COMM, &rho);
+    PetscPrintf(MICRO_COMM,"density = %e\n", rho);
   }
-  ierr = PetscLogEventEnd(EVENT_INIT,0,0,0,0);CHKERRQ(ierr);
 
-  ierr = PetscLogStagePop();CHKERRQ(ierr);
+  PetscLogEventEnd(EVENT_INIT,0,0,0,0);
 
-  /* Partition the mesh */
-  if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
-  ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL);
-
-  /* Calculate <*ghosts> and <nghosts> */
-  if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
-  ierr = calculate_ghosts(&MICRO_COMM, myname);
-
-  /* Reenumerate Nodes */
-  if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
-  ierr = reenumerate_PETSc(MICRO_COMM);
-
-  /* Coordinate Reading */
-  if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"Reading Coordinates\n");
-  ierr = read_mesh_coord(MICRO_COMM, mesh_n, mesh_f);
-
-  if(flag_print & (1<<PRINT_VTKPART)){
-    sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mic);
-    ierr = spu_vtk_partition( vtkfile_n, &MICRO_COMM );
-  }
-
-  list_init(&physical_list, sizeof(physical_t), NULL);
-  list_init(&boundary_list, sizeof(boundary_t), NULL);
-
-  /* Read Physical entities */
-  ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f);
-  if(ierr){
-    PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
-    goto end_mic_1;
-  }
-  ierr = mic_parse_boundary(MICRO_COMM, input_n);
-  if(ierr){
-    PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
-    goto end_mic_1;
-  }
-  ierr = set_id_on_material_and_boundary(MICRO_COMM);
-  ierr = check_elm_id();
-  ierr = mic_check_linear_material();
-
-  /* Read boundary */
-  ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);
-
-  /* Allocate matrices & vectors */ 
-  ierr = mic_alloc(MICRO_COMM);
-
-  /* Setting solver options */
-  ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-  ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
-
-  /* Init Gauss point shapes functions and derivatives */
-  ierr = fem_inigau();
-
-  /* micro main coupling loop */
   double strain_mac[6], strain_ave[6], stress_ave[6], c_homo[36];
-
-  ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);
-  PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);
-  ierr = get_domain_center(MICRO_COMM, coord, nmynods, center_domain);
-  PetscPrintf(MICRO_COMM,"center = %e %e %e\n",center_domain[0],center_domain[1],center_domain[2]);
-  ierr = calc_rho(MICRO_COMM, &rho);
-  PetscPrintf(MICRO_COMM,"density = %e\n", rho);
 
   if(flag_coupling){
 

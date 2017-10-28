@@ -88,6 +88,13 @@ int          nvoi;                              //  number of voigt components (
 
 int         flag_print;
 bool        flag_reactions;
+bool        flag_first_alloc;
+
+/* structured mesh */
+bool        flag_struct_mesh;
+int         nx, ny, nz, nn;       // number of nodes 
+double      lx, ly, lz;           // dimain lenght
+double      hx, hy, hz;           // element sizes 
 
 /* Cilindrical Fiber in quad Matrix */
 double      LX, LY, LZ;
