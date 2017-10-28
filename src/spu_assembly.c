@@ -688,7 +688,8 @@ int get_mat_from_elem(int e, material_t **mat)
   pn = material_list.head;
   while(pn){
 
-    if(flag_fiber_cilin){
+    if(flag_fiber_cilin)
+    {
       /* fiber in the middle */
       if(is_inside_fiber_cilin(e)){
 	if(!strcmp(((material_t*)pn->data)->name,"FIBER")) break;

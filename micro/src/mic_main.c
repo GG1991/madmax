@@ -184,6 +184,7 @@ end_mic_0:
     double E, v;
     list_init(&material_list,sizeof(material_t),NULL);
 
+    nval = 3;
     PetscOptionsGetRealArray(NULL, NULL, "-mat_fiber_t0",mat_fiber_t0,&nval,&set);
     if( set == PETSC_TRUE )
     {
@@ -333,9 +334,7 @@ end_mic_0:
   ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);
 
   /* Allocate matrices & vectors */ 
-  ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
-  ierr = mic_alloc(MICRO_COMM);CHKERRQ(ierr);
-  ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
+  ierr = mic_alloc(MICRO_COMM);
 
   /* Setting solver options */
   ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
