@@ -44,6 +44,7 @@ int partition_algorithm;
 		EVENT_SET_DISP_BOU,
 		EVENT_ASSEMBLY_JAC,
 		EVENT_ASSEMBLY_RES,
+		EVENT_INIT,
 		EVENT_SOLVE_SYSTEM;
 #endif
 

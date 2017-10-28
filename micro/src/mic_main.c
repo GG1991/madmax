@@ -16,8 +16,10 @@ static char help[] =
 "It has the capability of being couple with MACRO.\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
-"-homo_taylor_p     : c =  vi ci + vm cm            (parallel)\n"
-"-homo_taylor_s     : c = (vi ci^-1 + vm cm^-1)^-1  (serial)\n"
+"-mat_fiber_t0  [E,nu] : material \"FIBER\" type_0 given by command line\n"
+"-mat_matrix_t0 [E,nu] : material \"FIBER\" type_0 given by command line\n"
+"-homo_taylor_s     : c =  vi ci + vm cm            (serial)\n"
+"-homo_taylor_p     : c = (vi ci^-1 + vm cm^-1)^-1  (parallel)\n"
 "-homo_us           : homogenization using uniform strains approach\n"
 "-fiber_cilin <r,dx,dy,dz>\n"
 "-fiber_nx <nx>\n"
@@ -89,16 +91,16 @@ end_mic_0:
 
   /* Mesh and Input Options */
   mesh_f = FORMAT_NULL;
-  ierr = PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
-  ierr = PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
   if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
   if(mesh_f == FORMAT_NULL)SETERRQ(MICRO_COMM,1,"mesh format not given on command line.");
-  ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
+  PetscOptionsGetString(NULL, NULL, "-mesh",mesh_n,128,&set);
   if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"mesh file not given on command line.");
-  ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
+  PetscOptionsGetString(NULL, NULL, "-input", input_n,128,&set);
   if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"input file not given.");
-  ierr = PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set); CHKERRQ(ierr); 
+  PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
   if(set == PETSC_FALSE){
     PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
     ierr_1 = 1;
@@ -119,18 +121,18 @@ end_mic_0:
 
   /* Mesh partition algorithms */
   partition_algorithm = PARMETIS_MESHKWAY;
-  ierr = PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
   if(set==PETSC_TRUE) partition_algorithm = PARMETIS_MESHKWAY;
-  ierr = PetscOptionsHasName(NULL,NULL,"-part_geom",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
   if(set==PETSC_TRUE) partition_algorithm = PARMETIS_GEOM;
 
   /* Homogenization Options */
   homo_type=0;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor_p",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-homo_taylor_p",&set);
   if(set==PETSC_TRUE) homo_type = TAYLOR_P;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_taylor_s",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-homo_taylor_s",&set);
   if(set==PETSC_TRUE) homo_type = TAYLOR_S;
-  ierr = PetscOptionsHasName(NULL,NULL,"-homo_us",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-homo_us",&set);
   if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
   if(homo_type==0){
     PetscPrintf(MPI_COMM_SELF,"no homogenization option specified\n");
@@ -139,15 +141,15 @@ end_mic_0:
   }
 
   /* Solver Options */
-  ierr = PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
+  PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
   if(set==PETSC_FALSE) nr_max_its=5;
-  ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
+  PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
   /* Fiber in the middle */
   flag_fiber_cilin = 0;
   nval = 4;
-  ierr = PetscOptionsGetRealArray(NULL, NULL, "-fiber_cilin", fiber_cilin_vals, &nval,&set);
+  PetscOptionsGetRealArray(NULL, NULL, "-fiber_cilin", fiber_cilin_vals, &nval,&set);
   if(set==PETSC_TRUE) {
     flag_fiber_cilin=1;
     fiber_cilin_r=fiber_cilin_vals[0];
@@ -167,10 +169,13 @@ end_mic_0:
       }
     }
   }
-  ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
+  PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
   if(set==PETSC_FALSE) nx_fibers = 1;
-  ierr = PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
+  PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
   if(set==PETSC_FALSE) ny_fibers = 1;
+
+  /* Materials by command line */
+  PetscOptionsGetRealArray(NULL, NULL, "-mat_fiber_t0", fiber_cilin_vals, &nval,&set);
 
   /* Printing Options */
   flag_print = 0;
@@ -220,44 +225,36 @@ end_mic_0:
   /* read mesh */    
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
-  ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
+  ierr = PetscLogEventBegin(EVENT_INIT,0,0,0,0);CHKERRQ(ierr);
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Reading mesh elements\n");
   ierr = read_mesh_elmv(MICRO_COMM, myname, mesh_n, mesh_f);
   if(ierr){
     goto end_mic_1;
   }
-  ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(EVENT_INIT,0,0,0,0);CHKERRQ(ierr);
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
   /* Partition the mesh */
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
-  ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
   ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL);
-  ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
   /* Calculate <*ghosts> and <nghosts> */
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
-  ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
   ierr = calculate_ghosts(&MICRO_COMM, myname);
-  ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
   /* Reenumerate Nodes */
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
-  ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
   ierr = reenumerate_PETSc(MICRO_COMM);
-  ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
   /* Coordinate Reading */
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"Reading Coordinates\n");
-  ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
   ierr = read_mesh_coord(MICRO_COMM, mesh_n, mesh_f);
-  ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
   if(flag_print & (1<<PRINT_VTKPART)){
     sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mic);
@@ -267,21 +264,15 @@ end_mic_0:
   ierr = list_init(&physical_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
   ierr = list_init(&boundary_list, sizeof(boundary_t), NULL);CHKERRQ(ierr);
 
-  /* Read materials  */
-  ierr = parse_material(MICRO_COMM, input_n);
-  if(ierr){
-    ierr = PetscPrintf(MICRO_COMM,"Problem parsing materials from input file\n");
-    goto end_mic_1;
-  }
   /* Read Physical entities */
   ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f);
   if(ierr){
-    ierr = PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
+    PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
     goto end_mic_1;
   }
   ierr = mic_parse_boundary(MICRO_COMM, input_n);
   if(ierr){
-    ierr = PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
+    PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
     goto end_mic_1;
   }
   ierr = set_id_on_material_and_boundary(MICRO_COMM);
@@ -310,11 +301,11 @@ end_mic_0:
   double strain_mac[6], strain_ave[6], stress_ave[6], c_homo[36];
 
   ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);
-  ierr = PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);
+  PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);
   ierr = get_domain_center(MICRO_COMM, coord, nmynods, center_domain);
-  ierr = PetscPrintf(MICRO_COMM,"center = %e %e %e\n",center_domain[0],center_domain[1],center_domain[2]);
+  PetscPrintf(MICRO_COMM,"center = %e %e %e\n",center_domain[0],center_domain[1],center_domain[2]);
   ierr = calc_rho(MICRO_COMM, &rho);
-  ierr = PetscPrintf(MICRO_COMM,"density = %e\n", rho);
+  PetscPrintf(MICRO_COMM,"density = %e\n", rho);
 
   if(flag_coupling){
 
