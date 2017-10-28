@@ -197,9 +197,9 @@ end_mic_0:
       mat.type_id = TYPE_0;
       mat.name = strdup("FIBER");
       mat.type = malloc(sizeof(type_0));
-      ((type_0*)mat.type)->rho         = mat_matrix_t0[0];
-      E = ((type_0*)mat.type)->young   = mat_matrix_t0[1];
-      v = ((type_0*)mat.type)->poisson = mat_matrix_t0[2];
+      ((type_0*)mat.type)->rho         = mat_fiber_t0[0];
+      E = ((type_0*)mat.type)->young   = mat_fiber_t0[1];
+      v = ((type_0*)mat.type)->poisson = mat_fiber_t0[2];
       ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
       ((type_0*)mat.type)->mu          = E/(2*(1+v));
 

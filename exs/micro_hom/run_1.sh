@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./mpiexec -np 1 xterm -e gdb --args ../../micro/micro \
+./mpiexec -np 1 ../../micro/micro \
     -input ex2.spu \
     -mesh_gmsh \
     -mesh meshes/rve_struc/rve_1.msh \
