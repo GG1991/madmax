@@ -2,13 +2,13 @@
    Materials definition types
   
    material_t material;
-   lambda = ((type_00*)material.type)->lambda
+   lambda = ((type_0*)material.type)->lambda
   
  */
 
 #include "list.h"
 
-#define TYPE00    0
+#define TYPE_0    0
 #define TYPE01    1
 
 #define MICRO  2
@@ -19,7 +19,7 @@
 typedef struct material_t_{
 
   char  *name;
-  int   typeID;
+  int   type_id;
   int   GmshID;
   void  *type;
 
@@ -28,7 +28,7 @@ typedef struct material_t_{
 /*
    Linear Elastic Material
  */
-typedef struct _type_00{
+typedef struct _type_0{
 
   double young;
   double poisson;
@@ -36,7 +36,7 @@ typedef struct _type_00{
   double mu;
   double rho;
 
-}type_00;
+}type_0;
 
 list_t material_list;
 

@@ -174,8 +174,31 @@ end_mic_0:
   PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
   if(set==PETSC_FALSE) ny_fibers = 1;
 
-  /* Materials by command line */
-  PetscOptionsGetRealArray(NULL, NULL, "-mat_fiber_t0", fiber_cilin_vals, &nval,&set);
+  {
+    /* Materials by command line */
+    material_t mat;
+    list_init(&material_list,sizeof(material_t),NULL);
+    PetscOptionsGetRealArray(NULL, NULL, "-mat_fiber_t0",mat_fiber_t0, &nval,&set);
+    if( set == PETSC_TRUE ){
+
+      if( nval != 3 ){
+	PetscPrintf(MPI_COMM_SELF,"-mat_fiber_t0 should include 3 double arguments\n");
+	ierr_1 = 1;
+	goto end_mic_0;
+      }
+
+      double E, v;
+      mat.type_id = TYPE_0;
+      mat.name = strdup("FIBER");
+      mat.type = malloc(sizeof(type_0));
+      E = ((type_0*)mat.type)->young;
+      v = ((type_0*)mat.type)->poisson;
+      ((type_0*)mat.type)->lambda = (E*v)/((1+v)*(1-2*v));
+      ((type_0*)mat.type)->mu = E/(2*(1+v));
+
+      list_insertlast( &material_list , &mat );
+    }
+  }
 
   /* Printing Options */
   flag_print = 0;

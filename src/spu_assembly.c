@@ -201,7 +201,7 @@ int assembly_residual_sd(Vec *x, Vec *b)
 	}
       }
 
-      if(mat->typeID==MICRO){
+      if(mat->type_id==MICRO){
 
 	/* calculate stress using localization+homogenization */
 
@@ -536,13 +536,13 @@ int get_rho(const char *name, int e, double *rho)
     }
   }
 
-  switch(mat->typeID){
+  switch(mat->type_id){
 
-    case TYPE00:
+    case TYPE_0:
       /* 
 	 Elástico lineal 
        */
-      *rho  = ((type_00*)mat->type)->rho;
+      *rho  = ((type_0*)mat->type)->rho;
       break;
 
     case MICRO:
@@ -597,16 +597,16 @@ int get_c(const char *name, int e, int gp, double strain[6], double c[6][6])
     }
   }
 
-  switch(mat->typeID){
+  switch(mat->type_id){
 
-    case TYPE00:
+    case TYPE_0:
       /* 
 	 Elástico lineal 
        */
-      la  = ((type_00*)mat->type)->lambda;
-      mu  = ((type_00*)mat->type)->mu;
-      poi = ((type_00*)mat->type)->poisson;
-      you = ((type_00*)mat->type)->young;
+      la  = ((type_0*)mat->type)->lambda;
+      mu  = ((type_0*)mat->type)->mu;
+      poi = ((type_0*)mat->type)->poisson;
+      you = ((type_0*)mat->type)->young;
 
       if(dim==2){
 	/*

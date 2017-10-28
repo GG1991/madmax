@@ -36,8 +36,11 @@ int          first_time_homo;
 double       c_homo_lineal[36];
 double       rho;
 
-Mat          J;                // extended matrix for lagrange multipliers boundary setting
-Vec          xe, re;           // extended distributed vectors for lagrange multipliers boundary setting
+double       mat_fiber_t0[3];   // array of properties for type_0 fiber
+double       mat_matrix_t0[3];  // array of properties for type_0 matrix
+
+Mat          J;                 // extended matrix for lagrange multipliers boundary setting
+Vec          xe, re;            // extended distributed vectors for lagrange multipliers boundary setting
 Vec          b1;
 
 /*****************************************************************************************************

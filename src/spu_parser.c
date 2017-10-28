@@ -16,7 +16,7 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 
      $materials
      <PhysicalName> <TYPEXX> <options>
-     IRON  TYPE00 E=1.0e6 v=1.0e6
+     IRON  TYPE_0 E=1.0e6 v=1.0e6
      MICRO TYPE01 E=1.0e6 v=1.0e6
      $end_materials
    */
@@ -62,11 +62,11 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 	    data = strtok(NULL," \n");
 	    if(!data) SETERRQ(PROBLEM_COMM,1,"<type> expected.");
 
-	    if(!strcmp(data,"TYPE00")){
+	    if(!strcmp(data,"TYPE_0")){
 
-	      material.typeID = TYPE00;
+	      material.type_id = TYPE_0;
 	      material.GmshID = -1;
-	      material.type = malloc(sizeof(type_00));
+	      material.type = malloc(sizeof(type_0));
 
 	      // densidad rho
 	      data = strtok(NULL," \n");
@@ -76,7 +76,7 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 		return 1;
 	      }
 	      if(data[4]=='\0') return 1;
-	      ((type_00*)material.type)->rho = atof(&data[4]);
+	      ((type_0*)material.type)->rho = atof(&data[4]);
 
 	      // módulo de young
 	      data = strtok(NULL," \n");
@@ -86,7 +86,7 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 		return 1;
 	      }
 	      if(data[2]=='\0') return 1;
-	      ((type_00*)material.type)->young = atof(&data[2]);
+	      ((type_0*)material.type)->young = atof(&data[2]);
 
 	      // módulo de poisson
 	      data = strtok(NULL," \n");
@@ -96,17 +96,17 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 		return 1;
 	      }
 	      if(data[2]=='\0') return 1;
-	      ((type_00*)material.type)->poisson = atof(&data[2]);
+	      ((type_0*)material.type)->poisson = atof(&data[2]);
 
 	      // calculamos parametros derivados
 	      double E, v;
-	      E = ((type_00*)material.type)->young;
-	      v = ((type_00*)material.type)->poisson;
-	      ((type_00*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
-	      ((type_00*)material.type)->mu = E/(2*(1+v));
+	      E = ((type_0*)material.type)->young;
+	      v = ((type_0*)material.type)->poisson;
+	      ((type_0*)material.type)->lambda = (E*v)/((1+v)*(1-2*v));
+	      ((type_0*)material.type)->mu = E/(2*(1+v));
 	    }
 	    else if(!strcmp(data,"MICRO")){
-	      material.typeID = MICRO;
+	      material.type_id = MICRO;
 	      material.GmshID = -1;
 	      material.type = NULL;
 	    }
@@ -133,7 +133,7 @@ int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 int is_linear_material(int material)
 {
   switch(material){
-    case TYPE00:
+    case TYPE_0:
       return 1;
   }
   return 0;
