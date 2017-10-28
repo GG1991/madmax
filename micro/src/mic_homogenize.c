@@ -232,13 +232,14 @@ int mic_homogenize_unif_strains(MPI_Comm MICRO_COMM, double strain_mac[6], doubl
   return 0;
 }
 /****************************************************************************************************/
-int mic_homogenize_unif_strains_struct(
+int mic_homog_us(
     MPI_Comm MICRO_COMM, 
     double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
   /* 
-     homogenization routine for structured mesh 
+     homogenization routine with uniform strain BC
+     for structured mesh 
 
      a) alloc matrix/vector if it is first time
      b) assembly residue -> evaluate norm
@@ -246,167 +247,59 @@ int mic_homogenize_unif_strains_struct(
      d) solve system 
      e) iterate to b) with NR method
      f) get average properties
+
+     partimos el dominio en tandas por el eje y
+
    */
   if( flag_first_alloc == true )
   {
     flag_first_alloc = false;
 
     int rank, nproc;
-    int ierr;
 
     MPI_Comm_size(MICRO_COMM, &nproc);
     MPI_Comm_rank(MICRO_COMM, &rank);
 
-    int nl  = nn / nproc + (nn % nproc > rank)?1:0; // local nodes
+    int nyl = ny / nproc + (ny % nproc > rank)?1:0; // ny for every process
+    int nl  = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;    // local nodes
     int nnz = (dim==2)? 18:81;                      // nonzeros per row
 
-    ierr = MatCreate(MICRO_COMM,&A);CHKERRQ(ierr);
-    ierr = MatSetSizes(A,nl*dim,nl*dim,nn*dim,nn*dim);CHKERRQ(ierr);
-    ierr = MatSetFromOptions(A);CHKERRQ(ierr);
-    ierr = MatSeqAIJSetPreallocation(A,nnz,NULL);CHKERRQ(ierr);
-    ierr = MatMPIAIJSetPreallocation(A,nnz,NULL,nnz,NULL);CHKERRQ(ierr);
-    ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+    MatCreate(MICRO_COMM,&A);
+    MatSetSizes(A,nyl*nx*dim,nyl*nx*dim,nn*dim,nn*dim);
+    MatSetFromOptions(A);
+    MatSeqAIJSetPreallocation(A,nnz,NULL);
+    MatMPIAIJSetPreallocation(A,nnz,NULL,nnz,NULL);
+    MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
-    int i, d, *ghostsIndex;
-    ghostsIndex = malloc(nghost*dim* sizeof(int));
+    int istart, iend;
+    MatGetOwnershipRange(A,&istart,&iend);
 
-    for(i=0;i<nghost;i++){
-      for(d=0;d<dim;d++){
-	ghostsIndex[i*dim+d] = loc2petsc[nmynods + i]*dim+d;
+    int nghost = ( dim == 2 )?nx:nx*nz, *ghost_index;
+    ghost_index = malloc(nx*dim*sizeof(int));
+
+    int i;
+    if( rank == 0 ){
+      for( i = 0 ; i < nghost*dim  ; i++ )
+	ghost_index[i] = istart + (nyl-1)*nghost + i;
+    }
+    else if( rank == (nproc - 1) ){
+      for( i = 0 ; i < nghost*dim  ; i++ )
+	ghost_index[i] = istart + i;
+    }
+    else{
+      for( i = 0 ; i < nghost*dim  ; i++ ){
+	ghost_index[i] = istart + i;
+	ghost_index[i] = istart + (nyl-1)*nghost + i;
       }
     }
 
-    ierr = VecCreateGhost(MICRO_COMM, nmynods*dim, ntotnod*dim, nghost*dim, ghostsIndex, &x); CHKERRQ(ierr);
-    ierr = VecDuplicate(x,&dx);CHKERRQ(ierr);
-    ierr = VecDuplicate(x,&b);CHKERRQ(ierr);
-    ierr = VecDuplicate(x,&b1);CHKERRQ(ierr);
+    VecCreateGhost(MICRO_COMM, nl*dim, nn*dim, nghost*dim, ghost_index, &x);
+    VecDuplicate(x,&dx);
+    VecDuplicate(x,&b);
 
-    free(ghostsIndex);
+    free(ghost_index);
   }
 
-
-  return 0;
-}
-/****************************************************************************************************/
-int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
-{
-  /*
-     Here we apply the Lagrage multiplier procedure 
-     to stablish the linear displacement boundary conditions. 
-     The equations can be written:
-     fa(u)=0
-     fb(u)-ub=0
-     ub-D^Te=0
-
-         | A    ei |       | f       |     | x_val |
-     J = |         |  b =  |         | x = |       |
-         | ei^T 0  |       | ub-D^Te |     | l_val |
-
-     the "f" contains fa and fb mixed depending on the node numeration
-  */
-//  int    ierr, nr_its=-1, nnods_bc, i, d, k, n_loc, *ixb;
-//  double nr_norm_tol=1.0e-8, norm=2*nr_norm_tol, ub, strain_matrix[3][3], *x_arr, *b_arr;
-//
-//  if(dim==2){
-//    strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[2];
-//    strain_matrix[1][0]=strain_mac[2]; strain_matrix[1][1]=strain_mac[1];
-//  }
-//  else if(dim==3){
-//    strain_matrix[0][0]=strain_mac[0]; strain_matrix[0][1]=strain_mac[3]; strain_matrix[0][2]=strain_mac[5];
-//    strain_matrix[1][0]=strain_mac[3]; strain_matrix[1][1]=strain_mac[1]; strain_matrix[1][2]=strain_mac[4];
-//    strain_matrix[2][0]=strain_mac[5]; strain_matrix[2][1]=strain_mac[4]; strain_matrix[2][2]=strain_mac[2];
-//  }
-//
-//  nnods_bc = ((homog_ld_lagran_t*)homo.st)->nnods_bc;
-//  ixb = ((homog_ld_lagran_t*)homo.st)->index;
-//
-//  // first we fill the value ub_val in <homog_ld_lagran_t> structure
-//  for(i=0; i<nnods_bc; i++){
-//    for(d=0;d<dim;d++){
-//      n_loc = ixb[i*dim+d]/dim;
-//      ub = 0.0;
-//      for(k=0;k<dim;k++){
-//	ub += strain_matrix[d][k]*coord[n_loc * dim + k];
-//      }
-//      ((homog_ld_lagran_t*)homo.st)->ub_val[i*dim+d] = ub;
-//    }
-//  }
-//
-//  while( nr_its < nr_max_its && norm > nr_norm_tol )
-//  {
-//
-//    /* internal forces */
-//    ierr = VecGetArray(x, &x_arr);CHKERRQ(ierr);
-//    ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
-//    /* fb - delta */
-//    ierr = VecGetArray(b, &b_arr);CHKERRQ(ierr);
-//    for(i=0; i<nnods_bc; i++){
-//      for(d=0;d<dim;d++){
-//	b_arr[ixb[i*dim+d]] -= x_arr[nmynods*dim+i*dim+d];
-//      }
-//    }
-//    /* ub - D^T . e_mac */
-//    for(i=0; i<nnods_bc; i++){
-//      for(d=0;d<dim;d++){
-//	b_arr[nmynods*dim + i*dim+d] = x_arr[ixb[i*dim+d]] - ((homog_ld_lagran_t*)homo.st)->ub_val[i*dim+d];
-//      }
-//    }
-//    ierr = VecRestoreArray(b, &b_arr);CHKERRQ(ierr);
-//    ierr = VecRestoreArray(x, &x_arr);CHKERRQ(ierr);
-//
-//    ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-//    PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
-//    if( !(norm > nr_norm_tol) ) break;
-//    ierr = VecScale(b,-1.0); CHKERRQ(ierr);
-//
-//    /* Tangent matrix 
-//
-//         | K    1  |
-//     A = |         |
-//         | 1    0  |
-//    */
-//    ierr = assembly_jacobian_sd(&A);
-//    for(i=0; i<nnods_bc; i++){
-//      for(d=0;d<dim;d++){
-//	MatSetValue(A,ixb[i*dim+d],nmynods*dim+i*dim+d,-1.0,INSERT_VALUES);
-//      }
-//    }
-//    for(i=0; i<nnods_bc; i++){
-//      for(d=0;d<dim;d++){
-//	MatSetValue(A,nmynods*dim+i*dim+d,ixb[i*dim+d],1.0,INSERT_VALUES);
-//      }
-//    }
-//    for(i=0; i<nnods_bc; i++){
-//      for(d=0;d<dim;d++){
-//	MatSetValue(A,nmynods*dim+i*dim+d,nmynods*dim+i*dim+d,0.0,INSERT_VALUES);
-//      }
-//    }
-//    MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
-//    MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
-//  
-//    ierr = KSPSolve(ksp, b, dx);CHKERRQ(ierr);
-//    ierr = VecAXPY(x, 1.0, dx); CHKERRQ(ierr);
-//
-//    ierr = MatMult(A, dx, b1);CHKERRQ(ierr);
-//    
-//    if( flag_print & (1<<PRINT_PETSC) ){
-//      ierr = PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
-//      ierr = MatView(A,viewer); CHKERRQ(ierr);
-//      ierr = PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
-//      ierr = VecView(b,viewer); CHKERRQ(ierr);
-//      ierr = PetscViewerASCIIOpen(MICRO_COMM,"b1.dat",&viewer); CHKERRQ(ierr);
-//      ierr = VecView(b1,viewer); CHKERRQ(ierr);
-//      ierr = PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-//      ierr = VecView(x,viewer); CHKERRQ(ierr);
-//      ierr = PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
-//      ierr = VecView(x,viewer); CHKERRQ(ierr);
-//    }
-//
-//    nr_its ++;
-//  }
-//
-//  ierr = calc_ave_strain_stress(MICRO_COMM, &x, strain_ave, stress_ave);CHKERRQ(ierr);
-//
   return 0;
 }
 /****************************************************************************************************/
@@ -431,15 +324,9 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
   }
   else if(homo_type==UNIF_STRAINS){
 
-    if( flag_struct_mesh == true ){
-      ierr = mic_homogenize_unif_strains_struct(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-    }
-    else{
-      ierr = mic_homogenize_unif_strains(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-      if(ierr){
-	return 1;
-      }
-    }
+    ierr = mic_homog_us(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    if(ierr) return 1;
+
   }
   if(first_time_homo) first_time_homo = 0;
 
