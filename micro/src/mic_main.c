@@ -24,10 +24,10 @@ static char help[] =
 "-fiber_cilin <r,dx,dy,dz>\n"
 "-fiber_nx <nx>\n"
 "-fiber_ny <ny>\n"
-"-struct_mesh [<nx,ny>] if dim = 2\n"
+"-struct_n [<nx,ny>] if dim = 2\n"
+"-struct_l [<lx,ly>] if dim = 2\n"
 "-print_petsc\n"
 "-print_vtk\n"
-"-print_part\n"
 "-print_vtu\n"
 "-print_all\n";
 
@@ -131,7 +131,6 @@ end_mic_0:
     if( dim == 2 ) nval_expect = nval = 2;
     if( dim == 3 ) nval_expect = nval = 3;
     PetscOptionsGetIntArray(NULL, NULL, "-struct_mesh",struct_mesh_n,&nval,&set);
-    flag_struct_mesh  = true;
     if( set == PETSC_TRUE )
     {
       if( nval != nval_expect ){
@@ -156,7 +155,7 @@ end_mic_0:
       ny = struct_mesh_n[1];
       if( dim == 3 ) nz = struct_mesh_n[0];
     }
-    else if( flag_struct_mesh == true ){
+    else{
 	PetscPrintf(MPI_COMM_SELF,"-struct_size should be include because -struct_mesh was specified\n");
 	ierr_1 = 1;
 	goto end_mic_0;
@@ -165,29 +164,6 @@ end_mic_0:
     ly = struct_mesh_l[1];
     if( dim == 3 ) lz = struct_mesh_l[2];
   }
-  if( flag_struct_mesh == false){
-
-    /* mesh from gmsh */
-
-    mesh_f = FORMAT_NULL;
-    PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
-    if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
-    PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
-    if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
-    if(mesh_f == FORMAT_NULL)SETERRQ(MICRO_COMM,1,"mesh format not given on command line.");
-    PetscOptionsGetString(NULL, NULL, "-mesh",mesh_n,128,&set);
-    if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"mesh file not given on command line.");
-    PetscOptionsGetString(NULL, NULL, "-input", input_n,128,&set);
-    if(set == PETSC_FALSE) SETERRQ(MICRO_COMM,1,"input file not given.");
-  }
-
-
-  /* Mesh partition algorithms */
-  partition_algorithm = PARMETIS_MESHKWAY;
-  PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
-  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_MESHKWAY;
-  PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
-  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_GEOM;
 
   /* Homogenization Options */
   homo_type=0;
@@ -214,7 +190,12 @@ end_mic_0:
      inside the rve
    */
 
-  /* Fiber in the middle */
+  /* 
+     Cilindric fiber 
+     -fiber_cilin x,y,z,r
+     -fiber_nx <n> (optional)
+     -fiber_ny <n> (optional)
+   */
   flag_fiber_cilin = 0;
   nval = 4;
   PetscOptionsGetRealArray(NULL, NULL, "-fiber_cilin", fiber_cilin_vals, &nval,&set);
@@ -248,8 +229,8 @@ end_mic_0:
 
        We expect a fiber and a matrix material only
      */
-    material_t mat;
     double E, v;
+    material_t mat;
     list_init(&material_list,sizeof(material_t),NULL);
 
     nval = 3;
@@ -317,9 +298,6 @@ end_mic_0:
 	"--------------------------------------------------\n");
   }
 
-  file_out = NULL;
-  if(rank_mic==0) file_out = fopen("micro_structures.dat","w");
-
 #if defined(PETSC_USE_LOG)
   PetscLogEventRegister("ASSEMBLY_JAC",PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_JAC);
   PetscLogEventRegister("ASSEMBLY_RES",PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);
@@ -328,82 +306,11 @@ end_mic_0:
 #endif
 
   PetscLogEventBegin(EVENT_INIT,0,0,0,0);
-  if( flag_struct_mesh == false)
-  {
-    /* read mesh */    
-    if(!flag_coupling)
-      PetscPrintf(MICRO_COMM,"Reading mesh elements\n");
-    ierr = read_mesh_elmv(MICRO_COMM, myname, mesh_n, mesh_f);
-    if(ierr){
-      goto end_mic_1;
-    }
 
-    /* Partition the mesh */
-    if(!flag_coupling)
-      PetscPrintf(MICRO_COMM,"Partitioning and distributing mesh\n");
-    ierr = part_mesh_PARMETIS(&MICRO_COMM, time_fl, myname, NULL);
-
-    /* Calculate <*ghosts> and <nghosts> */
-    if(!flag_coupling)
-      PetscPrintf(MICRO_COMM,"Calculating Ghost Nodes\n");
-    ierr = calculate_ghosts(&MICRO_COMM, myname);
-
-    /* Reenumerate Nodes */
-    if(!flag_coupling)
-      PetscPrintf(MICRO_COMM,"Reenumering nodes\n");
-    ierr = reenumerate_PETSc(MICRO_COMM);
-
-    /* Coordinate Reading */
-    if(!flag_coupling)
-      PetscPrintf(MICRO_COMM,"Reading Coordinates\n");
-    ierr = read_mesh_coord(MICRO_COMM, mesh_n, mesh_f);
-
-    if(flag_print & (1<<PRINT_VTKPART)){
-      sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mic);
-      ierr = spu_vtk_partition( vtkfile_n, &MICRO_COMM );
-    }
-
-    list_init(&physical_list, sizeof(physical_t), NULL);
-    list_init(&boundary_list, sizeof(boundary_t), NULL);
-
-    /* Read Physical entities */
-    ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f);
-    if(ierr){
-      PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
-      goto end_mic_1;
-    }
-    ierr = mic_parse_boundary(MICRO_COMM, input_n);
-    if(ierr){
-      PetscPrintf(MICRO_COMM,"Problem parsing physical entities from mesh file\n");
-      goto end_mic_1;
-    }
-    ierr = set_id_on_material_and_boundary(MICRO_COMM);
-    ierr = check_elm_id();
-    ierr = mic_check_linear_material();
-
-    /* Read boundary */
-    ierr = read_boundary(MICRO_COMM, mesh_n, mesh_f);
-
-    /* Allocate matrices & vectors */ 
-    ierr = mic_alloc(MICRO_COMM);
-
-    /* Setting solver options */
-    ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-    ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
-
-    /* Init Gauss point shapes functions and derivatives */
-    ierr = fem_inigau();
-
-    /* micro main coupling loop */
-
-    ierr = get_bbox_limit_lengths(MICRO_COMM,coord,nmynods,&LX,&LY,&LZ);
-    PetscPrintf(MICRO_COMM,"LX=%e LY=%e LZ=%e\n",LX,LY,LZ);
-    ierr = get_domain_center(MICRO_COMM, coord, nmynods, center_domain);
-    PetscPrintf(MICRO_COMM,"center = %e %e %e\n",center_domain[0],center_domain[1],center_domain[2]);
-    ierr = calc_rho(MICRO_COMM, &rho);
-    PetscPrintf(MICRO_COMM,"density = %e\n", rho);
-  }
+  /* Setting solver options */
+  ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+  ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
 
   PetscLogEventEnd(EVENT_INIT,0,0,0,0);
 
