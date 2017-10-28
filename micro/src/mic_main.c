@@ -175,26 +175,53 @@ end_mic_0:
   if(set==PETSC_FALSE) ny_fibers = 1;
 
   {
-    /* Materials by command line */
-    material_t mat;
-    list_init(&material_list,sizeof(material_t),NULL);
-    PetscOptionsGetRealArray(NULL, NULL, "-mat_fiber_t0",mat_fiber_t0, &nval,&set);
-    if( set == PETSC_TRUE ){
+    /* 
+       Materials by command line 
 
+       We expect a fiber and a matrix material only
+     */
+    material_t mat;
+    double E, v;
+    list_init(&material_list,sizeof(material_t),NULL);
+
+    PetscOptionsGetRealArray(NULL, NULL, "-mat_fiber_t0",mat_fiber_t0,&nval,&set);
+    if( set == PETSC_TRUE )
+    {
       if( nval != 3 ){
 	PetscPrintf(MPI_COMM_SELF,"-mat_fiber_t0 should include 3 double arguments\n");
 	ierr_1 = 1;
 	goto end_mic_0;
       }
 
-      double E, v;
       mat.type_id = TYPE_0;
       mat.name = strdup("FIBER");
       mat.type = malloc(sizeof(type_0));
-      E = ((type_0*)mat.type)->young;
-      v = ((type_0*)mat.type)->poisson;
-      ((type_0*)mat.type)->lambda = (E*v)/((1+v)*(1-2*v));
-      ((type_0*)mat.type)->mu = E/(2*(1+v));
+      ((type_0*)mat.type)->rho         = mat_matrix_t0[0];
+      E = ((type_0*)mat.type)->young   = mat_matrix_t0[1];
+      v = ((type_0*)mat.type)->poisson = mat_matrix_t0[2];
+      ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
+      ((type_0*)mat.type)->mu          = E/(2*(1+v));
+
+      list_insertlast( &material_list , &mat );
+    }
+
+    PetscOptionsGetRealArray(NULL,NULL,"-mat_matrix_t0",mat_matrix_t0,&nval,&set);
+    if( set == PETSC_TRUE )
+    {
+      if( nval != 3 ){
+	PetscPrintf(MPI_COMM_SELF,"-mat_matrix_t0 should include 3 double arguments\n");
+	ierr_1 = 1;
+	goto end_mic_0;
+      }
+
+      mat.type_id = TYPE_0;
+      mat.name = strdup("MATRIX");
+      mat.type = malloc(sizeof(type_0));
+      ((type_0*)mat.type)->rho         = mat_matrix_t0[0];
+      E = ((type_0*)mat.type)->young   = mat_matrix_t0[1];
+      v = ((type_0*)mat.type)->poisson = mat_matrix_t0[2];
+      ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
+      ((type_0*)mat.type)->mu          = E/(2*(1+v));
 
       list_insertlast( &material_list , &mat );
     }
@@ -202,15 +229,15 @@ end_mic_0:
 
   /* Printing Options */
   flag_print = 0;
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTK);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-print_part",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-print_all",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
   //**************************************************
 
@@ -284,8 +311,8 @@ end_mic_0:
     ierr = spu_vtk_partition( vtkfile_n, &MICRO_COMM );
   }
 
-  ierr = list_init(&physical_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
-  ierr = list_init(&boundary_list, sizeof(boundary_t), NULL);CHKERRQ(ierr);
+  list_init(&physical_list, sizeof(physical_t), NULL);
+  list_init(&boundary_list, sizeof(boundary_t), NULL);
 
   /* Read Physical entities */
   ierr = read_physical_entities(MICRO_COMM, mesh_n, mesh_f);
@@ -316,9 +343,7 @@ end_mic_0:
   ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
 
   /* Init Gauss point shapes functions and derivatives */
-  ierr = PetscLogEventBegin(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
-  ierr = fem_inigau(); CHKERRQ(ierr);
-  ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
+  ierr = fem_inigau();
 
   /* micro main coupling loop */
   double strain_mac[6], strain_ave[6], stress_ave[6], c_homo[36];
@@ -452,14 +477,14 @@ end_mic_0:
       }
 
     }
-    ierr = PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");
+    PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");
     for(i=0;i<nvoi;i++){
       for(j=0;j<nvoi;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",(fabs(c_homo[i*nvoi+j])>1.0)?c_homo[i*nvoi+j]:0.0);
+	PetscPrintf(MICRO_COMM,"%e ",(fabs(c_homo[i*nvoi+j])>1.0)?c_homo[i*nvoi+j]:0.0);
       }
-      ierr = PetscPrintf(MICRO_COMM,"\n");
+      PetscPrintf(MICRO_COMM,"\n");
     }
-    ierr = PetscPrintf(MICRO_COMM,"\n");
+    PetscPrintf(MICRO_COMM,"\n");
 
     /*
        Experiment to test if the homogenization with <strain_mac>
@@ -471,11 +496,11 @@ end_mic_0:
     ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
     ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
     for(j=0;j<nvoi;j++){
-      ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
+      PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
     }
-    ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");
+    PetscPrintf(MICRO_COMM,"\nstress_ave = ");
     for(j=0;j<nvoi;j++){
-      ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
+      PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
     }
     for(i=0;i<nvoi;i++){
       stress_ave[i] = 0.0;
@@ -483,12 +508,11 @@ end_mic_0:
 	stress_ave[i] +=  c_homo[i*nvoi+j] * strain_mac[j];
       }
     }
-    ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");
+    PetscPrintf(MICRO_COMM,"\nstress_ave = ");
     for(j=0;j<nvoi;j++){
       ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
     }
-    ierr = PetscPrintf(MICRO_COMM," (c_homo*strain_mac)\n");
-
+    PetscPrintf(MICRO_COMM," (c_homo*strain_mac)\n");
 
   }
 
