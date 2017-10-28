@@ -130,9 +130,9 @@ end_mic_0:
 
     if( dim == 2 ) nval_expect = nval = 2;
     if( dim == 3 ) nval_expect = nval = 3;
-    PetscOptionsGetIntArray(NULL, NULL, "-struct_mesh",struct_mesh_n,&nval,&set);
-    if( set == PETSC_TRUE )
-    {
+    PetscOptionsGetIntArray(NULL, NULL, "-struct_n",struct_mesh_n,&nval,&set);
+    if( set == PETSC_TRUE ){
+
       if( nval != nval_expect ){
 	PetscPrintf(MPI_COMM_SELF,"-struct_mesh should include %d double arguments\n", nval_expect);
 	ierr_1 = 1;
@@ -141,9 +141,15 @@ end_mic_0:
       nx = struct_mesh_n[0];
       ny = struct_mesh_n[1];
       if( dim == 3 ) nz = struct_mesh_n[2];
+
+    }
+    else{
+	PetscPrintf(MPI_COMM_SELF,"-struct_n is request\n");
+	ierr_1 = 1;
+	goto end_mic_0;
     }
 
-    PetscOptionsGetRealArray(NULL, NULL, "-struct_size",struct_mesh_l,&nval,&set);
+    PetscOptionsGetRealArray(NULL, NULL, "-struct_l",struct_mesh_l,&nval,&set);
     if( set == PETSC_TRUE )
     {
       if( nval != nval_expect ){
@@ -156,7 +162,7 @@ end_mic_0:
       if( dim == 3 ) nz = struct_mesh_n[0];
     }
     else{
-	PetscPrintf(MPI_COMM_SELF,"-struct_size should be include because -struct_mesh was specified\n");
+	PetscPrintf(MPI_COMM_SELF,"-struct_l is request\n");
 	ierr_1 = 1;
 	goto end_mic_0;
     }
