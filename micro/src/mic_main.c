@@ -137,6 +137,7 @@ end_mic_0:
       nn = nx*ny*nz;
       nelm = ( dim == 2 ) ? (nx-1)*(ny-1) : (nx-1)*(ny-1)*(nz-1);
       npe  = ( dim == 2 ) ? 4 : 8;
+      ngp  = ( dim == 2 ) ? 4 : 8;
 
     }
     else{

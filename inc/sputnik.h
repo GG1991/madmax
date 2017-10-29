@@ -96,10 +96,11 @@ int         nx, ny, nz, nn;       // number of nodes
 double      lx, ly, lz;           // dimain lenght
 double      hx, hy, hz;           // element sizes 
 int         npe;                  // Nodes per Element
-double      *struct_sh;           // Shape functions
-double      *struct_dsh;          // Derivative shapes functions
+int         ngp;                  // Number of gauss points
+double      **struct_sh;          // Shape functions
+double      ***struct_dsh;        // Derivative shapes functions
 double      *struct_wp;           // Weights
-double      *struct_bmat;         // B matrix (Bu = epsilon)
+double      **struct_bmat;        // B matrix (Bu = epsilon)
 int         *loc_index;
 
 /* Cilindrical Fiber in quad Matrix */

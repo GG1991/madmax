@@ -4,7 +4,7 @@
 #include "fem.h"
 
 //--------------------------------------------------
-int fem_init_struct(double **sh, double **dsh, double **wp, double *h, int dim)
+int fem_init_struct(double ***sh, double ****dsh, double **wp, double *h, int dim)
 {
   int nsh = ( dim == 2 ) ? 4 : 8;
   int ngp = ( dim == 2 ) ? 4 : 8;
@@ -19,30 +19,43 @@ int fem_init_struct(double **sh, double **dsh, double **wp, double *h, int dim)
     xp[6] = -0.577350269189626;   xp[7]= +0.577350269189626;
   }
 
-  *sh   = malloc( nsh*ngp      * sizeof(double));
-  *dsh  = malloc( nsh*ngp*dim  * sizeof(double));
-  *wp   = malloc( ngp          * sizeof(double));
+  int is, d;
+
+  *sh = malloc( nsh * sizeof(double*));
+  for( is = 0 ; is < nsh ; is++ ){
+    (*sh)[is] = malloc( ngp * sizeof(double));
+  }
+  
+  *dsh  = malloc( nsh * sizeof(double**));
+  for( is = 0 ; is < nsh ; is++ ){
+    (*dsh)[is] = malloc( dim * sizeof(double*));
+    for( d = 0 ; d < dim ; d++ ){
+      (*dsh)[is][d] = malloc( ngp * sizeof(double));
+    }
+  }
+
+  *wp   = malloc( ngp * sizeof(double));
 
   if( dim == 2 )
   {
     
     for( gp = 0 ; gp < ngp ; gp++ ){
-      (*sh)[ 0*ngp + gp ] = (1 - xp[2*gp]) * (1 - xp[2*gp+1]);
-      (*sh)[ 1*ngp + gp ] = (1 + xp[2*gp]) * (1 - xp[2*gp+1]);
-      (*sh)[ 2*ngp + gp ] = (1 + xp[2*gp]) * (1 + xp[2*gp+1]);
-      (*sh)[ 3*ngp + gp ] = (1 - xp[2*gp]) * (1 + xp[2*gp+1]);
+      (*sh)[0][gp] = (1 - xp[2*gp]) * (1 - xp[2*gp+1])/4;
+      (*sh)[1][gp] = (1 + xp[2*gp]) * (1 - xp[2*gp+1])/4;
+      (*sh)[2][gp] = (1 + xp[2*gp]) * (1 + xp[2*gp+1])/4;
+      (*sh)[3][gp] = (1 - xp[2*gp]) * (1 + xp[2*gp+1])/4;
     }
 
     double hx = h[0], hy = h[1];
     for( gp = 0 ; gp < ngp ; gp++ ){
-      (*dsh)[ 0*dim*ngp + 0*ngp + gp ] = -1 * (1 - xp[2*gp+1]) * 2/hx; // d phi / d x
-      (*dsh)[ 1*dim*ngp + 0*ngp + gp ] = +1 * (1 - xp[2*gp+1]) * 2/hx;
-      (*dsh)[ 2*dim*ngp + 0*ngp + gp ] = +1 * (1 + xp[2*gp+1]) * 2/hx;
-      (*dsh)[ 3*dim*ngp + 0*ngp + gp ] = -1 * (1 + xp[2*gp+1]) * 2/hx;
-      (*dsh)[ 0*dim*ngp + 1*ngp + gp ] = -1 * (1 - xp[2*gp])   * 2/hy; // d phi / d y
-      (*dsh)[ 1*dim*ngp + 1*ngp + gp ] = -1 * (1 + xp[2*gp])   * 2/hy;
-      (*dsh)[ 2*dim*ngp + 1*ngp + gp ] = +1 * (1 + xp[2*gp])   * 2/hy;
-      (*dsh)[ 3*dim*ngp + 1*ngp + gp ] = +1 * (1 - xp[2*gp])   * 2/hy;
+      (*dsh)[0][0][gp] = -1 * (1 - xp[2*gp+1]) /4 * 2/hx; // d phi / d x
+      (*dsh)[1][0][gp] = +1 * (1 - xp[2*gp+1]) /4 * 2/hx;
+      (*dsh)[2][0][gp] = +1 * (1 + xp[2*gp+1]) /4 * 2/hx;
+      (*dsh)[3][0][gp] = -1 * (1 + xp[2*gp+1]) /4 * 2/hx;
+      (*dsh)[0][1][gp] = -1 * (1 - xp[2*gp])   /4 * 2/hy; // d phi / d y
+      (*dsh)[1][1][gp] = -1 * (1 + xp[2*gp])   /4 * 2/hy;
+      (*dsh)[2][1][gp] = +1 * (1 + xp[2*gp])   /4 * 2/hy;
+      (*dsh)[3][1][gp] = +1 * (1 - xp[2*gp])   /4 * 2/hy;
     }
 
     double vol = hx*hy;

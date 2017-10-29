@@ -308,13 +308,16 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     /* Initilize shape functions, derivatives, jacobian, b_matrix */
 
-    int nsh = ( dim == 2 ) ? 4 : 8;
     double h[3]; h[0] = hx; h[1] = hx; h[3] = hz;
 
     fem_init_struct( &struct_sh, &struct_dsh, &struct_wp, h, dim);
     
     /* alloc the B matrix */
-    struct_bmat = malloc( nvoi*nsh*dim* sizeof(double));
+    struct_bmat = malloc( nvoi * sizeof(double*));
+    for( i = 0 ; i < nvoi  ; i++ ){
+      struct_bmat[i] = malloc( npe*dim * sizeof(double));
+    }
+
     /* alloc the local index vector for assembly */
     loc_index   = malloc( dim*npe * sizeof(int));
 
@@ -347,8 +350,9 @@ int assembly_residual_struct(void)
   VecGhostGetLocalForm(x,&xlocal);
   VecGetArray(xlocal, &xvalues);
 
-  int e;
+  int    e, gp, is;
   double *elem_disp = malloc( dim*npe * sizeof(double));
+  double *res_elem  = malloc( dim*npe * sizeof(double));
 
   for( e = 0 ; e < nelm ; e++ ){
 
@@ -360,6 +364,20 @@ int assembly_residual_struct(void)
     for( i = 0 ; i < npe*dim ; i++ )
       elem_disp[i] = xvalues[loc_index[i]];
 
+    for( gp = 0; gp < ngp ; gp++ ){
+
+      if( dim == 2 ){
+	for( is = 0; is < npe ; is++ ){
+	  struct_bmat[0][is*dim + 0] = struct_dsh[is][0][gp];
+	  struct_bmat[0][is*dim + 1] = 0;
+	  struct_bmat[1][is*dim + 0] = 0;
+	  struct_bmat[1][is*dim + 1] = struct_dsh[is][1][gp];
+	  struct_bmat[2][is*dim + 0] = struct_dsh[is][1][gp];
+	  struct_bmat[2][is*dim + 1] = struct_dsh[is][0][gp];
+	}
+      }
+
+    }
   }
 
   return 0;
