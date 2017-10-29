@@ -54,7 +54,6 @@ int fem_init_struct(double **sh, double **dsh, double **wp, double *h, int dim)
   free(xp);
 
   return 0;
-
 }
 //--------------------------------------------------
 

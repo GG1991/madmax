@@ -11,6 +11,7 @@
 #include "math.h"
 
 int fem_inigau(void);
+int fem_init_struct(double **sh, double **dsh, double **wp, double *h, int dim);
 int fem_caljac3(double coor[8][3],double ***ds, int npe,int gp,double jac[3][3]);
 int fem_invjac3(double jac[3][3],double ijac[3][3],double *det);
 int fem_invjac(int dim, double jac[3][3],double ijac[3][3],double *det);

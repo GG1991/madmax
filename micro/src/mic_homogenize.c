@@ -307,8 +307,10 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     int nsh = ( dim == 2 ) ? 4 : 8;
     int ngp = ( dim == 2 ) ? 4 : 8;
+    double h[3]; h[0] = hx; h[1] = hx; h[3] = hz;
 
     struct_bmat = malloc( nvoi*nsh*ngp * sizeof(double));
+    fem_init_struct( &struct_sh, &struct_dsh, &struct_wp, h, dim);
 
   }
 
