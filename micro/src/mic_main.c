@@ -136,6 +136,7 @@ end_mic_0:
       if( dim == 3 ) nz = struct_mesh_n[2];
       nn = nx*ny*nz;
       nelm = ( dim == 2 ) ? (nx-1)*(ny-1) : (nx-1)*(ny-1)*(nz-1);
+      nex  = (nx-1); ney = (ny-1); nez = (nz-1);
       npe  = ( dim == 2 ) ? 4 : 8;
       ngp  = ( dim == 2 ) ? 4 : 8;
 
@@ -193,6 +194,8 @@ end_mic_0:
   /* 
      Geometry specifications or material distribution
      inside the rve
+
+     we should assign a value to "micro_type"
    */
 
   /* 
@@ -201,11 +204,10 @@ end_mic_0:
      -fiber_nx <n> (optional)
      -fiber_ny <n> (optional)
    */
-  flag_fiber_cilin = 0;
   nval = 4;
   PetscOptionsGetRealArray(NULL, NULL, "-fiber_cilin", fiber_cilin_vals, &nval,&set);
-  if(set==PETSC_TRUE) {
-    flag_fiber_cilin=1;
+  if( set == PETSC_TRUE ){
+    micro_type = CIRCULAR_FIBER;
     fiber_cilin_r=fiber_cilin_vals[0];
     if(nval==1){
       for(i=0;i<dim;i++){

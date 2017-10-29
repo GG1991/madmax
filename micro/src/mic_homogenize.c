@@ -10,6 +10,9 @@
 
 int get_local_index( int e, int *loc_index );
 int assembly_residual_struct( void );
+int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
+int get_centroid_struct( int e, double *centroid );
+int is_in_fiber( int e );
 
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
@@ -353,19 +356,26 @@ int assembly_residual_struct(void)
   int    e, gp, is;
   double *elem_disp = malloc( dim*npe * sizeof(double));
   double *res_elem  = malloc( dim*npe * sizeof(double));
+  double *strain_gp = malloc( nvoi    * sizeof(double));
+  double *stress_gp = malloc( nvoi    * sizeof(double));
 
   for( e = 0 ; e < nelm ; e++ ){
+
+    /* set to 0 res_elem */
+    int i;
+    for( i = 0 ; i < npe*dim ; i++ )
+      res_elem[i] = 0.0;
 
     /* get the local indeces of the element vertex nodes */
     get_local_index(e, loc_index);
 
     /* get the elemental displacements */
-    int i;
     for( i = 0 ; i < npe*dim ; i++ )
       elem_disp[i] = xvalues[loc_index[i]];
 
     for( gp = 0; gp < ngp ; gp++ ){
 
+      /* calc B matrix */
       if( dim == 2 ){
 	for( is = 0; is < npe ; is++ ){
 	  struct_bmat[0][is*dim + 0] = struct_dsh[is][0][gp];
@@ -377,7 +387,151 @@ int assembly_residual_struct(void)
 	}
       }
 
+      /* calc strain gp */
+      int v, j;
+      for( v = 0; v < nvoi ; v++ ){
+	strain_gp[v] = 0.0;
+	for( j = 0 ; j < npe*dim ; j++ )
+	  strain_gp[v] += struct_bmat[v][j] * elem_disp[j];
+      }
+
+      /* we get stress = f(strain) */
+      get_stress( e , gp , strain_gp , stress_gp );
+
+
+      for( j = 0 ; j < npe*dim ; j++ ){
+	for( v = 0; v < nvoi ; v++ )
+	  res_elem[j] += struct_bmat[v][j] * stress_gp[v];
+	res_elem[j] *= struct_wp[gp];
+      }
+
     }
+  }
+
+  return 0;
+}
+/****************************************************************************************************/
+int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
+{
+
+  /* returns the stress according to the elemet type */
+
+  material_t  *mat_p;
+  node_list_t *pm;
+
+  switch( micro_type ){
+
+    case CIRCULAR_FIBER:
+
+      if(is_in_fiber( e ))
+      {
+	/* is in the fiber */
+
+	pm = material_list.head;
+	while( pm ){
+
+          /* search FIBER */
+
+	  mat_p = (material_t *)pm->data;
+	  if( strcmp ( mat_p->name , "FIBER" ) == 0 ) break;
+
+	  pm = pm->next;
+	}
+	if( !pm ) return 1;
+	
+      }
+      else{
+	/* is in the matrix */
+
+	pm = material_list.head;
+	while( pm ){
+
+          /* search MATRIX */
+
+	  mat_p = (material_t *)pm->data;
+	  if( strcmp ( mat_p->name , "MATRIX" ) == 0 ) break;
+
+	  pm = pm->next;
+	}
+	if( !pm ) return 1;
+
+      }
+
+      break;
+
+    default:
+      return 1;
+
+  }
+
+  /* now that we now the material (mat_p) we calculate stress = f(strain) */
+
+  if( mat_p->type_id == TYPE_0 ){
+
+      /* is a linear material stress = C * strain */
+
+      double young   = ((type_0*)mat_p->type)->young;
+      double poisson = ((type_0*)mat_p->type)->poisson;
+      double c[3][3];
+      int    i , j;
+
+      if(dim==2){
+
+	/*
+	   Plane strain ( long fibers case )
+	 */
+	c[0][0]=1.0-poisson; c[0][1]=poisson    ; c[0][2]=0.0            ;
+	c[1][0]=poisson    ; c[1][1]=1.0-poisson; c[1][2]=0.0            ;
+	c[2][0]=0.0        ; c[2][1]=0.0        ; c[2][2]=(1-2*poisson)/2;
+
+	for( i = 0; i < nvoi ; i++ ){
+	  for( j = 0 ; j < nvoi ; j++ )
+	    c[i][j] = c[i][j] * young/((1+poisson)*(1-2*poisson));
+	}
+	for( i = 0; i < nvoi ; i++ ){
+	  stress_gp[i] = 0.0;
+	  for( j = 0 ; j < nvoi ; j++ )
+	    stress_gp[i] += c[i][j] * strain_gp[j];
+	}
+      }
+  }
+
+  return 0;
+}
+/****************************************************************************************************/
+int is_in_fiber( int e )
+{
+
+  int    i, j, d;
+  double l = -1, centroid[3];
+  double deviation[2];
+
+  get_centroid_struct( e, centroid );
+
+  for( i = 0 ; i < nx_fibers ; i++ ){
+    for( j = 0 ; j < ny_fibers ; j++ ){
+      deviation[0] = fiber_cilin_center_devi[0] - LX/2 + (lx/nx_fibers)/2 + i*(lx/nx_fibers);
+      deviation[1] = fiber_cilin_center_devi[1] - LY/2 + (ly/ny_fibers)/2 + j*(ly/ny_fibers);
+      l = 0.0;
+      for(d=0;d<2;d++){
+	l = l + pow(centroid[d]-(center_domain[d]+deviation[d]),2);
+      }
+      l = sqrt(l);
+      if (l<=fiber_cilin_r) return 1;
+    }
+  }
+  return 0;
+
+}
+/****************************************************************************************************/
+int get_centroid_struct( int e, double *centroid )
+{
+
+  /* formula only valid for sequencial now */
+
+  if( dim == 2 ){
+    centroid[0] = ( e % nex + 0.5 ) * hx;
+    centroid[1] = ( e / nex + 0.5 ) * hy;
   }
 
   return 0;
@@ -386,6 +540,8 @@ int assembly_residual_struct(void)
 int get_local_index( int e, int *loc_index )
 {
   
+  /* formula only valid for sequencial now */
+
   int d;
   if( dim == 2 ){
     for( d = 0 ; d < dim ; d++ ){

@@ -93,6 +93,7 @@ bool        flag_first_alloc;
 /* structured mesh */
 bool        flag_struct_mesh;
 int         nx, ny, nz, nn;       // number of nodes 
+int         nex, ney, nez;        // number of elements per direction 
 double      lx, ly, lz;           // dimain lenght
 double      hx, hy, hz;           // element sizes 
 int         npe;                  // Nodes per Element
@@ -112,6 +113,7 @@ double      fiber_cilin_r;
 double      fiber_cilin_center_devi[3];
 double      fiber_cilin_vals[4];
 double      center_domain[3];
+
 
 /* Interpolation over structured grids */
 int         nx_interp;

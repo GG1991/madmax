@@ -24,6 +24,13 @@ int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 #define TAYLOR_P     2
 #define UNIF_STRAINS 3
 
+
+/* Micro figure type */
+#define CIRCULAR_FIBER 1
+
+int          micro_type;
+
+
 /* Taylor homogenization variables */
 
 double       vi; // volumetric fraction of inclusions
