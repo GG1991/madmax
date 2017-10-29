@@ -348,12 +348,11 @@ int assembly_residual_struct(void)
   VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD);
 
   Vec     x_loc  , b_loc;
-  double  *x_arr , *b_arr;
+  double  *x_arr ;
 
   VecGhostGetLocalForm( x , &x_loc );
   VecGhostGetLocalForm( b , &b_loc );
   VecGetArray( x_loc, &x_arr );
-  VecGetArray( b_loc, &b_arr );
 
   int    e, gp, is;
   double *elem_disp = malloc( dim*npe * sizeof(double));
@@ -412,8 +411,10 @@ int assembly_residual_struct(void)
     VecSetValues( b_loc, npe*dim , loc_index, res_elem , ADD_VALUES );
   }
 
-  /* communication ? */
-  VecRestoreArray( b_loc, &b_arr );
+  /* communication between processes */
+
+  VecGhostUpdateBegin( b , ADD_VALUES , SCATTER_REVERSE );
+  VecGhostUpdateEnd( b , ADD_VALUES , SCATTER_REVERSE );
 
   return 0;
 }
