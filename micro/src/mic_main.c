@@ -118,6 +118,8 @@ end_mic_0:
     int    struct_mesh_n[3];
     double struct_mesh_l[3];
     nx = ny = nz = 1;
+    hx = hy = hz = -1;
+    lx = ly = lz = -1;
 
     if( dim == 2 ) nval_expect = nval = 2;
     if( dim == 3 ) nval_expect = nval = 3;
@@ -158,6 +160,11 @@ end_mic_0:
 	ierr_1 = 1;
 	goto end_mic_0;
     }
+
+    /* set the elements' size */
+    hx = lx/(nx+1);
+    hy = ly/(ny+1);
+    if( dim == 3 ) hz = lz / nz;
   }
 
   /* Homogenization Options */
