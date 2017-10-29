@@ -27,27 +27,27 @@ int fem_init_struct(double **sh, double **dsh, double **wp, double *h, int dim)
   {
     
     for( gp = 0 ; gp < ngp ; gp++ ){
-      *sh[ 0*ngp + gp ] = (1 - xp[2*gp]) * (1 - xp[2*gp-1]);
-      *sh[ 1*ngp + gp ] = (1 + xp[2*gp]) * (1 - xp[2*gp-1]);
-      *sh[ 2*ngp + gp ] = (1 + xp[2*gp]) * (1 + xp[2*gp-1]);
-      *sh[ 3*ngp + gp ] = (1 - xp[2*gp]) * (1 + xp[2*gp-1]);
+      (*sh)[ 0*ngp + gp ] = (1 - xp[2*gp]) * (1 - xp[2*gp+1]);
+      (*sh)[ 1*ngp + gp ] = (1 + xp[2*gp]) * (1 - xp[2*gp+1]);
+      (*sh)[ 2*ngp + gp ] = (1 + xp[2*gp]) * (1 + xp[2*gp+1]);
+      (*sh)[ 3*ngp + gp ] = (1 - xp[2*gp]) * (1 + xp[2*gp+1]);
     }
 
     double hx = h[0], hy = h[1];
     for( gp = 0 ; gp < ngp ; gp++ ){
-      *dsh[ 0*dim*ngp + 0*ngp + gp ] = -1 * (1 - xp[2*gp-1]) * 2/hx; // d phi / d x
-      *dsh[ 1*dim*ngp + 0*ngp + gp ] = +1 * (1 - xp[2*gp-1]) * 2/hx;
-      *dsh[ 2*dim*ngp + 0*ngp + gp ] = +1 * (1 + xp[2*gp-1]) * 2/hx;
-      *dsh[ 3*dim*ngp + 0*ngp + gp ] = -1 * (1 + xp[2*gp-1]) * 2/hx;
-      *dsh[ 0*dim*ngp + 1*ngp + gp ] = -1 * (1 - xp[2*gp])   * 2/hy; // d phi / d y
-      *dsh[ 1*dim*ngp + 1*ngp + gp ] = -1 * (1 + xp[2*gp])   * 2/hy;
-      *dsh[ 2*dim*ngp + 1*ngp + gp ] = +1 * (1 + xp[2*gp])   * 2/hy;
-      *dsh[ 3*dim*ngp + 1*ngp + gp ] = +1 * (1 - xp[2*gp])   * 2/hy;
+      (*dsh)[ 0*dim*ngp + 0*ngp + gp ] = -1 * (1 - xp[2*gp+1]) * 2/hx; // d phi / d x
+      (*dsh)[ 1*dim*ngp + 0*ngp + gp ] = +1 * (1 - xp[2*gp+1]) * 2/hx;
+      (*dsh)[ 2*dim*ngp + 0*ngp + gp ] = +1 * (1 + xp[2*gp+1]) * 2/hx;
+      (*dsh)[ 3*dim*ngp + 0*ngp + gp ] = -1 * (1 + xp[2*gp+1]) * 2/hx;
+      (*dsh)[ 0*dim*ngp + 1*ngp + gp ] = -1 * (1 - xp[2*gp])   * 2/hy; // d phi / d y
+      (*dsh)[ 1*dim*ngp + 1*ngp + gp ] = -1 * (1 + xp[2*gp])   * 2/hy;
+      (*dsh)[ 2*dim*ngp + 1*ngp + gp ] = +1 * (1 + xp[2*gp])   * 2/hy;
+      (*dsh)[ 3*dim*ngp + 1*ngp + gp ] = +1 * (1 - xp[2*gp])   * 2/hy;
     }
 
     double vol = hx*hy;
     for( gp = 0 ; gp < ngp ; gp++ )
-      *wp [gp] = vol / ngp;
+      (*wp)[gp] = vol / ngp;
 
   }
 
