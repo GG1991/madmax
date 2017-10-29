@@ -8,6 +8,9 @@
 
 #include "micro.h"
 
+int get_local_index( int e, int *loc_index );
+int assembly_residual_struct( void );
+
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
   /* 
@@ -249,8 +252,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
      partimos el dominio en tandas por el eje y
 
    */
-  if( flag_first_alloc == true )
-  {
+  if( flag_first_alloc == true ){
+
     flag_first_alloc = false;
 
     int rank, nproc;
@@ -306,14 +309,73 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     /* Initilize shape functions, derivatives, jacobian, b_matrix */
 
     int nsh = ( dim == 2 ) ? 4 : 8;
-    int ngp = ( dim == 2 ) ? 4 : 8;
     double h[3]; h[0] = hx; h[1] = hx; h[3] = hz;
 
-    struct_bmat = malloc( nvoi*nsh*ngp * sizeof(double));
     fem_init_struct( &struct_sh, &struct_dsh, &struct_wp, h, dim);
+    
+    /* alloc the B matrix */
+    struct_bmat = malloc( nvoi*nsh*dim* sizeof(double));
+    /* alloc the local index vector for assembly */
+    loc_index   = malloc( dim*npe * sizeof(int));
+
+  } // first time for allocation
+
+  /* 
+     Begin Newton-Raphson Iterations 
+   */
+  int nr_its = 0, norm = nr_norm_tol*2;
+  while( nr_its < nr_max_its && norm > nr_norm_tol )
+  {
+    assembly_residual_struct(); // assembly "b" (residue) using "x" (displacement)
+  }
+
+
+  return 0;
+}
+/****************************************************************************************************/
+int assembly_residual_struct(void)
+{
+
+  VecZeroEntries(b);
+  VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD);
+  VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD);
+
+  Vec     xlocal;
+  double *xvalues;
+
+  VecGhostGetLocalForm(x,&xlocal);
+  VecGetArray(xlocal, &xvalues);
+
+  int e;
+  double *elem_disp = malloc( dim*npe * sizeof(double));
+
+  for( e = 0 ; e < nelm ; e++ ){
+
+    /* get the local indeces of the element vertex nodes */
+    get_local_index(e, loc_index);
+
+    /* get the elemental displacements */
+    int i;
+    for( i = 0 ; i < npe*dim ; i++ )
+      elem_disp[i] = xvalues[loc_index[i]];
 
   }
 
+  return 0;
+}
+/****************************************************************************************************/
+int get_local_index( int e, int *loc_index )
+{
+  
+  int d;
+  if( dim == 2 ){
+    for( d = 0 ; d < dim ; d++ ){
+      loc_index[ 0*dim + d ] = (e + 0)      * dim + d ;
+      loc_index[ 1*dim + d ] = (e + 1)      * dim + d ;
+      loc_index[ 2*dim + d ] = (e + nx + 0) * dim + d ;
+      loc_index[ 3*dim + d ] = (e + nx + 1) * dim + d ;
+    }
+  }
   return 0;
 }
 /****************************************************************************************************/
