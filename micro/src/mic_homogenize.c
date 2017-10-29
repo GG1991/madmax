@@ -347,11 +347,13 @@ int assembly_residual_struct(void)
   VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD);
   VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD);
 
-  Vec     xlocal;
-  double *xvalues;
+  Vec     x_loc  , b_loc;
+  double  *x_arr , *b_arr;
 
-  VecGhostGetLocalForm(x,&xlocal);
-  VecGetArray(xlocal, &xvalues);
+  VecGhostGetLocalForm( x , &x_loc );
+  VecGhostGetLocalForm( b , &b_loc );
+  VecGetArray( x_loc, &x_arr );
+  VecGetArray( b_loc, &b_arr );
 
   int    e, gp, is;
   double *elem_disp = malloc( dim*npe * sizeof(double));
@@ -371,7 +373,7 @@ int assembly_residual_struct(void)
 
     /* get the elemental displacements */
     for( i = 0 ; i < npe*dim ; i++ )
-      elem_disp[i] = xvalues[loc_index[i]];
+      elem_disp[i] = x_arr[loc_index[i]];
 
     for( gp = 0; gp < ngp ; gp++ ){
 
@@ -406,7 +408,12 @@ int assembly_residual_struct(void)
       }
 
     }
+
+    VecSetValues( b_loc, npe*dim , loc_index, res_elem , ADD_VALUES );
   }
+
+  /* communication ? */
+  VecRestoreArray( b_loc, &b_arr );
 
   return 0;
 }
@@ -493,6 +500,7 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 	  for( j = 0 ; j < nvoi ; j++ )
 	    stress_gp[i] += c[i][j] * strain_gp[j];
 	}
+
       }
   }
 
