@@ -51,6 +51,7 @@ meshes/cube_unif/cube.geo
 meshes/barbero
 exs/ex1/coupling.sh
 exs/ex1/tmpi2
+exs/micro_hom/mpiexec
 
 # Packages #
 ############

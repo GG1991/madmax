@@ -109,18 +109,7 @@ end_mic_0:
     ierr_1 = 1;
     goto end_mic_1;
   }
-  switch(dim){
-    case 2:
-      nvoi=3;
-      break;
-    case 3:
-      nvoi=6;
-      break;
-    default:
-      PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
-      ierr_1 = 1;
-      goto end_mic_1;
-  }
+  nvoi = (dim == 2) ? 3 : 6;
 
   {
     /* struct mesh */

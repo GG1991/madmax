@@ -264,11 +264,11 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     int nnz = (dim==2)? 18:81;                        // nonzeros per row
 
     MatCreate(MICRO_COMM,&A);
-    MatSetSizes(A,nyl*nx*dim,nyl*nx*dim,nn*dim,nn*dim);
+    MatSetSizes(A, nl*dim, nl*dim, nn*dim, nn*dim);
     MatSetFromOptions(A);
-    MatSeqAIJSetPreallocation(A,nnz,NULL);
-    MatMPIAIJSetPreallocation(A,nnz,NULL,nnz,NULL);
-    MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+    MatSeqAIJSetPreallocation(A, nnz, NULL);
+    MatMPIAIJSetPreallocation(A, nnz, NULL, nnz, NULL);
+    MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
     int istart, iend;
     MatGetOwnershipRange(A,&istart,&iend);
@@ -302,6 +302,14 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     VecDuplicate(x,&b);
 
     free(ghost_index);
+
+    /* Initilize shape functions, derivatives, jacobian, b_matrix */
+
+    int nsh = ( dim == 2 ) ? 4 : 8;
+    int ngp = ( dim == 2 ) ? 4 : 8;
+
+    struct_bmat = malloc( nvoi*nsh*ngp * sizeof(double));
+
   }
 
   return 0;

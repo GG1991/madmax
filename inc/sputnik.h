@@ -95,6 +95,9 @@ bool        flag_struct_mesh;
 int         nx, ny, nz, nn;       // number of nodes 
 double      lx, ly, lz;           // dimain lenght
 double      hx, hy, hz;           // element sizes 
+double      *struc_sh;            // Shape functions
+double      *struc_dsh;           // Derivative shapes functions
+double      *struct_bmat;         // B matrix (Bu = epsilon)
 
 /* Cilindrical Fiber in quad Matrix */
 double      LX, LY, LZ;
