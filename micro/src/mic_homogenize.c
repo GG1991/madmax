@@ -323,7 +323,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   /* 
      Begin Newton-Raphson Iterations 
    */
-  int nr_its = 0, norm = nr_norm_tol*2;
+  int    nr_its = 0; 
+  double norm = nr_norm_tol*10;
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
     assembly_residual_struct(); // assembly "b" (residue) using "x" (displacement)

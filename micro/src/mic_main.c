@@ -187,7 +187,7 @@ end_mic_0:
   PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
   if(set==PETSC_FALSE) nr_max_its=5;
   PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
-  if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
+  if(set==PETSC_FALSE) nr_norm_tol=1.0e-5;
 
   /* 
      Geometry specifications or material distribution
