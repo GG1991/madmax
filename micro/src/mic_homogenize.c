@@ -11,6 +11,7 @@
 int get_local_elem_index( int e, int *loc_index );
 int assembly_residual_struct( void );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
+int get_c_tan( int e , int gp, double *strain_gp , double *c_tan );
 int get_centroid_struct( int e, double *centroid );
 int is_in_fiber( int e );
 int strain_x_coord( double * strain , double * coord , double * u );
@@ -540,6 +541,87 @@ int assembly_residual_struct(void)
   return 0;
 }
 /****************************************************************************************************/
+int assembly_jacobian_struct(void)
+{
+
+  MatZeroEntries(A);
+
+  Vec     x_loc  , b_loc;
+  double  *x_arr , *b_arr;
+
+  VecGhostGetLocalForm( x , &x_loc );
+  VecGhostGetLocalForm( b , &b_loc );
+  VecGetArray( x_loc, &x_arr );
+  VecGetArray( b_loc, &b_arr );
+
+  int    e, gp, is;
+  double *elem_disp = malloc( dim*npe         * sizeof(double));
+  double *k_elem    = malloc( dim*npe*dim*npe * sizeof(double));
+  double *strain_gp = malloc( nvoi            * sizeof(double));
+  double *c         = malloc( nvoi*nvoi       * sizeof(double));
+
+  for( e = 0 ; e < nelm ; e++ ){
+
+    /* set to 0 res_elem */
+    int i;
+    for( i = 0 ; i < npe*dim*npe*dim ; i++ )
+      k_elem[i] = 0.0;
+
+    /* get the local indeces of the element vertex nodes */
+    get_local_elem_index(e, loc_elem_index);
+
+    /* get the elemental displacements */
+    for( i = 0 ; i < npe*dim ; i++ )
+      elem_disp[i] = x_arr[loc_elem_index[i]];
+
+    for( gp = 0; gp < ngp ; gp++ ){
+
+      /* calc B matrix */
+      if( dim == 2 ){
+	for( is = 0; is < npe ; is++ ){
+	  struct_bmat[0][is*dim + 0] = struct_dsh[is][0][gp];
+	  struct_bmat[0][is*dim + 1] = 0;
+	  struct_bmat[1][is*dim + 0] = 0;
+	  struct_bmat[1][is*dim + 1] = struct_dsh[is][1][gp];
+	  struct_bmat[2][is*dim + 0] = struct_dsh[is][1][gp];
+	  struct_bmat[2][is*dim + 1] = struct_dsh[is][0][gp];
+	}
+      }
+
+      /* calc strain gp */
+      int v, j;
+      for( v = 0; v < nvoi ; v++ ){
+	strain_gp[v] = 0.0;
+	for( j = 0 ; j < npe*dim ; j++ )
+	  strain_gp[v] += struct_bmat[v][j] * elem_disp[j];
+      }
+
+      /* we get stress = f(strain) */
+      get_c_tan( e , gp , strain_gp , c );
+
+      int k, h;
+      for( i = 0 ; i < npe*dim ; i++ ){
+	for( j = 0 ; j < npe*dim ; j++ ){
+	  for( k = 0; k < nvoi ; k++ ){
+	    for( h = 0; h < nvoi ; h++ )
+	      k_elem[ i*npe*dim + j] += struct_bmat[h][i] * c[ h*nvoi + k ] * struct_bmat[k][j] * struct_wp[gp];
+	  }
+	}
+      }
+
+    }
+    MatSetValuesLocal( A , npe*dim , loc_elem_index , npe*dim , loc_elem_index , k_elem , ADD_VALUES );
+
+  }
+
+  /* communication between processes */
+  MatAssemblyBegin(A , MAT_FINAL_ASSEMBLY );
+  MatAssemblyEnd(  A , MAT_FINAL_ASSEMBLY );
+
+
+  return 0;
+}
+/****************************************************************************************************/
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 {
 
@@ -597,33 +679,117 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 
   if( mat_p->type_id == TYPE_0 ){
 
-      /* is a linear material stress = C * strain */
+    /* is a linear material stress = C * strain */
 
-      double young   = ((type_0*)mat_p->type)->young;
-      double poisson = ((type_0*)mat_p->type)->poisson;
-      double c[3][3];
-      int    i , j;
+    double young   = ((type_0*)mat_p->type)->young;
+    double poisson = ((type_0*)mat_p->type)->poisson;
+    double c[3][3];
+    int    i , j;
 
-      if(dim==2){
+    if(dim==2){
 
-	/*
-	   Plane strain ( long fibers case )
-	 */
-	c[0][0]=1.0-poisson; c[0][1]=poisson    ; c[0][2]=0.0            ;
-	c[1][0]=poisson    ; c[1][1]=1.0-poisson; c[1][2]=0.0            ;
-	c[2][0]=0.0        ; c[2][1]=0.0        ; c[2][2]=(1-2*poisson)/2;
+      /*
+	 Plane strain ( long fibers case )
+       */
+      c[0][0]=1.0-poisson; c[0][1]=poisson    ; c[0][2]=0.0            ;
+      c[1][0]=poisson    ; c[1][1]=1.0-poisson; c[1][2]=0.0            ;
+      c[2][0]=0.0        ; c[2][1]=0.0        ; c[2][2]=(1-2*poisson)/2;
 
-	for( i = 0; i < nvoi ; i++ ){
-	  for( j = 0 ; j < nvoi ; j++ )
-	    c[i][j] = c[i][j] * young/((1+poisson)*(1-2*poisson));
+      for( i = 0; i < nvoi ; i++ ){
+	for( j = 0 ; j < nvoi ; j++ )
+	  c[i][j] = c[i][j] * young/((1+poisson)*(1-2*poisson));
+      }
+      for( i = 0; i < nvoi ; i++ ){
+	stress_gp[i] = 0.0;
+	for( j = 0 ; j < nvoi ; j++ )
+	  stress_gp[i] += c[i][j] * strain_gp[j];
+      }
+
+    }
+  }
+
+  return 0;
+}
+/****************************************************************************************************/
+int get_c_tan( int e , int gp, double *strain_gp , double *c_tan )
+{
+
+  /* returns the stress according to the elemet type */
+
+  material_t  *mat_p;
+  node_list_t *pm;
+
+  switch( micro_type ){
+
+    case CIRCULAR_FIBER:
+
+      if(is_in_fiber( e ))
+      {
+	/* is in the fiber */
+
+	pm = material_list.head;
+	while( pm ){
+
+          /* search FIBER */
+
+	  mat_p = (material_t *)pm->data;
+	  if( strcmp ( mat_p->name , "FIBER" ) == 0 ) break;
+
+	  pm = pm->next;
 	}
-	for( i = 0; i < nvoi ; i++ ){
-	  stress_gp[i] = 0.0;
-	  for( j = 0 ; j < nvoi ; j++ )
-	    stress_gp[i] += c[i][j] * strain_gp[j];
+	if( !pm ) return 1;
+	
+      }
+      else{
+	/* is in the matrix */
+
+	pm = material_list.head;
+	while( pm ){
+
+          /* search MATRIX */
+
+	  mat_p = (material_t *)pm->data;
+	  if( strcmp ( mat_p->name , "MATRIX" ) == 0 ) break;
+
+	  pm = pm->next;
 	}
+	if( !pm ) return 1;
 
       }
+
+      break;
+
+    default:
+      return 1;
+
+  }
+
+  /* now that we now the material (mat_p) we calculate stress = f(strain) */
+
+  if( mat_p->type_id == TYPE_0 ){
+
+    /* is a linear material stress = C * strain */
+
+    double young   = ((type_0*)mat_p->type)->young;
+    double poisson = ((type_0*)mat_p->type)->poisson;
+    double c[3][3];
+    int    i , j;
+
+    if(dim==2){
+
+      /*
+	 Plane strain ( long fibers case )
+       */
+      c[0][0]=1.0-poisson; c[0][1]=poisson    ; c[0][2]=0.0            ;
+      c[1][0]=poisson    ; c[1][1]=1.0-poisson; c[1][2]=0.0            ;
+      c[2][0]=0.0        ; c[2][1]=0.0        ; c[2][2]=(1-2*poisson)/2;
+
+      for( i = 0; i < nvoi ; i++ ){
+	for( j = 0 ; j < nvoi ; j++ )
+	  c_tan[i*nvoi + j] = c[i][j] * young/((1+poisson)*(1-2*poisson));
+      }
+
+    }
   }
 
   return 0;
