@@ -8,12 +8,12 @@
 
 #include "micro.h"
 
-int get_local_index( int e, int *loc_index );
+int get_local_elem_index( int e, int *loc_index );
 int assembly_residual_struct( void );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_centroid_struct( int e, double *centroid );
 int is_in_fiber( int e );
-int mvp( double * mat , double * a , double * b , int n );
+int strain_x_coord( double * strain , double * coord , double * u );
 
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
@@ -323,7 +323,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     }
 
     /* alloc the local index vector for assembly */
-    loc_index   = malloc( dim*npe * sizeof(int));
+    loc_elem_index = malloc( dim*npe * sizeof(int));
 
   } // first time for allocation
 
@@ -334,6 +334,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   /* Set the displacement boundary conditions "u = E . X" */
   Vec     x_loc;
   double  *x_arr;
+
+  VecZeroEntries(x);
 
   VecGhostGetLocalForm( x , &x_loc );
   VecGetArray( x_loc, &x_arr );
@@ -366,7 +368,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
       coord[1] = ( n + ny_inf )*hy;
 
       /* calc displ on the node */
-      mvp( strain_mac , coord , displ , nvoi );
+      strain_x_coord( strain_mac , coord , displ );
 
       for( d = 0 ; d < dim ; d++ )
 	x_arr[index[d]] = displ[d];
@@ -380,7 +382,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
       coord[1] = ( n + ny_inf )*hy;
 
       /* calc displ on the node */
-      mvp( strain_mac , coord , displ , nvoi );
+      strain_x_coord( strain_mac , coord , displ );
 
       for( d = 0 ; d < dim ; d++ )
 	x_arr[index[d]] = displ[d];
@@ -392,11 +394,11 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
       for( n = 0 ; n < nx ; n++ ){
 	for( d = 0 ; d < dim ; d++ )
 	  index[ d ] = n*dim + d;
-	coord[0] = n*nx;
+	coord[0] = n*hx;
 	coord[1] = 0.0;
 
 	/* calc displ on the node */
-	mvp( strain_mac , coord , displ , nvoi );
+	strain_x_coord( strain_mac , coord , displ );
 
 	for( d = 0 ; d < dim ; d++ )
 	  x_arr[index[d]] = displ[d];
@@ -410,11 +412,11 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
       for( n = 0 ; n < nx ; n++ ){
 	for( d = 0 ; d < dim ; d++ )
 	  index[ d ] = (ny-1)*nx*dim + n*dim + d;
-	coord[0] = n*nx;
+	coord[0] = n*hx;
 	coord[1] = ly;
 
 	/* calc displ on the node */
-	mvp( strain_mac , coord , displ , nvoi );
+	strain_x_coord( strain_mac , coord , displ );
 
 	for( d = 0 ; d < dim ; d++ )
 	  x_arr[index[d]] = displ[d];
@@ -425,28 +427,32 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
   VecRestoreArray( x_loc , &x_arr);
   VecGhostRestoreLocalForm( x , &x_loc );
+  VecGhostUpdateBegin( x,INSERT_VALUES,SCATTER_REVERSE);
+  VecGhostUpdateEnd(   x,INSERT_VALUES,SCATTER_REVERSE);
+  VecGhostUpdateBegin( x,INSERT_VALUES,SCATTER_FORWARD);
+  VecGhostUpdateEnd(   x,INSERT_VALUES,SCATTER_FORWARD);
 
   int    nr_its = 0; 
   double norm = nr_norm_tol*10;
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
     assembly_residual_struct(); // assembly "b" (residue) using "x" (displacement)
+    nr_its ++;
   }
+
 
   return 0;
 }
 /****************************************************************************************************/
-int mvp( double * mat , double * a , double * b , int n )
+int strain_x_coord( double * strain , double * coord , double * u )
 {
   /* b = mat . a */
 
-  int  i , j ;
-
-  for( i = 0 ; i < n ; i++ ){
-    b[i] = 0.0;
-    for( j = 0 ; j < n ; j++ )
-      b[i] += mat[ i * n + j ] * a[j];
+  if( dim == 2 ){
+    u[0] = strain[0]   * coord[0] + strain[2]/2 * coord[1] ;
+    u[1] = strain[2]/2 * coord[0] + strain[1]   * coord[1] ;
   }
+
   return 0;
 }
 /****************************************************************************************************/
@@ -454,15 +460,14 @@ int assembly_residual_struct(void)
 {
 
   VecZeroEntries(b);
-  VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD);
-  VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD);
 
   Vec     x_loc  , b_loc;
-  double  *x_arr ;
+  double  *x_arr , *b_arr;
 
   VecGhostGetLocalForm( x , &x_loc );
   VecGhostGetLocalForm( b , &b_loc );
   VecGetArray( x_loc, &x_arr );
+  VecGetArray( b_loc, &b_arr );
 
   int    e, gp, is;
   double *elem_disp = malloc( dim*npe * sizeof(double));
@@ -478,11 +483,11 @@ int assembly_residual_struct(void)
       res_elem[i] = 0.0;
 
     /* get the local indeces of the element vertex nodes */
-    get_local_index(e, loc_index);
+    get_local_elem_index(e, loc_elem_index);
 
     /* get the elemental displacements */
     for( i = 0 ; i < npe*dim ; i++ )
-      elem_disp[i] = x_arr[loc_index[i]];
+      elem_disp[i] = x_arr[loc_elem_index[i]];
 
     for( gp = 0; gp < ngp ; gp++ ){
 
@@ -518,13 +523,19 @@ int assembly_residual_struct(void)
 
     }
 
-    VecSetValues( b_loc, npe*dim , loc_index, res_elem , ADD_VALUES );
+    for( i = 0 ; i < npe*dim ; i++ )
+      b_arr[loc_elem_index[i]] += res_elem[i];
+
   }
+
+  VecRestoreArray( b_loc , &b_arr);
 
   /* communication between processes */
 
-  VecGhostUpdateBegin( b , ADD_VALUES , SCATTER_REVERSE );
-  VecGhostUpdateEnd( b , ADD_VALUES , SCATTER_REVERSE );
+  VecGhostUpdateBegin( b , ADD_VALUES    , SCATTER_REVERSE );
+  VecGhostUpdateEnd(   b , ADD_VALUES    , SCATTER_REVERSE );
+  VecGhostUpdateBegin( b , INSERT_VALUES , SCATTER_FORWARD );
+  VecGhostUpdateEnd(   b , INSERT_VALUES , SCATTER_FORWARD );
 
   return 0;
 }
@@ -650,13 +661,13 @@ int get_centroid_struct( int e, double *centroid )
 
   if( dim == 2 ){
     centroid[0] = ( e % nex + 0.5 ) * hx;
-    centroid[1] = ( e / nex + 0.5 ) * hy;
+    centroid[1] = ( (e + nstart) / nex + 0.5 ) * hy;
   }
 
   return 0;
 }
 /****************************************************************************************************/
-int get_local_index( int e, int *loc_index )
+int get_local_elem_index( int e, int *loc_elem_index )
 {
   
   /* formula only valid for sequencial now */
@@ -664,10 +675,10 @@ int get_local_index( int e, int *loc_index )
   int d;
   if( dim == 2 ){
     for( d = 0 ; d < dim ; d++ ){
-      loc_index[ 0*dim + d ] = (e + 0)      * dim + d ;
-      loc_index[ 1*dim + d ] = (e + 1)      * dim + d ;
-      loc_index[ 2*dim + d ] = (e + nx + 0) * dim + d ;
-      loc_index[ 3*dim + d ] = (e + nx + 1) * dim + d ;
+      loc_elem_index[ 0*dim + d ] = (e + 0)        * dim + d ;
+      loc_elem_index[ 1*dim + d ] = (e + 1)        * dim + d ;
+      loc_elem_index[ 2*dim + d ] = (e + nx-1 + 0) * dim + d ;
+      loc_elem_index[ 3*dim + d ] = (e + nx-1 + 1) * dim + d ;
     }
   }
   return 0;
