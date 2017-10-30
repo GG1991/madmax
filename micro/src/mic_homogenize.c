@@ -861,10 +861,10 @@ int get_local_elem_index( int e, int *loc_elem_index )
 int get_node_local_num( int e , int *n_loc )
 {
   if( dim == 2 ){
-    n_loc[0] = (e + 0)      ;
-    n_loc[1] = (e + 1)      ;
-    n_loc[2] = (e + nx + 0) ;
-    n_loc[3] = (e + nx + 1) ;
+    n_loc[0] = ( (e % (nx-1)) + (e/(nx-1))*nx + 0)      ;
+    n_loc[1] = ( (e % (nx-1)) + (e/(nx-1))*nx + 1)      ;
+    n_loc[2] = ( (e % (nx-1)) + (e/(nx-1))*nx + nx + 1) ;
+    n_loc[3] = ( (e % (nx-1)) + (e/(nx-1))*nx + nx + 0) ;
   }
   return 0;
 }
@@ -1133,8 +1133,8 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
       fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
     for( d = dim ; d < 3 ; d++ )
       fprintf(fm,"%lf ",0.0);
+    fprintf(fm,"\n");
   }
-  fprintf(fm,"\n");
   VecRestoreArray( xlocal , &xvalues );
   fprintf(fm,"</DataArray>\n");
 
