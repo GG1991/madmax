@@ -264,7 +264,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     flag_first_alloc = false;
 
-    nyl = ny / nproc + ((ny % nproc > rank) ? 1:0);     // ny for every process
+    nyl = ny / nproc + ((ny % nproc > rank) ? 1:0);   // ny for every process
     int nl  = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;      // local nodes
     int nnz = (dim==2)? 18:81;                        // nonzeros per row
 
@@ -331,102 +331,100 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
      Begin Newton-Raphson Iterations 
    */
 
-   /* Set the displacement boundary conditions "u = E . X" */
-  {
-    Vec     x_loc;
-    double  *x_arr;
+  /* Set the displacement boundary conditions "u = E . X" */
+  Vec     x_loc;
+  double  *x_arr;
 
-    VecGhostGetLocalForm( x , &x_loc );
-    VecGetArray( x_loc, &x_arr );
+  VecGhostGetLocalForm( x , &x_loc );
+  VecGetArray( x_loc, &x_arr );
 
-    int  n , d;
+  int  n , d;
 
-    /* 
-       2d case we have 2 lateral walls and top and/or botton for rank = 0 or
-       rank = nproc - 1 
+  /* 
+     2d case we have 2 lateral walls and top and/or botton for rank = 0 or
+     rank = nproc - 1 
 
-       order : 
+     order 
 
-       1) lateral (all ranks)
-       2) bottom  (rank = 0)
-       3) top     (rank = nproc-1)
+     1) lateral (all ranks)
+     2) bottom  (rank = 0)
+     3) top     (rank = nproc-1)
 
-     */
+   */
 
-    if( dim == 2 ){
+  if( dim == 2 ){
 
-      int     index[2]; // (i,j) displacement index in local vector
-      double  coord[2]; // (x,y) coordinates
-      double  displ[2]; // (ux,uy) displacement
+    int     index[2]; // (i,j) displacement index in local vector
+    double  coord[2]; // (x,y) coordinates
+    double  displ[2]; // (ux,uy) displacement
 
-      /* cara lateral x = 0 (nodos locales) */
-      for( n = 0 ; n < nyl ; n++ ){
-	for( d = 0 ; d < dim ; d++ )
-	  index[ d ] = (n*nx)*dim + d;
-	coord[0] = 0.0;
-	coord[1] = (n+ny_inf)*hy;
+    /* cara lateral x = 0 (nodos locales) */
+    for( n = 0 ; n < nyl ; n++ ){
+      for( d = 0 ; d < dim ; d++ )
+	index[ d ] = (n*nx)*dim + d;
+      coord[0] = 0.0;
+      coord[1] = ( n + ny_inf )*hy;
 
-	/* calc displ on the node */
-	mvp( strain_mac , coord , displ , nvoi );
+      /* calc displ on the node */
+      mvp( strain_mac , coord , displ , nvoi );
 
-	for( d = 0 ; d < dim ; d++ )
-	  x_arr[index[d]] = displ[d];
-      }
-
-      /* cara lateral x = lx (nodos locales) */
-      for( n = 0 ; n < nyl ; n++ ){
-	for( d = 0 ; d < dim ; d++ )
-	  index[ d ] = ((n+1)*nx - 1)*dim + d;
-	coord[0] = lx;
-	coord[1] = (n+ny_inf)*hy;
-
-	/* calc displ on the node */
-	mvp( strain_mac , coord , displ , nvoi );
-
-	for( d = 0 ; d < dim ; d++ )
-	  x_arr[index[d]] = displ[d];
-      }
-
-      /* cara inferior y = 0 (solo rank = 0) */
-      if( rank == 0 ){
-
-	for( n = 0 ; n < nx ; n++ ){
-	  for( d = 0 ; d < dim ; d++ )
-	    index[ d ] = n*dim + d;
-	  coord[0] = n*nx;
-	  coord[1] = 0.0;
-
-	  /* calc displ on the node */
-	  mvp( strain_mac , coord , displ , nvoi );
-
-	  for( d = 0 ; d < dim ; d++ )
-	    x_arr[index[d]] = displ[d];
-	}
-
-      }
-
-      /* cara superior y = ly (solo rank = nproc - 1) */
-      if( rank == (nproc - 1) ){
-
-	for( n = 0 ; n < nx ; n++ ){
-	  for( d = 0 ; d < dim ; d++ )
-	    index[ d ] = (ny-1)*nx*dim + n*dim + d;
-	  coord[0] = n*nx;
-	  coord[1] = ly;
-
-	  /* calc displ on the node */
-	  mvp( strain_mac , coord , displ , nvoi );
-
-	  for( d = 0 ; d < dim ; d++ )
-	    x_arr[index[d]] = displ[d];
-	}
-
-      }
+      for( d = 0 ; d < dim ; d++ )
+	x_arr[index[d]] = displ[d];
     }
 
-    VecRestoreArray( x_loc , &x_arr);
-    VecGhostRestoreLocalForm( x , &x_loc );
+    /* cara lateral x = lx (nodos locales) */
+    for( n = 0 ; n < nyl ; n++ ){
+      for( d = 0 ; d < dim ; d++ )
+	index[ d ] = ((n+1)*nx - 1)*dim + d;
+      coord[0] = lx;
+      coord[1] = ( n + ny_inf )*hy;
+
+      /* calc displ on the node */
+      mvp( strain_mac , coord , displ , nvoi );
+
+      for( d = 0 ; d < dim ; d++ )
+	x_arr[index[d]] = displ[d];
+    }
+
+    /* cara inferior y = 0 (solo rank = 0) */
+    if( rank == 0 ){
+
+      for( n = 0 ; n < nx ; n++ ){
+	for( d = 0 ; d < dim ; d++ )
+	  index[ d ] = n*dim + d;
+	coord[0] = n*nx;
+	coord[1] = 0.0;
+
+	/* calc displ on the node */
+	mvp( strain_mac , coord , displ , nvoi );
+
+	for( d = 0 ; d < dim ; d++ )
+	  x_arr[index[d]] = displ[d];
+      }
+
+    }
+
+    /* cara superior y = ly (solo rank = nproc - 1) */
+    if( rank == (nproc - 1) ){
+
+      for( n = 0 ; n < nx ; n++ ){
+	for( d = 0 ; d < dim ; d++ )
+	  index[ d ] = (ny-1)*nx*dim + n*dim + d;
+	coord[0] = n*nx;
+	coord[1] = ly;
+
+	/* calc displ on the node */
+	mvp( strain_mac , coord , displ , nvoi );
+
+	for( d = 0 ; d < dim ; d++ )
+	  x_arr[index[d]] = displ[d];
+      }
+
+    }
   }
+
+  VecRestoreArray( x_loc , &x_arr);
+  VecGhostRestoreLocalForm( x , &x_loc );
 
   int    nr_its = 0; 
   double norm = nr_norm_tol*10;
@@ -434,7 +432,6 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   {
     assembly_residual_struct(); // assembly "b" (residue) using "x" (displacement)
   }
-
 
   return 0;
 }
