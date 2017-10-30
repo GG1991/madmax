@@ -276,8 +276,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     MatMPIAIJSetPreallocation(A, nnz, NULL, nnz, NULL);
     MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
-    int istart, iend;
     MatGetOwnershipRange(A,&istart,&iend);
+    nstart = istart / dim;
+    nend   = iend   / dim;
 
     int nghost, *ghost_index;;
     if( nproc == 1 )
@@ -329,6 +330,16 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   /* 
      Begin Newton-Raphson Iterations 
    */
+
+   /* Set the displacement boundary conditions "u = E . X" */
+  {
+    Vec     x_loc;
+    double  *x_arr;
+
+    VecGhostGetLocalForm( x , &x_loc );
+    VecGetArray( x_loc, &x_arr );
+  }
+
   int    nr_its = 0; 
   double norm = nr_norm_tol*10;
   while( nr_its < nr_max_its && norm > nr_norm_tol )
