@@ -34,8 +34,9 @@ int          micro_type;
 /* structured mesh */
 bool        flag_struct_mesh;
 int         nx, ny, nz, nn;       // number of nodes 
-int         nex, ney, nez;        // number of elements per direction 
-int         nyl;
+int         nex , ney , nez;      // total number of elements per direction 
+int         nyl;                  // local number of nodes in y direction
+int         ny_inf;               // inferior numeration in y direction
 double      lx, ly, lz;           // dimain lenght
 double      hx, hy, hz;           // element sizes 
 int         npe;                  // Nodes per element

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./mpiexec -np 1 xterm -e gdb --args  ../../micro/micro \
+./mpiexec -np 1 xterm -e gdb -x file.gdb --args  ../../micro/micro \
     -dim 2 \
     -struct_n    10,10 \
     -struct_l    0.1,0.1 \

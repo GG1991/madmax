@@ -278,6 +278,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     MatGetOwnershipRange(A,&istart,&iend);
     nstart = istart / dim;
     nend   = iend   / dim;
+    ny_inf = ( dim == 2 ) ? nstart / nx : nstart / (nx*nz);
 
     int nghost, *ghost_index;;
     if( nproc == 1 )
@@ -343,8 +344,15 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     /* 
        2d case we have 2 lateral walls and top and/or botton for rank = 0 or
        rank = nproc - 1 
-       order : 1) lateral 2]bottom 3]top
+
+       order : 
+
+       1) lateral (all ranks)
+       2) bottom  (rank = 0)
+       3) top     (rank = nproc-1)
+
      */
+
     if( dim == 2 ){
 
       int     index[2]; // (i,j) displacement index in local vector
@@ -355,6 +363,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
       for( n = 0 ; n < nyl ; n++ ){
 	for( d = 0 ; d < dim ; d++ )
 	  index[ d ] = (n*nx)*dim + d;
+	coord[0] = 0.0;
+	coord[1] = (n+ny_inf)*hy;
 
 	/* calc displ on the node */
 	mvp( strain_mac , coord , displ , nvoi );
@@ -367,6 +377,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
       for( n = 0 ; n < nyl ; n++ ){
 	for( d = 0 ; d < dim ; d++ )
 	  index[ d ] = ((n+1)*nx - 1)*dim + d;
+	coord[0] = lx;
+	coord[1] = (n+ny_inf)*hy;
 
 	/* calc displ on the node */
 	mvp( strain_mac , coord , displ , nvoi );
@@ -381,6 +393,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 	for( n = 0 ; n < nx ; n++ ){
 	  for( d = 0 ; d < dim ; d++ )
 	    index[ d ] = n*dim + d;
+	  coord[0] = n*nx;
+	  coord[1] = 0.0;
 
 	  /* calc displ on the node */
 	  mvp( strain_mac , coord , displ , nvoi );
@@ -397,6 +411,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 	for( n = 0 ; n < nx ; n++ ){
 	  for( d = 0 ; d < dim ; d++ )
 	    index[ d ] = (ny-1)*nx*dim + n*dim + d;
+	  coord[0] = n*nx;
+	  coord[1] = ly;
 
 	  /* calc displ on the node */
 	  mvp( strain_mac , coord , displ , nvoi );
@@ -407,6 +423,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
       }
     }
+
+    VecRestoreArray( x_loc , &x_arr);
+    VecGhostRestoreLocalForm( x , &x_loc );
   }
 
   int    nr_its = 0; 
