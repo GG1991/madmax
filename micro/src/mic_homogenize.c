@@ -13,6 +13,7 @@ int assembly_residual_struct( void );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_centroid_struct( int e, double *centroid );
 int is_in_fiber( int e );
+int mvp( double * mat , double * a , double * b , int n );
 
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
@@ -255,17 +256,15 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
      partimos el dominio en tandas por el eje y
 
    */
+  int rank, nproc;
+  MPI_Comm_size(MICRO_COMM, &nproc);
+  MPI_Comm_rank(MICRO_COMM, &rank);
+
   if( flag_first_alloc == true ){
 
     flag_first_alloc = false;
 
-    int rank, nproc;
-
-    MPI_Comm_size(MICRO_COMM, &nproc);
-    MPI_Comm_rank(MICRO_COMM, &rank);
-
-    //int nyl = ny / nproc; // ny for every process
-    int nyl = ny / nproc + ((ny % nproc > rank)?1:0); // ny for every process
+    nyl = ny / nproc + ((ny % nproc > rank) ? 1:0);     // ny for every process
     int nl  = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;      // local nodes
     int nnz = (dim==2)? 18:81;                        // nonzeros per row
 
@@ -338,6 +337,76 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     VecGhostGetLocalForm( x , &x_loc );
     VecGetArray( x_loc, &x_arr );
+
+    int  n , d;
+
+    /* 
+       2d case we have 2 lateral walls and top and/or botton for rank = 0 or
+       rank = nproc - 1 
+       order : 1) lateral 2]bottom 3]top
+     */
+    if( dim == 2 ){
+
+      int     index[2]; // (i,j) displacement index in local vector
+      double  coord[2]; // (x,y) coordinates
+      double  displ[2]; // (ux,uy) displacement
+
+      /* cara lateral x = 0 (nodos locales) */
+      for( n = 0 ; n < nyl ; n++ ){
+	for( d = 0 ; d < dim ; d++ )
+	  index[ d ] = (n*nx)*dim + d;
+
+	/* calc displ on the node */
+	mvp( strain_mac , coord , displ , nvoi );
+
+	for( d = 0 ; d < dim ; d++ )
+	  x_arr[index[d]] = displ[d];
+      }
+
+      /* cara lateral x = lx (nodos locales) */
+      for( n = 0 ; n < nyl ; n++ ){
+	for( d = 0 ; d < dim ; d++ )
+	  index[ d ] = ((n+1)*nx - 1)*dim + d;
+
+	/* calc displ on the node */
+	mvp( strain_mac , coord , displ , nvoi );
+
+	for( d = 0 ; d < dim ; d++ )
+	  x_arr[index[d]] = displ[d];
+      }
+
+      /* cara inferior y = 0 (solo rank = 0) */
+      if( rank == 0 ){
+
+	for( n = 0 ; n < nx ; n++ ){
+	  for( d = 0 ; d < dim ; d++ )
+	    index[ d ] = n*dim + d;
+
+	  /* calc displ on the node */
+	  mvp( strain_mac , coord , displ , nvoi );
+
+	  for( d = 0 ; d < dim ; d++ )
+	    x_arr[index[d]] = displ[d];
+	}
+
+      }
+
+      /* cara superior y = ly (solo rank = nproc - 1) */
+      if( rank == (nproc - 1) ){
+
+	for( n = 0 ; n < nx ; n++ ){
+	  for( d = 0 ; d < dim ; d++ )
+	    index[ d ] = (ny-1)*nx*dim + n*dim + d;
+
+	  /* calc displ on the node */
+	  mvp( strain_mac , coord , displ , nvoi );
+
+	  for( d = 0 ; d < dim ; d++ )
+	    x_arr[index[d]] = displ[d];
+	}
+
+      }
+    }
   }
 
   int    nr_its = 0; 
@@ -348,6 +417,20 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   }
 
 
+  return 0;
+}
+/****************************************************************************************************/
+int mvp( double * mat , double * a , double * b , int n )
+{
+  /* b = mat . a */
+
+  int  i , j ;
+
+  for( i = 0 ; i < n ; i++ ){
+    b[i] = 0.0;
+    for( j = 0 ; j < n ; j++ )
+      b[i] += mat[ i * n + j ] * a[j];
+  }
   return 0;
 }
 /****************************************************************************************************/
