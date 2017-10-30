@@ -315,7 +315,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     /* Initilize shape functions, derivatives, jacobian, b_matrix */
 
-    double h[3]; h[0] = hx; h[1] = hx; h[3] = hz;
+    double h[3]; h[0] = hx; h[1] = hx; h[2] = hz;
 
     fem_init_struct( &struct_sh, &struct_dsh, &struct_wp, h, dim);
     
