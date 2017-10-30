@@ -287,18 +287,18 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     if( nproc == 1 )
       nghost = 0;
     else
-      nghost = ( dim == 2 )?nx:nx*nz;
+      nghost = ( dim == 2 ) ? nx : nx*nz;
 
     ghost_index = malloc(nghost*dim*sizeof(int));
 
     int i;
     if( rank == 0 ){
       for( i = 0 ; i < nghost*dim  ; i++ )
-	ghost_index[i] = istart + (nyl-1)*nghost + i;
+	ghost_index[i] = iend - (( dim == 2 )? nx : nx*nz)*dim + i;
     }
     else if( rank == (nproc - 1) ){
       for( i = 0 ; i < nghost*dim  ; i++ )
-	ghost_index[i] = istart + i;
+	ghost_index[i] = istart - (( dim == 2 )? nx : nx*nz)*dim + i;
     }
     else{
       for( i = 0 ; i < nghost*dim  ; i++ ){
@@ -429,7 +429,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   }
 
   VecRestoreArray( x_loc , &x_arr);
-  VecGhostRestoreLocalForm( x , &x_loc );
+//  VecGhostRestoreLocalForm( x , &x_loc );
   VecGhostUpdateBegin( x,INSERT_VALUES,SCATTER_REVERSE);
   VecGhostUpdateEnd(   x,INSERT_VALUES,SCATTER_REVERSE);
   VecGhostUpdateBegin( x,INSERT_VALUES,SCATTER_FORWARD);
