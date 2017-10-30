@@ -849,10 +849,10 @@ int get_local_elem_index( int e, int *loc_elem_index )
   int d;
   if( dim == 2 ){
     for( d = 0 ; d < dim ; d++ ){
-      loc_elem_index[ 0*dim + d ] = (e + 0)        * dim + d ;
-      loc_elem_index[ 1*dim + d ] = (e + 1)        * dim + d ;
-      loc_elem_index[ 2*dim + d ] = (e + nx-1 + 0) * dim + d ;
-      loc_elem_index[ 3*dim + d ] = (e + nx-1 + 1) * dim + d ;
+      loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0)      * dim + d ;
+      loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1)      * dim + d ;
+      loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 1) * dim + d ;
+      loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 0) * dim + d ;
     }
   }
   return 0;
@@ -861,10 +861,10 @@ int get_local_elem_index( int e, int *loc_elem_index )
 int get_node_local_num( int e , int *n_loc )
 {
   if( dim == 2 ){
-    n_loc[0] = ( (e % (nx-1)) + (e/(nx-1))*nx + 0)      ;
-    n_loc[1] = ( (e % (nx-1)) + (e/(nx-1))*nx + 1)      ;
-    n_loc[2] = ( (e % (nx-1)) + (e/(nx-1))*nx + nx + 1) ;
-    n_loc[3] = ( (e % (nx-1)) + (e/(nx-1))*nx + nx + 0) ;
+    n_loc[0] = ( (e%nex) + (e/nex)*nx + 0)      ;
+    n_loc[1] = ( (e%nex) + (e/nex)*nx + 1)      ;
+    n_loc[2] = ( (e%nex) + (e/nex)*nx + nx + 1) ;
+    n_loc[3] = ( (e%nex) + (e/nex)*nx + nx + 0) ;
   }
   return 0;
 }
@@ -877,7 +877,7 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
 
      UNIF_STRAINS            > u = E . x
 
-     HOMO_TAYLOR_S           > 
+     HOMO_TAYLOR_S
    */
   int ierr;
 
