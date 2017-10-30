@@ -15,6 +15,8 @@ int get_c_tan( int e , int gp, double *strain_gp , double *c_tan );
 int get_centroid_struct( int e, double *centroid );
 int is_in_fiber( int e );
 int strain_x_coord( double * strain , double * coord , double * u );
+int get_node_local_coor( int n , double * coord );
+int get_node_local_num( int e , int * n_loc );
 
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
@@ -266,7 +268,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     flag_first_alloc = false;
 
     nyl = ny / nproc + ((ny % nproc > rank) ? 1:0);   // ny for every process
-    int nl  = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;      // local nodes
+    nl  = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;      // local nodes
     int nnz = (dim==2)? 18:81;                        // nonzeros per row
 
     MatCreate(MICRO_COMM,&A);
@@ -438,6 +440,12 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
     assembly_residual_struct(); // assembly "b" (residue) using "x" (displacement)
+    VecNorm(b,NORM_2,&norm);
+
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
+
+    if( !(norm > nr_norm_tol) ) break;
     nr_its ++;
   }
 
@@ -850,6 +858,17 @@ int get_local_elem_index( int e, int *loc_elem_index )
   return 0;
 }
 /****************************************************************************************************/
+int get_node_local_num( int e , int *n_loc )
+{
+  if( dim == 2 ){
+    n_loc[0] = (e + 0)      ;
+    n_loc[1] = (e + 1)      ;
+    n_loc[2] = (e + nx + 0) ;
+    n_loc[3] = (e + nx + 1) ;
+  }
+  return 0;
+}
+/****************************************************************************************************/
 int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
@@ -986,3 +1005,221 @@ int mic_check_linear_material(void)
 
   return 0;
 }
+/****************************************************************************************************/
+int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress, double *energy)
+{
+
+  FILE    *fm;
+  char    file_name[NBUF];
+  double  *xvalues;
+  Vec     xlocal;
+
+  int rank, nproc;
+  MPI_Comm_size(PROBLEM_COMM, &nproc);
+  MPI_Comm_rank(PROBLEM_COMM, &rank);
+
+  if( rank == 0 ){
+
+    /* rank 0 writes the .pvtu file first */
+    strcpy(file_name,name);
+    strcat(file_name,".pvtu");
+    fm = fopen(file_name,"w");
+
+    fprintf(fm, "<?xml version=\"1.0\"?>\n"
+	"<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
+	"<PUnstructuredGrid GhostLevel=\"0\">\n"
+	"<PPoints>\n"
+	"<PDataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\"/>\n"
+	"</PPoints>\n"
+	"<PCells>\n"
+	"<PDataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\"/>\n"
+	"<PDataArray type=\"Int32\" Name=\"offsets\"      NumberOfComponents=\"1\"/>\n"
+	"<PDataArray type=\"UInt8\" Name=\"types\"        NumberOfComponents=\"1\"/>\n"
+	"</PCells>\n" 
+
+	"<PPointData Vectors=\"displ\">\n" 
+	"<PDataArray type=\"Float64\" Name=\"displ\"    NumberOfComponents=\"3\" />\n"
+	"<PDataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" />\n"
+	"</PPointData>\n"
+
+	"<PCellData>\n"
+	"<PDataArray type=\"Int32\"   Name=\"part\" NumberOfComponents=\"1\"/>\n"
+	"<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\"/>\n"
+	"<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\"/>\n"
+	"</PCellData>\n" , nvoi , nvoi);
+
+    int i;
+    for( i = 0 ; i < nproc ; i++ ){
+      sprintf(file_name,"%s_%d",name,i);
+      fprintf(fm,	"<Piece Source=\"%s.vtu\"/>\n",file_name);
+    }
+    fprintf(fm,	"</PUnstructuredGrid>\n" 
+      "</VTKFile>\n" );
+
+    fclose(fm);
+
+  } // rank = 0
+
+  sprintf(file_name,"%s_%d.vtu",name,rank);
+  fm = fopen(file_name,"w"); 
+  if(!fm){
+    PetscPrintf(PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
+    return 1;
+  }
+
+  fprintf(fm, 
+      "<?xml version=\"1.0\"?>\n"
+      "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
+      "<UnstructuredGrid>\n");
+  fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", nl, nelm);
+  fprintf(fm,"<Points>\n");
+  fprintf(fm,"<DataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+
+  double *coord = malloc( dim * sizeof(double));
+  int    n , d;
+
+  for( n = 0 ; n < nl ; n++ ){
+    get_node_local_coor( n , coord );
+    for( d = 0 ; d < dim ; d++ )
+      fprintf(fm,"%e ",  coord[d] );
+    for( d = dim ; d < 3 ; d++ )
+      fprintf(fm,"%e ",0.0);
+    fprintf(fm,"\n");
+  }
+  fprintf(fm,"</DataArray>\n");
+  fprintf(fm,"</Points>\n");
+  fprintf(fm,"<Cells>\n");
+
+  int e;
+  int * n_loc = malloc( npe * sizeof(int));
+
+  fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+  for ( e = 0 ; e < nelm ; e++ ){
+    get_node_local_num( e , n_loc );
+    for ( n = 0 ; n < npe ; n++ )
+      fprintf(fm,"%d ", n_loc[n]);
+    fprintf(fm,"\n");
+  }
+  fprintf(fm,"</DataArray>\n");
+
+  int ce = npe;
+  fprintf(fm,"<DataArray type=\"Int32\" Name=\"offsets\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+  for ( e = 0 ; e < nelm ; e++ ){
+    fprintf(fm,"%d ", ce);
+    ce += npe;
+  }
+  fprintf(fm,"\n");
+  fprintf(fm,"</DataArray>\n");
+
+  fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+  for ( e = 0 ; e < nelm ; e++ )
+    fprintf(fm, "%d ",vtkcode( dim , npe ) );  
+  fprintf(fm,"\n");
+  fprintf(fm,"</DataArray>\n");
+
+  fprintf(fm,"</Cells>\n");
+  
+  fprintf(fm,"<PointData Vectors=\"displ\">\n"); // Vectors inside is a filter we should not use this here
+
+  /* <displ> */
+  VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD);
+  VecGhostUpdateEnd(   x , INSERT_VALUES , SCATTER_FORWARD);
+  VecGhostGetLocalForm(x , &xlocal );
+
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
+  VecGetArray( xlocal , &xvalues );
+  for( n = 0 ; n < nl ; n++ ){
+    for( d = 0 ; d < dim ; d++ )
+      fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
+    for( d = dim ; d < 3 ; d++ )
+      fprintf(fm,"%lf ",0.0);
+  }
+  fprintf(fm,"\n");
+  VecRestoreArray( xlocal , &xvalues );
+  fprintf(fm,"</DataArray>\n");
+
+  /* <residual> */
+  VecGhostUpdateBegin( b , INSERT_VALUES,SCATTER_FORWARD);
+  VecGhostUpdateEnd(   b , INSERT_VALUES,SCATTER_FORWARD);
+  VecGhostGetLocalForm(b , &xlocal);
+
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
+  VecGetArray(xlocal, &xvalues);
+  for( n = 0 ; n < nl ; n++ ){
+    for( d = 0 ; d < dim ; d++ )
+      fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
+    for( d = dim ; d < 3 ; d++ )
+      fprintf(fm, "%lf ", 0.0);
+    fprintf(fm,"\n");
+  }
+  VecRestoreArray( xlocal , &xvalues );
+  fprintf(fm,"</DataArray>\n");
+
+  fprintf(fm,"</PointData>\n");
+  fprintf(fm,"<CellData>\n");
+
+  /* <part> */
+  fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+  for( e = 0; e < nelm ; e++ )
+    fprintf(fm,"%d ",rank);  
+  fprintf(fm,"\n");
+  fprintf(fm,"</DataArray>\n");
+
+  int v;
+
+  /* <strain> */
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
+  for( e = 0; e < nelm ; e++ ){
+    for( v = 0 ; v < nvoi ; v++ )
+      fprintf(fm, "%lf ", strain[ e*nvoi + v ]);
+    fprintf(fm,"\n");
+  }
+  fprintf(fm,"</DataArray>\n");
+
+  /* <stress> */
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
+  for( e = 0; e < nelm ; e++ ){
+    for( v = 0 ; v < nvoi ; v++ )
+      fprintf(fm, "%lf ", stress[ e*nvoi + v ]);
+    fprintf(fm,"\n");
+  }
+  fprintf(fm,"</DataArray>\n");
+
+  /* <elm_id> */
+//  fprintf(fm,
+//      "<DataArray type=\"Int32\" Name=\"elm_id\" NumberOfComponents=\"1\" >\n");
+//  for (i=0;i<nelm;i++){
+//    fprintf(fm, "%d ", elm_id[i]);
+//  }
+//  fprintf(fm,"\n");
+//  fprintf(fm,"</DataArray>\n");
+
+  /* <energy> */
+//  fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+//  for (i=0;i<nelm;i++){
+//    fprintf(fm, "%lf ", energy[i]);
+//  }
+//  fprintf(fm,"\n");
+//  fprintf(fm,"</DataArray>\n");
+
+  fprintf(fm,
+      "</CellData>\n"
+      "</Piece>\n"
+      "</UnstructuredGrid>\n"
+      "</VTKFile>\n");
+
+  fclose(fm);
+  return 0;
+}
+/****************************************************************************************************/
+int get_node_local_coor( int n , double * coord )
+{
+  if( dim == 2 ){
+
+    coord[0] = (n % nx)*hx;
+    coord[1] = (ny_inf + n / nx)*hy;
+
+  }
+  return 0;
+}
+/****************************************************************************************************/

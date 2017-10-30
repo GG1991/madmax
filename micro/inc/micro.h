@@ -34,6 +34,7 @@ int          micro_type;
 /* structured mesh */
 bool        flag_struct_mesh;
 int         nx, ny, nz, nn;       // number of nodes 
+int         nl;                   // number of local nodes
 int         nex , ney , nez;      // total number of elements per direction 
 int         nyl;                  // local number of nodes in y direction
 int         ny_inf;               // inferior numeration in y direction
@@ -97,3 +98,5 @@ int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain
 int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]);
 int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36]);
 int mic_check_l_us(void);
+
+int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress, double *energy);

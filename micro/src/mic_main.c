@@ -410,36 +410,29 @@ end_mic_0:
 	goto end_mic_1;
       }
 
-      ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
+      PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
       for(j=0;j<nvoi;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
+	PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
       }
-      ierr = PetscPrintf(MICRO_COMM,"\nstress_ave = ");
+      PetscPrintf(MICRO_COMM,"\nstress_ave = ");
       for(j=0;j<nvoi;j++){
-	ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
+	PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
       }
-      ierr = PetscPrintf(MICRO_COMM,"\n");
+      PetscPrintf(MICRO_COMM,"\n");
       for(j=0;j<nvoi;j++){
 	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
       }
 
-      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU) && homo_type==UNIF_STRAINS){
-	strain = malloc(nelm*nvoi*sizeof(double));
-	stress = malloc(nelm*nvoi*sizeof(double));
-	energy = malloc(nelm*sizeof(double));
-	ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
-	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
-	if(flag_print & (1<<PRINT_VTK)){ 
-	  sprintf(vtkfile_n,"%s_exp%d_%d.vtk",myname,i,rank_mic);
-	  ierr = write_vtk(MICRO_COMM, vtkfile_n, &x, strain, stress);
-	}
-	if(flag_print & (1<<PRINT_VTU)){ 
-	  sprintf(vtkfile_n,"%s_exp%d",myname,i);
-	  ierr = write_vtu(MICRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);
-	  if(ierr){
-	    PetscPrintf(MICRO_COMM,"Problem writing vtu file\n");
-	    goto end_mic_1;
-	  }
+      if( flag_print & ( 1 << PRINT_VTU ) && homo_type == UNIF_STRAINS )
+      {
+	strain = malloc( nelm*nvoi * sizeof(double));
+	stress = malloc( nelm*nvoi * sizeof(double));
+	energy = malloc( nelm      * sizeof(double));
+	sprintf(vtkfile_n,"%s_exp%d",myname,i);
+	ierr = micro_pvtu(MICRO_COMM, vtkfile_n, strain, stress, energy);
+	if(ierr){
+	  PetscPrintf(MICRO_COMM,"Problem writing vtu file\n");
+	  goto end_mic_1;
 	}
 	free(stress); free(strain); free(energy);
       }
