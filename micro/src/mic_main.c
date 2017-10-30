@@ -166,9 +166,9 @@ end_mic_0:
     }
 
     /* set the elements' size */
-    hx = lx/(nx+1);
-    hy = ly/(ny+1);
-    if( dim == 3 ) hz = lz / nz;
+    hx = lx/nex;
+    hy = ly/ney;
+    if( dim == 3 ) hz = lz/nez;
   }
 
   /* Homogenization Options */
