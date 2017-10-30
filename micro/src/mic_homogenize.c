@@ -302,8 +302,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     }
     else{
       for( i = 0 ; i < nghost*dim  ; i++ ){
-	ghost_index[i] = istart + i;
-	ghost_index[i] = istart + (nyl-1)*nghost + i;
+	ghost_index[i] = istart - (( dim == 2 )? nx : nx*nz)*dim + i;
+	ghost_index[i] = iend   - (( dim == 2 )? nx : nx*nz)*dim + i;
       }
     }
 
