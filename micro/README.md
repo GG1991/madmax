@@ -13,4 +13,4 @@ mode will work with a send/recv strategy with *macro* using the MPI protocol.
 - Average stress
 - Average tangent moduli
 
-![micro_part](../doc/sputnik-man/figures/micro_part.jpg?raw=true "Title")
+![micro_part](../doc/sputnik-man/figures/part_micro.jpg?raw=true "Title")
