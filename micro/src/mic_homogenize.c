@@ -259,16 +259,11 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
      partimos el dominio en tandas por el eje y
 
    */
-  int rank, nproc;
-  MPI_Comm_size(MICRO_COMM, &nproc);
-  MPI_Comm_rank(MICRO_COMM, &rank);
 
   if( flag_first_alloc == true ){
 
     flag_first_alloc = false;
 
-    nyl = ny / nproc + ((ny % nproc > rank) ? 1:0);   // ny for every process
-    nl  = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;      // local nodes
     int nnz = (dim==2)? 18:81;                        // nonzeros per row
 
     MatCreate(MICRO_COMM,&A);
@@ -284,28 +279,20 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     ny_inf = ( dim == 2 ) ? nstart / nx : nstart / (nx*nz);
 
     int nghost, *ghost_index;;
-    if( nproc == 1 )
+    if( nproc_mic == 1 )
       nghost = 0;
-    else
-      nghost = ( dim == 2 ) ? nx : nx*nz;
+    else{
+      if( rank_mic == 0 )
+	nghost = 0;
+      else
+	nghost = ( dim == 2 ) ? nx : nx*nz;
+    }
 
-    ghost_index = malloc(nghost*dim*sizeof(int));
+    ghost_index = malloc( nghost*dim *sizeof(int) );
 
     int i;
-    if( rank == 0 ){
-      for( i = 0 ; i < nghost*dim  ; i++ )
-	ghost_index[i] = iend - (( dim == 2 )? nx : nx*nz)*dim + i;
-    }
-    else if( rank == (nproc - 1) ){
-      for( i = 0 ; i < nghost*dim  ; i++ )
-	ghost_index[i] = istart - (( dim == 2 )? nx : nx*nz)*dim + i;
-    }
-    else{
-      for( i = 0 ; i < nghost*dim  ; i++ ){
-	ghost_index[i] = istart - (( dim == 2 )? nx : nx*nz)*dim + i;
-	ghost_index[i] = iend   - (( dim == 2 )? nx : nx*nz)*dim + i;
-      }
-    }
+    for( i = 0 ; i < nghost*dim  ; i++ )
+      ghost_index[i] = istart - (( dim == 2 )? nx : nx*nz)*dim + i;
 
     VecCreateGhost(MICRO_COMM, nl*dim, nn*dim, nghost*dim, ghost_index, &x);
     VecDuplicate(x,&dx);
@@ -346,14 +333,14 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   int  n , d;
 
   /* 
-     2d case we have 2 lateral walls and top and/or botton for rank = 0 or
-     rank = nproc - 1 
+     2d case we have 2 lateral walls and top and/or botton for rank_mic = 0 or
+     rank_mic = nproc_mic - 1 
 
      order 
 
-     1) lateral (all ranks)
-     2) bottom  (rank = 0)
-     3) top     (rank = nproc-1)
+     1) lateral (all rank_mics)
+     2) bottom  (rank_mic = 0)
+     3) top     (rank_mic = nproc_mic-1)
 
    */
 
@@ -391,8 +378,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 	x_arr[index[d]] = displ[d];
     }
 
-    /* cara inferior y = 0 (solo rank = 0) */
-    if( rank == 0 ){
+    /* cara inferior y = 0 (solo rank_mic = 0) */
+    if( rank_mic == 0 ){
 
       for( n = 0 ; n < nx ; n++ ){
 	for( d = 0 ; d < dim ; d++ )
@@ -409,8 +396,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     }
 
-    /* cara superior y = ly (solo rank = nproc - 1) */
-    if( rank == (nproc - 1) ){
+    /* cara superior y = ly (solo rank_mic = nproc_mic - 1) */
+    if( rank_mic == (nproc_mic - 1) ){
 
       for( n = 0 ; n < nx ; n++ ){
 	for( d = 0 ; d < dim ; d++ )

@@ -82,16 +82,13 @@ int main(int argc, char **argv)
   ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
   
 end_mic_0:
-  ierr = PetscFinalize();CHKERRQ(ierr);
+  ierr = PetscFinalize();
   if(ierr_1) goto end_mic_2;
 
-  /*
-     Set PETSc communicator to MICRO_COMM
-     and start again
-   */
+  /* Set PETSc communicator to MICRO_COMM and start */
+
   PETSC_COMM_WORLD = MICRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
-
 
   /* 
      Dimension, mesh and input Options 
@@ -131,14 +128,26 @@ end_mic_0:
 	ierr_1 = 1;
 	goto end_mic_0;
       }
-      nx = struct_mesh_n[0];
-      ny = struct_mesh_n[1];
+      nx   = struct_mesh_n[0];
+      ny   = struct_mesh_n[1];
       if( dim == 3 ) nz = struct_mesh_n[2];
-      nn = nx*ny*nz;
-      nelm = ( dim == 2 ) ? (nx-1)*(ny-1) : (nx-1)*(ny-1)*(nz-1);
-      nex  = (nx-1); ney = (ny-1); nez = (nz-1);
+      nn   = nx*ny*nz;
+      nyl  = ny / nproc_mic + ((ny % nproc_mic > rank_mic) ? 1:0);   // local number of nodes in y direction
+      nl   = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;                      // local number of nodes
+      /* number of local elements */
+      if( nyl == 1 )
+	nelm = ( dim == 2 ) ? (nx-1) : (nx-1)*(nz-1);
+      else
+	nelm = ( dim == 2 ) ? (nx-1)*(nyl-1) : (nx-1)*(nyl-1)*(nz-1);
+
+      nex  = (nx-1) ; ney = (ny-1) ; nez = (nz-1) ;
       npe  = ( dim == 2 ) ? 4 : 8;
       ngp  = ( dim == 2 ) ? 4 : 8;
+      if( !( ny > nproc_mic ) ){
+	PetscPrintf(MPI_COMM_SELF,"ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
+	ierr_1 = 1;
+	goto end_mic_0;
+      }
 
     }
     else{
