@@ -463,23 +463,19 @@ end_mic_0:
     strain_mac[3] = 0.01; strain_mac[4] = -0.02; strain_mac[5] = +0.03;
     ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
     ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
-    for(j=0;j<nvoi;j++){
+    for( j = 0 ; j < nvoi ; j++ )
       PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
-    }
     PetscPrintf(MICRO_COMM,"\nstress_ave = ");
-    for(j=0;j<nvoi;j++){
+    for( j = 0 ; j < nvoi ; j++ )
       PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
-    }
-    for(i=0;i<nvoi;i++){
+    for( i = 0 ; i < nvoi ; i++ ){
       stress_ave[i] = 0.0;
-      for(j=0;j<nvoi;j++){
+	for( j = 0 ; j < nvoi ; j++ )
 	stress_ave[i] +=  c_homo[i*nvoi+j] * strain_mac[j];
-      }
     }
     PetscPrintf(MICRO_COMM,"\nstress_ave = ");
-    for(j=0;j<nvoi;j++){
+    for( j = 0 ; j < nvoi ; j++ )
       ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
-    }
     PetscPrintf(MICRO_COMM," (c_homo*strain_mac)\n");
 
   }
@@ -492,8 +488,6 @@ end_mic_1:
 	"  MICRO: FINISH COMPLETE\n"
 	"--------------------------------------------------\n");
   }
-
-  if(rank_mic==0) fclose(file_out); 
 
   ierr = PetscFinalize();
 
