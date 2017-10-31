@@ -17,7 +17,7 @@ int is_in_fiber( int e );
 int strain_x_coord( double * strain , double * coord , double * u );
 int get_node_local_coor( int n , double * coord );
 int get_node_ghost_coor( int n , double * coord );
-int get_node_local_num( int e , int * n_loc );
+int get_local_elem_node( int e , int * n_loc );
 
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
@@ -524,6 +524,8 @@ int assembly_residual_struct(void)
 
   }
 
+  VecRestoreArray(b_loc , &b_arr);
+
   /* from the local and ghost part with add to all processes */
   VecGhostUpdateBegin( b , ADD_VALUES    , SCATTER_REVERSE );
   VecGhostUpdateEnd(   b , ADD_VALUES    , SCATTER_REVERSE );
@@ -827,8 +829,8 @@ int get_local_elem_index( int e, int *loc_elem_index )
 {
 
   /* 
-     returns the local position in the distributed vector of the nodes in
-     vertices 
+     returns the local position in the distributed vector of the 
+     indeces corresponding to an element vertex 
    */
   
   int d;
@@ -854,7 +856,7 @@ int get_local_elem_index( int e, int *loc_elem_index )
   return 0;
 }
 /****************************************************************************************************/
-int get_node_local_num( int e , int *n_loc )
+int get_local_elem_node( int e , int *n_loc )
 {
   if( dim == 2 )
   {
@@ -1110,7 +1112,7 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for ( e = 0 ; e < nelm ; e++ ){
-    get_node_local_num( e , n_loc );
+    get_local_elem_node( e , n_loc );
     for ( n = 0 ; n < npe ; n++ )
       fprintf(fm,"%d ", n_loc[n]);
     fprintf(fm,"\n");
@@ -1255,7 +1257,6 @@ void micro_print_info( void ){
 
   FILE *fm = fopen("mic_info.dat","w");
 
-  double *d_data;
   int    *i_data;
   int    i , ierr;
   
@@ -1265,13 +1266,14 @@ void micro_print_info( void ){
     fprintf(fm,"-----------\n");
     fprintf(fm,"nx    ny    nz\n");
     fprintf(fm,"%2d    %2d    %2d\n", nx, ny, nz);
+    fprintf(fm,"lx    ly    lz\n");
+    fprintf(fm,"%lf    %lf    %lf\n", lx, ly, lz);
     fprintf(fm,"nex   ney   nez\n");
     fprintf(fm,"%2d    %2d    %2d\n", nex, ney, nez);
     fprintf(fm,"-----------\n");
   }
 
   if( rank_mic == 0 ){
-    d_data = malloc(nproc_mic*sizeof(double));
     i_data = malloc(nproc_mic*sizeof(double));
     fprintf(fm,"%-20s","rank ");
     for( i = 0 ; i < nproc_mic ; i++ )
