@@ -401,7 +401,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
       for( n = 0 ; n < nx ; n++ ){
 	for( d = 0 ; d < dim ; d++ )
-	  index[ d ] = (ny-1)*nx*dim + n*dim + d;
+	  index[ d ] = (nyl-1)*nx*dim + n*dim + d;
 	coord[0] = n*hx;
 	coord[1] = ly;
 
@@ -416,9 +416,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   }
 
   VecRestoreArray( x_loc , &x_arr);
-//  VecGhostRestoreLocalForm( x , &x_loc );
-  VecGhostUpdateBegin( x,INSERT_VALUES,SCATTER_REVERSE);
-  VecGhostUpdateEnd(   x,INSERT_VALUES,SCATTER_REVERSE);
+  /* we update the ghost regions with correct values from the owning process */
   VecGhostUpdateBegin( x,INSERT_VALUES,SCATTER_FORWARD);
   VecGhostUpdateEnd(   x,INSERT_VALUES,SCATTER_FORWARD);
 
@@ -831,15 +829,23 @@ int get_centroid_struct( int e, double *centroid )
 int get_local_elem_index( int e, int *loc_elem_index )
 {
   
-  /* formula only valid for sequencial now */
-
   int d;
   if( dim == 2 ){
-    for( d = 0 ; d < dim ; d++ ){
-      loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0)      * dim + d ;
-      loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1)      * dim + d ;
-      loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 1) * dim + d ;
-      loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 0) * dim + d ;
+    if( e >= nex || rank_mic == 0 ){
+      for( d = 0 ; d < dim ; d++ ){
+	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0)      * dim + d ;
+	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1)      * dim + d ;
+	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 1) * dim + d ;
+	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 0) * dim + d ;
+      }
+    }
+    else{
+      for( d = 0 ; d < dim ; d++ ){
+	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0) + nl * dim + d ;
+	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) + nl * dim + d ;
+	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) * dim + d ;
+	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + 0) * dim + d ;
+      }
     }
   }
   return 0;
@@ -847,11 +853,22 @@ int get_local_elem_index( int e, int *loc_elem_index )
 /****************************************************************************************************/
 int get_node_local_num( int e , int *n_loc )
 {
-  if( dim == 2 ){
-    n_loc[0] = ( (e%nex) + (e/nex)*nx + 0)      ;
-    n_loc[1] = ( (e%nex) + (e/nex)*nx + 1)      ;
-    n_loc[2] = ( (e%nex) + (e/nex)*nx + nx + 1) ;
-    n_loc[3] = ( (e%nex) + (e/nex)*nx + nx + 0) ;
+  if( dim == 2 )
+  {
+    if( e >= nex || rank_mic == 0 ){
+      /* does not have ghost values */
+      n_loc[0] = ( (e%nex) + (e/nex)*nx + 0)      ;
+      n_loc[1] = ( (e%nex) + (e/nex)*nx + 1)      ;
+      n_loc[2] = ( (e%nex) + (e/nex)*nx + nx + 1) ;
+      n_loc[3] = ( (e%nex) + (e/nex)*nx + nx + 0) ;
+    }
+    else{
+      /* has ghost values in the bottom */
+      n_loc[0] = ( (e%nex) + (e/nex)*nx + 0) + nl ;
+      n_loc[1] = ( (e%nex) + (e/nex)*nx + 1) + nl ;
+      n_loc[2] = ( (e%nex) + (e/nex)*nx + 1) ;
+      n_loc[3] = ( (e%nex) + (e/nex)*nx + 0) ;
+    }
   }
   return 0;
 }
@@ -1065,16 +1082,16 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
   double *coord = malloc( dim * sizeof(double));
   int    n , d;
 
-  for( n = 0 ; n < ngho ; n++ ){
-    get_node_ghost_coor( n , coord );
+  for( n = 0 ; n < nl ; n++ ){
+    get_node_local_coor( n , coord );
     for( d = 0 ; d < dim ; d++ )
       fprintf(fm,"%e ",  coord[d] );
     for( d = dim ; d < 3 ; d++ )
       fprintf(fm,"%e ",0.0);
     fprintf(fm,"\n");
   }
-  for( n = 0 ; n < nl ; n++ ){
-    get_node_local_coor( n , coord );
+  for( n = 0 ; n < ngho ; n++ ){
+    get_node_ghost_coor( n , coord );
     for( d = 0 ; d < dim ; d++ )
       fprintf(fm,"%e ",  coord[d] );
     for( d = dim ; d < 3 ; d++ )
