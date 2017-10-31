@@ -48,6 +48,7 @@ double      ***struct_dsh;        // Derivative shapes functions
 double      *struct_wp;           // Weights
 double      **struct_bmat;        // B matrix (Bu = epsilon)
 int         *loc_elem_index;      // local elemental index vector for assembly and reading
+int         *glo_elem_index;      // global elemental index vector for assembly and reading
 int         istart, iend;         // starting and ending index of matrices
 int         nstart, nend;         // starting and ending index of nodes
 

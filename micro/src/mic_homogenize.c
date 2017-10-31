@@ -440,19 +440,27 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   }
 
   VecRestoreArray( x_loc , &x_arr);
+
   /* we update the ghost regions with correct values from the owning process */
-  VecGhostUpdateBegin( x,INSERT_VALUES,SCATTER_FORWARD);
-  VecGhostUpdateEnd(   x,INSERT_VALUES,SCATTER_FORWARD);
+  VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateEnd(   x, INSERT_VALUES, SCATTER_REVERSE);
+
+  double norm_a;
+
+  VecNorm( x, NORM_2, &norm_a );
+  if( !flag_coupling )
+    PetscPrintf( MICRO_COMM, "|x| = %e \n", norm_a);
 
   int    nr_its = 0; 
-  double norm = nr_norm_tol*10;
   double *b_arr;
   int    i;
+  double norm = nr_norm_tol*10;
+
 
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
     assembly_residual_struct(); // assembly "b" (residue) using "x" (displacement)
-    VecNorm(b,NORM_2,&norm);
+    VecNorm( b , NORM_2 , &norm );
 
     if(!flag_coupling)
       PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
