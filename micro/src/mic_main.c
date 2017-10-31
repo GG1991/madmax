@@ -480,6 +480,8 @@ end_mic_0:
 
   }
 
+  micro_print_info();
+
 end_mic_1:
 
   if(!flag_coupling){

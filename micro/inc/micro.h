@@ -101,3 +101,5 @@ int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36]);
 int mic_check_l_us(void);
 
 int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress, double *energy);
+
+void micro_print_info( void );

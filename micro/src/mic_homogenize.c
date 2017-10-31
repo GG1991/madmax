@@ -367,9 +367,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     /* cara lateral x = lx (nodos locales) */
     for( n = 0 ; n < nyl ; n++ ){
       for( d = 0 ; d < dim ; d++ )
-	index[ d ] = ((n+1)*nx - 1)*dim + d;
+	index[ d ] = ((n+2)*nx - 1)*dim + d;
       coord[0] = lx;
-      coord[1] = ( n + ny_inf )*hy;
+      coord[1] = ( n + ny_inf + 1 )*hy;
 
       /* calc displ on the node */
       strain_x_coord( strain_mac , coord , displ );
@@ -1229,5 +1229,60 @@ int get_node_ghost_coor( int n , double * coord )
     coord[1] = (ny_inf + n / nx - 1)*hy;
   }
   return 0;
+}
+/****************************************************************************************************/
+void micro_print_info( void ){
+
+  FILE *fm = fopen("mic_info.dat","w");
+
+  double *d_data;
+  int    *i_data;
+  int    i , ierr;
+
+  if( rank_mic == 0 ){
+    d_data = malloc(nproc_mic*sizeof(double));
+    i_data = malloc(nproc_mic*sizeof(double));
+    fprintf(fm,"%-20s","rank ");
+    for( i = 0 ; i < nproc_mic ; i++ )
+      fprintf(fm,"%d ", i);
+    fprintf(fm,"\n");
+    fprintf(fm,"%-20s","");
+    for( i = 0 ; i < nproc_mic ; i++ )
+      fprintf(fm,"--");
+    fprintf(fm,"\n");
+  }
+
+  ierr = MPI_Gather(&ney, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
+  if(ierr) return;
+
+  if( rank_mic == 0 ){
+    fprintf(fm,"%-20s","eyl");
+    for( i = 0 ; i < nproc_mic ; i++ )
+      fprintf(fm,"%d ", i_data[i]);
+    fprintf(fm,"\n");
+  }
+
+  ierr = MPI_Gather(&nyl, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
+  if(ierr) return;
+
+  if( rank_mic == 0 ){
+    fprintf(fm,"%-20s","nyl");
+    for( i = 0 ; i < nproc_mic ; i++ )
+      fprintf(fm,"%d ", i_data[i]);
+    fprintf(fm,"\n");
+  }
+
+  ierr = MPI_Gather(&ngho, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
+  if(ierr) return;
+
+  if( rank_mic == 0 ){
+    fprintf(fm,"%-20s","ngho");
+    for( i = 0 ; i < nproc_mic ; i++ )
+      fprintf(fm,"%d ", i_data[i]);
+    fprintf(fm,"\n");
+  }
+
+  fclose(fm);
+  return;
 }
 /****************************************************************************************************/
