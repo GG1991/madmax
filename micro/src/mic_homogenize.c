@@ -454,6 +454,9 @@ int assembly_residual_struct(void)
 {
 
   VecZeroEntries(b);
+  /* from the owning processes to the ghosts in the others processes */
+  VecGhostUpdateBegin( b , INSERT_VALUES , SCATTER_FORWARD );
+  VecGhostUpdateEnd(   b , INSERT_VALUES , SCATTER_FORWARD );
 
   Vec     x_loc  , b_loc;
   double  *x_arr , *b_arr;
@@ -464,6 +467,7 @@ int assembly_residual_struct(void)
   VecGetArray( b_loc, &b_arr );
 
   int    e, gp, is;
+  int    i, j, v;
   double *elem_disp = malloc( dim*npe * sizeof(double));
   double *res_elem  = malloc( dim*npe * sizeof(double));
   double *strain_gp = malloc( nvoi    * sizeof(double));
@@ -472,7 +476,6 @@ int assembly_residual_struct(void)
   for( e = 0 ; e < nelm ; e++ ){
 
     /* set to 0 res_elem */
-    int i;
     for( i = 0 ; i < npe*dim ; i++ )
       res_elem[i] = 0.0;
 
@@ -498,7 +501,6 @@ int assembly_residual_struct(void)
       }
 
       /* calc strain gp */
-      int v, j;
       for( v = 0; v < nvoi ; v++ ){
 	strain_gp[v] = 0.0;
 	for( j = 0 ; j < npe*dim ; j++ )
@@ -522,14 +524,9 @@ int assembly_residual_struct(void)
 
   }
 
-  VecRestoreArray( b_loc , &b_arr);
-
-  /* communication between processes */
-
+  /* from the local and ghost part with add to all processes */
   VecGhostUpdateBegin( b , ADD_VALUES    , SCATTER_REVERSE );
   VecGhostUpdateEnd(   b , ADD_VALUES    , SCATTER_REVERSE );
-  VecGhostUpdateBegin( b , INSERT_VALUES , SCATTER_FORWARD );
-  VecGhostUpdateEnd(   b , INSERT_VALUES , SCATTER_FORWARD );
 
   return 0;
 }
@@ -828,9 +825,15 @@ int get_centroid_struct( int e, double *centroid )
 /****************************************************************************************************/
 int get_local_elem_index( int e, int *loc_elem_index )
 {
+
+  /* 
+     returns the local position in the distributed vector of the nodes in
+     vertices 
+   */
   
   int d;
-  if( dim == 2 ){
+  if( dim == 2 )
+  {
     if( e >= nex || rank_mic == 0 ){
       for( d = 0 ; d < dim ; d++ ){
 	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0)      * dim + d ;
