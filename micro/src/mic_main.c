@@ -132,15 +132,13 @@ end_mic_0:
       ny   = struct_mesh_n[1];
       if( dim == 3 ) nz = struct_mesh_n[2];
       nn   = nx*ny*nz;
-      nyl  = ny / nproc_mic + ((ny % nproc_mic > rank_mic) ? 1:0);   // local number of nodes in y direction
-      nl   = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;                      // local number of nodes
-      /* number of local elements */
-      if( nyl == 1 )
-	nelm = ( dim == 2 ) ? (nx-1) : (nx-1)*(nz-1);
-      else
-	nelm = ( dim == 2 ) ? (nx-1)*(nyl-1) : (nx-1)*(nyl-1)*(nz-1);
+      nex  = (nx-1);
+      ney  = (ny-1) / nproc_mic + (((ny-1) % nproc_mic > rank_mic) ? 1:0); // local number of elements in y direction
+      nez  = (nz-1);
+      nelm = ( dim == 2 ) ? nex*ney : nex*ney*nez;                         // number of local elements
+      nyl  = ( rank_mic == 0 ) ? ney+1 : ney;                              // local number of nodes in y direction
+      nl   = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;                            // local number of nodes
 
-      nex  = (nx-1) ; ney = (ny-1) ; nez = (nz-1) ;
       npe  = ( dim == 2 ) ? 4 : 8;
       ngp  = ( dim == 2 ) ? 4 : 8;
       if( !( ny > nproc_mic ) ){
@@ -176,7 +174,7 @@ end_mic_0:
 
     /* set the elements' size */
     hx = lx/nex;
-    hy = ly/ney;
+    hy = ly/(ny-1);
     if( dim == 3 ) hz = lz/nez;
   }
 

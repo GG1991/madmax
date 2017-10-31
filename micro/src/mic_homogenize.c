@@ -16,6 +16,7 @@ int get_centroid_struct( int e, double *centroid );
 int is_in_fiber( int e );
 int strain_x_coord( double * strain , double * coord , double * u );
 int get_node_local_coor( int n , double * coord );
+int get_node_ghost_coor( int n , double * coord );
 int get_node_local_num( int e , int * n_loc );
 
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
@@ -278,23 +279,23 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     nend   = iend   / dim;
     ny_inf = ( dim == 2 ) ? nstart / nx : nstart / (nx*nz);
 
-    int nghost, *ghost_index;;
+    int *ghost_index;;
     if( nproc_mic == 1 )
-      nghost = 0;
+      ngho = 0;
     else{
       if( rank_mic == 0 )
-	nghost = 0;
+	ngho = 0;
       else
-	nghost = ( dim == 2 ) ? nx : nx*nz;
+	ngho = ( dim == 2 ) ? nx : nx*nz;
     }
 
-    ghost_index = malloc( nghost*dim *sizeof(int) );
+    ghost_index = malloc( ngho*dim *sizeof(int) );
 
     int i;
-    for( i = 0 ; i < nghost*dim  ; i++ )
+    for( i = 0 ; i < ngho*dim  ; i++ )
       ghost_index[i] = istart - (( dim == 2 )? nx : nx*nz)*dim + i;
 
-    VecCreateGhost(MICRO_COMM, nl*dim, nn*dim, nghost*dim, ghost_index, &x);
+    VecCreateGhost(MICRO_COMM, nl*dim, nn*dim, ngho*dim, ghost_index, &x);
     VecDuplicate(x,&dx);
     VecDuplicate(x,&b);
 
@@ -308,9 +309,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     
     /* alloc the B matrix */
     struct_bmat = malloc( nvoi * sizeof(double*));
-    for( i = 0 ; i < nvoi  ; i++ ){
+    for( i = 0 ; i < nvoi  ; i++ )
       struct_bmat[i] = malloc( npe*dim * sizeof(double));
-    }
 
     /* alloc the local index vector for assembly */
     loc_elem_index = malloc( dim*npe * sizeof(int));
@@ -1058,13 +1058,21 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
       "<?xml version=\"1.0\"?>\n"
       "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
       "<UnstructuredGrid>\n");
-  fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", nl, nelm);
+  fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", nl + ngho, nelm);
   fprintf(fm,"<Points>\n");
   fprintf(fm,"<DataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
 
   double *coord = malloc( dim * sizeof(double));
   int    n , d;
 
+  for( n = 0 ; n < ngho ; n++ ){
+    get_node_ghost_coor( n , coord );
+    for( d = 0 ; d < dim ; d++ )
+      fprintf(fm,"%e ",  coord[d] );
+    for( d = dim ; d < 3 ; d++ )
+      fprintf(fm,"%e ",0.0);
+    fprintf(fm,"\n");
+  }
   for( n = 0 ; n < nl ; n++ ){
     get_node_local_coor( n , coord );
     for( d = 0 ; d < dim ; d++ )
@@ -1115,7 +1123,7 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   VecGetArray( xlocal , &xvalues );
-  for( n = 0 ; n < nl ; n++ ){
+  for( n = 0 ; n < (nl + ngho) ; n++ ){
     for( d = 0 ; d < dim ; d++ )
       fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
     for( d = dim ; d < 3 ; d++ )
@@ -1132,7 +1140,7 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   VecGetArray(xlocal, &xvalues);
-  for( n = 0 ; n < nl ; n++ ){
+  for( n = 0 ; n < (nl + ngho) ; n++ ){
     for( d = 0 ; d < dim ; d++ )
       fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
     for( d = dim ; d < 3 ; d++ )
@@ -1202,10 +1210,23 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
 int get_node_local_coor( int n , double * coord )
 {
   if( dim == 2 ){
-
+    if( rank_mic == 0 ){
+      coord[0] = (n % nx)*hx;
+      coord[1] = (ny_inf + n / nx)*hy;
+    }
+    else{
+      coord[0] = (n % nx)*hx;
+      coord[1] = (ny_inf + n / nx )*hy;
+    }
+  }
+  return 0;
+}
+/****************************************************************************************************/
+int get_node_ghost_coor( int n , double * coord )
+{
+  if( dim == 2 ){
     coord[0] = (n % nx)*hx;
-    coord[1] = (ny_inf + n / nx)*hy;
-
+    coord[1] = (ny_inf + n / nx - 1)*hy;
   }
   return 0;
 }

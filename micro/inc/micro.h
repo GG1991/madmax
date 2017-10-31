@@ -29,7 +29,7 @@ int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 #define CIRCULAR_FIBER 1
 
 int          micro_type;
-
+FILE         *fm_info;
 
 /* structured mesh */
 bool        flag_struct_mesh;
@@ -42,6 +42,7 @@ double      lx, ly, lz;           // dimain lenght
 double      hx, hy, hz;           // element sizes 
 int         npe;                  // Nodes per element
 int         ngp;                  // Number of gauss points per element
+int         ngho;                 // Number of ghosts nodes
 double      **struct_sh;          // Shape functions
 double      ***struct_dsh;        // Derivative shapes functions
 double      *struct_wp;           // Weights
