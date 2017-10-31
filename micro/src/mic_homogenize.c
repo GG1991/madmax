@@ -1238,6 +1238,17 @@ void micro_print_info( void ){
   double *d_data;
   int    *i_data;
   int    i , ierr;
+  
+  if( rank_mic == 0 ){
+    fprintf(fm,"-----------\n");
+    fprintf(fm,"nproc %d\n", nproc_mic);
+    fprintf(fm,"-----------\n");
+    fprintf(fm,"nx    ny    nz\n");
+    fprintf(fm,"%2d    %2d    %2d\n", nx, ny, nz);
+    fprintf(fm,"nex   ney   nez\n");
+    fprintf(fm,"%2d    %2d    %2d\n", nex, ney, nez);
+    fprintf(fm,"-----------\n");
+  }
 
   if( rank_mic == 0 ){
     d_data = malloc(nproc_mic*sizeof(double));
@@ -1267,6 +1278,16 @@ void micro_print_info( void ){
 
   if( rank_mic == 0 ){
     fprintf(fm,"%-20s","nyl");
+    for( i = 0 ; i < nproc_mic ; i++ )
+      fprintf(fm,"%d ", i_data[i]);
+    fprintf(fm,"\n");
+  }
+
+  ierr = MPI_Gather(&ny_inf, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
+  if(ierr) return;
+
+  if( rank_mic == 0 ){
+    fprintf(fm,"%-20s","ny_inf");
     for( i = 0 ; i < nproc_mic ; i++ )
       fprintf(fm,"%d ", i_data[i]);
     fprintf(fm,"\n");
