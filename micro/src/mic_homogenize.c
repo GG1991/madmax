@@ -9,7 +9,9 @@
 #include "micro.h"
 
 int get_local_elem_index( int e, int *loc_index );
+int get_global_elem_index( int e, int *glo_elem_index );
 int assembly_residual_struct( void );
+int assembly_jacobian_struct( void );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_c_tan( int e , int gp, double *strain_gp , double *c_tan );
 int get_centroid_struct( int e, double *centroid );
@@ -312,8 +314,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     for( i = 0 ; i < nvoi  ; i++ )
       struct_bmat[i] = malloc( npe*dim * sizeof(double));
 
-    /* alloc the local index vector for assembly */
+    /* alloc the local and global index vector for assembly */
     loc_elem_index = malloc( dim*npe * sizeof(int));
+    glo_elem_index = malloc( dim*npe * sizeof(int));
 
   } // first time for allocation
 
@@ -344,16 +347,31 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
    */
 
+  int *dir_ix, ndir;
+
   if( dim == 2 ){
+
+    ndir = 2 * nyl;   // all process have the part of the lateral face
+    if( rank_mic == 0 ){
+      ndir += nx;
+    }
+    if( rank_mic == (nproc_mic - 1) ){
+      ndir += nx;
+    }
+    ndir  *= dim;
+    dir_ix = malloc ( ndir * sizeof(int));
 
     int     index[2]; // (i,j) displacement index in local vector
     double  coord[2]; // (x,y) coordinates
     double  displ[2]; // (ux,uy) displacement
+    int     c = 0;
 
     /* cara lateral x = 0 (nodos locales) */
     for( n = 0 ; n < nyl ; n++ ){
-      for( d = 0 ; d < dim ; d++ )
+      for( d = 0 ; d < dim ; d++ ){
 	index[ d ] = (n*nx)*dim + d;
+	dir_ix[c++] = index[d];
+      }
       coord[0] = 0.0;
       coord[1] = ( n + ny_inf )*hy;
 
@@ -366,8 +384,10 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     /* cara lateral x = lx (nodos locales) */
     for( n = 0 ; n < nyl ; n++ ){
-      for( d = 0 ; d < dim ; d++ )
+      for( d = 0 ; d < dim ; d++ ){
 	index[ d ] = ((n+2)*nx - 1)*dim + d;
+	dir_ix[c++] = index[d];
+      }
       coord[0] = lx;
       coord[1] = ( n + ny_inf + 1 )*hy;
 
@@ -382,8 +402,10 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     if( rank_mic == 0 ){
 
       for( n = 0 ; n < nx ; n++ ){
-	for( d = 0 ; d < dim ; d++ )
+	for( d = 0 ; d < dim ; d++ ){
 	  index[ d ] = n*dim + d;
+	  dir_ix[c++] = index[d];
+	}
 	coord[0] = n*hx;
 	coord[1] = 0.0;
 
@@ -400,8 +422,10 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     if( rank_mic == (nproc_mic - 1) ){
 
       for( n = 0 ; n < nx ; n++ ){
-	for( d = 0 ; d < dim ; d++ )
+	for( d = 0 ; d < dim ; d++ ){
 	  index[ d ] = (nyl-1)*nx*dim + n*dim + d;
+	  dir_ix[c++] = index[d];
+	}
 	coord[0] = n*hx;
 	coord[1] = ly;
 
@@ -422,6 +446,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
   int    nr_its = 0; 
   double norm = nr_norm_tol*10;
+  double *b_arr;
+  int    i;
+
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
     assembly_residual_struct(); // assembly "b" (residue) using "x" (displacement)
@@ -430,7 +457,17 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     if(!flag_coupling)
       PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
 
+    VecGetArray( b, &b_arr );
+    for( i = 0; i < ndir ; i++ ){
+      b_arr[dir_ix[i]] = 0.0;
+    }
+    VecRestoreArray( b, &b_arr );
+
     if( !(norm > nr_norm_tol) ) break;
+
+    VecScale( b, -1.0 );
+    assembly_jacobian_struct(); // assembly "A" (jacobian) using "x" (displacement)
+
     nr_its ++;
   }
 
@@ -533,18 +570,16 @@ int assembly_residual_struct(void)
   return 0;
 }
 /****************************************************************************************************/
-int assembly_jacobian_struct(void)
+int assembly_jacobian_struct( void )
 {
 
   MatZeroEntries(A);
 
-  Vec     x_loc  , b_loc;
-  double  *x_arr , *b_arr;
+  Vec     x_loc;
+  double  *x_arr;
 
   VecGhostGetLocalForm( x , &x_loc );
-  VecGhostGetLocalForm( b , &b_loc );
-  VecGetArray( x_loc, &x_arr );
-  VecGetArray( b_loc, &b_arr );
+  VecGetArray(x_loc, &x_arr );
 
   int    e, gp, is;
   double *elem_disp = malloc( dim*npe         * sizeof(double));
@@ -561,6 +596,7 @@ int assembly_jacobian_struct(void)
 
     /* get the local indeces of the element vertex nodes */
     get_local_elem_index(e, loc_elem_index);
+    get_global_elem_index(e, glo_elem_index);
 
     /* get the elemental displacements */
     for( i = 0 ; i < npe*dim ; i++ )
@@ -602,14 +638,13 @@ int assembly_jacobian_struct(void)
       }
 
     }
-    MatSetValuesLocal( A , npe*dim , loc_elem_index , npe*dim , loc_elem_index , k_elem , ADD_VALUES );
+    MatSetValues( A , npe*dim , glo_elem_index , npe*dim , glo_elem_index , k_elem , ADD_VALUES );
 
   }
 
   /* communication between processes */
   MatAssemblyBegin(A , MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd(  A , MAT_FINAL_ASSEMBLY );
-
 
   return 0;
 }
@@ -850,6 +885,37 @@ int get_local_elem_index( int e, int *loc_elem_index )
 	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) + nl * dim + d ;
 	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) * dim + d ;
 	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + 0) * dim + d ;
+      }
+    }
+  }
+  return 0;
+}
+/****************************************************************************************************/
+int get_global_elem_index( int e, int *glo_elem_index )
+{
+
+  /* 
+     returns the local position in the distributed vector of the 
+     indeces corresponding to an element vertex 
+   */
+  
+  int d;
+  if( dim == 2 )
+  {
+    if( e >= nex || rank_mic == 0 ){
+      for( d = 0 ; d < dim ; d++ ){
+	glo_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0)      * dim + d ;
+	glo_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1)      * dim + d ;
+	glo_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 1) * dim + d ;
+	glo_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 0) * dim + d ;
+      }
+    }
+    else{
+      for( d = 0 ; d < dim ; d++ ){
+	glo_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0) + nl * dim + d ;
+	glo_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) + nl * dim + d ;
+	glo_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) * dim + d ;
+	glo_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + 0) * dim + d ;
       }
     }
   }
