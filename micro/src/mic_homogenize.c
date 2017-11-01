@@ -329,6 +329,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   double  *x_arr;
 
   VecZeroEntries(x);
+  VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD);
 
   VecGhostGetLocalForm( x , &x_loc );
   VecGetArray( x_loc, &x_arr );
@@ -369,7 +371,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     /* cara lateral x = 0 (nodos locales) */
     for( n = 0 ; n < nyl ; n++ ){
       for( d = 0 ; d < dim ; d++ ){
-	index[ d ] = (n*nx)*dim + d;
+	index[ d ]  = ( n*nx )*dim + d;
 	dir_ix[c++] = index[d];
       }
       coord[0] = 0.0;
@@ -385,7 +387,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     /* cara lateral x = lx (nodos locales) */
     for( n = 0 ; n < nyl ; n++ ){
       for( d = 0 ; d < dim ; d++ ){
-	index[ d ] = ((n+2)*nx - 1)*dim + d;
+	index[ d ]  = ( (n+1)*nx-1)*dim + d;
 	dir_ix[c++] = index[d];
       }
       coord[0] = lx;
@@ -439,11 +441,12 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     }
   }
 
-  VecRestoreArray( x_loc , &x_arr);
+  VecRestoreArray( x_loc , &x_arr );
+  VecGhostRestoreLocalForm( x , &x_loc );
 
   /* we update the ghost regions with correct values from the owning process */
-  VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(   x, INSERT_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD);
 
   double norm_a;
 
@@ -479,6 +482,18 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     nr_its ++;
   }
 
+  free(dir_ix);
+
+  if( flag_print & (1<<PRINT_PETSC) ){
+//    PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer);
+//    MatView(A,viewer);
+//    PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer);
+//    VecView(b,viewer);
+    PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer);
+    VecView(x,viewer);
+//    PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer);
+//    VecView(x,viewer);
+  }
 
   return 0;
 }
@@ -499,6 +514,7 @@ int assembly_residual_struct(void)
 {
 
   VecZeroEntries(b);
+
   /* from the owning processes to the ghosts in the others processes */
   VecGhostUpdateBegin( b , INSERT_VALUES , SCATTER_FORWARD );
   VecGhostUpdateEnd(   b , INSERT_VALUES , SCATTER_FORWARD );
@@ -508,8 +524,8 @@ int assembly_residual_struct(void)
 
   VecGhostGetLocalForm( x , &x_loc );
   VecGhostGetLocalForm( b , &b_loc );
-  VecGetArray( x_loc, &x_arr );
-  VecGetArray( b_loc, &b_arr );
+  VecGetArray         ( x_loc, &x_arr );
+  VecGetArray         ( b_loc, &b_arr );
 
   int    e, gp, is;
   int    i, j, v;
@@ -572,8 +588,8 @@ int assembly_residual_struct(void)
   VecRestoreArray(b_loc , &b_arr);
 
   /* from the local and ghost part with add to all processes */
-  VecGhostUpdateBegin( b , ADD_VALUES    , SCATTER_REVERSE );
-  VecGhostUpdateEnd(   b , ADD_VALUES    , SCATTER_REVERSE );
+  VecGhostUpdateBegin( b, ADD_VALUES, SCATTER_REVERSE );
+  VecGhostUpdateEnd  ( b, ADD_VALUES, SCATTER_REVERSE );
 
   return 0;
 }
@@ -1262,7 +1278,8 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
   for( e = 0; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
-      fprintf(fm, "%lf ", strain[ e*nvoi + v ]);
+      fprintf(fm, "%lf ", 0.0);
+//    fprintf(fm, "%lf ", strain[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
@@ -1271,7 +1288,8 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
   for( e = 0; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
-      fprintf(fm, "%lf ", stress[ e*nvoi + v ]);
+      fprintf(fm, "%lf ", 0.0);
+//    fprintf(fm, "%lf ", stress[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
@@ -1308,11 +1326,11 @@ int get_node_local_coor( int n , double * coord )
   if( dim == 2 ){
     if( rank_mic == 0 ){
       coord[0] = (n % nx)*hx;
-      coord[1] = (ny_inf + n / nx)*hy;
+      coord[1] = (n / nx)*hy;
     }
     else{
       coord[0] = (n % nx)*hx;
-      coord[1] = (ny_inf + n / nx )*hy;
+      coord[1] = (n / nx + ny_inf)*hy;
     }
   }
   return 0;
