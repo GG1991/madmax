@@ -13,6 +13,7 @@ int get_global_elem_index( int e, int *glo_elem_index );
 int assembly_residual_struct( void );
 int assembly_jacobian_struct( void );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
+int get_strain( int e , int gp, double *strain_gp );
 int get_c_tan( int e , int gp, double *strain_gp , double *c_tan );
 int get_centroid_struct( int e, double *centroid );
 int is_in_fiber( int e );
@@ -293,7 +294,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     ghost_index = malloc( ngho*dim *sizeof(int) );
 
-    int i;
+    int i, j;
     for( i = 0 ; i < ngho*dim  ; i++ )
       ghost_index[i] = istart - (( dim == 2 )? nx : nx*nz)*dim + i;
 
@@ -310,17 +311,39 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     fem_init_struct( &struct_sh, &struct_dsh, &struct_wp, h, dim);
     
     /* alloc the B matrix */
-    struct_bmat = malloc( nvoi * sizeof(double*));
-    for( i = 0 ; i < nvoi  ; i++ )
-      struct_bmat[i] = malloc( npe*dim * sizeof(double));
+    struct_bmat = malloc( nvoi * sizeof(double**));
+    for( i = 0 ; i < nvoi  ; i++ ){
+      struct_bmat[i] = malloc( npe*dim * sizeof(double*));
+      for( j = 0 ; j < npe*dim ; j++ )
+	struct_bmat[i][j] = malloc( ngp * sizeof(double));
+    }
+
+    /* calc B matrix */
+    int is, gp;
+    for( gp = 0; gp < ngp ; gp++ ){
+      for( is = 0; is < npe ; is++ ){
+	if( dim == 2 ){
+	  struct_bmat[0][is*dim + 0][gp] = struct_dsh[is][0][gp];
+	  struct_bmat[0][is*dim + 1][gp] = 0;
+	  struct_bmat[1][is*dim + 0][gp] = 0;
+	  struct_bmat[1][is*dim + 1][gp] = struct_dsh[is][1][gp];
+	  struct_bmat[2][is*dim + 0][gp] = struct_dsh[is][1][gp];
+	  struct_bmat[2][is*dim + 1][gp] = struct_dsh[is][0][gp];
+	}
+      }
+    }
 
     /* alloc the local and global index vector for assembly */
     loc_elem_index = malloc( dim*npe * sizeof(int));
     glo_elem_index = malloc( dim*npe * sizeof(int));
+    elem_disp = malloc( dim*npe * sizeof(double));
+    stress_gp = malloc( nvoi * sizeof(double) );
+    strain_gp = malloc( nvoi * sizeof(double) );
 
   } // first time for allocation
 
   /* 
+
      Begin Newton-Raphson Iterations 
    */
 
@@ -527,12 +550,9 @@ int assembly_residual_struct(void)
   VecGetArray         ( x_loc, &x_arr );
   VecGetArray         ( b_loc, &b_arr );
 
-  int    e, gp, is;
+  int    e, gp;
   int    i, j, v;
-  double *elem_disp = malloc( dim*npe * sizeof(double));
   double *res_elem  = malloc( dim*npe * sizeof(double));
-  double *strain_gp = malloc( nvoi    * sizeof(double));
-  double *stress_gp = malloc( nvoi    * sizeof(double));
 
   for( e = 0 ; e < nelm ; e++ ){
 
@@ -549,23 +569,11 @@ int assembly_residual_struct(void)
 
     for( gp = 0; gp < ngp ; gp++ ){
 
-      /* calc B matrix */
-      if( dim == 2 ){
-	for( is = 0; is < npe ; is++ ){
-	  struct_bmat[0][is*dim + 0] = struct_dsh[is][0][gp];
-	  struct_bmat[0][is*dim + 1] = 0;
-	  struct_bmat[1][is*dim + 0] = 0;
-	  struct_bmat[1][is*dim + 1] = struct_dsh[is][1][gp];
-	  struct_bmat[2][is*dim + 0] = struct_dsh[is][1][gp];
-	  struct_bmat[2][is*dim + 1] = struct_dsh[is][0][gp];
-	}
-      }
-
       /* calc strain gp */
       for( v = 0; v < nvoi ; v++ ){
 	strain_gp[v] = 0.0;
 	for( j = 0 ; j < npe*dim ; j++ )
-	  strain_gp[v] += struct_bmat[v][j] * elem_disp[j];
+	  strain_gp[v] += struct_bmat[v][j][gp] * elem_disp[j];
       }
 
       /* we get stress = f(strain) */
@@ -574,7 +582,7 @@ int assembly_residual_struct(void)
 
       for( j = 0 ; j < npe*dim ; j++ ){
 	for( v = 0; v < nvoi ; v++ )
-	  res_elem[j] += struct_bmat[v][j] * stress_gp[v];
+	  res_elem[j] += struct_bmat[v][j][gp] * stress_gp[v];
 	res_elem[j] *= struct_wp[gp];
       }
 
@@ -605,10 +613,8 @@ int assembly_jacobian_struct( void )
   VecGhostGetLocalForm( x , &x_loc );
   VecGetArray(x_loc, &x_arr );
 
-  int    e, gp, is;
-  double *elem_disp = malloc( dim*npe         * sizeof(double));
+  int    e, gp;
   double *k_elem    = malloc( dim*npe*dim*npe * sizeof(double));
-  double *strain_gp = malloc( nvoi            * sizeof(double));
   double *c         = malloc( nvoi*nvoi       * sizeof(double));
 
   for( e = 0 ; e < nelm ; e++ ){
@@ -628,24 +634,12 @@ int assembly_jacobian_struct( void )
 
     for( gp = 0; gp < ngp ; gp++ ){
 
-      /* calc B matrix */
-      if( dim == 2 ){
-	for( is = 0; is < npe ; is++ ){
-	  struct_bmat[0][is*dim + 0] = struct_dsh[is][0][gp];
-	  struct_bmat[0][is*dim + 1] = 0;
-	  struct_bmat[1][is*dim + 0] = 0;
-	  struct_bmat[1][is*dim + 1] = struct_dsh[is][1][gp];
-	  struct_bmat[2][is*dim + 0] = struct_dsh[is][1][gp];
-	  struct_bmat[2][is*dim + 1] = struct_dsh[is][0][gp];
-	}
-      }
-
       /* calc strain gp */
       int v, j;
       for( v = 0; v < nvoi ; v++ ){
 	strain_gp[v] = 0.0;
 	for( j = 0 ; j < npe*dim ; j++ )
-	  strain_gp[v] += struct_bmat[v][j] * elem_disp[j];
+	  strain_gp[v] += struct_bmat[v][j][gp] * elem_disp[j];
       }
 
       /* we get stress = f(strain) */
@@ -656,7 +650,7 @@ int assembly_jacobian_struct( void )
 	for( j = 0 ; j < npe*dim ; j++ ){
 	  for( k = 0; k < nvoi ; k++ ){
 	    for( h = 0; h < nvoi ; h++ )
-	      k_elem[ i*npe*dim + j] += struct_bmat[h][i] * c[ h*nvoi + k ] * struct_bmat[k][j] * struct_wp[gp];
+	      k_elem[ i*npe*dim + j] += struct_bmat[h][i][gp] * c[ h*nvoi + k ] * struct_bmat[k][j][gp] * struct_wp[gp];
 	  }
 	}
       }
@@ -669,6 +663,58 @@ int assembly_jacobian_struct( void )
   /* communication between processes */
   MatAssemblyBegin(A , MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd(  A , MAT_FINAL_ASSEMBLY );
+
+  return 0;
+}
+/****************************************************************************************************/
+int calc_stress_strain_energy( double * stress, double * strain, double * energy )
+{
+
+  int e, v, gp;
+
+  for ( e = 0 ; e < nelm ; e++ ){
+    for ( v = 0 ; v < nvoi ; v++ ){
+
+      strain[ e*nvoi + v ] = 0.0;
+      stress[ e*nvoi + v ] = 0.0;
+
+      for ( gp = 0 ; gp < ngp ; gp++ ){
+	get_strain( e , gp, strain_gp );
+	strain[ e*nvoi + v ] += strain_gp[gp] * struct_wp[gp];
+	get_stress( e , gp, strain_gp, stress_gp );
+	stress[ e*nvoi + v ] += stress_gp[gp] * struct_wp[gp];
+      }
+
+    }
+  }
+
+  return 0;
+}
+/****************************************************************************************************/
+int get_strain( int e , int gp, double *strain_gp )
+{
+
+  Vec     x_loc;
+  double  *x_arr;
+
+  VecGhostGetLocalForm( x , &x_loc );
+  VecGetArray         ( x_loc, &x_arr );
+
+  int    i , v;
+
+  /* get the local indeces of the element vertex nodes */
+  get_local_elem_index(e, loc_elem_index);
+
+  /* get the elemental displacements */
+  for( i = 0 ; i < npe*dim ; i++ )
+    elem_disp[i] = x_arr[loc_elem_index[i]];
+
+  /* calc strain gp */
+  for( v = 0; v < nvoi ; v++ ){
+    strain_gp[v] = 0.0;
+    for( i = 0 ; i < npe*dim ; i++ )
+      strain_gp[v] += struct_bmat[v][i][gp] * elem_disp[i];
+  }
 
   return 0;
 }

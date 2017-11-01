@@ -46,11 +46,15 @@ int         ngho;                 // Number of ghosts nodes
 double      **struct_sh;          // Shape functions
 double      ***struct_dsh;        // Derivative shapes functions
 double      *struct_wp;           // Weights
-double      **struct_bmat;        // B matrix (Bu = epsilon)
+double      ***struct_bmat;       // B matrix (Bu = epsilon)
+double      *elem_disp;
 int         *loc_elem_index;      // local elemental index vector for assembly and reading
 int         *glo_elem_index;      // global elemental index vector for assembly and reading
 int         istart, iend;         // starting and ending index of matrices
 int         nstart, nend;         // starting and ending index of nodes
+double      *stress_gp;
+double      *strain_gp;
+
 
 /* Taylor homogenization variables */
 
@@ -104,3 +108,4 @@ int mic_check_l_us(void);
 int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress, double *energy);
 
 void micro_print_info( void );
+int  calc_stress_strain_energy( double * stress, double * strain, double * energy );

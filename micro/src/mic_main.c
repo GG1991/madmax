@@ -436,6 +436,7 @@ end_mic_0:
 	stress = malloc( nelm*nvoi * sizeof(double));
 	energy = malloc( nelm      * sizeof(double));
 	sprintf(vtkfile_n,"%s_exp%d",myname,i);
+        ierr = calc_stress_strain_energy( stress, strain, energy );
 	ierr = micro_pvtu(MICRO_COMM, vtkfile_n, strain, stress, energy);
 	if(ierr){
 	  PetscPrintf(MICRO_COMM,"Problem writing vtu file\n");
