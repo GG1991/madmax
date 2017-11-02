@@ -593,7 +593,10 @@ int assembly_residual_struct(void)
 
   }
 
+  VecRestoreArray(x_loc , &x_arr);
   VecRestoreArray(b_loc , &b_arr);
+  VecGhostRestoreLocalForm( x , &x_loc );
+  VecGhostRestoreLocalForm( b , &b_loc );
 
   /* from the local and ghost part with add to all processes */
   VecGhostUpdateBegin( b, ADD_VALUES, SCATTER_REVERSE );
@@ -673,16 +676,17 @@ int calc_stress_strain_energy( double * stress, double * strain, double * energy
   int e, v, gp;
 
   for ( e = 0 ; e < nelm ; e++ ){
-    for ( v = 0 ; v < nvoi ; v++ ){
 
-      strain[ e*nvoi + v ] = 0.0;
-      stress[ e*nvoi + v ] = 0.0;
+    for ( v = 0 ; v < nvoi ; v++ )
+      strain[ e*nvoi + v ] = stress[ e*nvoi + v ] = 0.0;
 
-      for ( gp = 0 ; gp < ngp ; gp++ ){
-	get_strain( e , gp, strain_gp );
-	strain[ e*nvoi + v ] += strain_gp[gp] * struct_wp[gp];
-	get_stress( e , gp, strain_gp, stress_gp );
-	stress[ e*nvoi + v ] += stress_gp[gp] * struct_wp[gp];
+    for ( gp = 0 ; gp < ngp ; gp++ ){
+
+      get_strain( e , gp, strain_gp );
+      get_stress( e , gp, strain_gp, stress_gp );
+      for ( v = 0 ; v < nvoi ; v++ ){
+	strain[ e*nvoi + v ] += strain_gp[v] * struct_wp[gp];
+	stress[ e*nvoi + v ] += stress_gp[v] * struct_wp[gp];
       }
 
     }
@@ -934,27 +938,35 @@ int get_local_elem_index( int e, int *loc_elem_index )
 {
 
   /* 
-     returns the local position in the distributed vector of the 
+     Returns the local position in the distributed vector of the 
      indeces corresponding to an element vertex 
    */
   
   int d;
   if( dim == 2 )
   {
-    if( e >= nex || rank_mic == 0 ){
+    if(  rank_mic == 0 ){
       for( d = 0 ; d < dim ; d++ ){
-	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0)      * dim + d ;
-	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1)      * dim + d ;
-	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 1) * dim + d ;
-	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 0) * dim + d ;
+	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0 )      * dim + d ;
+	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1 )      * dim + d ;
+	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 1 ) * dim + d ;
+	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 0 ) * dim + d ;
+      }
+    }
+    else if(e >= nex ){
+      for( d = 0 ; d < dim ; d++ ){
+	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex-1)*nx + 0 )      * dim + d ;
+	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex-1)*nx + 1 )      * dim + d ;
+	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex-1)*nx + nx + 1 ) * dim + d ;
+	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex-1)*nx + nx + 0 ) * dim + d ;
       }
     }
     else{
       for( d = 0 ; d < dim ; d++ ){
-	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0) + nl * dim + d ;
-	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) + nl * dim + d ;
-	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) * dim + d ;
-	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + 0) * dim + d ;
+	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0 + nl ) * dim + d ; // is a ghost
+	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1 + nl ) * dim + d ; // is a ghost
+	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + 1 )      * dim + d ;
+	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + 0 )      * dim + d ;
       }
     }
   }
@@ -982,8 +994,8 @@ int get_global_elem_index( int e, int *glo_elem_index )
     }
     else{
       for( d = 0 ; d < dim ; d++ ){
-	glo_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0) + nl * dim + d ;
-	glo_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) + nl * dim + d ;
+	glo_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 1 + nl )* dim + d ;
+	glo_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 2 + nl )* dim + d ;
 	glo_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) * dim + d ;
 	glo_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + 0) * dim + d ;
       }
@@ -1124,9 +1136,8 @@ int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain
     for(i=0;i<nvoi;i++){
       strain_ave[i] = strain_mac[i];
       stress_ave[i] = 0.0;
-      for(j=0;j<nvoi;j++){
+      for( j = 0 ; j < nvoi ; j++ )
 	stress_ave[i] += c_homo_lineal[i*nvoi+j] * strain_mac[j];
-      }
     }
     return 0;
 
@@ -1324,8 +1335,7 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
   for( e = 0; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
-      fprintf(fm, "%lf ", 0.0);
-//    fprintf(fm, "%lf ", strain[ e*nvoi + v ]);
+      fprintf(fm, "%lf ", strain[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
@@ -1334,8 +1344,7 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
   for( e = 0; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
-      fprintf(fm, "%lf ", 0.0);
-//    fprintf(fm, "%lf ", stress[ e*nvoi + v ]);
+      fprintf(fm, "%lf ", stress[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
@@ -1406,6 +1415,8 @@ void micro_print_info( void ){
     fprintf(fm,"%2d    %2d    %2d\n", nx, ny, nz);
     fprintf(fm,"lx    ly    lz\n");
     fprintf(fm,"%lf    %lf    %lf\n", lx, ly, lz);
+    fprintf(fm,"hx    hy    hz\n");
+    fprintf(fm,"%lf    %lf    %lf\n", hx, hy, hz);
     fprintf(fm,"nex   ney   nez\n");
     fprintf(fm,"%2d    %2d    %2d\n", nex, ney, nez);
     fprintf(fm,"-----------\n");

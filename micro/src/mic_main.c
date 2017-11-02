@@ -418,17 +418,15 @@ end_mic_0:
       }
 
       PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
-      for(j=0;j<nvoi;j++){
+      for( j = 0 ; j < nvoi ; j++ )
 	PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
-      }
       PetscPrintf(MICRO_COMM,"\nstress_ave = ");
-      for(j=0;j<nvoi;j++){
+      for( j = 0 ; j < nvoi ; j++ )
 	PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
-      }
       PetscPrintf(MICRO_COMM,"\n");
-      for(j=0;j<nvoi;j++){
+
+      for( j = 0 ; j < nvoi ; j++ )
 	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
-      }
 
       if( flag_print & ( 1 << PRINT_VTU ) && homo_type == UNIF_STRAINS )
       {
