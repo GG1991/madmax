@@ -471,12 +471,6 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD);
 
-  double norm_a;
-
-  VecNorm( x, NORM_2, &norm_a );
-  if( !flag_coupling )
-    PetscPrintf( MICRO_COMM, "|x| = %e \n", norm_a);
-
   int    nr_its = 0; 
   double *b_arr;
   int    i;
@@ -508,14 +502,14 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   free(dir_ix);
 
   if( flag_print & (1<<PRINT_PETSC) ){
-//    PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer);
-//    MatView(A,viewer);
-//    PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer);
-//    VecView(b,viewer);
+    PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer);
+    MatView(A,viewer);
+    PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer);
+    VecView(b,viewer);
     PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer);
     VecView(x,viewer);
-//    PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer);
-//    VecView(x,viewer);
+    PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer);
+    VecView(x,viewer);
   }
 
   return 0;
@@ -614,7 +608,7 @@ int assembly_jacobian_struct( void )
   double  *x_arr;
 
   VecGhostGetLocalForm( x , &x_loc );
-  VecGetArray(x_loc, &x_arr );
+  VecGetArray(          x_loc, &x_arr );
 
   int    e, gp;
   double *k_elem    = malloc( dim*npe*dim*npe * sizeof(double));
@@ -984,20 +978,20 @@ int get_global_elem_index( int e, int *glo_elem_index )
   int d;
   if( dim == 2 )
   {
-    if( e >= nex || rank_mic == 0 ){
+    if(  rank_mic == 0 ){
       for( d = 0 ; d < dim ; d++ ){
-	glo_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0)      * dim + d ;
-	glo_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1)      * dim + d ;
-	glo_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 1) * dim + d ;
-	glo_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 0) * dim + d ;
+	glo_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0      ) * dim + d ;
+	glo_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1      ) * dim + d ;
+	glo_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 1 ) * dim + d ;
+	glo_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 0 ) * dim + d ;
       }
     }
     else{
       for( d = 0 ; d < dim ; d++ ){
-	glo_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 1 + nl )* dim + d ;
-	glo_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 2 + nl )* dim + d ;
-	glo_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + 1) * dim + d ;
-	glo_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + 0) * dim + d ;
+	glo_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + (ny_inf-1)*nx + 0      ) * dim + d ;
+	glo_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + (ny_inf-1)*nx + 1      ) * dim + d ;
+	glo_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + (ny_inf-1)*nx + nx + 1 ) * dim + d ;
+	glo_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + (ny_inf-1)*nx + nx + 0 ) * dim + d ;
       }
     }
   }
@@ -1472,6 +1466,18 @@ void micro_print_info( void ){
     for( i = 0 ; i < nproc_mic ; i++ )
       fprintf(fm,"%d ", i_data[i]);
     fprintf(fm,"\n");
+  }
+
+  double norm;
+
+  VecNorm( x, NORM_2, &norm );
+  if( rank_mic == 0 ){
+    fprintf(fm,"|x| = %lf \n", norm);
+  }
+
+  MatNorm( A , NORM_FROBENIUS , &norm );
+  if( rank_mic == 0 ){
+    fprintf(fm,"|A| = %lf \n",norm);
   }
 
   fclose(fm);
