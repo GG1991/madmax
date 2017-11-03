@@ -52,10 +52,10 @@ int fem_init_struct(double ***sh, double ****dsh, double **wp, double *h, int di
       (*dsh)[1][0][gp] = +1 * (1 - xp[2*gp+1]) /4 * 2/hx;
       (*dsh)[2][0][gp] = +1 * (1 + xp[2*gp+1]) /4 * 2/hx;
       (*dsh)[3][0][gp] = -1 * (1 + xp[2*gp+1]) /4 * 2/hx;
-      (*dsh)[0][1][gp] = -1 * (1 - xp[2*gp])   /4 * 2/hy; // d phi / d y
-      (*dsh)[1][1][gp] = -1 * (1 + xp[2*gp])   /4 * 2/hy;
-      (*dsh)[2][1][gp] = +1 * (1 + xp[2*gp])   /4 * 2/hy;
-      (*dsh)[3][1][gp] = +1 * (1 - xp[2*gp])   /4 * 2/hy;
+      (*dsh)[0][1][gp] = -1 * (1 - xp[2*gp+0]) /4 * 2/hy; // d phi / d y
+      (*dsh)[1][1][gp] = -1 * (1 + xp[2*gp+0]) /4 * 2/hy;
+      (*dsh)[2][1][gp] = +1 * (1 + xp[2*gp+0]) /4 * 2/hy;
+      (*dsh)[3][1][gp] = +1 * (1 - xp[2*gp+0]) /4 * 2/hy;
     }
 
     double vol = hx*hy;

@@ -448,6 +448,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     }
 
+    for( i = 0; i < ndir_ix ; i++ )
+      dir_ix_glo[i] = local_to_global_index( dir_ix_loc[i] );
 
   } // first time for allocation
 
@@ -456,7 +458,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   Vec     x_loc;
   double  *x_arr;
 
-  VecZeroEntries(x);
+  VecZeroEntries( x );
   VecGhostGetLocalForm( x , &x_loc );
   VecGetArray( x_loc, &x_arr );
 
@@ -484,9 +486,6 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   double  *b_arr;
   double  norm = nr_norm_tol*10;
 
-  for( i = 0; i < ndir_ix ; i++ )
-    dir_ix_glo[i] = local_to_global_index( dir_ix_loc[i] );
-
   VecNorm( x , NORM_2 , &norm );
   if(!flag_coupling)
     PetscPrintf(MICRO_COMM,"|x| = %lf \n",norm);
@@ -494,10 +493,6 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
     assembly_residual_struct(); // assembly "b" (residue) using "x" (displacement)
-    VecNorm( b , NORM_2 , &norm );
-
-    if(!flag_coupling)
-      PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
 
     VecGetArray( b, &b_arr );
     for( i = 0; i < ndir_ix ; i++ )
@@ -505,6 +500,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     VecRestoreArray( b, &b_arr );
     VecGhostUpdateBegin ( b, INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd   ( b, INSERT_VALUES, SCATTER_FORWARD);
+    VecNorm( b , NORM_2 , &norm );
+    if(!flag_coupling)
+      PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
 
     if( !(norm > nr_norm_tol) ) break;
 
@@ -514,7 +512,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     KSPSetOperators(ksp,A,A);
     KSPSolve( ksp, b, dx );
-//    VecAXPY( x, 1.0, dx);
+    VecAXPY( x, 1.0, dx);
+    VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD);
 
     nr_its ++;
   }
@@ -554,16 +554,14 @@ int assembly_residual_struct(void)
   VecGhostUpdateBegin( b , INSERT_VALUES , SCATTER_FORWARD );
   VecGhostUpdateEnd(   b , INSERT_VALUES , SCATTER_FORWARD );
 
-  Vec     x_loc  , b_loc;
-  double  *x_arr , *b_arr;
+  Vec      b_loc;
+  double  *b_arr;
 
-  VecGhostGetLocalForm( x , &x_loc );
   VecGhostGetLocalForm( b , &b_loc );
-  VecGetArray         ( x_loc, &x_arr );
   VecGetArray         ( b_loc, &b_arr );
 
   int    e, gp;
-  int    i, j, v;
+  int    i, j;
   double *res_elem  = malloc( dim*npe * sizeof(double));
 
   for( e = 0 ; e < nelm ; e++ ){
@@ -575,27 +573,17 @@ int assembly_residual_struct(void)
     /* get the local indeces of the element vertex nodes */
     get_local_elem_index(e, loc_elem_index);
 
-    /* get the elemental displacements */
-    for( i = 0 ; i < npe*dim ; i++ )
-      elem_disp[i] = x_arr[loc_elem_index[i]];
-
     for( gp = 0; gp < ngp ; gp++ ){
 
       /* calc strain gp */
-      for( v = 0; v < nvoi ; v++ ){
-	strain_gp[v] = 0.0;
-	for( j = 0 ; j < npe*dim ; j++ )
-	  strain_gp[v] += struct_bmat[v][j][gp] * elem_disp[j];
-      }
+      get_strain( e , gp, strain_gp );
 
       /* we get stress = f(strain) */
       get_stress( e , gp , strain_gp , stress_gp );
 
-
-      for( j = 0 ; j < npe*dim ; j++ ){
-	for( v = 0; v < nvoi ; v++ )
-	  res_elem[j] += struct_bmat[v][j][gp] * stress_gp[v];
-	res_elem[j] *= struct_wp[gp];
+      for( i = 0 ; i < npe*dim ; i++ ){
+	for( j = 0; j < nvoi ; j++ )
+	  res_elem[i] += struct_bmat[j][i][gp] * stress_gp[j] * struct_wp[gp];
       }
 
     }
@@ -605,9 +593,7 @@ int assembly_residual_struct(void)
 
   }
 
-  VecRestoreArray(x_loc , &x_arr);
-  VecRestoreArray(b_loc , &b_arr);
-  VecGhostRestoreLocalForm( x , &x_loc );
+  VecRestoreArray( b_loc , &b_arr);
   VecGhostRestoreLocalForm( b , &b_loc );
 
   /* from the local and ghost part with add to all processes */
@@ -622,50 +608,33 @@ int assembly_jacobian_struct( void )
 
   MatZeroEntries(A);
 
-  Vec     x_loc;
-  double  *x_arr;
-
-  VecGhostGetLocalForm( x , &x_loc );
-  VecGetArray(          x_loc, &x_arr );
-
   int    e, gp;
   double *k_elem    = malloc( dim*npe*dim*npe * sizeof(double));
   double *c         = malloc( nvoi*nvoi       * sizeof(double));
+  int    i, j, k, h;
 
   for( e = 0 ; e < nelm ; e++ ){
 
     /* set to 0 res_elem */
-    int i;
     for( i = 0 ; i < npe*dim*npe*dim ; i++ )
       k_elem[i] = 0.0;
 
-    /* get the local indeces of the element vertex nodes */
-    get_local_elem_index(e, loc_elem_index);
     get_global_elem_index(e, glo_elem_index);
-
-    /* get the elemental displacements */
-    for( i = 0 ; i < npe*dim ; i++ )
-      elem_disp[i] = x_arr[loc_elem_index[i]];
 
     for( gp = 0; gp < ngp ; gp++ ){
 
       /* calc strain gp */
-      int v, j;
-      for( v = 0; v < nvoi ; v++ ){
-	strain_gp[v] = 0.0;
-	for( j = 0 ; j < npe*dim ; j++ )
-	  strain_gp[v] += struct_bmat[v][j][gp] * elem_disp[j];
-      }
+      get_strain( e , gp, strain_gp );
 
       /* we get stress = f(strain) */
       get_c_tan( e , gp , strain_gp , c );
 
-      int k, h;
       for( i = 0 ; i < npe*dim ; i++ ){
 	for( j = 0 ; j < npe*dim ; j++ ){
 	  for( k = 0; k < nvoi ; k++ ){
 	    for( h = 0; h < nvoi ; h++ )
-	      k_elem[ i*npe*dim + j] += struct_bmat[h][i][gp] * c[ h*nvoi + k ] * struct_bmat[k][j][gp] * struct_wp[gp];
+	      k_elem[ i*npe*dim + j] += \
+	      struct_bmat[h][i][gp] * c[ h*nvoi + k ] * struct_bmat[k][j][gp] * struct_wp[gp];
 	  }
 	}
       }
@@ -743,42 +712,30 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
   material_t  *mat_p;
   node_list_t *pm;
 
-  switch( micro_type ){
-
+  switch( micro_type )
+  {
     case CIRCULAR_FIBER:
-
       if(is_in_fiber( e ))
-      {
-	/* is in the fiber */
-
+      { /* is in the fiber */
 	pm = material_list.head;
 	while( pm ){
-
           /* search FIBER */
-
 	  mat_p = (material_t *)pm->data;
 	  if( strcmp ( mat_p->name , "FIBER" ) == 0 ) break;
-
 	  pm = pm->next;
 	}
 	if( !pm ) return 1;
-	
       }
-      else{
-	/* is in the matrix */
-
+      else
+      { /* is in the matrix */
 	pm = material_list.head;
 	while( pm ){
-
           /* search MATRIX */
-
 	  mat_p = (material_t *)pm->data;
 	  if( strcmp ( mat_p->name , "MATRIX" ) == 0 ) break;
-
 	  pm = pm->next;
 	}
 	if( !pm ) return 1;
-
       }
 
       break;
@@ -794,23 +751,21 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 
     /* is a linear material stress = C * strain */
 
-    double young   = ((type_0*)mat_p->type)->young;
-    double poisson = ((type_0*)mat_p->type)->poisson;
-    double c[3][3];
-    int    i , j;
+    double  young   = ((type_0*)mat_p->type)->young;
+    double  poisson = ((type_0*)mat_p->type)->poisson;
+    double  c[3][3];
+    int     i , j;
 
     if(dim==2){
 
-      /*
-	 Plane strain ( long fibers case )
-       */
+      /* Plane strain ( long fibers case ) */
       c[0][0]=1.0-poisson; c[0][1]=poisson    ; c[0][2]=0.0            ;
       c[1][0]=poisson    ; c[1][1]=1.0-poisson; c[1][2]=0.0            ;
       c[2][0]=0.0        ; c[2][1]=0.0        ; c[2][2]=(1-2*poisson)/2;
 
       for( i = 0; i < nvoi ; i++ ){
 	for( j = 0 ; j < nvoi ; j++ )
-	  c[i][j] = c[i][j] * young/((1+poisson)*(1-2*poisson));
+	  c[i][j] *= young/((1+poisson)*(1-2*poisson));
       }
       for( i = 0; i < nvoi ; i++ ){
 	stress_gp[i] = 0.0;
@@ -837,39 +792,27 @@ int get_c_tan( int e , int gp, double *strain_gp , double *c_tan )
     case CIRCULAR_FIBER:
 
       if(is_in_fiber( e ))
-      {
-	/* is in the fiber */
-
+      {	/* is in the fiber */
 	pm = material_list.head;
 	while( pm ){
-
           /* search FIBER */
-
 	  mat_p = (material_t *)pm->data;
 	  if( strcmp ( mat_p->name , "FIBER" ) == 0 ) break;
-
 	  pm = pm->next;
 	}
 	if( !pm ) return 1;
-	
       }
-      else{
-	/* is in the matrix */
-
+      else
+      { /* is in the matrix */
 	pm = material_list.head;
 	while( pm ){
-
           /* search MATRIX */
-
 	  mat_p = (material_t *)pm->data;
 	  if( strcmp ( mat_p->name , "MATRIX" ) == 0 ) break;
-
 	  pm = pm->next;
 	}
 	if( !pm ) return 1;
-
       }
-
       break;
 
     default:
@@ -882,24 +825,20 @@ int get_c_tan( int e , int gp, double *strain_gp , double *c_tan )
   if( mat_p->type_id == TYPE_0 ){
 
     /* is a linear material stress = C * strain */
-
-    double young   = ((type_0*)mat_p->type)->young;
-    double poisson = ((type_0*)mat_p->type)->poisson;
-    double c[3][3];
-    int    i , j;
+    double  young   = ((type_0*)mat_p->type)->young;
+    double  poisson = ((type_0*)mat_p->type)->poisson;
+    int     i , j;
 
     if(dim==2){
 
-      /*
-	 Plane strain ( long fibers case )
-       */
-      c[0][0]=1.0-poisson; c[0][1]=poisson    ; c[0][2]=0.0            ;
-      c[1][0]=poisson    ; c[1][1]=1.0-poisson; c[1][2]=0.0            ;
-      c[2][0]=0.0        ; c[2][1]=0.0        ; c[2][2]=(1-2*poisson)/2;
+      /* Plane strain ( long fibers case ) */
+      c_tan[0*nvoi+0]=1.0-poisson; c_tan[0*nvoi+1]=poisson    ; c_tan[0*nvoi+2]=0.0            ;
+      c_tan[1*nvoi+0]=poisson    ; c_tan[1*nvoi+1]=1.0-poisson; c_tan[1*nvoi+2]=0.0            ;
+      c_tan[2*nvoi+0]=0.0        ; c_tan[2*nvoi+1]=0.0        ; c_tan[2*nvoi+2]=(1-2*poisson)/2;
 
       for( i = 0; i < nvoi ; i++ ){
 	for( j = 0 ; j < nvoi ; j++ )
-	  c_tan[i*nvoi + j] = c[i][j] * young/((1+poisson)*(1-2*poisson));
+	  c_tan[i*nvoi + j] *= young/((1+poisson)*(1-2*poisson));
       }
 
     }
