@@ -324,7 +324,6 @@ end_mic_0:
   /* Setting solver options */
   ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-  ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
 
   PetscLogEventEnd(EVENT_INIT,0,0,0,0);
 

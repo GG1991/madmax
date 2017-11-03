@@ -21,6 +21,7 @@ int strain_x_coord( double * strain , double * coord , double * u );
 int get_node_local_coor( int n , double * coord );
 int get_node_ghost_coor( int n , double * coord );
 int get_local_elem_node( int e , int * n_loc );
+int local_to_global_index( int local );
 
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
@@ -372,7 +373,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
    */
 
-  int *dir_ix, ndir;
+  int *dir_ix, *dir_ix_glo, ndir;
 
   if( dim == 2 ){
 
@@ -383,8 +384,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     if( rank_mic == (nproc_mic - 1) ){
       ndir += nx;
     }
-    ndir  *= dim;
-    dir_ix = malloc ( ndir * sizeof(int));
+    ndir       *= dim;
+    dir_ix      = malloc ( ndir * sizeof(int));
+    dir_ix_glo  = malloc ( ndir * sizeof(int));
 
     int     index[2]; // (i,j) displacement index in local vector
     double  coord[2]; // (x,y) coordinates
@@ -473,9 +475,11 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
   int    nr_its = 0; 
   double *b_arr;
-  int    i;
+  int    i, ierr;
   double norm = nr_norm_tol*10;
 
+  for( i = 0; i < ndir ; i++ )
+    dir_ix_glo[i] = local_to_global_index( dir_ix[i] );
 
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
@@ -486,20 +490,25 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
       PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
 
     VecGetArray( b, &b_arr );
-    for( i = 0; i < ndir ; i++ ){
+    for( i = 0; i < ndir ; i++ )
       b_arr[dir_ix[i]] = 0.0;
-    }
     VecRestoreArray( b, &b_arr );
 
     if( !(norm > nr_norm_tol) ) break;
 
     VecScale( b, -1.0 );
     assembly_jacobian_struct(); // assembly "A" (jacobian) using "x" (displacement)
+    MatZeroRowsColumns(A, ndir, dir_ix_glo, 1.0, NULL, NULL);
+
+    KSPSetOperators(ksp,A,A);
+//    ierr = KSPSolve( ksp, b, dx );CHKERRQ(ierr);
+    //    VecAXPY( x, 1.0, dx);
 
     nr_its ++;
   }
 
   free(dir_ix);
+  free(dir_ix_glo);
 
   if( flag_print & (1<<PRINT_PETSC) ){
     PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer);
@@ -653,13 +662,13 @@ int assembly_jacobian_struct( void )
       }
 
     }
-    MatSetValues( A , npe*dim , glo_elem_index , npe*dim , glo_elem_index , k_elem , ADD_VALUES );
+    MatSetValues( A, npe*dim, glo_elem_index, npe*dim, glo_elem_index, k_elem, ADD_VALUES );
 
   }
 
   /* communication between processes */
-  MatAssemblyBegin(A , MAT_FINAL_ASSEMBLY );
-  MatAssemblyEnd(  A , MAT_FINAL_ASSEMBLY );
+  MatAssemblyBegin( A , MAT_FINAL_ASSEMBLY );
+  MatAssemblyEnd(   A , MAT_FINAL_ASSEMBLY );
 
   return 0;
 }
@@ -936,7 +945,7 @@ int get_local_elem_index( int e, int *loc_elem_index )
      indeces corresponding to an element vertex 
    */
   
-  int d;
+  int d ;
   if( dim == 2 )
   {
     if(  rank_mic == 0 ){
@@ -995,6 +1004,20 @@ int get_global_elem_index( int e, int *glo_elem_index )
       }
     }
   }
+  return 0;
+}
+/****************************************************************************************************/
+int local_to_global_index( int local )
+{
+
+  if ( rank_mic == 0 ) return local;
+
+  if( dim == 2 ){
+
+    return (ny_inf-1)*nx*dim + local;
+
+  }
+
   return 0;
 }
 /****************************************************************************************************/
@@ -1470,15 +1493,17 @@ void micro_print_info( void ){
 
   double norm;
 
+  VecNorm( b, NORM_2, &norm );
+  if( rank_mic == 0 )
+    fprintf(fm,"|b| = %lf \n", norm);
+
   VecNorm( x, NORM_2, &norm );
-  if( rank_mic == 0 ){
+  if( rank_mic == 0 )
     fprintf(fm,"|x| = %lf \n", norm);
-  }
 
   MatNorm( A , NORM_FROBENIUS , &norm );
-  if( rank_mic == 0 ){
+  if( rank_mic == 0 )
     fprintf(fm,"|A| = %lf \n",norm);
-  }
 
   fclose(fm);
   return;
