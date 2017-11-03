@@ -53,8 +53,7 @@ int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double stra
 	vol_ma += vol_e;
       }
       else{
-	PetscPrintf(MICRO_COMM,
-	"not possible to compute a Taylor homogenization with a material of type\n",mat->name);
+	PetscPrintf(MICRO_COMM,	"not possible to compute a Taylor homogenization with a material of type\n",mat->name);
 	return 1;
       }
 
@@ -341,145 +340,156 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     stress_gp = malloc( nvoi * sizeof(double) );
     strain_gp = malloc( nvoi * sizeof(double) );
 
+    /* alloc arrays for boundary condition setting */
+    if(nproc_mic == 1){
+      ndir_ix = 2*nx + 2*(nyl-2);
+    }
+    else{
+      if( rank_mic == 0 || rank_mic == (nproc_mic - 1) ){
+	ndir_ix = nx + (nyl - 1)*2;
+      }
+      else{ 
+	ndir_ix = nyl * 2;
+      }
+    }
+    ndir_ix    *= dim;
+    dir_ix_loc  = malloc ( ndir_ix * sizeof(int));
+    dir_ix_glo  = malloc ( ndir_ix * sizeof(int));
+    coor_dir    = malloc ( ndir_ix * sizeof(double));
+
+    int n, d, c;
+
+    c = 0;
+    if(rank_mic == 0){
+
+      /* y = 0 */
+      for( n = 0 ; n < nx ; n++ ){
+	for( d = 0 ; d < dim ; d++ )
+	  dir_ix_loc[c*dim + d] = n*dim + d;
+	coor_dir[c*dim + 0] = n*hx;
+	coor_dir[c*dim + 1] = 0.0;
+	c++;
+      }
+    }
+    if( rank_mic == (nproc_mic - 1) ){
+
+      /* y = ly */
+      for( n = 0 ; n < nx ; n++ ){
+	for( d = 0 ; d < dim ; d++ )
+	  dir_ix_loc[c*dim + d] = ((nyl-1)*nx + n)*dim + d;
+	coor_dir[c*dim + 0] = n*hx;
+	coor_dir[c*dim + 1] = ly;
+	c++;
+      }
+    }
+    if( nproc_mic > 1)
+    {
+      if( rank_mic == 0 || rank_mic == (nproc_mic - 1) )
+      {
+	/* x = 0 */
+	for( n = 0 ; n < (nyl - 1) ; n++ ){
+	  for( d = 0 ; d < dim ; d++ )
+	    dir_ix_loc[c*dim + d] = (n+1)*nx*dim + d;
+	  coor_dir[c*dim + 0] = 0;
+	  coor_dir[c*dim + 1] = (ny_inf + n+1)*hy;
+	  c++;
+	}
+
+	/* x = lx */
+	for( n = 0 ; n < (nyl - 1) ; n++ ){
+	  for( d = 0 ; d < dim ; d++ )
+	    dir_ix_loc[c*dim + d] = (2*nx-1)*dim + n*nx*dim + d;
+	  coor_dir[c*dim + 0] = lx;
+	  coor_dir[c*dim + 1] = (ny_inf + n + 1)*hy;
+	  c++;
+	}
+      }
+      else
+      {
+	/* 0 < rank_mic < (nproc - 1) */
+	/* x = 0 */
+	for( n = 0 ; n < nyl ; n++ ){
+	  for( d = 0 ; d < dim ; d++ )
+	    dir_ix_loc[c*dim + d] = n*nx*dim + d;
+	  coor_dir[c*dim + 0] = 0;
+	  coor_dir[c*dim + 1] = (ny_inf + n + 1)*hy;
+	  c++;
+	}
+
+	/* x = lx */
+	for( n = 0 ; n < nyl ; n++ ){
+	  for( d = 0 ; d < dim ; d++ )
+	    dir_ix_loc[c*dim + d] = (nx-1)*dim + n*nx*dim + d;
+	  coor_dir[c*dim + 0] = lx;
+	  coor_dir[c*dim + 1] = (ny_inf + n + 1)*hy;
+	  c++;
+	}
+      }
+    }
+    else{
+
+      /* x = 0 */
+      for( n = 0 ; n < nyl-2; n++ ){
+	for( d = 0 ; d < dim ; d++ )
+	  dir_ix_loc[c*dim + d] = (n+1)*nx*dim + d;
+	coor_dir[c*dim + 0] = 0;
+	coor_dir[c*dim + 1] = (ny_inf + n+1)*hy;
+	c++;
+      }
+
+      /* x = lx */
+      for( n = 0 ; n < nyl-2; n++ ){
+	for( d = 0 ; d < dim ; d++ )
+	  dir_ix_loc[c*dim + d] = ((n+2)*nx-1)*dim + d;
+	coor_dir[c*dim + 0] = lx;
+	coor_dir[c*dim + 1] = (ny_inf + n + 1)*hy;
+	c++;
+      }
+
+    }
+
+
   } // first time for allocation
 
-  /* 
-
-     Begin Newton-Raphson Iterations 
-   */
-
   /* Set the displacement boundary conditions "u = E . X" */
+
   Vec     x_loc;
   double  *x_arr;
 
   VecZeroEntries(x);
-  VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD);
-
   VecGhostGetLocalForm( x , &x_loc );
   VecGetArray( x_loc, &x_arr );
 
   int  n , d;
-
-  /* 
-     2d case we have 2 lateral walls and top and/or botton for rank_mic = 0 or
-     rank_mic = nproc_mic - 1 
-
-     order 
-
-     1) lateral (all rank_mics)
-     2) bottom  (rank_mic = 0)
-     3) top     (rank_mic = nproc_mic-1)
-
-   */
-
-  int *dir_ix, *dir_ix_glo, ndir;
-
   if( dim == 2 ){
 
-    ndir = 2 * nyl;   // all process have the part of the lateral face
-    if( rank_mic == 0 ){
-      ndir += nx;
-    }
-    if( rank_mic == (nproc_mic - 1) ){
-      ndir += nx;
-    }
-    ndir       *= dim;
-    dir_ix      = malloc ( ndir * sizeof(int));
-    dir_ix_glo  = malloc ( ndir * sizeof(int));
-
-    int     index[2]; // (i,j) displacement index in local vector
-    double  coord[2]; // (x,y) coordinates
     double  displ[2]; // (ux,uy) displacement
-    int     c = 0;
 
-    /* cara lateral x = 0 (nodos locales) */
-    for( n = 0 ; n < nyl ; n++ ){
-      for( d = 0 ; d < dim ; d++ ){
-	index[ d ]  = ( n*nx )*dim + d;
-	dir_ix[c++] = index[d];
-      }
-      coord[0] = 0.0;
-      coord[1] = ( n + ny_inf )*hy;
-
+    for( n = 0 ; n < ndir_ix/dim ; n++ )
+    {
       /* calc displ on the node */
-      strain_x_coord( strain_mac , coord , displ );
-
+      strain_x_coord( strain_mac , &coor_dir[n*dim] , displ );
       for( d = 0 ; d < dim ; d++ )
-	x_arr[index[d]] = displ[d];
-    }
-
-    /* cara lateral x = lx (nodos locales) */
-    for( n = 0 ; n < nyl ; n++ ){
-      for( d = 0 ; d < dim ; d++ ){
-	index[ d ]  = ( (n+1)*nx-1)*dim + d;
-	dir_ix[c++] = index[d];
-      }
-      coord[0] = lx;
-      coord[1] = ( n + ny_inf + 1 )*hy;
-
-      /* calc displ on the node */
-      strain_x_coord( strain_mac , coord , displ );
-
-      for( d = 0 ; d < dim ; d++ )
-	x_arr[index[d]] = displ[d];
-    }
-
-    /* cara inferior y = 0 (solo rank_mic = 0) */
-    if( rank_mic == 0 ){
-
-      for( n = 0 ; n < nx ; n++ ){
-	for( d = 0 ; d < dim ; d++ ){
-	  index[ d ] = n*dim + d;
-	  dir_ix[c++] = index[d];
-	}
-	coord[0] = n*hx;
-	coord[1] = 0.0;
-
-	/* calc displ on the node */
-	strain_x_coord( strain_mac , coord , displ );
-
-	for( d = 0 ; d < dim ; d++ )
-	  x_arr[index[d]] = displ[d];
-      }
-
-    }
-
-    /* cara superior y = ly (solo rank_mic = nproc_mic - 1) */
-    if( rank_mic == (nproc_mic - 1) ){
-
-      for( n = 0 ; n < nx ; n++ ){
-	for( d = 0 ; d < dim ; d++ ){
-	  index[ d ] = (nyl-1)*nx*dim + n*dim + d;
-	  dir_ix[c++] = index[d];
-	}
-	coord[0] = n*hx;
-	coord[1] = ly;
-
-	/* calc displ on the node */
-	strain_x_coord( strain_mac , coord , displ );
-
-	for( d = 0 ; d < dim ; d++ )
-	  x_arr[index[d]] = displ[d];
-      }
-
+	x_arr[dir_ix_loc[n*dim + d]] = displ[d];
     }
   }
 
   VecRestoreArray( x_loc , &x_arr );
   VecGhostRestoreLocalForm( x , &x_loc );
-
-  /* we update the ghost regions with correct values from the owning process */
   VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD);
 
-  int    nr_its = 0; 
-  double *b_arr;
-  int    i, ierr;
-  double norm = nr_norm_tol*10;
+  int     i;
+  int     nr_its = 0; 
+  double  *b_arr;
+  double  norm = nr_norm_tol*10;
 
-  for( i = 0; i < ndir ; i++ )
-    dir_ix_glo[i] = local_to_global_index( dir_ix[i] );
+  for( i = 0; i < ndir_ix ; i++ )
+    dir_ix_glo[i] = local_to_global_index( dir_ix_loc[i] );
+
+  VecNorm( x , NORM_2 , &norm );
+  if(!flag_coupling)
+    PetscPrintf(MICRO_COMM,"|x| = %lf \n",norm);
 
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
@@ -490,25 +500,24 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
       PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
 
     VecGetArray( b, &b_arr );
-    for( i = 0; i < ndir ; i++ )
-      b_arr[dir_ix[i]] = 0.0;
+    for( i = 0; i < ndir_ix ; i++ )
+      b_arr[dir_ix_loc[i]] = 0.0;
     VecRestoreArray( b, &b_arr );
+    VecGhostUpdateBegin ( b, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd   ( b, INSERT_VALUES, SCATTER_FORWARD);
 
     if( !(norm > nr_norm_tol) ) break;
 
     VecScale( b, -1.0 );
     assembly_jacobian_struct(); // assembly "A" (jacobian) using "x" (displacement)
-    MatZeroRowsColumns(A, ndir, dir_ix_glo, 1.0, NULL, NULL);
+    MatZeroRowsColumns(A, ndir_ix, dir_ix_glo, 1.0, NULL, NULL);
 
     KSPSetOperators(ksp,A,A);
-//    ierr = KSPSolve( ksp, b, dx );CHKERRQ(ierr);
-    //    VecAXPY( x, 1.0, dx);
+    KSPSolve( ksp, b, dx );
+//    VecAXPY( x, 1.0, dx);
 
     nr_its ++;
   }
-
-  free(dir_ix);
-  free(dir_ix_glo);
 
   if( flag_print & (1<<PRINT_PETSC) ){
     PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer);
@@ -1014,7 +1023,7 @@ int local_to_global_index( int local )
 
   if( dim == 2 ){
 
-    return (ny_inf-1)*nx*dim + local;
+    return ny_inf*nx*dim + local;
 
   }
 
@@ -1435,7 +1444,7 @@ void micro_print_info( void ){
     fprintf(fm,"hx    hy    hz\n");
     fprintf(fm,"%lf    %lf    %lf\n", hx, hy, hz);
     fprintf(fm,"nex   ney   nez\n");
-    fprintf(fm,"%2d    %2d    %2d\n", nex, ney, nez);
+    fprintf(fm,"%2d    %2d    %2d\n", nex, ny-1, nez);
     fprintf(fm,"-----------\n");
   }
 

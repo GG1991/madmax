@@ -54,6 +54,10 @@ int         istart, iend;         // starting and ending index of matrices
 int         nstart, nend;         // starting and ending index of nodes
 double      *stress_gp;
 double      *strain_gp;
+int         *dir_ix_loc;          // dirichlet indeces (local numeration)
+int         *dir_ix_glo;          // dirichlet indeces (global numeration)
+int         ndir_ix;              // number of dirichlet indeces
+double      *coor_dir;            // coordinates of dirichlet nodes
 
 
 /* Taylor homogenization variables */
