@@ -878,8 +878,8 @@ int get_centroid_struct( int e, double *centroid )
   /* formula only valid for sequencial now */
 
   if( dim == 2 ){
-    centroid[0] = ( e % nex + 0.5 ) * hx;
-    centroid[1] = ( (e + nstart) / nex + 0.5 ) * hy;
+    centroid[0] = ( e % nex + 0.5         ) * hx;
+    centroid[1] = ( e / nex + 0.5 + ny_inf) * hy;
   }
 
   return 0;
