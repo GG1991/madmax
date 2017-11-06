@@ -920,6 +920,34 @@ int get_local_elem_index( int e, int *loc_elem_index )
 
 /****************************************************************************************************/
 
+int get_local_elem_node( int e , int *n_loc )
+{
+  if( dim == 2 )
+  {
+    if(  rank_mic == 0 ){
+      n_loc[0] = ( (e%nex) + (e/nex)*nx + 0 )      ;
+      n_loc[1] = ( (e%nex) + (e/nex)*nx + 1 )      ;
+      n_loc[2] = ( (e%nex) + (e/nex)*nx + nx + 1 ) ;
+      n_loc[3] = ( (e%nex) + (e/nex)*nx + nx + 0 ) ;
+    }
+    else if(e >= nex ){
+      n_loc[0] = ( (e%nex) + (e/nex-1)*nx + 0 )      ;
+      n_loc[1] = ( (e%nex) + (e/nex-1)*nx + 1 )      ;
+      n_loc[2] = ( (e%nex) + (e/nex-1)*nx + nx + 1 ) ;
+      n_loc[3] = ( (e%nex) + (e/nex-1)*nx + nx + 0 ) ;
+    }
+    else{
+      n_loc[0] = ( (e%nex) + (e/nex)*nx + 0 + nl ) ; // is a ghost
+      n_loc[1] = ( (e%nex) + (e/nex)*nx + 1 + nl ) ; // is a ghost
+      n_loc[2] = ( (e%nex) + (e/nex)*nx + 1 )      ;
+      n_loc[3] = ( (e%nex) + (e/nex)*nx + 0 )      ;
+    }
+  }
+  return 0;
+}
+
+/****************************************************************************************************/
+
 int get_global_elem_index( int e, int *glo_elem_index )
 {
 
@@ -964,30 +992,6 @@ int local_to_global_index( int local )
 
   }
 
-  return 0;
-}
-
-/****************************************************************************************************/
-
-int get_local_elem_node( int e , int *n_loc )
-{
-  if( dim == 2 )
-  {
-    if( e >= nex || rank_mic == 0 ){
-      /* does not have ghost values */
-      n_loc[0] = ( (e%nex) + (e/nex)*nx + 0)      ;
-      n_loc[1] = ( (e%nex) + (e/nex)*nx + 1)      ;
-      n_loc[2] = ( (e%nex) + (e/nex)*nx + nx + 1) ;
-      n_loc[3] = ( (e%nex) + (e/nex)*nx + nx + 0) ;
-    }
-    else{
-      /* has ghost values in the bottom */
-      n_loc[0] = ( (e%nex) + (e/nex)*nx + 0) + nl ;
-      n_loc[1] = ( (e%nex) + (e/nex)*nx + 1) + nl ;
-      n_loc[2] = ( (e%nex) + (e/nex)*nx + 1) ;
-      n_loc[3] = ( (e%nex) + (e/nex)*nx + 0) ;
-    }
-  }
   return 0;
 }
 
@@ -1229,13 +1233,12 @@ int micro_pvtu(char *name, double *strain, double *stress, double *energy)
   fprintf(fm,"<Cells>\n");
 
   int e;
-  int * n_loc = malloc( npe * sizeof(int));
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for ( e = 0 ; e < nelm ; e++ ){
-    get_local_elem_node( e , n_loc );
+    get_local_elem_node( e , loc_elem_index );
     for ( n = 0 ; n < npe ; n++ )
-      fprintf(fm,"%d ", n_loc[n]);
+      fprintf(fm,"%d ", loc_elem_index[n]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
