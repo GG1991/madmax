@@ -237,21 +237,16 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     /* alloc the local and global index vector for assembly */
     loc_elem_index = malloc( dim*npe * sizeof(int));
     glo_elem_index = malloc( dim*npe * sizeof(int));
-    elem_disp = malloc( dim*npe * sizeof(double));
-    stress_gp = malloc( nvoi * sizeof(double) );
-    strain_gp = malloc( nvoi * sizeof(double) );
+    elem_disp      = malloc( dim*npe * sizeof(double));
+    stress_gp      = malloc( nvoi    * sizeof(double) );
+    strain_gp      = malloc( nvoi    * sizeof(double) );
 
     /* alloc arrays for boundary condition setting */
     if(nproc_mic == 1){
       ndir_ix = 2*nx + 2*(nyl-2);
     }
     else{
-      if( rank_mic == 0 || rank_mic == (nproc_mic - 1) ){
-	ndir_ix = nx + (nyl - 1)*2;
-      }
-      else{ 
-	ndir_ix = nyl * 2;
-      }
+      ndir_ix = ( rank_mic == 0 || rank_mic == (nproc_mic-1) ) ? (nx + (nyl-1)*2) : (nyl * 2);
     }
     ndir_ix    *= dim;
     dir_ix_loc  = malloc ( ndir_ix * sizeof(int));
@@ -411,9 +406,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     assembly_jacobian_struct(); // assembly "A" (jacobian) using "x" (displacement)
     MatZeroRowsColumns(A, ndir_ix, dir_ix_glo, 1.0, NULL, NULL);
 
-    KSPSetOperators(ksp,A,A);
+    KSPSetOperators( ksp, A, A );
     KSPSolve( ksp, b, dx );
-    VecAXPY( x, 1.0, dx);
+    VecAXPY( x, 1.0, dx );
     VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD);
 
@@ -456,7 +451,7 @@ int assembly_residual_struct(void)
 
   /* from the owning processes to the ghosts in the others processes */
   VecGhostUpdateBegin( b , INSERT_VALUES , SCATTER_FORWARD );
-  VecGhostUpdateEnd(   b , INSERT_VALUES , SCATTER_FORWARD );
+  VecGhostUpdateEnd  ( b , INSERT_VALUES , SCATTER_FORWARD );
 
   Vec      b_loc;
   double  *b_arr;
