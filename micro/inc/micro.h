@@ -40,6 +40,8 @@ int         nyl;                  // local number of nodes in y direction
 int         ny_inf;               // inferior numeration in y direction
 double      lx, ly, lz;           // dimain lenght
 double      hx, hy, hz;           // element sizes 
+double      vol_tot;              // total volume
+double      vol_loc;              // local volume
 int         npe;                  // Nodes per element
 int         ngp;                  // Number of gauss points per element
 int         ngho;                 // Number of ghosts nodes
@@ -52,12 +54,12 @@ int         *loc_elem_index;      // local elemental index vector for assembly a
 int         *glo_elem_index;      // global elemental index vector for assembly and reading
 int         istart, iend;         // starting and ending index of matrices
 int         nstart, nend;         // starting and ending index of nodes
-double      *stress_gp;
-double      *strain_gp;
 int         *dir_ix_loc;          // dirichlet indeces (local numeration)
 int         *dir_ix_glo;          // dirichlet indeces (global numeration)
 int         ndir_ix;              // number of dirichlet indeces
 double      *coor_dir;            // coordinates of dirichlet nodes
+double      *strain_gp;           // strain at Gauss point
+double      *stress_gp;           // stress at Gauss point
 
 
 /* Taylor homogenization variables */

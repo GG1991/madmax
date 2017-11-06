@@ -176,6 +176,17 @@ end_mic_0:
     hx = lx/nex;
     hy = ly/(ny-1);
     if( dim == 3 ) hz = lz/nez;
+
+    /* set volumes */
+    if ( dim == 2 ){
+      vol_tot = lx * ly;
+      vol_loc = lx * (hy*ney);
+    }
+    else{
+      vol_tot = lx * ly       * lz;
+      vol_loc = lx * (hy*ney) * lz;
+    }
+
   }
 
   /* Homogenization Options */
