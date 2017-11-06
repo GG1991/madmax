@@ -42,6 +42,7 @@ double      lx, ly, lz;           // dimain lenght
 double      hx, hy, hz;           // element sizes 
 double      vol_tot;              // total volume
 double      vol_loc;              // local volume
+double      vol_elem;             // elemental volume
 int         npe;                  // Nodes per element
 int         ngp;                  // Number of gauss points per element
 int         ngho;                 // Number of ghosts nodes

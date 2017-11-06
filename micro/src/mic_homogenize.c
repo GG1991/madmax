@@ -572,22 +572,28 @@ int get_elem_properties( void )
 
   /* fills *elem_strain, *elem_stress, *elem_type, *elem_energy */
 
-  int e, v, gp;
+  int      e, v, gp;
+  double  *strain_aux = malloc( nvoi * sizeof(double) );
+  double  *stress_aux = malloc( nvoi * sizeof(double) );
 
   for ( e = 0 ; e < nelm ; e++ ){
 
     for ( v = 0 ; v < nvoi ; v++ )
-      elem_strain[ e*nvoi + v ] = elem_stress[ e*nvoi + v ] = 0.0;
+      strain_aux[v] = stress_aux[v] = 0.0;
 
     for ( gp = 0 ; gp < ngp ; gp++ ){
 
       get_strain( e , gp, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );
       for ( v = 0 ; v < nvoi ; v++ ){
-	elem_strain[ e*nvoi + v ] += strain_gp[v] * struct_wp[gp];
-	elem_stress[ e*nvoi + v ] += stress_gp[v] * struct_wp[gp];
+	strain_aux[v] += strain_gp[v] * struct_wp[gp];
+	stress_aux[v] += stress_gp[v] * struct_wp[gp];
       }
 
+    }
+    for ( v = 0 ; v < nvoi ; v++ ){
+      elem_strain[ e*nvoi + v ] = strain_aux[v] / vol_elem;
+      elem_stress[ e*nvoi + v ] = stress_aux[v] / vol_elem;
     }
 
     /* fill *elem_type */
@@ -1499,9 +1505,8 @@ int init_shapes( double ***sh, double ****dsh, double **wp )
       (*dsh)[3][1][gp] = +1 * (1 - xp[2*gp+0]) /4 * 2/hy;
     }
 
-    double vol = hx*hy;
     for( gp = 0 ; gp < ngp ; gp++ )
-      (*wp)[gp] = vol / ngp;
+      (*wp)[gp] = vol_elem / ngp;
 
   }
 

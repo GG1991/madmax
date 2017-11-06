@@ -182,15 +182,17 @@ end_mic_0:
     if ( dim == 2 ){
       center_coor[0] = lx / 2;
       center_coor[1] = ly / 2;
-      vol_tot = lx * ly;
-      vol_loc = lx * (hy*ney);
+      vol_elem = hx*hy;
+      vol_tot  = lx * ly;
+      vol_loc  = lx * (hy*ney);
     }
     else{
       center_coor[0] = lx / 2;
       center_coor[1] = ly / 2;
       center_coor[2] = lz / 2;
-      vol_tot = lx * ly       * lz;
-      vol_loc = lx * (hy*ney) * lz;
+      vol_elem = hx*hy*hz;
+      vol_tot  = lx * ly       * lz;
+      vol_loc  = lx * (hy*ney) * lz;
     }
 
   }
