@@ -61,8 +61,9 @@ double      *coor_dir;            // coordinates of dirichlet nodes
 double      *strain_gp;           // strain at Gauss point
 double      *stress_gp;           // stress at Gauss point
 int         *elem_type;           // type in each element (depends on the micro structure "micro_type")
-int         *elem_strain;         // strain at each element
-int         *elem_stress;         // stress at each element
+double      *elem_strain;         // strain at each element
+double      *elem_stress;         // stress at each element
+double      *elem_energy;         // energy at each element
 double      *center_coor;         // coordinates of the center
 
 /* Taylor homogenization variables */
@@ -118,3 +119,4 @@ int micro_pvtu( char *name, double *strain, double *stress, double *energy);
 
 void micro_print_info( void );
 int  get_elem_properties( double * stress, double * strain, double * energy );
+int  init_shapes( double ***sh, double ****dsh, double **wp );

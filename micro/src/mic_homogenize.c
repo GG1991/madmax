@@ -22,7 +22,6 @@ int get_node_local_coor( int n , double * coord );
 int get_node_ghost_coor( int n , double * coord );
 int get_local_elem_node( int e , int * n_loc );
 int local_to_global_index( int local );
-int init_shapes( double ***sh, double ****dsh, double **wp, double *h, int dim );
 int get_averages( double * strain_ave, double * stress_ave );
 int vtkcode( int dim, int npe );
 int get_elem_type( int e , int *type );
@@ -186,7 +185,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     nend   = iend   / dim;
     ny_inf = ( dim == 2 ) ? nstart / nx : nstart / (nx*nz);
 
-    int *ghost_index;;
+    int *ghost_index;
     if( nproc_mic == 1 )
       ngho = 0;
     else{
@@ -198,7 +197,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     ghost_index = malloc( ngho*dim *sizeof(int) );
 
-    int i, j;
+    int i;
     for( i = 0 ; i < ngho*dim  ; i++ )
       ghost_index[i] = istart - (( dim == 2 )? nx : nx*nz)*dim + i;
 
@@ -207,42 +206,6 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     VecDuplicate(x,&b);
 
     free(ghost_index);
-
-    /* Initilize shape functions, derivatives, jacobian, b_matrix */
-
-    double h[3]; h[0] = hx; h[1] = hx; h[2] = hz;
-
-    init_shapes( &struct_sh, &struct_dsh, &struct_wp, h, dim);
-    
-    /* alloc the B matrix */
-    struct_bmat = malloc( nvoi * sizeof(double**));
-    for( i = 0 ; i < nvoi  ; i++ ){
-      struct_bmat[i] = malloc( npe*dim * sizeof(double*));
-      for( j = 0 ; j < npe*dim ; j++ )
-	struct_bmat[i][j] = malloc( ngp * sizeof(double));
-    }
-
-    /* calc B matrix */
-    int is, gp;
-    for( gp = 0; gp < ngp ; gp++ ){
-      for( is = 0; is < npe ; is++ ){
-	if( dim == 2 ){
-	  struct_bmat[0][is*dim + 0][gp] = struct_dsh[is][0][gp];
-	  struct_bmat[0][is*dim + 1][gp] = 0;
-	  struct_bmat[1][is*dim + 0][gp] = 0;
-	  struct_bmat[1][is*dim + 1][gp] = struct_dsh[is][1][gp];
-	  struct_bmat[2][is*dim + 0][gp] = struct_dsh[is][1][gp];
-	  struct_bmat[2][is*dim + 1][gp] = struct_dsh[is][0][gp];
-	}
-      }
-    }
-
-    /* alloc the local and global index vector for assembly */
-    loc_elem_index = malloc( dim*npe * sizeof(int));
-    glo_elem_index = malloc( dim*npe * sizeof(int));
-    elem_disp      = malloc( dim*npe * sizeof(double));
-    stress_gp      = malloc( nvoi    * sizeof(double) );
-    strain_gp      = malloc( nvoi    * sizeof(double) );
 
     /* alloc arrays for boundary condition setting */
     if(nproc_mic == 1){
@@ -1484,11 +1447,10 @@ void micro_print_info( void ){
   return;
 }
 /****************************************************************************************************/
-int init_shapes(double ***sh, double ****dsh, double **wp, double *h, int dim)
+int init_shapes( double ***sh, double ****dsh, double **wp )
 {
-  int nsh = ( dim == 2 ) ? 4 : 8;
-  int ngp = ( dim == 2 ) ? 4 : 8;
-  int gp;
+  int    nsh = ( dim == 2 ) ? 4 : 8;
+  int    gp;
   double *xp = malloc( ngp*dim * sizeof(double));
 
   if( dim == 2 )
@@ -1526,7 +1488,6 @@ int init_shapes(double ***sh, double ****dsh, double **wp, double *h, int dim)
       (*sh)[3][gp] = (1 - xp[2*gp]) * (1 + xp[2*gp+1])/4;
     }
 
-    double hx = h[0], hy = h[1];
     for( gp = 0 ; gp < ngp ; gp++ ){
       (*dsh)[0][0][gp] = -1 * (1 - xp[2*gp+1]) /4 * 2/hx; // d phi / d x
       (*dsh)[1][0][gp] = +1 * (1 - xp[2*gp+1]) /4 * 2/hx;

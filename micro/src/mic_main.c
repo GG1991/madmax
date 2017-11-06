@@ -36,7 +36,7 @@ static char help[] =
 int main(int argc, char **argv)
 {
 
-  int        i, ierr, ierr_1=0;
+  int        i, j, ierr, ierr_1=0;
   int        nval;
   char       vtkfile_n[NBUF];
   PetscBool  set;
@@ -211,9 +211,9 @@ end_mic_0:
 
   /* Solver Options */
   PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
-  if(set==PETSC_FALSE) nr_max_its=5;
+  if(set==PETSC_FALSE) nr_max_its = 5;
   PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
-  if(set==PETSC_FALSE) nr_norm_tol=1.0e-5;
+  if(set==PETSC_FALSE) nr_norm_tol = 1.0e-5;
 
   /* 
      Geometry specifications or material distribution
@@ -254,11 +254,10 @@ end_mic_0:
   PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
   if(set==PETSC_FALSE) ny_fibers = 1;
 
+  /**************************************************/
   {
-    /* 
-       Materials by command line 
-
-       We expect a fiber and a matrix material only
+    /* Materials by command line 
+       (expect a fiber and a matrix material only)
      */
     double E, v;
     material_t mat;
@@ -307,7 +306,9 @@ end_mic_0:
       list_insertlast( &material_list , &mat );
     }
   }
+  /**************************************************/
 
+  /**************************************************/
   /* Printing Options */
   flag_print = 0;
   PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
@@ -320,7 +321,7 @@ end_mic_0:
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
   PetscOptionsHasName(NULL,NULL,"-print_all",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
-  //**************************************************
+  /**************************************************/
 
   if(!flag_coupling){
     PetscPrintf(MICRO_COMM,
@@ -329,20 +330,49 @@ end_mic_0:
 	"--------------------------------------------------\n");
   }
 
-#if defined(PETSC_USE_LOG)
-  PetscLogEventRegister("ASSEMBLY_JAC",PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_JAC);
-  PetscLogEventRegister("ASSEMBLY_RES",PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);
-  PetscLogEventRegister("SOLVE_SYSTEM",PETSC_VIEWER_CLASSID,&EVENT_SOLVE_SYSTEM);
-  PetscLogEventRegister("ASSEMBLY_JAC",PETSC_VIEWER_CLASSID,&EVENT_INIT);
-#endif
+  /**************************************************/
+  /* alloc variables*/
+  loc_elem_index = malloc( dim*npe * sizeof(int));
+  glo_elem_index = malloc( dim*npe * sizeof(int));
+  elem_disp      = malloc( dim*npe * sizeof(double));
+  stress_gp      = malloc( nvoi    * sizeof(double));
+  strain_gp      = malloc( nvoi    * sizeof(double));
+  if( flag_print & ( 1 << PRINT_VTU ) ){
+    elem_strain = malloc( nelm*nvoi * sizeof(double));
+    elem_stress = malloc( nelm*nvoi * sizeof(double));
+    elem_energy = malloc( nelm      * sizeof(double));
+  }
+  /* Initilize shape functions, derivatives, jacobian, b_matrix */
 
-  PetscLogEventBegin(EVENT_INIT,0,0,0,0);
+  init_shapes( &struct_sh, &struct_dsh, &struct_wp );
+
+  /* alloc the B matrix */
+  struct_bmat = malloc( nvoi * sizeof(double**));
+  for( i = 0 ; i < nvoi  ; i++ ){
+    struct_bmat[i] = malloc( npe*dim * sizeof(double*));
+    for( j = 0 ; j < npe*dim ; j++ )
+      struct_bmat[i][j] = malloc( ngp * sizeof(double));
+  }
+
+  /* calc B matrix */
+  int is, gp;
+  for( gp = 0; gp < ngp ; gp++ ){
+    for( is = 0; is < npe ; is++ ){
+      if( dim == 2 ){
+	struct_bmat[0][is*dim + 0][gp] = struct_dsh[is][0][gp];
+	struct_bmat[0][is*dim + 1][gp] = 0;
+	struct_bmat[1][is*dim + 0][gp] = 0;
+	struct_bmat[1][is*dim + 1][gp] = struct_dsh[is][1][gp];
+	struct_bmat[2][is*dim + 0][gp] = struct_dsh[is][1][gp];
+	struct_bmat[2][is*dim + 1][gp] = struct_dsh[is][0][gp];
+      }
+    }
+  }
+  /**************************************************/
 
   /* Setting solver options */
   ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-
-  PetscLogEventEnd(EVENT_INIT,0,0,0,0);
 
   double strain_mac[6], strain_ave[6], stress_ave[6], c_homo[36];
 
@@ -436,6 +466,7 @@ end_mic_0:
       PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
       for( j = 0 ; j < nvoi ; j++ )
 	PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
+
       PetscPrintf(MICRO_COMM,"\nstress_ave = ");
       for( j = 0 ; j < nvoi ; j++ )
 	PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
@@ -497,6 +528,28 @@ end_mic_0:
   }
 
   micro_print_info();
+
+  /**************************************************/
+  /* free variables*/
+  free(loc_elem_index); 
+  free(glo_elem_index); 
+  free(elem_disp     ); 
+  free(stress_gp     ); 
+  free(strain_gp     ); 
+  if( flag_print & ( 1 << PRINT_VTU ) ){
+    free(elem_strain); 
+    free(elem_stress); 
+    free(elem_energy); 
+  }
+
+  /* free the B matrix */
+  for( i = 0 ; i < nvoi  ; i++ ){
+    for( j = 0 ; j < npe*dim ; j++ )
+      free(struct_bmat[i][j]);
+    free(struct_bmat[i]);
+  }
+  free(struct_bmat);
+  /**************************************************/
 
 end_mic_1:
 
