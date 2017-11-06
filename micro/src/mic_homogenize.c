@@ -25,6 +25,7 @@ int local_to_global_index( int local );
 int init_shapes( double ***sh, double ****dsh, double **wp, double *h, int dim );
 int get_averages( double * strain_ave, double * stress_ave );
 int vtkcode( int dim, int npe );
+int get_elem_type( int e , int *type );
 
 int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6] )
 {
@@ -372,7 +373,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     }
   }
 
-  VecRestoreArray(          x_loc , &x_arr );
+  VecRestoreArray         ( x_loc , &x_arr );
   VecGhostRestoreLocalForm( x     , &x_loc );
   VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD);
@@ -593,8 +594,11 @@ int get_averages( double * strain_ave, double * stress_ave )
 }
 
 /****************************************************************************************************/
-int calc_stress_strain_energy( double * stress, double * strain, double * energy )
+
+int get_elem_properties( double * stress, double * strain, double * energy )
 {
+
+  /* fills *elem_strain, *elem_stress, *elem_type, *elem_energy */
 
   int e, v, gp;
 
@@ -613,6 +617,9 @@ int calc_stress_strain_energy( double * stress, double * strain, double * energy
       }
 
     }
+
+    /* fill *elem_type */
+    get_elem_type( e, &elem_type[e]);
   }
 
   return 0;
@@ -643,6 +650,28 @@ int get_strain( int e , int gp, double *strain_gp )
       strain_gp[v] += struct_bmat[v][i][gp] * elem_disp[i];
   }
 
+  return 0;
+}
+/****************************************************************************************************/
+int get_elem_type( int e , int *type )
+{
+  /* 
+  Returns the elem type 
+  > CIRCULAR_FIBER :  FIBER = 1 , MATRIX = 0
+  */
+
+  switch( micro_type )
+  {
+    /**************************************************/
+    case CIRCULAR_FIBER:
+      *type = ( is_in_fiber( e ) ) ? 1 : 0;
+      break;
+    /**************************************************/
+
+    default:
+      return 1;
+
+  }
   return 0;
 }
 /****************************************************************************************************/
@@ -1069,7 +1098,7 @@ int mic_check_linear_material(void)
   return 0;
 }
 /****************************************************************************************************/
-int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress, double *energy)
+int micro_pvtu(char *name, double *strain, double *stress, double *energy)
 {
 
   FILE    *fm;
@@ -1077,11 +1106,7 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
   double  *xvalues;
   Vec     xlocal;
 
-  int rank, nproc;
-  MPI_Comm_size(PROBLEM_COMM, &nproc);
-  MPI_Comm_rank(PROBLEM_COMM, &rank);
-
-  if( rank == 0 ){
+  if( rank_mic == 0 ){
 
     /* rank 0 writes the .pvtu file first */
     strcpy(file_name,name);
@@ -1106,13 +1131,14 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
 	"</PPointData>\n"
 
 	"<PCellData>\n"
-	"<PDataArray type=\"Int32\"   Name=\"part\" NumberOfComponents=\"1\"/>\n"
+	"<PDataArray type=\"Int32\"   Name=\"part\"   NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\"/>\n"
 	"<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\"/>\n"
+	"<PDataArray type=\"Int32\"   Name=\"elem_type\" NumberOfComponents=\"1\"/>\n"
 	"</PCellData>\n" , nvoi , nvoi);
 
     int i;
-    for( i = 0 ; i < nproc ; i++ ){
+    for( i = 0 ; i < nproc_mic ; i++ ){
       sprintf(file_name,"%s_%d",name,i);
       fprintf(fm,	"<Piece Source=\"%s.vtu\"/>\n",file_name);
     }
@@ -1123,7 +1149,7 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
 
   } // rank = 0
 
-  sprintf(file_name,"%s_%d.vtu",name,rank);
+  sprintf( file_name, "%s_%d.vtu", name, rank_mic);
   fm = fopen(file_name,"w"); 
   if(!fm){
     PetscPrintf(PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
@@ -1232,9 +1258,9 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
   /* <part> */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for( e = 0; e < nelm ; e++ )
-    fprintf(fm,"%d ",rank);  
-  fprintf(fm,"\n");
-  fprintf(fm,"</DataArray>\n");
+    fprintf( fm, "%d ", rank_mic );  
+  fprintf( fm, "\n");
+  fprintf( fm, "</DataArray>\n");
 
   int v;
 
@@ -1256,14 +1282,12 @@ int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress
   }
   fprintf(fm,"</DataArray>\n");
 
-  /* <elm_id> */
-//  fprintf(fm,
-//      "<DataArray type=\"Int32\" Name=\"elm_id\" NumberOfComponents=\"1\" >\n");
-//  for (i=0;i<nelm;i++){
-//    fprintf(fm, "%d ", elm_id[i]);
-//  }
-//  fprintf(fm,"\n");
-//  fprintf(fm,"</DataArray>\n");
+  /* <elem_type> */
+  fprintf(fm,"<DataArray type=\"Int32\" Name=\"elem_type\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+  for( e = 0; e < nelm ; e++ )
+    fprintf( fm, "%d ", elem_type[e] );
+  fprintf(fm,"\n");
+  fprintf(fm,"</DataArray>\n");
 
   /* <energy> */
 //  fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\" format=\"ascii\">\n");

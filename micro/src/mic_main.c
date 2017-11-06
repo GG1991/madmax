@@ -443,14 +443,15 @@ end_mic_0:
 	strain = malloc( nelm*nvoi * sizeof(double));
 	stress = malloc( nelm*nvoi * sizeof(double));
 	energy = malloc( nelm      * sizeof(double));
+	elem_type = malloc( nelm * sizeof(int));
 	sprintf(vtkfile_n,"%s_exp%d",myname,i);
-        ierr = calc_stress_strain_energy( stress, strain, energy );
-	ierr = micro_pvtu(MICRO_COMM, vtkfile_n, strain, stress, energy);
+        ierr = get_elem_properties( stress, strain, energy );
+	ierr = micro_pvtu( vtkfile_n, strain, stress, energy);
 	if(ierr){
 	  PetscPrintf(MICRO_COMM,"Problem writing vtu file\n");
 	  goto end_mic_1;
 	}
-	free(stress); free(strain); free(energy);
+	free(stress); free(strain); free(energy); free(elem_type);
       }
 
     }

@@ -60,7 +60,9 @@ int         ndir_ix;              // number of dirichlet indeces
 double      *coor_dir;            // coordinates of dirichlet nodes
 double      *strain_gp;           // strain at Gauss point
 double      *stress_gp;           // stress at Gauss point
-
+int         *elem_type;           // type in each element (depends on the micro structure "micro_type")
+int         *elem_strain;         // strain at each element
+int         *elem_stress;         // stress at each element
 
 /* Taylor homogenization variables */
 
@@ -111,7 +113,7 @@ int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]
 int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36]);
 int mic_check_l_us(void);
 
-int micro_pvtu(MPI_Comm PROBLEM_COMM, char *name, double *strain, double *stress, double *energy);
+int micro_pvtu( char *name, double *strain, double *stress, double *energy);
 
 void micro_print_info( void );
-int  calc_stress_strain_energy( double * stress, double * strain, double * energy );
+int  get_elem_properties( double * stress, double * strain, double * energy );
