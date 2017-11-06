@@ -57,7 +57,9 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o \
            ${MAC_OBJ_DIR}/mac_boundary.o       
 
 MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o \
-           ${MIC_OBJ_DIR}/mic_homogenize.o
+           ${MIC_OBJ_DIR}/mic_homogenize.o \
+           $(SPU_OBJ_DIR)/spu_comm.o \
+           $(SPU_OBJ_DIR)/list.o
 
 EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o \
            $(SPU_OBJ_DIR)/list.o \
@@ -104,8 +106,8 @@ ${MAC_DIR}/macro: ${MAC_OBJ} ${SPU_OBJ}
 
 ##############################
 # MICRO
-${MIC_DIR}/micro: ${MIC_OBJ} 
-	gcc -o ${MIC_DIR}/micro $^ ${PETSC_KSP_LIB} ${MIC_LDFLAG} 
+${MIC_DIR}/micro: ${MIC_OBJ}
+	gcc -o ${MIC_DIR}/micro $^ ${PETSC_KSP_LIB} ${MIC_LDFLAG}
 	@echo "MICRO great :) !" 
 
 ##############################
