@@ -147,7 +147,9 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
 //
   return 0;
 }
+
 /****************************************************************************************************/
+
 int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
@@ -432,7 +434,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int strain_x_coord( double * strain , double * coord , double * u )
 {
   /* b = mat . a */
@@ -444,7 +448,9 @@ int strain_x_coord( double * strain , double * coord , double * u )
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int assembly_residual_struct(void)
 {
 
@@ -502,7 +508,9 @@ int assembly_residual_struct(void)
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int assembly_jacobian_struct( void )
 {
 
@@ -550,6 +558,7 @@ int assembly_jacobian_struct( void )
 
   return 0;
 }
+
 /****************************************************************************************************/
 
 int get_averages( double * strain_ave, double * stress_ave )
@@ -624,7 +633,9 @@ int get_elem_properties( double * stress, double * strain, double * energy )
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_strain( int e , int gp, double *strain_gp )
 {
 
@@ -749,7 +760,9 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_c_tan( int e , int gp, double *strain_gp , double *c_tan )
 {
 
@@ -817,45 +830,55 @@ int get_c_tan( int e , int gp, double *strain_gp , double *c_tan )
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int is_in_fiber( int e )
 {
 
   int    i, j, d;
-  double l = -1, centroid[3];
+  double centroid[3];
   double deviation[2];
 
   get_centroid_struct( e, centroid );
 
   for( i = 0 ; i < nx_fibers ; i++ ){
     for( j = 0 ; j < ny_fibers ; j++ ){
-      deviation[0] = fiber_cilin_center_devi[0] - LX/2 + (lx/nx_fibers)/2 + i*(lx/nx_fibers);
-      deviation[1] = fiber_cilin_center_devi[1] - LY/2 + (ly/ny_fibers)/2 + j*(ly/ny_fibers);
-      l = 0.0;
-      for(d=0;d<2;d++){
-	l = l + pow(centroid[d]-(center_domain[d]+deviation[d]),2);
-      }
+      deviation[0] = fiber_cilin_center_devi[0] - lx/2 + (lx/nx_fibers)/2 + i*(lx/nx_fibers);
+      deviation[1] = fiber_cilin_center_devi[1] - ly/2 + (ly/ny_fibers)/2 + j*(ly/ny_fibers);
+      double l = 0.0;
+      for( d = 0 ; d < 2 ; d++ )
+	l = l + pow( centroid[d] - (center_coor[d] + deviation[d]), 2 );
       l = sqrt(l);
-      if (l<=fiber_cilin_r) return 1;
+      return ( l <= fiber_cilin_r ) ? 1:0;
     }
   }
   return 0;
-
 }
+
 /****************************************************************************************************/
+
 int get_centroid_struct( int e, double *centroid )
 {
 
   /* formula only valid for sequencial now */
 
   if( dim == 2 ){
-    centroid[0] = ( e % nex + 0.5         ) * hx;
-    centroid[1] = ( e / nex + 0.5 + ny_inf) * hy;
+    if( rank_mic == 0 ){
+      centroid[0] = ( e % nex + 0.5 ) * hx;
+      centroid[1] = ( e / nex + 0.5 ) * hy;
+    }
+    else{
+      centroid[0] = ( e % nex + 0.5              ) * hx;
+      centroid[1] = ( e / nex + 0.5 + ny_inf - 1 ) * hy;
+    }
   }
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_local_elem_index( int e, int *loc_elem_index )
 {
 
@@ -894,7 +917,9 @@ int get_local_elem_index( int e, int *loc_elem_index )
   }
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_global_elem_index( int e, int *glo_elem_index )
 {
 
@@ -925,7 +950,9 @@ int get_global_elem_index( int e, int *glo_elem_index )
   }
   return 0;
 }
+
 /****************************************************************************************************/
+
 int local_to_global_index( int local )
 {
 
@@ -939,7 +966,9 @@ int local_to_global_index( int local )
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_local_elem_node( int e , int *n_loc )
 {
   if( dim == 2 )
@@ -961,7 +990,9 @@ int get_local_elem_node( int e , int *n_loc )
   }
   return 0;
 }
+
 /****************************************************************************************************/
+
 int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
@@ -991,7 +1022,9 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36])
 {
 
@@ -1021,7 +1054,9 @@ int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]
   }
   return 0;
 }
+
 /****************************************************************************************************/
+
 int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36])
 {
 
@@ -1055,7 +1090,9 @@ int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36])
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
@@ -1089,7 +1126,9 @@ int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain
   }
   return 0;
 }
+
 /****************************************************************************************************/
+
 int mic_check_linear_material(void)
 {
 
@@ -1097,7 +1136,9 @@ int mic_check_linear_material(void)
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int micro_pvtu(char *name, double *strain, double *stress, double *energy)
 {
 
@@ -1306,7 +1347,9 @@ int micro_pvtu(char *name, double *strain, double *stress, double *energy)
   fclose(fm);
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_node_local_coor( int n , double * coord )
 {
   if( dim == 2 ){
@@ -1321,7 +1364,9 @@ int get_node_local_coor( int n , double * coord )
   }
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_node_ghost_coor( int n , double * coord )
 {
   if( dim == 2 ){
@@ -1330,7 +1375,9 @@ int get_node_ghost_coor( int n , double * coord )
   }
   return 0;
 }
+
 /****************************************************************************************************/
+
 void micro_print_info( void ){
 
   FILE *fm = fopen("mic_info.dat","w");

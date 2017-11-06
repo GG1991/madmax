@@ -63,6 +63,7 @@ double      *stress_gp;           // stress at Gauss point
 int         *elem_type;           // type in each element (depends on the micro structure "micro_type")
 int         *elem_strain;         // strain at each element
 int         *elem_stress;         // stress at each element
+double      *center_coor;         // coordinates of the center
 
 /* Taylor homogenization variables */
 

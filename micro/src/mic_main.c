@@ -177,12 +177,18 @@ end_mic_0:
     hy = ly/(ny-1);
     if( dim == 3 ) hz = lz/nez;
 
-    /* set volumes */
+    /* set volumes and center*/
+    center_coor = malloc ( dim * sizeof(double));
     if ( dim == 2 ){
+      center_coor[0] = lx / 2;
+      center_coor[1] = ly / 2;
       vol_tot = lx * ly;
       vol_loc = lx * (hy*ney);
     }
     else{
+      center_coor[0] = lx / 2;
+      center_coor[1] = ly / 2;
+      center_coor[2] = lz / 2;
       vol_tot = lx * ly       * lz;
       vol_loc = lx * (hy*ney) * lz;
     }
