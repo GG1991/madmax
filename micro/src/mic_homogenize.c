@@ -22,6 +22,7 @@ int get_node_local_coor( int n , double * coord );
 int get_node_ghost_coor( int n , double * coord );
 int get_local_elem_node( int e , int * n_loc );
 int local_to_global_index( int local );
+int init_shapes(double ***sh, double ****dsh, double **wp, double *h, int dim);
 
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
@@ -308,7 +309,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     double h[3]; h[0] = hx; h[1] = hx; h[2] = hz;
 
-    fem_init_struct( &struct_sh, &struct_dsh, &struct_wp, h, dim);
+    init_shapes( &struct_sh, &struct_dsh, &struct_wp, h, dim);
     
     /* alloc the B matrix */
     struct_bmat = malloc( nvoi * sizeof(double**));
@@ -1457,3 +1458,67 @@ void micro_print_info( void ){
   return;
 }
 /****************************************************************************************************/
+int init_shapes(double ***sh, double ****dsh, double **wp, double *h, int dim)
+{
+  int nsh = ( dim == 2 ) ? 4 : 8;
+  int ngp = ( dim == 2 ) ? 4 : 8;
+  int gp;
+  double *xp = malloc( ngp*dim * sizeof(double));
+
+  if( dim == 2 )
+  {
+    xp[0] = -0.577350269189626;   xp[1]= -0.577350269189626;
+    xp[2] = +0.577350269189626;   xp[3]= -0.577350269189626;
+    xp[4] = +0.577350269189626;   xp[5]= +0.577350269189626;
+    xp[6] = -0.577350269189626;   xp[7]= +0.577350269189626;
+  }
+
+  int is, d;
+
+  *sh = malloc( nsh * sizeof(double*));
+  for( is = 0 ; is < nsh ; is++ ){
+    (*sh)[is] = malloc( ngp * sizeof(double));
+  }
+  
+  *dsh  = malloc( nsh * sizeof(double**));
+  for( is = 0 ; is < nsh ; is++ ){
+    (*dsh)[is] = malloc( dim * sizeof(double*));
+    for( d = 0 ; d < dim ; d++ ){
+      (*dsh)[is][d] = malloc( ngp * sizeof(double));
+    }
+  }
+
+  *wp   = malloc( ngp * sizeof(double));
+
+  if( dim == 2 )
+  {
+    
+    for( gp = 0 ; gp < ngp ; gp++ ){
+      (*sh)[0][gp] = (1 - xp[2*gp]) * (1 - xp[2*gp+1])/4;
+      (*sh)[1][gp] = (1 + xp[2*gp]) * (1 - xp[2*gp+1])/4;
+      (*sh)[2][gp] = (1 + xp[2*gp]) * (1 + xp[2*gp+1])/4;
+      (*sh)[3][gp] = (1 - xp[2*gp]) * (1 + xp[2*gp+1])/4;
+    }
+
+    double hx = h[0], hy = h[1];
+    for( gp = 0 ; gp < ngp ; gp++ ){
+      (*dsh)[0][0][gp] = -1 * (1 - xp[2*gp+1]) /4 * 2/hx; // d phi / d x
+      (*dsh)[1][0][gp] = +1 * (1 - xp[2*gp+1]) /4 * 2/hx;
+      (*dsh)[2][0][gp] = +1 * (1 + xp[2*gp+1]) /4 * 2/hx;
+      (*dsh)[3][0][gp] = -1 * (1 + xp[2*gp+1]) /4 * 2/hx;
+      (*dsh)[0][1][gp] = -1 * (1 - xp[2*gp+0]) /4 * 2/hy; // d phi / d y
+      (*dsh)[1][1][gp] = -1 * (1 + xp[2*gp+0]) /4 * 2/hy;
+      (*dsh)[2][1][gp] = +1 * (1 + xp[2*gp+0]) /4 * 2/hy;
+      (*dsh)[3][1][gp] = +1 * (1 - xp[2*gp+0]) /4 * 2/hy;
+    }
+
+    double vol = hx*hy;
+    for( gp = 0 ; gp < ngp ; gp++ )
+      (*wp)[gp] = vol / ngp;
+
+  }
+
+  free(xp);
+
+  return 0;
+}
