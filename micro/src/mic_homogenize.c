@@ -22,10 +22,11 @@ int get_node_local_coor( int n , double * coord );
 int get_node_ghost_coor( int n , double * coord );
 int get_local_elem_node( int e , int * n_loc );
 int local_to_global_index( int local );
-int init_shapes(double ***sh, double ****dsh, double **wp, double *h, int dim);
-int vtkcode(int dim,int npe);
+int init_shapes( double ***sh, double ****dsh, double **wp, double *h, int dim );
+int get_averages( double * strain_ave, double * stress_ave );
+int vtkcode( int dim, int npe );
 
-int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
+int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6] )
 {
 //  /* 
 //     This work only if inclusion names starts with FIBER and matrix name start with MATRIX
@@ -355,12 +356,12 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
   /* Set the displacement boundary conditions "u = E . X" */
 
+  VecZeroEntries( x );
+
   Vec     x_loc;
   double  *x_arr;
-
-  VecZeroEntries( x );
-  VecGhostGetLocalForm( x , &x_loc );
-  VecGetArray( x_loc, &x_arr );
+  VecGhostGetLocalForm( x    , &x_loc );
+  VecGetArray(          x_loc, &x_arr );
 
   int  n , d;
   if( dim == 2 ){
@@ -376,10 +377,10 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     }
   }
 
-  VecRestoreArray( x_loc , &x_arr );
-  VecGhostRestoreLocalForm( x , &x_loc );
-  VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD);
+  VecRestoreArray(          x_loc , &x_arr );
+  VecGhostRestoreLocalForm( x     , &x_loc );
+  VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD);
 
   int     i;
   int     nr_its = 0; 
@@ -418,6 +419,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     nr_its ++;
   }
+
+  /* get the integrals */
+  get_averages( strain_ave, stress_ave );
 
   if( flag_print & (1<<PRINT_PETSC) ){
     PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer);
@@ -550,6 +554,49 @@ int assembly_jacobian_struct( void )
 
   return 0;
 }
+/****************************************************************************************************/
+
+int get_averages( double * strain_ave, double * stress_ave )
+{
+  /* Calculate averange strain and stress tensors on the hole domain
+     the operation is an All_Reduce on all processes */
+
+  int    i, e, gp;
+  int    ierr;
+
+  double * strain_part = malloc( nvoi * sizeof(double) );
+  double * stress_part = malloc( nvoi * sizeof(double) );
+
+  for( i = 0 ; i < nvoi ; i++ )
+    strain_part[i] = stress_part[i] = 0.0;
+
+  for( e = 0 ; e < nelm ; e++ )
+  {
+    for( gp = 0; gp < ngp ; gp++ )
+    {
+      /* calc strain gp */
+      get_strain( e , gp, strain_gp );
+      /* we get stress = f(strain) */
+      get_stress( e , gp , strain_gp , stress_gp );
+      for( i = 0; i < nvoi ; i++ )
+      {
+	stress_part[i] += stress_gp[i] * struct_wp[gp];
+	strain_part[i] += strain_gp[i] * struct_wp[gp];
+      }
+    }
+  }
+
+  ierr = MPI_Allreduce( stress_part, stress_ave, nvoi, MPI_DOUBLE, MPI_SUM, MICRO_COMM );
+  ierr = MPI_Allreduce( strain_part, strain_ave, nvoi, MPI_DOUBLE, MPI_SUM, MICRO_COMM );
+
+  for( i = 0; i < nvoi ; i++ )
+  {
+    stress_ave[i] /= vol_tot;
+    strain_ave[i] /= vol_tot;
+  }
+  return ierr;
+}
+
 /****************************************************************************************************/
 int calc_stress_strain_energy( double * stress, double * strain, double * energy )
 {
