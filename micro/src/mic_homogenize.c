@@ -890,28 +890,32 @@ int get_local_elem_index( int e, int *loc_elem_index )
   int d ;
   if( dim == 2 )
   {
+    int n0;
     if(  rank_mic == 0 ){
       for( d = 0 ; d < dim ; d++ ){
-	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0 )      * dim + d ;
-	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1 )      * dim + d ;
-	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 1 ) * dim + d ;
-	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 0 ) * dim + d ;
+	n0 = (e%nex) + (e/nex)*nx;
+	loc_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
+	loc_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
+	loc_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
+	loc_elem_index[ 3*dim + d ] = ( n0 + nx + 0 ) * dim + d ;
       }
     }
     else if(e >= nex ){
       for( d = 0 ; d < dim ; d++ ){
-	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex-1)*nx + 0 )      * dim + d ;
-	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex-1)*nx + 1 )      * dim + d ;
-	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex-1)*nx + nx + 1 ) * dim + d ;
-	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex-1)*nx + nx + 0 ) * dim + d ;
+	n0 = (e%nex) + (e/nex-1)*nx;
+	loc_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
+	loc_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
+	loc_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
+	loc_elem_index[ 3*dim + d ] = ( n0 + nx     ) * dim + d ;
       }
     }
     else{
       for( d = 0 ; d < dim ; d++ ){
-	loc_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0 + nl ) * dim + d ; // is a ghost
-	loc_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1 + nl ) * dim + d ; // is a ghost
-	loc_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + 1 )      * dim + d ;
-	loc_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + 0 )      * dim + d ;
+	n0 = (e%nex) + (e/nex)*nx;
+	loc_elem_index[ 0*dim + d ] = ( n0 + nl     ) * dim + d ; // is a ghost
+	loc_elem_index[ 1*dim + d ] = ( n0 + nl + 1 ) * dim + d ; // is a ghost
+	loc_elem_index[ 2*dim + d ] = ( n0 + 1 )      * dim + d ;
+	loc_elem_index[ 3*dim + d ] = ( n0     )      * dim + d ;
       }
     }
   }
@@ -924,23 +928,27 @@ int get_local_elem_node( int e , int *n_loc )
 {
   if( dim == 2 )
   {
+    int n0;
     if(  rank_mic == 0 ){
-      n_loc[0] = ( (e%nex) + (e/nex)*nx + 0 )      ;
-      n_loc[1] = ( (e%nex) + (e/nex)*nx + 1 )      ;
-      n_loc[2] = ( (e%nex) + (e/nex)*nx + nx + 1 ) ;
-      n_loc[3] = ( (e%nex) + (e/nex)*nx + nx + 0 ) ;
+      n0 = (e%nex) + (e/nex)*nx;
+      n_loc[0] = n0          ;
+      n_loc[1] = n0 + 1      ;
+      n_loc[2] = n0 + nx + 1 ;
+      n_loc[3] = n0 + nx     ;
     }
     else if(e >= nex ){
-      n_loc[0] = ( (e%nex) + (e/nex-1)*nx + 0 )      ;
-      n_loc[1] = ( (e%nex) + (e/nex-1)*nx + 1 )      ;
-      n_loc[2] = ( (e%nex) + (e/nex-1)*nx + nx + 1 ) ;
-      n_loc[3] = ( (e%nex) + (e/nex-1)*nx + nx + 0 ) ;
+      n0 = (e%nex) + (e/nex-1)*nx;
+      n_loc[0] = n0          ;
+      n_loc[1] = n0 + 1      ;
+      n_loc[2] = n0 + nx + 1 ;
+      n_loc[3] = n0 + nx     ;
     }
     else{
-      n_loc[0] = ( (e%nex) + (e/nex)*nx + 0 + nl ) ; // is a ghost
-      n_loc[1] = ( (e%nex) + (e/nex)*nx + 1 + nl ) ; // is a ghost
-      n_loc[2] = ( (e%nex) + (e/nex)*nx + 1 )      ;
-      n_loc[3] = ( (e%nex) + (e/nex)*nx + 0 )      ;
+      n0 = (e%nex) + (e/nex)*nx;
+      n_loc[0] = n0 + nl     ; // is a ghost
+      n_loc[1] = n0 + nl + 1 ; // is a ghost
+      n_loc[2] = n0 + 1      ;
+      n_loc[3] = n0          ;
     }
   }
   return 0;
@@ -959,20 +967,23 @@ int get_global_elem_index( int e, int *glo_elem_index )
   int d;
   if( dim == 2 )
   {
+    int n0;
     if(  rank_mic == 0 ){
       for( d = 0 ; d < dim ; d++ ){
-	glo_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + 0      ) * dim + d ;
-	glo_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + 1      ) * dim + d ;
-	glo_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 1 ) * dim + d ;
-	glo_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + nx + 0 ) * dim + d ;
+	n0 = (e%nex) + (e/nex)*nx;
+	glo_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
+	glo_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
+	glo_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
+	glo_elem_index[ 3*dim + d ] = ( n0 + nx     ) * dim + d ;
       }
     }
     else{
       for( d = 0 ; d < dim ; d++ ){
-	glo_elem_index[ 0*dim + d ] = ( (e%nex) + (e/nex)*nx + (ny_inf-1)*nx + 0      ) * dim + d ;
-	glo_elem_index[ 1*dim + d ] = ( (e%nex) + (e/nex)*nx + (ny_inf-1)*nx + 1      ) * dim + d ;
-	glo_elem_index[ 2*dim + d ] = ( (e%nex) + (e/nex)*nx + (ny_inf-1)*nx + nx + 1 ) * dim + d ;
-	glo_elem_index[ 3*dim + d ] = ( (e%nex) + (e/nex)*nx + (ny_inf-1)*nx + nx + 0 ) * dim + d ;
+	n0 = (e%nex) + (e/nex)*nx + (ny_inf-1)*nx;
+	glo_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
+	glo_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
+	glo_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
+	glo_elem_index[ 3*dim + d ] = ( n0 + nx     ) * dim + d ;
       }
     }
   }
