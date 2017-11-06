@@ -341,6 +341,7 @@ end_mic_0:
     elem_strain = malloc( nelm*nvoi * sizeof(double));
     elem_stress = malloc( nelm*nvoi * sizeof(double));
     elem_energy = malloc( nelm      * sizeof(double));
+    elem_type   = malloc( nelm      * sizeof(int));
   }
   /* Initilize shape functions, derivatives, jacobian, b_matrix */
 
@@ -431,27 +432,8 @@ end_mic_0:
   }
   else{
 
-    /*
-       STANDALONE EXECUTION
+    /* STANDALONE EXECUTION */
 
-       We perform 6 homogenization using :
-
-       dim = 2
-
-       e0 = (  0.005 0 0  )
-       e1 = (  0 0.005 0  )
-       e2 = (  0 0 0.005  )
-
-       dim = 3
-       
-       e0 = (  0.005 0 0 0 0 0     )
-       e1 = (  0 0.005 0 0 0 0     )
-       e2 = (  0 0 0.005 0 0 0     )
-       e3 = (  0 0 0 0.005 0 0     )
-       e4 = (  0 0 0 0 0 0 0.005   )
-       e5 = (  0 0 0 0 0 0 0 0.005 )
-     */
-    int j;
     double strain_mac[6];
 
     memset(c_homo,0.0,36*sizeof(double));
@@ -477,18 +459,13 @@ end_mic_0:
 
       if( flag_print & ( 1 << PRINT_VTU ) && homo_type == UNIF_STRAINS )
       {
-	strain = malloc( nelm*nvoi * sizeof(double));
-	stress = malloc( nelm*nvoi * sizeof(double));
-	energy = malloc( nelm      * sizeof(double));
-	elem_type = malloc( nelm * sizeof(int));
-	sprintf(vtkfile_n,"%s_exp%d",myname,i);
-        ierr = get_elem_properties( stress, strain, energy );
-	ierr = micro_pvtu( vtkfile_n, strain, stress, energy);
+        get_elem_properties();
+	sprintf(vtkfile_n,"micro_exp%d",i);
+	ierr = micro_pvtu( vtkfile_n );
 	if(ierr){
 	  PetscPrintf(MICRO_COMM,"Problem writing vtu file\n");
 	  goto end_mic_1;
 	}
-	free(stress); free(strain); free(energy); free(elem_type);
       }
 
     }

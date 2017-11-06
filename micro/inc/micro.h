@@ -115,8 +115,8 @@ int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]
 int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36]);
 int mic_check_l_us(void);
 
-int micro_pvtu( char *name, double *strain, double *stress, double *energy);
+int micro_pvtu( char *name );
 
 void micro_print_info( void );
-int  get_elem_properties( double * stress, double * strain, double * energy );
+int  get_elem_properties( void );
 int  init_shapes( double ***sh, double ****dsh, double **wp );

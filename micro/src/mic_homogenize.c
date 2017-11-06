@@ -567,7 +567,7 @@ int get_averages( double * strain_ave, double * stress_ave )
 
 /****************************************************************************************************/
 
-int get_elem_properties( double * stress, double * strain, double * energy )
+int get_elem_properties( void )
 {
 
   /* fills *elem_strain, *elem_stress, *elem_type, *elem_energy */
@@ -577,15 +577,15 @@ int get_elem_properties( double * stress, double * strain, double * energy )
   for ( e = 0 ; e < nelm ; e++ ){
 
     for ( v = 0 ; v < nvoi ; v++ )
-      strain[ e*nvoi + v ] = stress[ e*nvoi + v ] = 0.0;
+      elem_strain[ e*nvoi + v ] = elem_stress[ e*nvoi + v ] = 0.0;
 
     for ( gp = 0 ; gp < ngp ; gp++ ){
 
       get_strain( e , gp, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );
       for ( v = 0 ; v < nvoi ; v++ ){
-	strain[ e*nvoi + v ] += strain_gp[v] * struct_wp[gp];
-	stress[ e*nvoi + v ] += stress_gp[v] * struct_wp[gp];
+	elem_strain[ e*nvoi + v ] += strain_gp[v] * struct_wp[gp];
+	elem_stress[ e*nvoi + v ] += stress_gp[v] * struct_wp[gp];
       }
 
     }
@@ -1117,7 +1117,7 @@ int mic_check_linear_material(void)
 
 /****************************************************************************************************/
 
-int micro_pvtu(char *name, double *strain, double *stress, double *energy)
+int micro_pvtu( char *name )
 {
 
   FILE    *fm;
@@ -1286,7 +1286,7 @@ int micro_pvtu(char *name, double *strain, double *stress, double *energy)
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
   for( e = 0; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
-      fprintf(fm, "%lf ", strain[ e*nvoi + v ]);
+      fprintf(fm, "%lf ", elem_strain[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
@@ -1295,7 +1295,7 @@ int micro_pvtu(char *name, double *strain, double *stress, double *energy)
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
   for( e = 0; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
-      fprintf(fm, "%lf ", stress[ e*nvoi + v ]);
+      fprintf(fm, "%lf ", elem_stress[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
