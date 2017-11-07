@@ -36,6 +36,7 @@ DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
 	       ${DEP_DIR}/list.h \
 	       ${DEP_DIR}/boundary.h \
 	       ${DEP_DIR}/fun.h \
+	       ${DEP_DIR}/trace.h \
 	       ${DEP_DIR}/material.h
 
 DEPS_MACMIC =  ${MAC_INC_DIR}/macro.h \
@@ -43,7 +44,8 @@ DEPS_MACMIC =  ${MAC_INC_DIR}/macro.h \
 	       ${DEP_DIR}/sputnik.h
 
 DEPS_MIC =  ${MIC_INC_DIR}/micro.h \
-            ${DEP_DIR}/comm.h
+            ${DEP_DIR}/comm.h \
+            ${DEP_DIR}/trace.h
 
 DEP_DIRS = ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
 
@@ -53,6 +55,7 @@ SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o \
            $(SPU_OBJ_DIR)/spu_out.o \
            $(SPU_OBJ_DIR)/spu_assembly.o \
            $(SPU_OBJ_DIR)/spu_util.o \
+           $(SPU_OBJ_DIR)/trace.o \
            $(SPU_OBJ_DIR)/spu_comm.o    
 
 MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o \
@@ -62,6 +65,7 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/mac_main.o \
 MIC_OBJ  = ${MIC_OBJ_DIR}/mic_main.o \
            ${MIC_OBJ_DIR}/mic_homogenize.o \
            $(SPU_OBJ_DIR)/spu_comm.o \
+           $(SPU_OBJ_DIR)/trace.o \
            $(SPU_OBJ_DIR)/list.o
 
 EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o \
