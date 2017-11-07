@@ -199,9 +199,9 @@ end_mic_0:
 
   /* Homogenization Options */
   homo_type=0;
-  PetscOptionsHasName(NULL,NULL,"-homo_taylor_p",&set);
+  PetscOptionsHasName(NULL,NULL,"-homo_tp",&set);
   if(set==PETSC_TRUE) homo_type = TAYLOR_P;
-  PetscOptionsHasName(NULL,NULL,"-homo_taylor_s",&set);
+  PetscOptionsHasName(NULL,NULL,"-homo_ts",&set);
   if(set==PETSC_TRUE) homo_type = TAYLOR_S;
   PetscOptionsHasName(NULL,NULL,"-homo_us",&set);
   if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
@@ -333,6 +333,12 @@ end_mic_0:
   }
 
   /**************************************************/
+  /* initialize global variables*/
+  A   = NULL;
+  b   = NULL;
+  x   = NULL;
+  dx  = NULL;
+
   /* alloc variables*/
   loc_elem_index = malloc( dim*npe * sizeof(int));
   glo_elem_index = malloc( dim*npe * sizeof(int));
@@ -439,13 +445,11 @@ end_mic_0:
     double strain_mac[6];
 
     memset(c_homo,0.0,36*sizeof(double));
-    for(i=0;i<nvoi;i++){
-
+    for( i = 0 ; i < nvoi ; i++ )
+    {
       memset(strain_mac,0.0,nvoi*sizeof(double)); strain_mac[i]=0.005;
       ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-      if(ierr){
-	goto end_mic_1;
-      }
+      if(ierr) goto end_mic_1;
 
       PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
       for( j = 0 ; j < nvoi ; j++ )
@@ -472,10 +476,9 @@ end_mic_0:
 
     }
     PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");
-    for(i=0;i<nvoi;i++){
-      for(j=0;j<nvoi;j++){
+    for( i = 0 ; i < nvoi ; i++ ){
+      for( j = 0 ; j < nvoi ; j++ )
 	PetscPrintf(MICRO_COMM,"%e ",(fabs(c_homo[i*nvoi+j])>1.0)?c_homo[i*nvoi+j]:0.0);
-      }
       PetscPrintf(MICRO_COMM,"\n");
     }
     PetscPrintf(MICRO_COMM,"\n");
@@ -488,7 +491,7 @@ end_mic_0:
     strain_mac[0] = 0.01; strain_mac[1] = -0.02; strain_mac[2] = +0.03;
     strain_mac[3] = 0.01; strain_mac[4] = -0.02; strain_mac[5] = +0.03;
     ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-    ierr = PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
+    PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
     for( j = 0 ; j < nvoi ; j++ )
       PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
     PetscPrintf(MICRO_COMM,"\nstress_ave = ");
@@ -501,7 +504,7 @@ end_mic_0:
     }
     PetscPrintf(MICRO_COMM,"\nstress_ave = ");
     for( j = 0 ; j < nvoi ; j++ )
-      ierr = PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
+      PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
     PetscPrintf(MICRO_COMM," (c_homo*strain_mac)\n");
 
   }
@@ -519,6 +522,7 @@ end_mic_0:
     free(elem_strain); 
     free(elem_stress); 
     free(elem_energy); 
+    free(elem_type); 
   }
 
   /* free the B matrix */
