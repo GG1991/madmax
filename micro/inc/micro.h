@@ -114,12 +114,16 @@ bool        flag_first_alloc;
 
 #define CIRCULAR_FIBER 1
 
-int         nx_fibers;
-int         ny_fibers;
-double      fiber_cilin_r;
-double      fiber_cilin_center_devi[3];
 double      center_domain[3];
 
+typedef struct _cilin_fiber_t{
+  double radius;
+  double deviation[3];
+  int    nx;
+  int    ny;
+}cilin_fiber_t;
+
+cilin_fiber_t cilin_fiber;
 
 /*****************************************************************************************************
    MICRO function definitions

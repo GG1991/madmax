@@ -813,15 +813,15 @@ int is_in_fiber( int e )
 
   get_centroid_struct( e, centroid );
 
-  for( i = 0 ; i < nx_fibers ; i++ ){
-    for( j = 0 ; j < ny_fibers ; j++ ){
-      deviation[0] = fiber_cilin_center_devi[0] - lx/2 + (lx/nx_fibers)/2 + i*(lx/nx_fibers);
-      deviation[1] = fiber_cilin_center_devi[1] - ly/2 + (ly/ny_fibers)/2 + j*(ly/ny_fibers);
+  for( i = 0 ; i < cilin_fiber.nx ; i++ ){
+    for( j = 0 ; j < cilin_fiber.ny ; j++ ){
+      deviation[0] = cilin_fiber.deviation[0] - lx/2 + (lx/cilin_fiber.nx)/2 + i*(lx/cilin_fiber.nx);
+      deviation[1] = cilin_fiber.deviation[1] - ly/2 + (ly/cilin_fiber.ny)/2 + j*(ly/cilin_fiber.ny);
       double l = 0.0;
       for( d = 0 ; d < 2 ; d++ )
 	l = l + pow( centroid[d] - (center_coor[d] + deviation[d]), 2 );
       l = sqrt(l);
-      return ( l <= fiber_cilin_r ) ? 1:0;
+      return ( l <= cilin_fiber.radius ) ? 1:0;
     }
   }
   return 0;

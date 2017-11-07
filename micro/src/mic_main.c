@@ -245,11 +245,10 @@ end_mic_0:
 
     if( set == PETSC_TRUE ){
       micro_type = CIRCULAR_FIBER;
-      fiber_cilin_r=fiber_cilin_vals[0];
+      cilin_fiber.radius = fiber_cilin_vals[0];
       if(nval==1){
-	for(i=0;i<dim;i++){
-	  fiber_cilin_center_devi[i]=0.0;
-	}
+	for( i = 0 ; i < dim ; i++ )
+	  cilin_fiber.deviation[i]=0.0;
       }
       else if(nval==0){
 	PetscPrintf(MPI_COMM_SELF,"-fiber_cilin specified with no argument\n");
@@ -257,15 +256,14 @@ end_mic_0:
 	goto end_mic_0;
       }
       else{
-	for(i=0;i<nval;i++){
-	  fiber_cilin_center_devi[i]=fiber_cilin_vals[1+i];
-	}
+	for( i = 0 ; i < dim ; i++ )
+	  cilin_fiber.deviation[i]=fiber_cilin_vals[1+i];
       }
     }
-    PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
-    if(set==PETSC_FALSE) nx_fibers = 1;
-    PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
-    if(set==PETSC_FALSE) ny_fibers = 1;
+    PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &cilin_fiber.nx, &set);
+    if( set == PETSC_FALSE ) cilin_fiber.nx = 1;
+    PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &cilin_fiber.ny, &set);
+    if( set == PETSC_FALSE ) cilin_fiber.ny = 1;
   }
 
   /**************************************************/
