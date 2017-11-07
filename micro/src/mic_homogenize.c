@@ -1436,18 +1436,24 @@ void micro_print_info( void ){
   }
 
   double norm;
+ 
+  if( b != NULL ){
+    VecNorm( b, NORM_2, &norm );
+    if( rank_mic == 0 )
+      fprintf(fm,"|b| = %lf \n", norm);
+  }
 
-  VecNorm( b, NORM_2, &norm );
-  if( rank_mic == 0 )
-    fprintf(fm,"|b| = %lf \n", norm);
+  if( x != NULL ){
+    VecNorm( x, NORM_2, &norm );
+    if( rank_mic == 0 )
+      fprintf(fm,"|x| = %lf \n", norm);
+  }
 
-  VecNorm( x, NORM_2, &norm );
-  if( rank_mic == 0 )
-    fprintf(fm,"|x| = %lf \n", norm);
-
-  MatNorm( A , NORM_FROBENIUS , &norm );
-  if( rank_mic == 0 )
-    fprintf(fm,"|A| = %lf \n",norm);
+  if( A != NULL ){
+    MatNorm( A , NORM_FROBENIUS , &norm );
+    if( rank_mic == 0 )
+      fprintf(fm,"|A| = %lf \n",norm);
+  }
 
   fclose(fm);
   return;
