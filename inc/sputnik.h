@@ -184,48 +184,6 @@ typedef struct gauss_t_{
 
 gauss_t * gauss;
 
-#define  COUP_NULL  0
-#define  COUP_1     1
-
-int       coup_type;
-
-/*
-   COUP_1 > linear analisis only one kind of micro structure with homogeneum material
-   ____________________                      __________
-   |microstructure     | -> macro-structure  |         | -> micro-structure
-   |      _____________|                     | ||||||| |
-   |      |homogeneous |                     |         |
-   |______|____________|                     |_________|
-
-   We store the constitutive tensor on the <macro> processes, they 
-   are calculated only once by their respectively <micro> workers.
-   All the calculations should give the same values of <homo_cij>.
-
-*/
- 
-typedef struct mac_coup_1_t_{
-
-  int     mic_rank;     // rank of micro worker
-  double  homo_cij[36]; // tangent constitutive tensor of the micro-structure
-
-}mac_coup_1_t;
-
-typedef struct mic_coup_1_t_{
-
-  int   mac_rank;      // rank of macro leader
-  int   im_leader;     // 1 if im the leader 0 if not
-
-}mic_coup_1_t;
-
-typedef struct coupling_t_{
-
-  int   type;
-  void  *coup;
-
-}coupling_t;
-
-coupling_t macmic;
-
 /* Global Variables */
 
 int          *remote_ranks;     //  remote ranks if micro processes
@@ -235,8 +193,6 @@ int          *nproc_per_mic;    // number of processes per micro structure ( siz
 int          nproc_mic_group;   // number of micro process in a group = sum_i nproc_per_mic[i]
 int          nmic_worlds;       // number of micro worlds nproc_mic / nproc_mic_group
 int          scheme;            // communication approach
-
-PetscBool    flag_coupling;
 
 /* Matrices and vectors */
 

@@ -7,6 +7,7 @@
  */
 
 #include "sputnik.h"
+#include "comm.h"
 
 int assembly_jacobian_sd(Mat *J)
 {
@@ -656,16 +657,15 @@ int get_c(const char *name, int e, int gp, double strain[6], double c[6][6])
       }
 
       /* recv c_homo from micro */
-      ierr = mac_recv_c_homo(WORLD_COMM, c_homo);
+      ierr = mac_recv_c_homo(WORLD_COMM, nvoi, c_homo);
       if(ierr){
 	ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem receiving c_homo from micro\n");
 	return 1;
       }
 
-      for(i=0;i<nvoi;i++){
-	for(j=0;j<nvoi;j++){
+      for(i=0;i<nvoi;i++)
+	for(j=0;j<nvoi;j++)
 	  c[i][j] = c_homo[i*nvoi+j];
-	}
       }
 
       break;

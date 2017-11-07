@@ -15,9 +15,26 @@
 #define  C_HOMO             3
 #define  RHO                4
 
+int       coup_type;
+
+/*
+   COUP_1 > linear analisis only one kind of micro structure with homogeneum material
+   ____________________                      __________
+   |microstructure     | -> macro-structure  |         | -> micro-structure
+   |      _____________|                     | ||||||| |
+   |      |homogeneous |                     |         |
+   |______|____________|                     |_________|
+
+   We store the constitutive tensor on the <macro> processes, they 
+   are calculated only once by their respectively <micro> workers.
+   All the calculations should give the same values of <homo_cij>.
+
+*/
+
 MPI_Comm   WORLD_COMM;
 MPI_Comm   MICRO_COMM;
 MPI_Comm   MACRO_COMM;
+
 int        color;
 int        rank_wor;
 int        nproc_wor;
