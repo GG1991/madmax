@@ -231,37 +231,42 @@ end_mic_0:
      we should assign a value to "micro_type"
    */
 
-  /* 
-     Cilindric fiber 
-     -fiber_cilin x,y,z,r
-     -fiber_nx <n> (optional)
-     -fiber_ny <n> (optional)
-   */
-  nval = 4;
-  PetscOptionsGetRealArray(NULL, NULL, "-fiber_cilin", fiber_cilin_vals, &nval,&set);
-  if( set == PETSC_TRUE ){
-    micro_type = CIRCULAR_FIBER;
-    fiber_cilin_r=fiber_cilin_vals[0];
-    if(nval==1){
-      for(i=0;i<dim;i++){
-	fiber_cilin_center_devi[i]=0.0;
+
+  {
+    /* 
+       Cilindric fiber 
+       -fiber_cilin x,y,z,r
+       -fiber_nx <n> (optional)
+       -fiber_ny <n> (optional)
+     */
+    int     nval = 4;
+    double  fiber_cilin_vals[4];
+    PetscOptionsGetRealArray(NULL, NULL, "-fiber_cilin", fiber_cilin_vals, &nval,&set);
+
+    if( set == PETSC_TRUE ){
+      micro_type = CIRCULAR_FIBER;
+      fiber_cilin_r=fiber_cilin_vals[0];
+      if(nval==1){
+	for(i=0;i<dim;i++){
+	  fiber_cilin_center_devi[i]=0.0;
+	}
+      }
+      else if(nval==0){
+	PetscPrintf(MPI_COMM_SELF,"-fiber_cilin specified with no argument\n");
+	ierr_1 = 1;
+	goto end_mic_0;
+      }
+      else{
+	for(i=0;i<nval;i++){
+	  fiber_cilin_center_devi[i]=fiber_cilin_vals[1+i];
+	}
       }
     }
-    else if(nval==0){
-      PetscPrintf(MPI_COMM_SELF,"-fiber_cilin specified with no argument\n");
-      ierr_1 = 1;
-      goto end_mic_0;
-    }
-    else{
-      for(i=0;i<nval;i++){
-	fiber_cilin_center_devi[i]=fiber_cilin_vals[1+i];
-      }
-    }
+    PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
+    if(set==PETSC_FALSE) nx_fibers = 1;
+    PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
+    if(set==PETSC_FALSE) ny_fibers = 1;
   }
-  PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &nx_fibers, &set);
-  if(set==PETSC_FALSE) nx_fibers = 1;
-  PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &ny_fibers, &set);
-  if(set==PETSC_FALSE) ny_fibers = 1;
 
   /**************************************************/
   {
@@ -427,7 +432,7 @@ end_mic_0:
 	  /* Calculates C homogenized */
 	  ierr = mic_calc_c_homo(MICRO_COMM, strain_mac, c_homo);
 	  /* Send C homogenized */
-	  ierr = mic_send_c_homo(WORLD_COMM, c_homo);
+	  ierr = mic_send_c_homo(WORLD_COMM, nvoi, c_homo);
 	  break;
 
 	case RHO:
