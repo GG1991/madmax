@@ -14,7 +14,7 @@ int assembly_residual_struct( void );
 int assembly_jacobian_struct( void );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_strain( int e , int gp, double *strain_gp );
-int get_c_tan( int e , int gp, double *strain_gp , double *c_tan );
+int get_c_tan( const char * name , int e , int gp, double *strain_gp , double *c_tan );
 int get_centroid_struct( int e, double *centroid );
 int is_in_fiber( int e );
 int strain_x_coord( double * strain , double * coord , double * u );
@@ -498,7 +498,7 @@ int assembly_jacobian_struct( void )
       get_strain( e , gp, strain_gp );
 
       /* we get stress = f(strain) */
-      get_c_tan( e , gp , strain_gp , c );
+      get_c_tan( NULL , e , gp , strain_gp , c );
 
       for( i = 0 ; i < npe*dim ; i++ ){
 	for( j = 0 ; j < npe*dim ; j++ ){
@@ -632,7 +632,9 @@ int get_strain( int e , int gp, double *strain_gp )
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_elem_type( int e , int *type )
 {
   /* 
@@ -654,7 +656,9 @@ int get_elem_type( int e , int *type )
   }
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 {
 
@@ -732,45 +736,61 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 
 /****************************************************************************************************/
 
-int get_c_tan( int e , int gp, double *strain_gp , double *c_tan )
+int get_c_tan( const char *name, int e , int gp, double *strain_gp , double *c_tan )
 {
 
   /* returns the stress according to the elemet type */
 
+
   material_t  *mat_p;
   node_list_t *pm;
 
-  switch( micro_type ){
+  if( name != NULL ){
+    /* it is being asked by name */
 
-    case CIRCULAR_FIBER:
+    pm = material_list.head;
+    while( pm ){
+      /* search FIBER */
+      mat_p = (material_t *)pm->data;
+      if( strcmp ( mat_p->name , name ) == 0 ) break;
+      pm = pm->next;
+    }
+    if( !pm ) return 1;
 
-      if(is_in_fiber( e ))
-      {	/* is in the fiber */
-	pm = material_list.head;
-	while( pm ){
-          /* search FIBER */
-	  mat_p = (material_t *)pm->data;
-	  if( strcmp ( mat_p->name , "FIBER" ) == 0 ) break;
-	  pm = pm->next;
+  }
+  else{
+    switch( micro_type )
+    {
+      case CIRCULAR_FIBER:
+
+	if(is_in_fiber( e ))
+	{	/* is in the fiber */
+	  pm = material_list.head;
+	  while( pm ){
+	    /* search FIBER */
+	    mat_p = (material_t *)pm->data;
+	    if( strcmp ( mat_p->name , "FIBER" ) == 0 ) break;
+	    pm = pm->next;
+	  }
+	  if( !pm ) return 1;
 	}
-	if( !pm ) return 1;
-      }
-      else
-      { /* is in the matrix */
-	pm = material_list.head;
-	while( pm ){
-          /* search MATRIX */
-	  mat_p = (material_t *)pm->data;
-	  if( strcmp ( mat_p->name , "MATRIX" ) == 0 ) break;
-	  pm = pm->next;
+	else
+	{ /* is in the matrix */
+	  pm = material_list.head;
+	  while( pm ){
+	    /* search MATRIX */
+	    mat_p = (material_t *)pm->data;
+	    if( strcmp ( mat_p->name , "MATRIX" ) == 0 ) break;
+	    pm = pm->next;
+	  }
+	  if( !pm ) return 1;
 	}
-	if( !pm ) return 1;
-      }
-      break;
+	break;
 
-    default:
-      return 1;
+      default:
+	return 1;
 
+    }
   }
 
   /* now that we now the material (mat_p) we calculate stress = f(strain) */
@@ -1384,9 +1404,9 @@ void micro_print_info( void ){
   }
 
   if( rank_mic == 0 ){
-    i_data = malloc(nproc_mic*sizeof(double));
+    i_data = malloc( nproc_mic * sizeof(double) );
     fprintf(fm,"%-20s","rank ");
-    for( i = 0 ; i < nproc_mic ; i++ )
+    for( i = 0 ; i < nproc_mic ; i++  )
       fprintf(fm,"%d ", i);
     fprintf(fm,"\n");
     fprintf(fm,"%-20s","");
