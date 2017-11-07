@@ -3,22 +3,22 @@
 *****************************************************************************************************/
 
 #include "sputnik.h"
+#include "comm.h"
 
 #define NORMAL      1
 #define EIGENSYSTEM 2
 #define TEST_COMM   3
 
-int    flag_mode;
+int     flag_mode;
 
 /*****************************************************************************************************
    MACRO global variables 
 *****************************************************************************************************/
 
-int         mymicro_rank_worker;
+int     mymicro_rank_worker;
 
-MPI_Comm    MACRO_COMM;
-int         rank_mac;          //  rank on macro comm
-int         nproc_mac;         //  # of macro processes (WORLD_COMM)  
+int     rank_mac;          //  rank on macro comm
+int     nproc_mac;         //  # of macro processes (WORLD_COMM)  
 
 /*****************************************************************************************************
    MACRO function definitions
