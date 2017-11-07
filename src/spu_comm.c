@@ -6,8 +6,7 @@
 
  */
 
-#include "micro.h"
-#include "macro.h"
+#include "comm.h"
 
 int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM)
 {
@@ -44,7 +43,7 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
   int  *id_vec = malloc(nproc_wor * sizeof(int));
 
   // Allgather of the id_vec array 
-  ierr = MPI_Allgather(color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);CHKERRQ(ierr);
+  ierr = MPI_Allgather(color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM); if(ierr) return 1;
 
   nproc_mic_tot = nproc_mac_tot = 0;
   for(i=0;i<nproc_wor;i++){
@@ -60,7 +59,7 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
   }
 
   if(flag_coupling == true && (nproc_mic_tot==0 || nproc_mac_tot==0)){
-    PetscPrintf(PETSC_COMM_WORLD,"-coupl activated but there is only one code in execution\n");
+    //PetscPrintf(PETSC_COMM_WORLD,"-coupl activated but there is only one code in execution\n");
     return 1;
   }
 
@@ -68,13 +67,13 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
   if(flag_coupling == false){
 
     // LOCAL_COMM creation
-    ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM);CHKERRQ(ierr);
+    ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM); if(ierr) return 1;
 
   }
   else if(macmic->type == COUP_1){
 
     if(nproc_mic_tot % nproc_mac_tot != 0){
-      PetscPrintf(PETSC_COMM_WORLD,"mod(nproc_mic_tot,nproc_mac_tot) = %d\n",nproc_mic_tot % nproc_mac_tot);
+      //PetscPrintf(PETSC_COMM_WORLD,"mod(nproc_mic_tot,nproc_mac_tot) = %d\n",nproc_mic_tot % nproc_mac_tot);
       return 1;
     }
     mic_nproc_group = nproc_mic_tot / nproc_mac_tot;
@@ -156,7 +155,7 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
     }
 
     // LOCAL_COMM creation
-    ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM);CHKERRQ(ierr);
+    ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM); if(ierr) return 1;
 
   }
   else{
@@ -199,7 +198,7 @@ int mac_send_signal(MPI_Comm WORLD_COMM, int signal)
   int ierr, remote_rank;
   if(macmic.type == COUP_1){
     remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
-    ierr = MPI_Ssend(&signal, 1, MPI_INT, remote_rank, 0, WORLD_COMM);CHKERRQ(ierr);
+    ierr = MPI_Ssend(&signal, 1, MPI_INT, remote_rank, 0, WORLD_COMM); if(ierr) return 1;
   }
   else{
     return 1;
@@ -380,7 +379,7 @@ int mac_recv_rho(MPI_Comm WORLD_COMM, double *rho)
   return 0;
 }
 /****************************************************************************************************/
-int mac_recv_c_homo(MPI_Comm WORLD_COMM, double c_homo[36])
+int mac_recv_c_homo(MPI_Comm WORLD_COMM, int nvoi, double c_homo[36])
 {
   /* The processes will wait here until they receive the c_homo */
 
@@ -399,7 +398,7 @@ int mac_recv_c_homo(MPI_Comm WORLD_COMM, double c_homo[36])
   return 0;
 }
 /****************************************************************************************************/
-int mic_send_c_homo(MPI_Comm WORLD_COMM, double c_homo[36])
+int mic_send_c_homo(MPI_Comm WORLD_COMM, int nvoi, double c_homo[36])
 {
   /* Sends to macro leader the C homogenized tensor */
 

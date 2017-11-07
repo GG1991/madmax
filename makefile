@@ -42,7 +42,10 @@ DEPS_MACMIC =  ${MAC_INC_DIR}/macro.h \
 	       ${MIC_INC_DIR}/micro.h \
 	       ${DEP_DIR}/sputnik.h
 
-DEP_DIRS= ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
+DEPS_MIC =  ${MIC_INC_DIR}/micro.h \
+            ${DEP_DIR}/comm.h
+
+DEP_DIRS = ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
 
 SPU_OBJ  = $(SPU_OBJ_DIR)/spu_mesh.o \
            $(SPU_OBJ_DIR)/spu_time.o \
@@ -124,7 +127,7 @@ ${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c $(DEPS_MACMIC)
 
 ##############################
 # MICRO OBJECTS
-${MIC_OBJ_DIR}/%.o: ${MIC_SRC_DIR}/%.c ${DEPS} $(DEPS_MACMIC)
+${MIC_OBJ_DIR}/%.o: ${MIC_SRC_DIR}/%.c ${DEPS_MIC}
 	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	${SLEPC_EPS_LIB}
 	@echo ">>> "$@
 
