@@ -6,6 +6,7 @@
 typedef struct _trace_t{
 
   FILE   *file;
+  double t0;
 
 }trace_t;
 

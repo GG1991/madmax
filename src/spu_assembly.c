@@ -663,7 +663,7 @@ int get_c(const char *name, int e, int gp, double strain[6], double c[6][6])
 	return 1;
       }
 
-      for(i=0;i<nvoi;i++)
+      for(i=0;i<nvoi;i++){
 	for(j=0;j<nvoi;j++)
 	  c[i][j] = c_homo[i*nvoi+j];
       }

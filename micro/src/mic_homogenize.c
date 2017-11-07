@@ -335,6 +335,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
+    save_event( MICRO_COMM, "ass_0" );
     assembly_residual_struct(); // assembly "b" (residue) using "x" (displacement)
 
     VecGetArray( b, &b_arr );
@@ -352,15 +353,19 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     VecScale( b, -1.0 );
     assembly_jacobian_struct(); // assembly "A" (jacobian) using "x" (displacement)
     MatZeroRowsColumns(A, ndir_ix, dir_ix_glo, 1.0, NULL, NULL);
+    save_event( MICRO_COMM, "ass_1" );
 
+    save_event( MICRO_COMM, "sol_0" );
     KSPSetOperators( ksp, A, A );
     KSPSolve( ksp, b, dx );
+    save_event( MICRO_COMM, "sol_1" );
     VecAXPY( x, 1.0, dx );
     VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD);
 
     nr_its ++;
   }
+  save_event( MICRO_COMM, "ass_1" );
 
   /* get the integrals */
   get_averages( strain_ave, stress_ave );

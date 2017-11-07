@@ -77,8 +77,8 @@ int main(int argc, char **argv)
     goto end_mic_0;
   }
 
-  ierr = MPI_Comm_size(MICRO_COMM, &nproc_mic);
-  ierr = MPI_Comm_rank(MICRO_COMM, &rank_mic);
+  MPI_Comm_size(MICRO_COMM, &nproc_mic);
+  MPI_Comm_rank(MICRO_COMM, &rank_mic);
   
 end_mic_0:
   ierr = PetscFinalize();
@@ -234,7 +234,7 @@ end_mic_0:
 
   {
     /* 
-       Cilindric fiber 
+       CIRCULAR_FIBER 
        -fiber_cilin x,y,z,r
        -fiber_nx <n> (optional)
        -fiber_ny <n> (optional)
@@ -248,7 +248,7 @@ end_mic_0:
       cilin_fiber.radius = fiber_cilin_vals[0];
       if(nval==1){
 	for( i = 0 ; i < dim ; i++ )
-	  cilin_fiber.deviation[i]=0.0;
+	  cilin_fiber.deviation[i] = 0.0;
       }
       else if(nval==0){
 	PetscPrintf(MPI_COMM_SELF,"-fiber_cilin specified with no argument\n");
@@ -257,7 +257,7 @@ end_mic_0:
       }
       else{
 	for( i = 0 ; i < dim ; i++ )
-	  cilin_fiber.deviation[i]=fiber_cilin_vals[1+i];
+	  cilin_fiber.deviation[i] = fiber_cilin_vals[1+i];
       }
     }
     PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &cilin_fiber.nx, &set);
@@ -387,6 +387,8 @@ end_mic_0:
       }
     }
   }
+
+  init_trace( MICRO_COMM, "micro_trace.dat" );
   /**************************************************/
 
   /* Setting solver options */
@@ -542,6 +544,8 @@ end_mic_0:
     free(struct_bmat[i]);
   }
   free(struct_bmat);
+
+  end_trace( MICRO_COMM );
   /**************************************************/
 
 end_mic_1:

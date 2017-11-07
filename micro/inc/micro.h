@@ -11,6 +11,7 @@
 #include "string.h"
 #include "material.h"
 #include "comm.h"
+#include "trace.h"
 #include <gsl/gsl_linalg.h>
 
 /*****************************************************************************************************
