@@ -15,17 +15,6 @@ fi
 
 file=$1
 
-names=(  \
-"ass"    \
-"sol"    )
-
-color=(  \
-"BLUE"   \
-"RED"    )
-
-nevents=${#names[@]}
-
-# Armamos los rectangulitos a partir de cada fila de times.dat
 if [ -e "trace_half.tex" ]; then
    rm trace_half.tex
 fi
@@ -38,26 +27,35 @@ awk -v width_awk=$width     \
     -v sep_awk=$sep         \
     -v scale_x_awk=$scale_x \
 ' 
-BEGIN{ 
-    i = 1
-}
 /ass/{
-  ymin = 10 - i * (width_awk + sep_awk) - width_awk ;
-  ymax = 10 - i * (width_awk + sep_awk);
-  for( j = 0 ; j < NF ; j++ ){
-    start_time[j] = $(j+1)
-  }
+  for( j = 0 ; j < NF-1 ; j++ )
+    start_time[j] = $(j+2)
   getline;
+  for( j = 0 ; j < NF-1 ; j++ )
+    end_time[j]   = $(j+2)
   for( j = 0 ; j < NF-1 ; j++ ){
-    end_time[j]   = $(j+1)
-  }
-  for( j = 0 ; j < NF-1 ; j++ ){
+      ymin = 10 - j * (width_awk + sep_awk) - width_awk ;
+      ymax = 10 - j * (width_awk + sep_awk);
       printf "\\filldraw[fill=%s, draw=White] (%e, %e) rectangle (%e,%e);\n"  \
 ,"BLUE",start_time[j]*scale_x_awk, ymin, end_time[j]*scale_x_awk,ymax
   }
   printf "\n"
-  i++;
-}' $file >> trace_half.tex
+}
+/sol/{
+  for( j = 0 ; j < NF-1 ; j++ )
+    start_time[j] = $(j+2)
+  getline;
+  for( j = 0 ; j < NF-1 ; j++ )
+    end_time[j]   = $(j+2)
+  for( j = 0 ; j < NF-1 ; j++ ){
+      ymin = 10 - j * (width_awk + sep_awk) - width_awk ;
+      ymax = 10 - j * (width_awk + sep_awk);
+      printf "\\filldraw[fill=%s, draw=White] (%e, %e) rectangle (%e,%e);\n"  \
+,"RED",start_time[j]*scale_x_awk, ymin, end_time[j]*scale_x_awk,ymax
+  }
+  printf "\n"
+}
+' $file >> trace_half.tex
 
 cat trace_head.tex >  trace_final.tex
 cat trace_half.tex >> trace_final.tex
