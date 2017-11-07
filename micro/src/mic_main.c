@@ -44,7 +44,6 @@ int main(int argc, char **argv)
   myname            = strdup("micro");
   flag_linear_micro = 0;
   first_time_homo   = 1;
-  energy_interp     = NULL;
   flag_struct_mesh  = false;
   flag_first_alloc  = true;
 
@@ -138,6 +137,14 @@ end_mic_0:
       nelm = ( dim == 2 ) ? nex*ney : nex*ney*nez;                         // number of local elements
       nyl  = ( rank_mic == 0 ) ? ney+1 : ney;                              // local number of nodes in y direction
       nl   = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;                            // local number of nodes
+
+      int *nyl_arr = malloc(nproc_mic * sizeof(int));
+      ierr = MPI_Allgather( &nyl, 1, MPI_INT, nyl_arr, 1, MPI_INT, MICRO_COMM); if(ierr) return 1;
+      ny_inf = 0;
+      for( i = 0 ; i < rank_mic ; i++ ){
+	ny_inf += nyl_arr[i];
+      }
+      free(nyl_arr);
 
       npe  = ( dim == 2 ) ? 4 : 8;
       ngp  = ( dim == 2 ) ? 4 : 8;

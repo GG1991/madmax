@@ -32,9 +32,10 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
     
   int          i, j, e, ierr;
   int          elem_type;
+  int          ne_i = 0, ne_m = 0;
   double       *c_i = malloc( nvoi*nvoi * sizeof(double));
   double       *c_m = malloc( nvoi*nvoi * sizeof(double));
-  double       c[6][6];
+  double       *c   = malloc( nvoi*nvoi * sizeof(double));
   double       vol_i = 0.0, vol_ia = 0.0;  // inclusion volume
   double       vol_m = 0.0, vol_ma = 0.0;  // matrix volume
 
@@ -45,17 +46,25 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
       /* get element type */
       get_elem_type( e, &elem_type );
 
-      if( elem_type == 1 )
+      if( elem_type == 1 ){
 	vol_ia += vol_elem;
-      else
+	ne_i++;
+      }
+      else{
 	vol_ma += vol_elem;
+	ne_m++;
+      }
 
     }
     ierr = MPI_Allreduce( &vol_ia, &vol_i, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
     ierr = MPI_Allreduce( &vol_ma, &vol_m, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
-    
-    vi    = vol_i / vol_tot;                   // inclusion fraction
-    vm    = vol_m / vol_tot;                   // matrix fraction
+    vi   = vol_i / vol_tot;                   // inclusion fraction
+    vm   = vol_m / vol_tot;                   // matrix fraction
+    PetscPrintf(MICRO_COMM,"vi = %lf \n",vi);
+    PetscPrintf(MICRO_COMM,"vm = %lf \n",vm);
+    //    PetscPrintf(MICRO_COMM,"vol_i = %lf \n",vol_i);
+    //    PetscPrintf(MICRO_COMM,"vol_m = %lf \n",vol_m);
+    //    printf("[%d] nelm = %d ne_i = %d ne_m = %d \n", rank_mic, nelm, ne_i, ne_m);
   }
   get_c_tan("FIBER" , 0, 0, NULL, c_i);  //returns c_i of FIBER
   get_c_tan("MATRIX", 0, 0, NULL, c_m);  //returns c_m of MATRIX
@@ -65,53 +74,55 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
     /* PARALLEL THEORY */
     for( i = 0 ; i < nvoi ; i++ ){
       for( j = 0 ; j < nvoi ; j++ )
-	c[i][j] = vi * c_i[i*nvoi + j] + vm * c_m[i*nvoi + j];
+	c[i*nvoi + j] = vi * c_i[i*nvoi + j] + vm * c_m[i*nvoi + j];
     }
 
   }
   else if( homo_type == TAYLOR_S ){
 
-//    /* SERIAL THEORY */
-//    int              s;
-//    gsl_matrix_view  gsl_c_m , gsl_c_i;   // gsl arrays of c_i and c_m
-//    gsl_matrix_view  gsl_c_mi, gsl_c_ii;  // gsl arrays of c_i and c_m (inverted) (inverted)
-//    gsl_permutation  *p;
-//
-//    p  = gsl_permutation_alloc(nvoi);
-//
-//    gsl_c_i = gsl_matrix_view_array(c_i,nvoi,nvoi);
-//    gsl_c_m = gsl_matrix_view_array(c_m,nvoi,nvoi);
-//    
-//    gsl_linalg_LU_decomp (&gsl_c_m.matrix, p, &s);    
-//    gsl_linalg_LU_invert (&gsl_c_m.matrix, p, &gsl_c_mi.matrix);
-//    gsl_linalg_LU_decomp (&gsl_c_i.matrix, p, &s);    
-//    gsl_linalg_LU_invert (&gsl_c_i.matrix, p, &gsl_c_ii.matrix);
-//    
-//    for( i = 0; i < nvoi; i++ ){
-//      for( j = 0; j < nvoi; j++ ){
-//	c_m[i*nvoi+j] = gsl_matrix_get( &gsl_c_mi.matrix, i, j);
-//	c_i[i*nvoi+j] = gsl_matrix_get( &gsl_c_ii.matrix, i, j);
-//      }
-//    }
-//
-//    for( i = 0; i < nvoi*nvoi ; i++)
-//      c_i[i] = vi * c_i[i] + vm * c_m[i];
-//
-//    gsl_linalg_LU_decomp (&m.matrix, p, &s);    
-//    gsl_linalg_LU_invert (&m.matrix, p, &mi.matrix);
-//    
-//    for( i = 0; i < nvoi; i++ ){
-//      for( j = 0; j < nvoi; j++ )
-//	c[i][j] = gsl_matrix_get(&mi.matrix,i,j);
-//    }
-//     
-//    gsl_permutation_free (p);
+    /* SERIAL THEORY */
+    int              s;
+    double *c_mi = malloc( nvoi*nvoi * sizeof(double));
+    double *c_ii = malloc( nvoi*nvoi * sizeof(double));
+    gsl_matrix_view  gsl_c_m , gsl_c_i ;  // gsl arrays of c_i and c_m
+    gsl_matrix_view  gsl_c_mi, gsl_c_ii;  // gsl arrays of c_i and c_m (inverted)
+
+    gsl_permutation  *p;
+
+    p  = gsl_permutation_alloc(nvoi);
+
+    gsl_c_i  = gsl_matrix_view_array( c_i , nvoi, nvoi );
+    gsl_c_m  = gsl_matrix_view_array( c_m , nvoi, nvoi );
+    gsl_c_ii = gsl_matrix_view_array( c_ii, nvoi, nvoi );
+    gsl_c_mi = gsl_matrix_view_array( c_mi, nvoi, nvoi );
+
+    gsl_linalg_LU_decomp (&gsl_c_m.matrix, p, &s);
+    gsl_linalg_LU_invert (&gsl_c_m.matrix, p, &gsl_c_mi.matrix);
+    gsl_linalg_LU_decomp (&gsl_c_i.matrix, p, &s);
+    gsl_linalg_LU_invert (&gsl_c_i.matrix, p, &gsl_c_ii.matrix);
+
+    /* we reuse c_i */
+    for( i = 0; i < nvoi*nvoi ; i++)
+      c_i[i] = vi * c_ii[i] + vm * c_mi[i];
+
+    gsl_linalg_LU_decomp (&gsl_c_i.matrix, p, &s);
+    gsl_linalg_LU_invert (&gsl_c_i.matrix, p, &gsl_c_mi.matrix);
+
+    for( i = 0; i < nvoi; i++ ){
+      for( j = 0; j < nvoi; j++ )
+	c[i*nvoi + j] = gsl_matrix_get( &gsl_c_mi.matrix, i, j );
+    }
+
+    gsl_permutation_free (p);
+    free(c_mi);
+    free(c_ii);
   }
+
   for( i = 0; i < nvoi; i++ ){
     strain_ave[i] = strain_mac[i];
     stress_ave[i] = 0.0;
     for( j = 0; j < nvoi; j++ )
-      stress_ave[i] += c[i][j] * strain_mac[j];
+      stress_ave[i] += c[i*nvoi + j] * strain_mac[j];
   }
 
   return 0;
@@ -153,7 +164,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     MatGetOwnershipRange(A,&istart,&iend);
     nstart = istart / dim;
     nend   = iend   / dim;
-    ny_inf = ( dim == 2 ) ? nstart / nx : nstart / (nx*nz);
+    //    ny_inf = ( dim == 2 ) ? nstart / nx : nstart / (nx*nz);
 
     int *ghost_index;
     if( nproc_mic == 1 )
@@ -355,6 +366,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   get_averages( strain_ave, stress_ave );
 
   if( flag_print & (1<<PRINT_PETSC) ){
+    PetscViewer  viewer;
     PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer);
     MatView(A,viewer);
     PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer);
@@ -1382,6 +1394,16 @@ void micro_print_info( void ){
     fprintf(fm,"%-20s","");
     for( i = 0 ; i < nproc_mic ; i++ )
       fprintf(fm,"--");
+    fprintf(fm,"\n");
+  }
+
+  ierr = MPI_Gather(&nelm, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
+  if(ierr) return;
+
+  if( rank_mic == 0 ){
+    fprintf(fm,"%-20s","nelm");
+    for( i = 0 ; i < nproc_mic ; i++ )
+      fprintf(fm,"%d ", i_data[i]);
     fprintf(fm,"\n");
   }
 
