@@ -1,8 +1,17 @@
 /*****************************************************************************************************
    MICRO external lybraries
 *****************************************************************************************************/
-
-#include "sputnik.h"
+#include "petscksp.h"
+#include "petscsys.h"
+#include "slepceps.h"
+#include "list.h"
+#include "stdbool.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "material.h"
+#include "comm.h"
+#include <gsl/gsl_linalg.h>
 
 /*****************************************************************************************************
    MICRO global variables 
@@ -16,17 +25,20 @@ double       *gauss_param_d;
 
 /* Variables Send by <macro> */
 
-MPI_Comm     MICRO_COMM;
 int          rank_mic;          //  rank on macro comm
 int          nproc_mic;         //  # of micro processes (MICRO_COMM)
+int          dim;               //  problem dimensions
+int          nvoi;              //  number of voigt components (3 if dim=2, 6 if dim=3)
 
+#define NBUF         256        // Buffers length for read from a file
 #define TAYLOR_S     1
 #define TAYLOR_P     2
 #define UNIF_STRAINS 3
 
+char         *myname;
+int          nr_max_its;
+double       nr_norm_tol;
 
-/* Micro figure type */
-#define CIRCULAR_FIBER 1
 
 int          micro_type;
 FILE         *fm_info;
@@ -35,6 +47,7 @@ FILE         *fm_info;
 bool        flag_struct_mesh;
 int         nx, ny, nz, nn;       // number of nodes 
 int         nl;                   // number of local nodes
+int         nelm;
 int         nex , ney , nez;      // total number of elements per direction 
 int         nyl;                  // local number of nodes in y direction
 int         ny_inf;               // inferior numeration in y direction
@@ -82,9 +95,31 @@ double       rho;
 double       mat_fiber_t0[3];     // array of properties for type_0 fiber
 double       mat_matrix_t0[3];    // array of properties for type_0 matrix
 
-Mat          J;                   // extended matrix for lagrange multipliers boundary setting
-Vec          xe, re;              // extended distributed vectors for lagrange multipliers boundary setting
-Vec          b1;
+Mat          A, J;                // petsc matrices
+Vec          x, b;                // petsc vectors
+Vec          dx;
+KSP          ksp;                 // linear solver context
+
+
+#define PRINT_PETSC        0
+#define PRINT_VTK          1
+#define PRINT_VTU          2
+#define PRINT_VTKPART      4
+#define PRINT_ALL          8
+
+int         flag_print;
+bool        flag_first_alloc;
+
+/* Micro figure type */
+
+#define CIRCULAR_FIBER 1
+
+int         nx_fibers;
+int         ny_fibers;
+double      fiber_cilin_r;
+double      fiber_cilin_center_devi[3];
+double      center_domain[3];
+
 
 /*****************************************************************************************************
    MICRO function definitions
@@ -121,3 +156,4 @@ int micro_pvtu( char *name );
 void micro_print_info( void );
 int  get_elem_properties( void );
 int  init_shapes( double ***sh, double ****dsh, double **wp );
+
