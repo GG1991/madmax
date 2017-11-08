@@ -10,6 +10,8 @@
 
  */
 
+#include "micro.h"
+
 static char help[] = 
 "MICRO MULTISCALE CODE\n"
 "Solves the RVE problem inside a solid structure.                                             \n"
@@ -31,14 +33,11 @@ static char help[] =
 "-print_vtu                                                                                   \n"
 "-print_all                                                                                   \n";
 
-#include "micro.h"
-
 int main(int argc, char **argv)
 {
 
-  int        i, j, ierr, ierr_1=0;
+  int        i, j, ierr, ierr_1 = 0;
   int        nval;
-  char       vtkfile_n[NBUF];
   PetscBool  set;
 
   myname            = strdup("micro");
@@ -478,8 +477,8 @@ end_mic_0:
       if( flag_print & ( 1 << PRINT_VTU ) && homo_type == UNIF_STRAINS )
       {
         get_elem_properties();
-	sprintf(vtkfile_n,"micro_exp%d",i);
-	ierr = micro_pvtu( vtkfile_n );
+	sprintf(filename,"micro_exp%d",i);
+	ierr = micro_pvtu( filename );
 	if(ierr){
 	  PetscPrintf(MICRO_COMM,"Problem writing vtu file\n");
 	  goto end_mic_1;

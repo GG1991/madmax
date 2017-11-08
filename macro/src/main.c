@@ -11,20 +11,20 @@
 #include "macro.h"
 
 static char help[] = 
-"MACRO MULTISCALE CODE                                                                        \n"
-"Solves the displacement field inside a solid structure.                                      \n"
-"-coupl    [0 (no coupling ) | 1 (coupling with micro)]                                       \n"
-"-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
-"-eigensys : calculates the eigensystem Mx = -(1/omega)Kx                                     \n"
-"-print_petsc prints petsc structures on files such as Mat and Vec objects                    \n"
-"-print_vtu prints solutions on .vtu and .pvtu files                                          \n";
+"MACRO MULTISCALE CODE                                                                             \n"
+"Solves the displacement field inside a solid structure.                                           \n"
+"-coupl       : [0 (no coupling ) | 1 (coupling with micro)]                                       \n"
+"-testcomm    : [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
+"-eigensys    : calculates the eigensystem Mx = -(1/omega)Kx                                       \n"
+"-print_petsc : prints petsc structures on files such as Mat and Vec objects                       \n"
+"-print_vtu   : prints solutions on .vtu and .pvtu files                                           \n";
 
 int main(int argc, char **argv)
 {
 
-  int        ierr, ierr_1=0;
+  int        ierr, ierr_1 = 0;
   char       filename[NBUF];
-  double     t0=0.0, tf, dt;
+  double     tf, dt;
   PetscBool  set;
 
   myname = strdup("macro");
@@ -123,14 +123,8 @@ end_mac_0:
   flag_print = 0;
   PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
-  PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTK);
-  PetscOptionsHasName(NULL,NULL,"-print_part",&set);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
   PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
-  PetscOptionsHasName(NULL,NULL,"-print_all",&set);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
   
   /* Newton-Raphson solver options */
   PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
@@ -212,11 +206,6 @@ end_mac_0:
     goto end_mac_1;
   }
 
-  if( flag_print & (1<<PRINT_VTKPART)){
-    sprintf(filename,"%s_part_%d.vtk",myname,rank_mac);
-    ierr = spu_vtk_partition( filename, &MACRO_COMM );CHKERRQ(ierr);
-  }
-
   list_init(&physical_list, sizeof(physical_t), NULL);
   list_init(&function_list, sizeof(physical_t), NULL);
   /* Read materials  */
@@ -243,32 +232,32 @@ end_mac_0:
   /* Read boundaries */
   ierr = macro_parse_boundary(MACRO_COMM, input_n);
   if(ierr){
-    ierr = PetscPrintf(MACRO_COMM,"Problem reading boundaries from input file\n");
+    PetscPrintf(MACRO_COMM,"Problem reading boundaries from input file\n");
     goto end_mac_1;
   }
   ierr = set_id_on_material_and_boundary(MACRO_COMM);
   if(ierr){
-    ierr = PetscPrintf(MACRO_COMM,"Problem determing ids on materials and boundaries\n");
+    PetscPrintf(MACRO_COMM,"Problem determing ids on materials and boundaries\n");
     goto end_mac_1;
   }
   ierr = check_elm_id();
   if(ierr){
-    ierr = PetscPrintf(MACRO_COMM,"Problem checking physical ids\n");
+    PetscPrintf(MACRO_COMM,"Problem checking physical ids\n");
     goto end_mac_1;
   }
   
-  ierr = read_boundary(MACRO_COMM, mesh_n, mesh_f);CHKERRQ(ierr);
-  ierr = mac_init_boundary(MACRO_COMM, &boundary_list);
+  read_boundary(MACRO_COMM, mesh_n, mesh_f);
+  mac_init_boundary(MACRO_COMM, &boundary_list);
 
   /* Allocate matrices & vectors */ 
-  ierr = PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");CHKERRQ(ierr);
-  ierr = mac_alloc(MACRO_COMM);
+  PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");
+  mac_alloc(MACRO_COMM);
 
   /* Setting solver options */
-  ierr = KSPCreate(MACRO_COMM,&ksp); CHKERRQ(ierr);
-  ierr = KSPSetType(ksp,KSPCG); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-  ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
+  KSPCreate(MACRO_COMM,&ksp);
+  KSPSetType(ksp,KSPCG);
+  KSPSetFromOptions(ksp);
+  KSPSetOperators(ksp,A,A);
 
   /* Init Gauss point shapes functions and derivatives */
   ierr = fem_inigau();
@@ -279,13 +268,12 @@ end_mac_0:
 
   ierr = get_bbox_local_limits(coord, nallnods, &limit[0], &limit[2], &limit[4]);
   PetscPrintf(MACRO_COMM,"Limit = ");
-  for(i=0;i<6;i++){
+  for( i = 0 ; i < nvoi ; i++ )
     PetscPrintf(MACRO_COMM,"%lf ",limit[i]);
-  }
   PetscPrintf(MACRO_COMM,"\n");
 
   // Initial condition <x> = 0
-  ierr = VecZeroEntries(x);CHKERRQ(ierr);
+  VecZeroEntries(x);
 
   if(flag_mode == TEST_COMM){
 
@@ -300,7 +288,7 @@ end_mac_0:
       ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);
       ierr = mac_send_strain(WORLD_COMM, strain_mac    );
       ierr = mac_recv_stress(WORLD_COMM, stress_mac    );
-      ierr = PetscPrintf(MACRO_COMM,"\nstress_ave = ");
+      PetscPrintf(MACRO_COMM,"\nstress_ave = ");
       for( j = 0 ; j < nvoi ; j++ ){
 	PetscPrintf(MACRO_COMM,"%e ",stress_mac[j]);
       }
@@ -319,14 +307,14 @@ end_mac_0:
 
     MatCreate(MACRO_COMM,&M);
     MatSetSizes(M,nlocal,nlocal,ntotal,ntotal);
-    MatSetFromOptions(M);CHKERRQ(ierr);
+    MatSetFromOptions(M);
     MatSeqAIJSetPreallocation(M,117,NULL);
     MatMPIAIJSetPreallocation(M,117,NULL,117,NULL);
     MatSetOption(M,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
     ierr = assembly_mass(&M);
     if(ierr){
-      ierr = PetscPrintf(MACRO_COMM, "problem assembling mass matrix\n");
+      PetscPrintf(MACRO_COMM, "problem assembling mass matrix\n");
       goto end_mac_1;
     }
     ierr = assembly_jacobian_sd(&A);
@@ -341,8 +329,8 @@ end_mac_0:
       mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
       dir_idx = mac_boundary->dir_idx;
       ndir = mac_boundary->ndir;
-      ierr = MatZeroRowsColumns(M, ndir, dir_idx, 1.0, NULL, NULL); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(A, ndir, dir_idx, 1.0, NULL, NULL); CHKERRQ(ierr);
+      MatZeroRowsColumns(M, ndir, dir_idx, 1.0, NULL, NULL);
+      MatZeroRowsColumns(A, ndir, dir_idx, 1.0, NULL, NULL);
       pBound = pBound->next;
     }
     MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);
@@ -363,21 +351,21 @@ end_mac_0:
     int nconv; // number of converged eigenpairs
     double error;
 
-    ierr = EPSCreate(MACRO_COMM,&eps);CHKERRQ(ierr);
-    ierr = EPSSetOperators(eps,M,A);CHKERRQ(ierr);
-    ierr = EPSSetProblemType(eps,EPS_GHEP);CHKERRQ(ierr);
-    ierr = EPSSetFromOptions(eps);CHKERRQ(ierr);
-    ierr = EPSGetDimensions(eps,&nev,NULL,NULL);CHKERRQ(ierr);
+    EPSCreate(MACRO_COMM,&eps);
+    EPSSetOperators(eps,M,A);
+    EPSSetProblemType(eps,EPS_GHEP);
+    EPSSetFromOptions(eps);
+    EPSGetDimensions(eps,&nev,NULL,NULL);
     PetscPrintf(MACRO_COMM,"Number of requested eigenvalues: %D\n",nev);
 
-    ierr = EPSSolve(eps);CHKERRQ(ierr);
-    ierr = EPSGetConverged(eps,&nconv);CHKERRQ(ierr);
+    ierr = EPSSolve(eps);
+    ierr = EPSGetConverged(eps,&nconv);
     PetscPrintf(MACRO_COMM,"Number of converged eigenpairs: %D\n",nconv);
 
     for( i = 0 ; i < nev ; i++ ){
 
-      ierr = EPSGetEigenpair(eps,i,&omega,NULL,x,NULL);CHKERRQ(ierr);
-      ierr = EPSComputeError(eps,i,EPS_ERROR_RELATIVE,&error);CHKERRQ(ierr);
+      EPSGetEigenpair(eps,i,&omega,NULL,x,NULL);
+      EPSComputeError(eps,i,EPS_ERROR_RELATIVE,&error);
       PetscPrintf(MACRO_COMM, "omega %d = %e   error = %e\n", i, omega, error);
 
       if(flag_print & (1<<PRINT_VTU)){ 
@@ -386,7 +374,7 @@ end_mac_0:
 	stress = malloc(nelm*nvoi*sizeof(double));
 	energy = malloc(nelm*sizeof(double));
 	energy_interp = malloc(nelm*sizeof(double));
-	ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
+	ierr = assembly_residual_sd(&x, &b);
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
 	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
 
@@ -400,10 +388,10 @@ end_mac_0:
 
     }
 
-    ierr = EPSDestroy(&eps); CHKERRQ(ierr);
+    EPSDestroy(&eps);
 
   }
-  else if(flag_mode == NORMAL){
+  else if( flag_mode == NORMAL ){
 
     /* Begin time dependent loop */
     
@@ -478,17 +466,17 @@ end_mac_0:
 	stress = malloc(nelm*nvoi*sizeof(double));
 	energy = malloc(nelm*sizeof(double));
 	energy_interp = malloc(nelm*sizeof(double));
-	ierr = assembly_residual_sd(&x, &b);CHKERRQ(ierr);
+	ierr = assembly_residual_sd(&x, &b);
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
 	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
 
 	if(flag_print & (1<<PRINT_VTK)){ 
 	  sprintf(filename,"%s_t_%d_%d.vtk",myname,time_step,rank_mac);
-	  ierr = write_vtk(MACRO_COMM, filename, &x, strain, stress);
+	  write_vtk(MACRO_COMM, filename, &x, strain, stress);
 	}
 	if(flag_print & (1<<PRINT_VTU)){ 
 	  sprintf(filename,"%s_t_%d",myname,time_step);
-	  ierr = write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
+	  write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
 	}
 	free(stress); free(strain); free(energy);
       }
@@ -508,9 +496,6 @@ end_mac_1:
       return 1;
     }
   }
-
-  /* Free Memory and close things */
-  if(rank_mac==0) fclose(file_out); 
 
   list_clear(&material_list);
   list_clear(&physical_list);
