@@ -233,59 +233,34 @@ end_mac_0:
 
   /* read mesh */    
   PetscPrintf( MACRO_COMM, "Reading mesh elements\n" );
-  ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
-  if(ierr){
-    goto end_mac_1;
-  }
+  read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
 
   /* partition the mesh */
   PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");
-  ierr = part_mesh_PARMETIS(&MACRO_COMM, myname, NULL);
-  if(ierr){
-    goto end_mac_1;
-  }
+  part_mesh_PARMETIS(&MACRO_COMM, myname, NULL);
 
-  /* Calculate <*ghosts> and <nghosts> */
+  /* calculate <*ghosts> and <nghosts> */
   PetscPrintf(MACRO_COMM,"Calculating Ghost Nodes\n");
-  ierr = calculate_ghosts(&MACRO_COMM, myname);
-  if(ierr){
-    goto end_mac_1;
-  }
+  calculate_ghosts(&MACRO_COMM, myname);
 
-  /* Reenumerate Nodes */
+  /* reenumerate Nodes */
   PetscPrintf(MACRO_COMM,"Reenumering nodes\n");
-  ierr = reenumerate_PETSc(MACRO_COMM);
-  if(ierr){
-    goto end_mac_1;
-  }
+  reenumerate_PETSc(MACRO_COMM);
 
-  /* Coordinate Reading */
+  /* coordinate Reading */
   PetscPrintf(MACRO_COMM,"Reading Coordinates\n");
-  ierr = read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);
-  if(ierr){
-    goto end_mac_1;
-  }
+  read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);
 
+  /* read physical entities */
   list_init(&physical_list, sizeof(physical_t), NULL);
+  read_physical_entities(MACRO_COMM, mesh_n, mesh_f);
 
-  /* Read Physical entities */
-  ierr = read_physical_entities(MACRO_COMM, mesh_n, mesh_f);
-  if(ierr){
-    PetscPrintf(MACRO_COMM,"Problem parsing physical entities from mesh file\n");
-    goto end_mac_1;
-  }
-
-  /* Read boundaries */
-  ierr = set_id_on_material_and_boundary(MACRO_COMM);
-  if(ierr){
-    PetscPrintf(MACRO_COMM,"Problem determing ids on materials and boundaries\n");
-    goto end_mac_1;
-  }
-  
+  /* read boundaries */
   read_boundary(MACRO_COMM, mesh_n, mesh_f);
+  
 
   /**************************************************/
-  /* initialize global variables*/
+  /* alloc and init variables */
   PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");
   mac_alloc(MACRO_COMM);
 
@@ -311,6 +286,8 @@ end_mac_0:
   bmat = malloc( nvoi * sizeof(double*));
   for( i = 0 ; i < nvoi  ; i++ )
     bmat[i] = malloc( npe_max*dim * sizeof(double));
+
+  /**************************************************/
 
   /* Setting solver options */
   KSPCreate(MACRO_COMM,&ksp);

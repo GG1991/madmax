@@ -49,6 +49,7 @@ typedef struct bound_t_
   char    *name;
   int     kind;
   int     *fnum;
+  int     nix;
   int     *disp_ixs;
   double  *disp_val;
 
