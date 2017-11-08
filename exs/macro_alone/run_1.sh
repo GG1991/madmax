@@ -9,8 +9,8 @@ else
 fi
 
 $MPIEXEC -np $NP xterm -e gdb -x file.gdb --args ../../macro/macro \
-    -boundary "X0 111 0 0 0","X1 111 0 0 1" \
-    -function 0.0,0.0,1.0,0.001    \
+    -boundary "X0 11 0 0","X1 11 0 1" \
+    -function 0.0,0.0,1.0,0.001       \
     -mesh cube_2d.msh \
     -dim 2            \
     -mesh_gmsh        \

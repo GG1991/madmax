@@ -189,7 +189,7 @@ end_mac_0:
 	data = strtok(NULL, " \n");
 	bou.kind     = atoi(data);
 	bou.fnum     = malloc(dim * sizeof(int));
-	for( j = 0 ; j < nvoi ; j++ ){
+	for( j = 0 ; j < dim ; j++ ){
 	  data = strtok(NULL, " \n");
 	  bou.fnum[j] = atoi(data);
 	}
@@ -220,7 +220,7 @@ end_mac_0:
   }
 
   /* Mesh partition algorithms */
-  partition_algorithm = PARMETIS_MESHKWAY;
+  partition_algorithm = PARMETIS_GEOM;
   PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
   if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_MESHKWAY;
   PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
@@ -232,7 +232,7 @@ end_mac_0:
     PetscPrintf(MACRO_COMM,"MACRO: STANDALONE\n");
 
   /* read mesh */    
-  PetscPrintf(MACRO_COMM,"Reading mesh elements\n");
+  PetscPrintf( MACRO_COMM, "Reading mesh elements\n" );
   ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
   if(ierr){
     goto end_mac_1;
@@ -281,11 +281,6 @@ end_mac_0:
     PetscPrintf(MACRO_COMM,"Problem determing ids on materials and boundaries\n");
     goto end_mac_1;
   }
-//  ierr = check_elm_id();
-  if(ierr){
-    PetscPrintf(MACRO_COMM,"Problem checking physical ids\n");
-    goto end_mac_1;
-  }
   
   read_boundary(MACRO_COMM, mesh_n, mesh_f);
 
@@ -319,9 +314,7 @@ end_mac_0:
 
   /* Setting solver options */
   KSPCreate(MACRO_COMM,&ksp);
-  KSPSetType(ksp,KSPCG);
   KSPSetFromOptions(ksp);
-  KSPSetOperators(ksp,A,A);
 
   /* Init Gauss point shapes functions and derivatives */
   ierr = fem_inigau();
@@ -335,9 +328,6 @@ end_mac_0:
   for( i = 0 ; i < nvoi ; i++ )
     PetscPrintf(MACRO_COMM,"%lf ",limit[i]);
   PetscPrintf(MACRO_COMM,"\n");
-
-  // Initial condition <x> = 0
-  VecZeroEntries(x);
 
   if(macro_mode == TEST_COMM){
 
@@ -353,18 +343,17 @@ end_mac_0:
       ierr = mac_send_strain(WORLD_COMM, strain_mac    );
       ierr = mac_recv_stress(WORLD_COMM, stress_mac    );
       PetscPrintf(MACRO_COMM,"\nstress_ave = ");
-      for( j = 0 ; j < nvoi ; j++ ){
+      for( j = 0 ; j < nvoi ; j++ )
 	PetscPrintf(MACRO_COMM,"%e ",stress_mac[j]);
-      }
       PetscPrintf(MACRO_COMM,"\n");
     }
 
   }
   else if( macro_mode == EIGENSYSTEM ){
 
-    int    nlocal, ntotal;
-    double omega;
-    EPS   eps;
+    int     nlocal, ntotal;
+    double  omega;
+    EPS     eps;
 
     nlocal = dim * nmynods;
     ntotal = dim * ntotnod;
@@ -432,22 +421,12 @@ end_mac_0:
       EPSComputeError(eps,i,EPS_ERROR_RELATIVE,&error);
       PetscPrintf(MACRO_COMM, "omega %d = %e   error = %e\n", i, omega, error);
 
-      if(flag_print & (1<<PRINT_VTU)){ 
-
-	strain = malloc(nelm*nvoi*sizeof(double));
-	stress = malloc(nelm*nvoi*sizeof(double));
-	energy = malloc(nelm*sizeof(double));
-	energy_interp = malloc(nelm*sizeof(double));
-	ierr = assembly_residual_sd(&x, &b);
+      if(flag_print & (1<<PRINT_VTU))
+      { 
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
 	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
-
-	if(flag_print & (1<<PRINT_VTU)){ 
-	  sprintf(filename,"%s_eigen_%d", myname, i);
-	  ierr = write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
-	}
-	free(stress); free(strain); free(energy);
-
+	sprintf( filename, "macro_eigen_%d", i);
+	ierr = write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
       }
 
     }
