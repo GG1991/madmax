@@ -4,12 +4,17 @@
 
 #include "sputnik.h"
 #include "comm.h"
+#include "util.h"
 
 #define NORMAL      1
 #define EIGENSYSTEM 2
 #define TEST_COMM   3
 
-int     flag_mode;
+#define NBUF        256    // buffer length
+
+char    filename[NBUF];
+
+int     macro_mode;
 
 /*****************************************************************************************************
    MACRO global variables 

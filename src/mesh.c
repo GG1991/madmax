@@ -10,6 +10,8 @@
 #include "sputnik.h"
 #include "parmetis.h"
 
+#define NBUF 256
+
 int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, FILE *time_fl, char *myname, double *centroid)
 {
 

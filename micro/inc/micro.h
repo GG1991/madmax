@@ -14,34 +14,34 @@
 #include "trace.h"
 #include <gsl/gsl_linalg.h>
 
-#define NBUF         256        // Buffers length for read from a file
 #define TAYLOR_S     1
 #define TAYLOR_P     2
 #define UNIF_STRAINS 3
 
+#define NBUF         256
 
-char         filename[NBUF];    //  string for different purposes
+char        filename[NBUF];    //  string for different purposes
 
 /*
    Internal Variables on Gauss Points are going to be saved on 
    this vector
 */
-double       *gauss_param_d;
+double      *gauss_param_d;
 
 /* Variables Send by <macro> */
 
-int          rank_mic;          //  rank on macro comm
-int          nproc_mic;         //  # of micro processes (MICRO_COMM)
-int          dim;               //  problem dimensions
-int          nvoi;              //  number of voigt components (3 if dim=2, 6 if dim=3)
+int         rank_mic;          //  rank on macro comm
+int         nproc_mic;         //  # of micro processes (MICRO_COMM)
+int         dim;               //  problem dimensions
+int         nvoi;              //  number of voigt components (3 if dim=2, 6 if dim=3)
 
-char         *myname;
-int          nr_max_its;
-double       nr_norm_tol;
+char        *myname;
+int         nr_max_its;
+double      nr_norm_tol;
 
 
-int          micro_type;
-FILE         *fm_info;
+int         micro_type;
+FILE        *fm_info;
 
 /* structured mesh */
 bool        flag_struct_mesh;

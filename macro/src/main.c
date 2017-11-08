@@ -13,8 +13,9 @@
 static char help[] = 
 "MACRO MULTISCALE CODE                                                                             \n"
 "Solves the displacement field inside a solid structure.                                           \n"
-"-coupl       : [0 (no coupling ) | 1 (coupling with micro)]                                       \n"
-"-testcomm    : [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
+"-coupl       : coupled with \"micro\" code for solving multiscale problem                         \n"
+"-normal      : normal execution, solves a time dependent boundary condition problem               \n"
+"-testcomm    : communication testing with the \"micro\" code                                      \n"
 "-eigensys    : calculates the eigensystem Mx = -(1/omega)Kx                                       \n"
 "-print_petsc : prints petsc structures on files such as Mat and Vec objects                       \n"
 "-print_vtu   : prints solutions on .vtu and .pvtu files                                           \n";
@@ -23,8 +24,8 @@ int main(int argc, char **argv)
 {
 
   int        ierr, ierr_1 = 0;
-  char       filename[NBUF];
   double     tf, dt;
+  char       mesh_n[NBUF];
   PetscBool  set;
 
   myname = strdup("macro");
@@ -53,10 +54,7 @@ int main(int argc, char **argv)
   /* Stablish a new local communicator */
   color = MACRO;
   ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
-  if(ierr){
-    ierr_1=1;
-    goto end_mac_0;
-  }
+  if( ierr ) ierr_1 = 1; goto end_mac_0;
 
   MPI_Comm_size(MACRO_COMM, &nproc_mac);
   MPI_Comm_rank(MACRO_COMM, &rank_mac);
@@ -70,8 +68,12 @@ end_mac_0:
      and start again
   */
   PETSC_COMM_WORLD = MACRO_COMM;
-  //  ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+
+#ifdef SLEPC
   SlepcInitialize(&argc,&argv,(char*)0,help);
+#elif  PETSC
+  PetscInitialize(&argc,&argv,(char*)0,help);
+#endif
 
   PetscPrintf(MACRO_COMM,
       "--------------------------------------------------\n"
@@ -79,15 +81,15 @@ end_mac_0:
       "--------------------------------------------------\n");
 
   /* execution mode */
-  flag_mode  = NORMAL;
+  macro_mode  = NORMAL;
   PetscOptionsHasName(NULL,NULL,"-testcomm",&set);
   if(set == PETSC_TRUE){
-    flag_mode = TEST_COMM;
+    macro_mode = TEST_COMM;
     PetscPrintf(MACRO_COMM,"MACRO MODE : TEST_COMM\n");
   }
   PetscOptionsHasName(NULL,NULL,"-eigensys",&set);
   if(set == PETSC_TRUE){
-    flag_mode = EIGENSYSTEM;
+    macro_mode = EIGENSYSTEM;
     PetscPrintf(MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
   }
 
@@ -104,11 +106,6 @@ end_mac_0:
   PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set);
   if( set == PETSC_FALSE ){
     PetscPrintf(MPI_COMM_SELF,"mesh file not given on command line.\n");
-    goto end_mac_1;
-  }
-  PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set);
-  if( set == PETSC_FALSE ){
-    PetscPrintf(MPI_COMM_SELF,"input file not given.\n");
     goto end_mac_1;
   }
   PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
@@ -133,15 +130,15 @@ end_mac_0:
   if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
   /* structured grid interp */
-  ierr = PetscOptionsGetInt(NULL, NULL, "-nx_interp", &nx_interp, &set);
+  PetscOptionsGetInt(NULL, NULL, "-nx_interp", &nx_interp, &set);
   if(set==PETSC_FALSE) nx_interp=2;
-  ierr = PetscOptionsGetInt(NULL, NULL, "-ny_interp", &ny_interp, &set);
+  PetscOptionsGetInt(NULL, NULL, "-ny_interp", &ny_interp, &set);
   if(set==PETSC_FALSE) ny_interp=2;
-  ierr = PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
+  PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
   if(set==PETSC_FALSE) nz_interp=2;
 
   /* flow execution variables for NORMAL mode */
-  if(flag_mode==NORMAL){
+  if( macro_mode == NORMAL ){
     PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);
     if(set == PETSC_FALSE){
       PetscPrintf(MPI_COMM_SELF,"-tf not given.\n");
@@ -157,19 +154,17 @@ end_mac_0:
   /* Mesh partition algorithms */
   partition_algorithm = PARMETIS_MESHKWAY;
   PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
-  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_MESHKWAY;
+  if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_MESHKWAY;
   PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
-  if(set==PETSC_TRUE) partition_algorithm = PARMETIS_GEOM;
+  if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_GEOM;
 
   file_out = NULL;
   if(rank_mac==0) file_out = fopen("macro_structures.dat","w");
 
-  if(flag_coupling){
+  if(flag_coupling)
     PetscPrintf(MACRO_COMM,"MACRO: COUPLING\n");
-  }
-  else{
+  else
     PetscPrintf(MACRO_COMM,"MACRO: STANDALONE\n");
-  }
 
   /* read mesh */    
   PetscPrintf(MACRO_COMM,"Reading mesh elements\n");
@@ -208,12 +203,6 @@ end_mac_0:
 
   list_init(&physical_list, sizeof(physical_t), NULL);
   list_init(&function_list, sizeof(physical_t), NULL);
-  /* Read materials  */
-  ierr = parse_material(MACRO_COMM, input_n);
-  if(ierr){
-    PetscPrintf(MACRO_COMM,"Problem parsing materials from input file\n");
-    goto end_mac_1;
-  }
 
   /* Read Physical entities */
   ierr = read_physical_entities(MACRO_COMM, mesh_n, mesh_f);
@@ -222,19 +211,7 @@ end_mac_0:
     goto end_mac_1;
   }
 
-  /* Read functions */
-  parse_function(MACRO_COMM, input_n);
-  if(ierr){
-    PetscPrintf(MACRO_COMM,"Problem parsing functions from input file\n");
-    goto end_mac_1;
-  }
-
   /* Read boundaries */
-  ierr = macro_parse_boundary(MACRO_COMM, input_n);
-  if(ierr){
-    PetscPrintf(MACRO_COMM,"Problem reading boundaries from input file\n");
-    goto end_mac_1;
-  }
   ierr = set_id_on_material_and_boundary(MACRO_COMM);
   if(ierr){
     PetscPrintf(MACRO_COMM,"Problem determing ids on materials and boundaries\n");
@@ -262,8 +239,8 @@ end_mac_0:
   /* Init Gauss point shapes functions and derivatives */
   ierr = fem_inigau();
 
-  int      i, j, nr_its = -1, kspits = -1;
-  double   norm = -1.0, kspnorm = -1.0;
+  int      i, j, nr_its = -1;
+  double   norm = -1.0;
   double   limit[6];
 
   ierr = get_bbox_local_limits(coord, nallnods, &limit[0], &limit[2], &limit[4]);
@@ -275,7 +252,7 @@ end_mac_0:
   // Initial condition <x> = 0
   VecZeroEntries(x);
 
-  if(flag_mode == TEST_COMM){
+  if(macro_mode == TEST_COMM){
 
     double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
     double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -296,7 +273,7 @@ end_mac_0:
     }
 
   }
-  else if( flag_mode == EIGENSYSTEM ){
+  else if( macro_mode == EIGENSYSTEM ){
 
     int    nlocal, ntotal;
     double omega;
@@ -391,7 +368,7 @@ end_mac_0:
     EPSDestroy(&eps);
 
   }
-  else if( flag_mode == NORMAL ){
+  else if( macro_mode == NORMAL ){
 
     /* Begin time dependent loop */
     
@@ -416,10 +393,10 @@ end_mac_0:
 	  PetscPrintf(MACRO_COMM, "problem assembling residual\n");
 	  goto end_mac_1;
 	}
-	MacroSetBoundaryOnResidual(&b); CHKERRQ(ierr);
-	VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-	PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
-	VecScale(b,-1.0); CHKERRQ(ierr);
+	MacroSetBoundaryOnResidual(&b);
+	VecNorm(b,NORM_2,&norm);
+	PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);
+	VecScale( b, -1.0 );
 
 	if( norm < nr_norm_tol )break;
 
@@ -431,23 +408,9 @@ end_mac_0:
 	/* Solving Problem */
 	PetscPrintf(MACRO_COMM, "Solving Linear System\n ");
 	KSPSolve(ksp,b,dx);
-	KSPGetIterationNumber(ksp,&kspits);
-	KSPGetConvergedReason(ksp,&reason);
-	KSPGetResidualNorm(ksp,&kspnorm);
+	print_ksp_info( MACRO_COMM, ksp );
 	VecAXPY(x, 1.0, dx);
 
-	switch(reason){
-	  case KSP_CONVERGED_RTOL:
-	    strcpy(reason_s, "RTOL");
-	    break;
-	  case KSP_CONVERGED_ATOL:
-	    strcpy(reason_s, "ATOL");
-	    break;
-	  default :
-	    strcpy(reason_s, "I DONT KNOW");
-	    break;
-	}
-	PetscPrintf(MACRO_COMM,"kspits %D kspnorm %e kspreason %s\n",kspits, kspnorm, reason_s);
 
 	if(flag_print & (1<<PRINT_PETSC)){
 	  PetscViewer  viewer;
@@ -461,23 +424,17 @@ end_mac_0:
 	nr_its ++;
       }
 
-      if(flag_print & (1<<PRINT_VTK | 1<<PRINT_VTU)){ 
-	strain = malloc(nelm*nvoi*sizeof(double));
-	stress = malloc(nelm*nvoi*sizeof(double));
-	energy = malloc(nelm*sizeof(double));
-	energy_interp = malloc(nelm*sizeof(double));
+      if( flag_print & (1<<PRINT_VTU) )
+      { 
+	strain = malloc( nelm*nvoi * sizeof(double));
+	stress = malloc( nelm*nvoi * sizeof(double));
+	energy = malloc( nelm      * sizeof(double));
+	energy_interp = malloc(nelm* sizeof(double));
 	ierr = assembly_residual_sd(&x, &b);
 	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
 	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
-
-	if(flag_print & (1<<PRINT_VTK)){ 
-	  sprintf(filename,"%s_t_%d_%d.vtk",myname,time_step,rank_mac);
-	  write_vtk(MACRO_COMM, filename, &x, strain, stress);
-	}
-	if(flag_print & (1<<PRINT_VTU)){ 
-	  sprintf(filename,"%s_t_%d",myname,time_step);
-	  write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
-	}
+	sprintf( filename, "macro_t_%d", time_step );
+	write_vtu( MACRO_COMM, filename, &x, &b, strain, stress, energy );
 	free(stress); free(strain); free(energy);
       }
 
@@ -510,10 +467,16 @@ end_mac_1:
       "  MACRO: FINISH COMPLETE\n"
       "--------------------------------------------------\n");
 
-  ierr = SlepcFinalize();
+#ifdef SLEPC
+  SlepcFinalize();
+#elif  PETSC
+  PetscFinalize();
+#endif
 
 end_mac_2:
   ierr = MPI_Finalize();
 
   return 0;
 }
+
+/****************************************************************************************************/
