@@ -116,17 +116,7 @@ end_mac_0:
     PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
     goto end_mac_1;
   }
-  switch(dim){
-    case 2:
-      nvoi=3;
-      break;
-    case 3:
-      nvoi=6;
-      break;
-    default:
-      PetscPrintf(MPI_COMM_SELF,"dimension number %d not allowded\n", dim);
-      goto end_mac_1;
-  }
+  nvoi = (dim == 2) ? 3 : 6;
 
 
   /* Printing Options */
