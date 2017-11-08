@@ -173,30 +173,33 @@ end_mac_0:
 
   /* read boundary elements */
   { 
-    list_init( &boundary_list, sizeof(bound_t), NULL );
 
-    int      nval = 64;
-    char     string[nval];
+    int      nval = 4;
+    char     *string[nval];
     char     *data;
     bound_t  bou;
-    PetscOptionsGetString( NULL, NULL, "-boundary_1", string, nval, &set);
+
+    list_init( &boundary_list, sizeof(bound_t), NULL );
+    PetscOptionsGetStringArray( NULL, NULL, "-boundary", string, &nval, &set );
     if( set == PETSC_TRUE )
     {
-      data = strtok(string, " \n");
-      bou.name     = strdup(data); 
-      data = strtok(NULL, " \n");
-      bou.kind     = atoi(data);
-      bou.fnum     = malloc(dim * sizeof(int));
-      for( i = 0 ; i < nvoi ; i++ ){
+      for( i = 0 ; i < nval ; i++ ){
+	data = strtok(string[i], " \n");
+	bou.name     = strdup(data); 
 	data = strtok(NULL, " \n");
-	bou.fnum[i] = atoi(data);
+	bou.kind     = atoi(data);
+	bou.fnum     = malloc(dim * sizeof(int));
+	for( j = 0 ; j < nvoi ; j++ ){
+	  data = strtok(NULL, " \n");
+	  bou.fnum[j] = atoi(data);
+	}
+	bou.disp_ixs = NULL;
+	bou.disp_val = NULL;
+	list_insertlast( &boundary_list, &bou );
       }
-      bou.disp_ixs = NULL;
-      bou.disp_val = NULL;
-      list_insertlast( &boundary_list, &bou );
     }
     else if( macro_mode == NORMAL ){
-      PetscPrintf(MACRO_COMM,"-boundary_1 should be set.\n");
+      PetscPrintf(MACRO_COMM,"-boundary should be set.\n");
       ierr_1 = 1;
       goto end_mac_0;
     }

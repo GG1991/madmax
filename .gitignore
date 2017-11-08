@@ -53,6 +53,7 @@ exs/ex1/coupling.sh
 exs/ex1/tmpi2
 exs/micro_hom/mpiexec
 exs/micro_hom/file.gdb
+exs/macro_alone/file.gdb
 
 # Packages #
 ############
