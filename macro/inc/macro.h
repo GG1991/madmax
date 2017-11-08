@@ -16,6 +16,9 @@ char    filename[NBUF];
 
 int     macro_mode;
 
+int          nr_max_its;   // newton raphson maximum number of iterations
+double       nr_norm_tol;  // newton raphson minimum tolerance
+
 /*****************************************************************************************************
    MACRO global variables 
 *****************************************************************************************************/

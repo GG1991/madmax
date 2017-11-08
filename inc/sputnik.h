@@ -73,17 +73,6 @@ int         nz_interp;
 
 int          mesh_f;                   // Mesh format number
 
-// Time measurement
-
-FILE         *time_fl;
-FILE         *file_out;
-double       t0,t1;
-double       *time_vec;
-
-// Solver options
-
-int          nr_max_its;
-double       nr_norm_tol;
 
 // Structures to save de mesh on CSR format 
 
@@ -190,7 +179,7 @@ int read_boundary(MPI_Comm PROBLEM_COMM, char *mesh_n,int mesh_f);
 int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n);
 int read_boundary_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n);
 
-int part_mesh_PARMETIS(MPI_Comm *comm, FILE *time_fl, char *myname, double *centroid);
+int part_mesh_PARMETIS( MPI_Comm *COMM, char * myname, double * centroid );
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,

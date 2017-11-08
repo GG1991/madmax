@@ -158,9 +158,6 @@ end_mac_0:
   PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
   if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_GEOM;
 
-  file_out = NULL;
-  if(rank_mac==0) file_out = fopen("macro_structures.dat","w");
-
   if(flag_coupling)
     PetscPrintf(MACRO_COMM,"MACRO: COUPLING\n");
   else
@@ -175,7 +172,7 @@ end_mac_0:
 
   /* partition the mesh */
   PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");
-  ierr = part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL);
+  ierr = part_mesh_PARMETIS(&MACRO_COMM, myname, NULL);
   if(ierr){
     goto end_mac_1;
   }
@@ -372,7 +369,7 @@ end_mac_0:
 
     /* Begin time dependent loop */
     
-    double   t = t0;
+    double   t = 0.0;
     int      time_step = 0;
 
     while( t < (tf + 1.0e-10) ){
