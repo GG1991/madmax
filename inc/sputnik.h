@@ -3,7 +3,6 @@
 *****************************************************************************************************/
 
 #include "petscksp.h"
-#include "petscsys.h"
 #include "slepceps.h"
 #include "list.h"
 #include "stdbool.h"
@@ -32,22 +31,6 @@
 
 int partition_algorithm;
 
-#if defined(PETSC_USE_LOG)
-  PetscLogStage stages[3];
-  PetscLogEvent EVENT_READ_MESH_ELEM,
-		EVENT_PART_MESH,
-		EVENT_CALC_GHOSTS,
-		EVENT_REENUMERATE,
-		EVENT_READ_COORD,
-		EVENT_INIT_GAUSS,
-		EVENT_ALLOC_MATVEC,
-		EVENT_SET_DISP_BOU,
-		EVENT_ASSEMBLY_JAC,
-		EVENT_ASSEMBLY_RES,
-		EVENT_INIT,
-		EVENT_SOLVE_SYSTEM;
-#endif
-
 /*****************************************************************************************************
    SPUTNIK user defined structures
 *****************************************************************************************************/
@@ -71,7 +54,6 @@ char         input_n[NBUF];                     // Input file name
 
 MPI_Comm     WORLD_COMM;
 MPI_Status   status;
-PetscViewer  viewer;
 int          reason;
 char         reason_s[64];
 

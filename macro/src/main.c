@@ -30,9 +30,9 @@ int main(int argc, char **argv)
   myname = strdup("macro");
 
   WORLD_COMM = MPI_COMM_WORLD;
-  ierr = MPI_Init(&argc, &argv);
-  ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
-  ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(WORLD_COMM, &nproc_wor);
+  MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
   /* 
      We start PETSc before coloring here for using command line reading tools only
@@ -43,9 +43,9 @@ int main(int argc, char **argv)
 
   /* Coupling Options */
   flag_coupling = PETSC_FALSE;
-  ierr = PetscOptionsHasName(NULL,NULL,"-coupl",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-coupl",&set);
   macmic.type = 0;
-  if(set == PETSC_TRUE){
+  if( set == PETSC_TRUE ){
     flag_coupling = PETSC_TRUE;
     macmic.type = COUP_1;
   }
@@ -58,11 +58,11 @@ int main(int argc, char **argv)
     goto end_mac_0;
   }
 
-  ierr = MPI_Comm_size(MACRO_COMM, &nproc_mac);
-  ierr = MPI_Comm_rank(MACRO_COMM, &rank_mac);
+  MPI_Comm_size(MACRO_COMM, &nproc_mac);
+  MPI_Comm_rank(MACRO_COMM, &rank_mac);
   
 end_mac_0:
-  ierr = PetscFinalize();CHKERRQ(ierr);
+  PetscFinalize();
   if(ierr_1) goto end_mac_2;
 
   /*
@@ -71,7 +71,7 @@ end_mac_0:
   */
   PETSC_COMM_WORLD = MACRO_COMM;
   //  ierr = PetscInitialize(&argc,&argv,(char*)0,help);
-  ierr = SlepcInitialize(&argc,&argv,(char*)0,help);
+  SlepcInitialize(&argc,&argv,(char*)0,help);
 
   PetscPrintf(MACRO_COMM,
       "--------------------------------------------------\n"
@@ -80,12 +80,12 @@ end_mac_0:
 
   /* execution mode */
   flag_mode  = NORMAL;
-  ierr = PetscOptionsHasName(NULL,NULL,"-testcomm",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-testcomm",&set);
   if(set == PETSC_TRUE){
     flag_mode = TEST_COMM;
     PetscPrintf(MACRO_COMM,"MACRO MODE : TEST_COMM\n");
   }
-  ierr = PetscOptionsHasName(NULL,NULL,"-eigensys",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-eigensys",&set);
   if(set == PETSC_TRUE){
     flag_mode = EIGENSYSTEM;
     PetscPrintf(MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
@@ -93,17 +93,26 @@ end_mac_0:
 
   /* Mesh and Input Options */
   mesh_f = FORMAT_NULL;
-  ierr = PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) mesh_f = FORMAT_GMSH;
-  ierr = PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);CHKERRQ(ierr);
-  if(set == PETSC_TRUE) mesh_f = FORMAT_ALYA;
-  if(mesh_f == FORMAT_NULL)SETERRQ(MACRO_COMM,1,"mesh format not given on command line.");
-  ierr = PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"mesh file not given on command line.");
-  ierr = PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE) SETERRQ(MACRO_COMM,1,"input file not given.");
-  ierr = PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set); CHKERRQ(ierr); 
-  if(set == PETSC_FALSE){
+  PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);
+  if( set == PETSC_TRUE ) mesh_f = FORMAT_GMSH;
+  PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);
+  if( set == PETSC_TRUE ) mesh_f = FORMAT_ALYA;
+  if( mesh_f == FORMAT_NULL ){
+    PetscPrintf(MPI_COMM_SELF,"mesh format not given on command line.\n");
+    goto end_mac_1;
+  }
+  PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set);
+  if( set == PETSC_FALSE ){
+    PetscPrintf(MPI_COMM_SELF,"mesh file not given on command line.\n");
+    goto end_mac_1;
+  }
+  PetscOptionsGetString(NULL, NULL, "-input", input_n, 128, &set);
+  if( set == PETSC_FALSE ){
+    PetscPrintf(MPI_COMM_SELF,"input file not given.\n");
+    goto end_mac_1;
+  }
+  PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
+  if( set == PETSC_FALSE ){
     PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
     goto end_mac_1;
   }
@@ -122,21 +131,21 @@ end_mac_0:
 
   /* Printing Options */
   flag_print = 0;
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTK);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_part",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-print_part",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
-  ierr = PetscOptionsHasName(NULL,NULL,"-print_all",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-print_all",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
   
   /* Newton-Raphson solver options */
-  ierr = PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
+  PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
   if(set==PETSC_FALSE) nr_max_its=5;
-  ierr = PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
+  PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
 
   /* structured grid interp */
@@ -149,12 +158,12 @@ end_mac_0:
 
   /* flow execution variables for NORMAL mode */
   if(flag_mode==NORMAL){
-    ierr = PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);CHKERRQ(ierr);
+    PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);
     if(set == PETSC_FALSE){
       PetscPrintf(MPI_COMM_SELF,"-tf not given.\n");
       goto end_mac_1;
     }
-    ierr = PetscOptionsGetReal(NULL,NULL,"-dt",&dt,&set);CHKERRQ(ierr);
+    PetscOptionsGetReal(NULL,NULL,"-dt",&dt,&set);
     if(set == PETSC_FALSE){
       PetscPrintf(MPI_COMM_SELF,"-dt not given.\n");
       goto end_mac_1;
@@ -163,27 +172,13 @@ end_mac_0:
 
   /* Mesh partition algorithms */
   partition_algorithm = PARMETIS_MESHKWAY;
-  ierr = PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
   if(set==PETSC_TRUE) partition_algorithm = PARMETIS_MESHKWAY;
-  ierr = PetscOptionsHasName(NULL,NULL,"-part_geom",&set);CHKERRQ(ierr);
+  PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
   if(set==PETSC_TRUE) partition_algorithm = PARMETIS_GEOM;
 
   file_out = NULL;
   if(rank_mac==0) file_out = fopen("macro_structures.dat","w");
-
-#if defined(PETSC_USE_LOG)
-  ierr = PetscLogEventRegister("Read_Elems_of_Mesh"    ,PETSC_VIEWER_CLASSID,&EVENT_READ_MESH_ELEM);
-  ierr = PetscLogEventRegister("Partition_Mesh"        ,PETSC_VIEWER_CLASSID,&EVENT_PART_MESH);
-  ierr = PetscLogEventRegister("Calculate_Ghosts_Nodes",PETSC_VIEWER_CLASSID,&EVENT_CALC_GHOSTS);
-  ierr = PetscLogEventRegister("Reenumerates_Nodes"    ,PETSC_VIEWER_CLASSID,&EVENT_REENUMERATE);
-  ierr = PetscLogEventRegister("Read_Coordinates"      ,PETSC_VIEWER_CLASSID,&EVENT_READ_COORD);
-  ierr = PetscLogEventRegister("Init_Gauss_Points"     ,PETSC_VIEWER_CLASSID,&EVENT_INIT_GAUSS);
-  ierr = PetscLogEventRegister("Allocate_Mat_and_Vec"  ,PETSC_VIEWER_CLASSID,&EVENT_ALLOC_MATVEC);
-  ierr = PetscLogEventRegister("Set_Displ_on_Bou "     ,PETSC_VIEWER_CLASSID,&EVENT_SET_DISP_BOU);
-  ierr = PetscLogEventRegister("Assembly_Jacobian"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_JAC);
-  ierr = PetscLogEventRegister("Assembly_Residual"     ,PETSC_VIEWER_CLASSID,&EVENT_ASSEMBLY_RES);
-  ierr = PetscLogEventRegister("Solve_Linear_System"   ,PETSC_VIEWER_CLASSID,&EVENT_SOLVE_SYSTEM);
-#endif
 
   if(flag_coupling){
     PetscPrintf(MACRO_COMM,"MACRO: COUPLING\n");
@@ -192,85 +187,66 @@ end_mac_0:
     PetscPrintf(MACRO_COMM,"MACRO: STANDALONE\n");
   }
 
-  /* Register various stages for profiling */
-  ierr = PetscLogStageRegister("Read Mesh Elements",&stages[0]);CHKERRQ(ierr);
-  ierr = PetscLogStageRegister("Linear System 1",&stages[1]);CHKERRQ(ierr);
-  ierr = PetscLogStageRegister("Linear System 2",&stages[2]);CHKERRQ(ierr);
-
   /* read mesh */    
-  ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
-
-  ierr = PetscLogEventBegin(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
-  ierr = PetscPrintf(MACRO_COMM,"Reading mesh elements\n");CHKERRQ(ierr);
+  PetscPrintf(MACRO_COMM,"Reading mesh elements\n");
   ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
   if(ierr){
     goto end_mac_1;
   }
-  ierr = PetscLogEventEnd(EVENT_READ_MESH_ELEM,0,0,0,0);CHKERRQ(ierr);
-
-  ierr = PetscLogStagePop();CHKERRQ(ierr);
 
   /* partition the mesh */
-  ierr = PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");CHKERRQ(ierr);
-  ierr = PetscLogEventBegin(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
+  PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");
   ierr = part_mesh_PARMETIS(&MACRO_COMM, time_fl, myname, NULL);
   if(ierr){
     goto end_mac_1;
   }
-  ierr = PetscLogEventEnd(EVENT_PART_MESH,0,0,0,0);CHKERRQ(ierr);
 
   /* Calculate <*ghosts> and <nghosts> */
-  ierr = PetscPrintf(MACRO_COMM,"Calculating Ghost Nodes\n");CHKERRQ(ierr);
-  ierr = PetscLogEventBegin(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
+  PetscPrintf(MACRO_COMM,"Calculating Ghost Nodes\n");
   ierr = calculate_ghosts(&MACRO_COMM, myname);
   if(ierr){
     goto end_mac_1;
   }
-  ierr = PetscLogEventEnd(EVENT_CALC_GHOSTS,0,0,0,0);CHKERRQ(ierr);
 
   /* Reenumerate Nodes */
-  ierr = PetscPrintf(MACRO_COMM,"Reenumering nodes\n");CHKERRQ(ierr);
-  ierr = PetscLogEventBegin(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
+  PetscPrintf(MACRO_COMM,"Reenumering nodes\n");
   ierr = reenumerate_PETSc(MACRO_COMM);
   if(ierr){
     goto end_mac_1;
   }
-  ierr = PetscLogEventEnd(EVENT_REENUMERATE,0,0,0,0);CHKERRQ(ierr);
 
   /* Coordinate Reading */
-  ierr = PetscPrintf(MACRO_COMM,"Reading Coordinates\n");CHKERRQ(ierr);
-  ierr = PetscLogEventBegin(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
+  PetscPrintf(MACRO_COMM,"Reading Coordinates\n");
   ierr = read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);
   if(ierr){
     goto end_mac_1;
   }
-  ierr = PetscLogEventEnd(EVENT_READ_COORD,0,0,0,0);CHKERRQ(ierr);
 
   if( flag_print & (1<<PRINT_VTKPART)){
     sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mac);
     ierr = spu_vtk_partition( vtkfile_n, &MACRO_COMM );CHKERRQ(ierr);
   }
 
-  ierr = list_init(&physical_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
-  ierr = list_init(&function_list, sizeof(physical_t), NULL);CHKERRQ(ierr);
+  list_init(&physical_list, sizeof(physical_t), NULL);
+  list_init(&function_list, sizeof(physical_t), NULL);
   /* Read materials  */
   ierr = parse_material(MACRO_COMM, input_n);
   if(ierr){
-    ierr = PetscPrintf(MACRO_COMM,"Problem parsing materials from input file\n");
+    PetscPrintf(MACRO_COMM,"Problem parsing materials from input file\n");
     goto end_mac_1;
   }
 
   /* Read Physical entities */
   ierr = read_physical_entities(MACRO_COMM, mesh_n, mesh_f);
   if(ierr){
-    ierr = PetscPrintf(MACRO_COMM,"Problem parsing physical entities from mesh file\n");
+    PetscPrintf(MACRO_COMM,"Problem parsing physical entities from mesh file\n");
     goto end_mac_1;
   }
 
   /* Read functions */
-  ierr = parse_function(MACRO_COMM, input_n);
+  parse_function(MACRO_COMM, input_n);
   if(ierr){
-    ierr = PetscPrintf(MACRO_COMM,"Problem parsing functions from input file\n");
+    PetscPrintf(MACRO_COMM,"Problem parsing functions from input file\n");
     goto end_mac_1;
   }
 
@@ -295,10 +271,8 @@ end_mac_0:
   ierr = mac_init_boundary(MACRO_COMM, &boundary_list);
 
   /* Allocate matrices & vectors */ 
-  ierr = PetscLogEventBegin(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
   ierr = PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");CHKERRQ(ierr);
   ierr = mac_alloc(MACRO_COMM);
-  ierr = PetscLogEventEnd(EVENT_ALLOC_MATVEC,0,0,0,0);CHKERRQ(ierr);
 
   /* Setting solver options */
   ierr = KSPCreate(MACRO_COMM,&ksp); CHKERRQ(ierr);
@@ -307,9 +281,7 @@ end_mac_0:
   ierr = KSPSetOperators(ksp,A,A); CHKERRQ(ierr);
 
   /* Init Gauss point shapes functions and derivatives */
-  ierr = PetscLogEventBegin(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
   ierr = fem_inigau();
-  ierr = PetscLogEventEnd(EVENT_INIT_GAUSS,0,0,0,0);CHKERRQ(ierr);
 
   int      i, j, nr_its = -1, kspits = -1;
   double   norm = -1.0, kspnorm = -1.0;
@@ -331,23 +303,22 @@ end_mac_0:
     double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     /* TEST> Sends a calculating strain to micro and obtain the stress */
-    for(i=0;i<nvoi;i++){
-      for(j=0;j<nvoi;j++){
+    for( i = 0 ; i < nvoi ; i++ ){
+      for( j = 0 ; j < nvoi ; j++ )
 	strain_mac[j] = 0.0;
-      }
       strain_mac[i] = 0.005;
-      ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);CHKERRQ(ierr);
-      ierr = mac_send_strain(WORLD_COMM, strain_mac);CHKERRQ(ierr);
-      ierr = mac_recv_stress(WORLD_COMM, stress_mac);CHKERRQ(ierr);
-      ierr = PetscPrintf(MACRO_COMM,"\nstress_ave = ");CHKERRQ(ierr);
-      for(j=0;j<nvoi;j++){
-	ierr = PetscPrintf(MACRO_COMM,"%e ",stress_mac[j]);
+      ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);
+      ierr = mac_send_strain(WORLD_COMM, strain_mac    );
+      ierr = mac_recv_stress(WORLD_COMM, stress_mac    );
+      ierr = PetscPrintf(MACRO_COMM,"\nstress_ave = ");
+      for( j = 0 ; j < nvoi ; j++ ){
+	PetscPrintf(MACRO_COMM,"%e ",stress_mac[j]);
       }
-      ierr = PetscPrintf(MACRO_COMM,"\n");
+      PetscPrintf(MACRO_COMM,"\n");
     }
 
   }
-  else if(flag_mode == EIGENSYSTEM){
+  else if( flag_mode == EIGENSYSTEM ){
 
     int    nlocal, ntotal;
     double omega;
@@ -356,12 +327,12 @@ end_mac_0:
     nlocal = dim * nmynods;
     ntotal = dim * ntotnod;
 
-    ierr = MatCreate(MACRO_COMM,&M);CHKERRQ(ierr);
-    ierr = MatSetSizes(M,nlocal,nlocal,ntotal,ntotal);CHKERRQ(ierr);
-    ierr = MatSetFromOptions(M);CHKERRQ(ierr);
-    ierr = MatSeqAIJSetPreallocation(M,117,NULL);CHKERRQ(ierr);
-    ierr = MatMPIAIJSetPreallocation(M,117,NULL,117,NULL);CHKERRQ(ierr);
-    ierr = MatSetOption(M,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+    MatCreate(MACRO_COMM,&M);
+    MatSetSizes(M,nlocal,nlocal,ntotal,ntotal);
+    MatSetFromOptions(M);CHKERRQ(ierr);
+    MatSeqAIJSetPreallocation(M,117,NULL);
+    MatMPIAIJSetPreallocation(M,117,NULL,117,NULL);
+    MatSetOption(M,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
     ierr = assembly_mass(&M);
     if(ierr){
@@ -384,22 +355,18 @@ end_mac_0:
       ierr = MatZeroRowsColumns(A, ndir, dir_idx, 1.0, NULL, NULL); CHKERRQ(ierr);
       pBound = pBound->next;
     }
-    ierr = MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(M, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd  (M, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd  (A, MAT_FINAL_ASSEMBLY);
 
     if(flag_print & (1<<PRINT_PETSC)){
-      ierr = PetscViewerASCIIOpen(MACRO_COMM,"M.dat",&viewer); CHKERRQ(ierr);
-      ierr = MatView(M,viewer); CHKERRQ(ierr);
-      ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
-      ierr = MatView(A,viewer); CHKERRQ(ierr);
-      ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
-      ierr = VecView(b,viewer); CHKERRQ(ierr);
-      ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
-      ierr = VecView(dx,viewer); CHKERRQ(ierr);
-      ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-      ierr = VecView(x,viewer); CHKERRQ(ierr);
+      PetscViewer  viewer;
+      PetscViewerASCIIOpen(MACRO_COMM,"M.dat" ,&viewer); MatView(M ,viewer);
+      PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
+      PetscViewerASCIIOpen(MACRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
+      PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
+      PetscViewerASCIIOpen(MACRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
     }
 
     int nev;   // number of request eigenpairs
@@ -455,48 +422,41 @@ end_mac_0:
 
     while( t < (tf + 1.0e-10) ){
 
-      ierr = PetscPrintf(MACRO_COMM,"\ntime step %3d %e seg\n", time_step, t);
+      PetscPrintf(MACRO_COMM,"\ntime step %3d %e seg\n", time_step, t);
 
       /* Setting Displacement on Dirichlet Indeces on <x> */
-      ierr = PetscLogEventBegin(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
-      ierr = MacroSetDisplacementOnBoundary(t, &x);
-      ierr = PetscLogEventEnd(EVENT_SET_DISP_BOU,0,0,0,0);CHKERRQ(ierr);
+      MacroSetDisplacementOnBoundary(t, &x);
 
       nr_its = 0; norm = 2*nr_norm_tol;
       while( nr_its < nr_max_its && norm > nr_norm_tol )
       {
 
 	/* Assemblying residual */
-	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MACRO_COMM, "Assembling Residual\n");
+	PetscPrintf(MACRO_COMM, "Assembling Residual\n");
 	ierr = assembly_residual_sd(&x, &b);
 	if(ierr){
-	  ierr = PetscPrintf(MACRO_COMM, "problem assembling residual\n");
+	  PetscPrintf(MACRO_COMM, "problem assembling residual\n");
 	  goto end_mac_1;
 	}
-	ierr = MacroSetBoundaryOnResidual(&b); CHKERRQ(ierr);
-	ierr = VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
-	ierr = PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
-	ierr = VecScale(b,-1.0); CHKERRQ(ierr);
-	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_RES,0,0,0,0);CHKERRQ(ierr);
+	MacroSetBoundaryOnResidual(&b); CHKERRQ(ierr);
+	VecNorm(b,NORM_2,&norm);CHKERRQ(ierr);
+	PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);CHKERRQ(ierr);
+	VecScale(b,-1.0); CHKERRQ(ierr);
 
 	if( norm < nr_norm_tol )break;
 
 	/* Assemblying Jacobian */
-	ierr = PetscLogEventBegin(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
+	PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
 	ierr = assembly_jacobian_sd(&A);
 	ierr = MacroSetBoundaryOnJacobian(&A); CHKERRQ(ierr);
-	ierr = PetscLogEventEnd(EVENT_ASSEMBLY_JAC,0,0,0,0);CHKERRQ(ierr);
 
 	/* Solving Problem */
-	ierr = PetscLogEventBegin(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
-	ierr = PetscPrintf(MACRO_COMM, "Solving Linear System\n ");
-	ierr = KSPSolve(ksp,b,dx);CHKERRQ(ierr);
-	ierr = KSPGetIterationNumber(ksp,&kspits);CHKERRQ(ierr);
-	ierr = KSPGetConvergedReason(ksp,&reason);CHKERRQ(ierr);
-	ierr = KSPGetResidualNorm(ksp,&kspnorm);CHKERRQ(ierr);
-	ierr = VecAXPY(x, 1.0, dx); CHKERRQ(ierr);
+	PetscPrintf(MACRO_COMM, "Solving Linear System\n ");
+	KSPSolve(ksp,b,dx);
+	KSPGetIterationNumber(ksp,&kspits);
+	KSPGetConvergedReason(ksp,&reason);
+	KSPGetResidualNorm(ksp,&kspnorm);
+	VecAXPY(x, 1.0, dx);
 
 	switch(reason){
 	  case KSP_CONVERGED_RTOL:
@@ -509,18 +469,15 @@ end_mac_0:
 	    strcpy(reason_s, "I DONT KNOW");
 	    break;
 	}
-	ierr = PetscPrintf(MACRO_COMM,"kspits %D kspnorm %e kspreason %s\n",kspits, kspnorm, reason_s);
-	ierr = PetscLogEventEnd(EVENT_SOLVE_SYSTEM,0,0,0,0);CHKERRQ(ierr);
+	PetscPrintf(MACRO_COMM,"kspits %D kspnorm %e kspreason %s\n",kspits, kspnorm, reason_s);
 
 	if(flag_print & (1<<PRINT_PETSC)){
-	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"A.dat",&viewer); CHKERRQ(ierr);
-	  ierr = MatView(A,viewer); CHKERRQ(ierr);
-	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"b.dat",&viewer); CHKERRQ(ierr);
-	  ierr = VecView(b,viewer); CHKERRQ(ierr);
-	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); CHKERRQ(ierr);
-	  ierr = VecView(dx,viewer); CHKERRQ(ierr);
-	  ierr = PetscViewerASCIIOpen(MACRO_COMM,"x.dat",&viewer); CHKERRQ(ierr);
-	  ierr = VecView(x,viewer); CHKERRQ(ierr);
+	  PetscViewer  viewer;
+	  PetscViewerASCIIOpen(MACRO_COMM,"M.dat" ,&viewer); MatView(M ,viewer);
+	  PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
+	  PetscViewerASCIIOpen(MACRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
+	  PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
+	  PetscViewerASCIIOpen(MACRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
 	}
 
 	nr_its ++;
@@ -557,7 +514,7 @@ end_mac_1:
   if(flag_coupling){
     ierr = mac_send_signal(WORLD_COMM, MIC_END);
     if(ierr){
-      ierr = PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
+      PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
       return 1;
     }
   }
@@ -568,17 +525,16 @@ end_mac_1:
   list_clear(&material_list);
   list_clear(&physical_list);
 
-  ierr = MatDestroy(&A);CHKERRQ(ierr);
-  ierr = VecDestroy(&x);CHKERRQ(ierr);  
-  ierr = VecDestroy(&b);CHKERRQ(ierr);  
-  ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
+  MatDestroy(&A);
+  VecDestroy(&x);
+  VecDestroy(&b);
+  KSPDestroy(&ksp);
 
   PetscPrintf(MACRO_COMM,
       "--------------------------------------------------\n"
       "  MACRO: FINISH COMPLETE\n"
       "--------------------------------------------------\n");
 
-  //  ierr = PetscFinalize();
   ierr = SlepcFinalize();
 
 end_mac_2:

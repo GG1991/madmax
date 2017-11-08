@@ -372,14 +372,10 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
   if( flag_print & (1<<PRINT_PETSC) ){
     PetscViewer  viewer;
-    PetscViewerASCIIOpen(MICRO_COMM,"A.dat",&viewer);
-    MatView(A,viewer);
-    PetscViewerASCIIOpen(MICRO_COMM,"b.dat",&viewer);
-    VecView(b,viewer);
-    PetscViewerASCIIOpen(MICRO_COMM,"x.dat",&viewer);
-    VecView(x,viewer);
-    PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer);
-    VecView(x,viewer);
+    PetscViewerASCIIOpen(MICRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
+    PetscViewerASCIIOpen(MICRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
+    PetscViewerASCIIOpen(MICRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
+    PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
   }
 
   return 0;
