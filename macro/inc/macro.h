@@ -10,25 +10,40 @@
 #define EIGENSYSTEM 2
 #define TEST_COMM   3
 
-#define NBUF        256    // buffer length
+#define NBUF        256            // buffer length
 
-char    filename[NBUF];
+char        filename[NBUF];
 
-int     macro_mode;
+int         macro_mode;
 
-int          nr_max_its;   // newton raphson maximum number of iterations
-double       nr_norm_tol;  // newton raphson minimum tolerance
+int         nr_max_its;          // newton raphson maximum number of iterations
+double      nr_norm_tol;         // newton raphson minimum tolerance
+
+double      **struct_sh;          // Shape functions
+double      ***struct_dsh;        // Derivative shapes functions
+double      *struct_wp;           // Weights
+double      **bmat;               // B matrix (Bu = epsilon)
+int         npe_max;              // maximum number of nodes per element
+double      *elem_disp;
+int         *loc_elem_index;      // local elemental index vector for assembly and reading
+int         *glo_elem_index;      // global elemental index vector for assembly and reading
+double      *strain_gp;           // strain at Gauss point
+double      *stress_gp;           // stress at Gauss point
+int         *elem_type;           // type in each element
+double      *elem_strain;         // strain at each element
+double      *elem_stress;         // stress at each element
+double      *elem_energy;         // energy at each element
 
 /*****************************************************************************************************
    MACRO global variables 
 *****************************************************************************************************/
 
-int     mymicro_rank_worker;
+int         mymicro_rank_worker;
 
-int     rank_mac;          //  rank on macro comm
-int     nproc_mac;         //  # of macro processes (WORLD_COMM)  
+int         rank_mac;          //  rank on macro comm
+int         nproc_mac;         //  # of macro processes (WORLD_COMM)  
 
-char    filename[NBUF];    //  string for different purposes
+char        filename[NBUF];    //  string for different purposes
 
 /*****************************************************************************************************
    MACRO function definitions

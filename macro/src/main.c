@@ -113,8 +113,8 @@ end_mac_0:
     PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
     goto end_mac_1;
   }
-  nvoi = (dim == 2) ? 3 : 6;
-
+  nvoi    = (dim == 2) ? 3 : 6;
+  npe_max = (dim == 2) ? 4 : 8;
 
   /* Printing Options */
   flag_print = 0;
@@ -223,9 +223,33 @@ end_mac_0:
   read_boundary(MACRO_COMM, mesh_n, mesh_f);
   mac_init_boundary(MACRO_COMM, &boundary_list);
 
-  /* Allocate matrices & vectors */ 
+  /**************************************************/
+  /* initialize global variables*/
   PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");
   mac_alloc(MACRO_COMM);
+
+  A   = NULL;
+  b   = NULL;
+  x   = NULL;
+  dx  = NULL;
+
+  /* alloc variables*/
+  loc_elem_index = malloc( dim*npe_max * sizeof(int));
+  glo_elem_index = malloc( dim*npe_max * sizeof(int));
+  elem_disp      = malloc( dim*npe_max * sizeof(double));
+  stress_gp      = malloc( nvoi        * sizeof(double));
+  strain_gp      = malloc( nvoi        * sizeof(double));
+  if( flag_print & ( 1 << PRINT_VTU ) ){
+    elem_strain = malloc( nelm*nvoi * sizeof(double));
+    elem_stress = malloc( nelm*nvoi * sizeof(double));
+    elem_energy = malloc( nelm      * sizeof(double));
+    elem_type   = malloc( nelm      * sizeof(int));
+  }
+
+  /* alloc the B matrix */
+  bmat = malloc( nvoi * sizeof(double*));
+  for( i = 0 ; i < nvoi  ; i++ )
+    struct_bmat[i] = malloc( npe*dim * sizeof(double));
 
   /* Setting solver options */
   KSPCreate(MACRO_COMM,&ksp);
@@ -450,6 +474,25 @@ end_mac_1:
       return 1;
     }
   }
+
+  /**************************************************/
+  /* free variables*/
+  free(loc_elem_index); 
+  free(glo_elem_index); 
+  free(elem_disp     ); 
+  free(stress_gp     ); 
+  free(strain_gp     ); 
+  if( flag_print & ( 1 << PRINT_VTU ) ){
+    free(elem_strain); 
+    free(elem_stress); 
+    free(elem_energy); 
+    free(elem_type); 
+  }
+
+  /* free the B matrix */
+  for( i = 0 ; i < nvoi  ; i++ )
+    free(bmat[i]);
+  free(bmat);
 
   list_clear(&material_list);
   list_clear(&physical_list);
