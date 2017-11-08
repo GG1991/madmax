@@ -30,7 +30,6 @@ CFLAGS=-O3
 else
 CFLAGS=-g -O0
 endif
-	
 
 DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
 	       ${DEP_DIR}/list.h \
@@ -43,24 +42,30 @@ DEPS_MACMIC =  ${MAC_INC_DIR}/macro.h \
 	       ${MIC_INC_DIR}/micro.h \
 	       ${DEP_DIR}/sputnik.h
 
+DEPS_MAC =  ${MIC_INC_DIR}/macro.h \
+            ${DEP_DIR}/sputnik.h \
+            ${DEP_DIR}/util.h \
+            ${DEP_DIR}/comm.h \
+            ${DEP_DIR}/trace.h
+
 DEPS_MIC =  ${MIC_INC_DIR}/micro.h \
             ${DEP_DIR}/comm.h \
             ${DEP_DIR}/trace.h
 
 DEP_DIRS = ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
 
-SPU_OBJ  = $(SPU_OBJ_DIR)/mesh.o \
-           $(SPU_OBJ_DIR)/time.o \
-           $(SPU_OBJ_DIR)/parser.o \
-           $(SPU_OBJ_DIR)/out.o \
+SPU_OBJ  = $(SPU_OBJ_DIR)/mesh.o     \
+           $(SPU_OBJ_DIR)/time.o     \
+           $(SPU_OBJ_DIR)/parser.o   \
+           $(SPU_OBJ_DIR)/out.o      \
            $(SPU_OBJ_DIR)/assembly.o \
-           $(SPU_OBJ_DIR)/util.o \
-           $(SPU_OBJ_DIR)/trace.o \
+           $(SPU_OBJ_DIR)/util.o     \
+           $(SPU_OBJ_DIR)/trace.o    \
            $(SPU_OBJ_DIR)/comm.o    
 
-MAC_OBJ  = ${MAC_OBJ_DIR}/main.o \
-           ${MAC_OBJ_DIR}/alloc.o \
-           ${MAC_OBJ_DIR}/boundary.o       
+MAC_OBJ  = ${MAC_OBJ_DIR}/main.o     \
+           ${MAC_OBJ_DIR}/alloc.o    \
+           ${MAC_OBJ_DIR}/boundary.o
 
 MIC_OBJ  = ${MIC_OBJ_DIR}/main.o \
            ${MIC_OBJ_DIR}/homogenize.o \
@@ -107,7 +112,7 @@ all: ${MAC_DIR}/macro ${MIC_DIR}/micro
 
 ##############################
 # MACRO
-${MAC_DIR}/macro: ${MAC_OBJ} ${SPU_OBJ} 
+${MAC_DIR}/macro: ${MAC_OBJ} ${SPU_OBJ}
 	gcc -o ${MAC_DIR}/macro $^ ${PETSC_KSP_LIB} -lm ${LDFLAG} ${SLEPC_EPS_LIB}
 	@echo "MACRO great :) !" 
 
@@ -120,13 +125,13 @@ ${MIC_DIR}/micro: ${MIC_OBJ}
 ##############################
 # SPUTNIK OBJECTS (do not work)
 ${SPU_OBJ_DIR}/%.o: ${SPU_SRC_DIR}/%.c ${DEPS_SPUTNIK} ${PARMETIS_HEA} ${SLEPC_EPS_LIB}
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 
+	${PETSC_COMPILE} -DPETSC -c ${CFLAGS} -o $@ $< 
 	@echo ">>> "$@
 
 ##############################
 # MACRO OBJECTS
-${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c $(DEPS_MACMIC)
-	${PETSC_COMPILE} -c ${CFLAGS} -o $@ $< 	${SLEPC_EPS_LIB}
+${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c ${DEPS_MACMIC}
+	${PETSC_COMPILE} -DPETSC -c ${CFLAGS} -o $@ $< 	${SLEPC_EPS_LIB}
 	@echo ">>> "$@
 
 ##############################
