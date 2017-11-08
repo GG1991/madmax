@@ -20,6 +20,8 @@ int     mymicro_rank_worker;
 int     rank_mac;          //  rank on macro comm
 int     nproc_mac;         //  # of macro processes (WORLD_COMM)  
 
+char    filename[NBUF];    //  string for different purposes
+
 /*****************************************************************************************************
    MACRO function definitions
 *****************************************************************************************************/

@@ -8,22 +8,22 @@
    Date> 28-07-2017
  */
 
-static char help[] = 
-"MACRO MULTISCALE CODE\n"
-"Solves the displacement field inside a solid structure. \n"
-"-coupl    [0 (no coupling ) | 1 (coupling with micro)]\n"
-"-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
-"-eigensys : calculates the eigensystem Mx = -(1/omega)Kx\n"
-"-print_petsc prints petsc structures on files such as Mat and Vec objects\n"
-"-print_vtu prints solutions on .vtu and .pvtu files\n";
-
 #include "macro.h"
+
+static char help[] = 
+"MACRO MULTISCALE CODE                                                                        \n"
+"Solves the displacement field inside a solid structure.                                      \n"
+"-coupl    [0 (no coupling ) | 1 (coupling with micro)]                                       \n"
+"-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
+"-eigensys : calculates the eigensystem Mx = -(1/omega)Kx                                     \n"
+"-print_petsc prints petsc structures on files such as Mat and Vec objects                    \n"
+"-print_vtu prints solutions on .vtu and .pvtu files                                          \n";
 
 int main(int argc, char **argv)
 {
 
   int        ierr, ierr_1=0;
-  char       vtkfile_n[NBUF];
+  char       filename[NBUF];
   double     t0=0.0, tf, dt;
   PetscBool  set;
 
@@ -213,8 +213,8 @@ end_mac_0:
   }
 
   if( flag_print & (1<<PRINT_VTKPART)){
-    sprintf(vtkfile_n,"%s_part_%d.vtk",myname,rank_mac);
-    ierr = spu_vtk_partition( vtkfile_n, &MACRO_COMM );CHKERRQ(ierr);
+    sprintf(filename,"%s_part_%d.vtk",myname,rank_mac);
+    ierr = spu_vtk_partition( filename, &MACRO_COMM );CHKERRQ(ierr);
   }
 
   list_init(&physical_list, sizeof(physical_t), NULL);
@@ -391,8 +391,8 @@ end_mac_0:
 	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
 
 	if(flag_print & (1<<PRINT_VTU)){ 
-	  sprintf(vtkfile_n,"%s_eigen_%d", myname, i);
-	  ierr = write_vtu(MACRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);
+	  sprintf(filename,"%s_eigen_%d", myname, i);
+	  ierr = write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
 	}
 	free(stress); free(strain); free(energy);
 
@@ -483,12 +483,12 @@ end_mac_0:
 	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
 
 	if(flag_print & (1<<PRINT_VTK)){ 
-	  sprintf(vtkfile_n,"%s_t_%d_%d.vtk",myname,time_step,rank_mac);
-	  ierr = write_vtk(MACRO_COMM, vtkfile_n, &x, strain, stress);
+	  sprintf(filename,"%s_t_%d_%d.vtk",myname,time_step,rank_mac);
+	  ierr = write_vtk(MACRO_COMM, filename, &x, strain, stress);
 	}
 	if(flag_print & (1<<PRINT_VTU)){ 
-	  sprintf(vtkfile_n,"%s_t_%d",myname,time_step);
-	  ierr = write_vtu(MACRO_COMM, vtkfile_n, &x, &b, strain, stress, energy);
+	  sprintf(filename,"%s_t_%d",myname,time_step);
+	  ierr = write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
 	}
 	free(stress); free(strain); free(energy);
       }

@@ -1,6 +1,6 @@
-/*****************************************************************************************************
+/*
    MICRO external lybraries
-*****************************************************************************************************/
+*/
 #include "petscksp.h"
 #include "petscsys.h"
 #include "slepceps.h"
@@ -14,9 +14,13 @@
 #include "trace.h"
 #include <gsl/gsl_linalg.h>
 
-/*****************************************************************************************************
-   MICRO global variables 
-*****************************************************************************************************/
+#define NBUF         256        // Buffers length for read from a file
+#define TAYLOR_S     1
+#define TAYLOR_P     2
+#define UNIF_STRAINS 3
+
+
+char         filename[NBUF];    //  string for different purposes
 
 /*
    Internal Variables on Gauss Points are going to be saved on 
@@ -30,11 +34,6 @@ int          rank_mic;          //  rank on macro comm
 int          nproc_mic;         //  # of micro processes (MICRO_COMM)
 int          dim;               //  problem dimensions
 int          nvoi;              //  number of voigt components (3 if dim=2, 6 if dim=3)
-
-#define NBUF         256        // Buffers length for read from a file
-#define TAYLOR_S     1
-#define TAYLOR_P     2
-#define UNIF_STRAINS 3
 
 char         *myname;
 int          nr_max_its;
