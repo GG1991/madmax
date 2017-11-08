@@ -7,6 +7,8 @@
 
 #include "sputnik.h"
 
+#define NBUF 256
+
 int parse_material(MPI_Comm PROBLEM_COMM, char * input)
 {
   /*

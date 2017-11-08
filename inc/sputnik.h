@@ -1,6 +1,8 @@
 /*****************************************************************************************************
    SPUTNIK external lybraries
 *****************************************************************************************************/
+#ifndef SPUTNIK_H
+#define SPUTNIK_H
 
 #include "petscksp.h"
 #include "slepceps.h"
@@ -14,26 +16,12 @@
 #include "boundary.h"
 #include <gsl/gsl_linalg.h>
 
-#ifndef SPUTNIK_H
-#define SPUTNIK_H
-
-#define NBUF               256   // Buffers length for read from a file
-
-// Execution schemes
-#define MACRO_MICRO         1   // Coupled execution
-#define MACRO_ALONE         2   // Standalone execution of MACRO
-#define MICRO_ALONE         3   // Standalone execution of MICRO
-
 #define PARMETIS_GEOMKWAY   1
 #define PARMETIS_GEOM       2
 #define PARMETIS_KWAY       3
 #define PARMETIS_MESHKWAY   4
 
 int partition_algorithm;
-
-/*****************************************************************************************************
-   SPUTNIK user defined structures
-*****************************************************************************************************/
 
 typedef struct _physical_t{
     
@@ -44,18 +32,11 @@ typedef struct _physical_t{
 
 }physical_t;
 
-
-/*****************************************************************************************************
-   SPUTNIK global variables
-*****************************************************************************************************/
-
 char         *myname;
-char         input_n[NBUF];                     // Input file name
 
 MPI_Comm     WORLD_COMM;
 MPI_Status   status;
 int          reason;
-char         reason_s[64];
 
 int          rank_wor;                          //  rank on world comm
 int          nproc_wor;                         //  # of processes (WORLD_COMM)
@@ -109,8 +90,6 @@ int          nr_max_its;
 double       nr_norm_tol;
 
 // Structures to save de mesh on CSR format 
-
-char         mesh_n[NBUF];           // Mesh file name
 
 int          *part;
 int          *elmdist;                // number of elements inside each procesor

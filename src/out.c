@@ -12,6 +12,8 @@
 
 #include "sputnik.h"
 
+#define NBUF 256
+
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
 {
 
