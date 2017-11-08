@@ -9,6 +9,7 @@
 
 #include "sputnik.h"
 #include "parmetis.h"
+#include "boundary.h"
 
 #define NBUF 256
 

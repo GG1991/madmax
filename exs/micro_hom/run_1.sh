@@ -1,13 +1,14 @@
 #!/bin/bash
 
-#./mpiexec -np 1 xterm -e gdb -x file.gdb --args  ../../micro/micro \
+MPIEXEC="/home/guido/libs/openmpi-install/bin/mpiexec" 
+
 if [ $# -eq 0 ]; then
   NP=1;
 else
   NP=$1;
 fi
 
-./mpiexec -np $NP  ../../micro/micro \
+$MPIEXEC -np $NP  ../../micro/micro \
     -dim 2 \
     -struct_n      50,50 \
     -struct_l      0.1,0.1 \

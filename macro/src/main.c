@@ -24,6 +24,7 @@ int main(int argc, char **argv)
 {
 
   int        ierr, ierr_1 = 0;
+  int        i, j;
   double     tf, dt;
   char       mesh_n[NBUF];
   PetscBool  set;
@@ -82,20 +83,25 @@ end_mac_0:
 
   /* execution mode */
   macro_mode  = NORMAL;
-  PetscOptionsHasName(NULL,NULL,"-testcomm",&set);
-  if(set == PETSC_TRUE){
-    macro_mode = TEST_COMM;
-    PetscPrintf(MACRO_COMM,"MACRO MODE : TEST_COMM\n");
+  PetscOptionsHasName( NULL, NULL, "-normal", &set );
+  if( set == PETSC_TRUE ){
+    macro_mode = NORMAL;
+    PetscPrintf( MACRO_COMM, "MACRO MODE : NORMAL\n" );
   }
-  PetscOptionsHasName(NULL,NULL,"-eigensys",&set);
-  if(set == PETSC_TRUE){
+  PetscOptionsHasName( NULL, NULL, "-testcomm", &set );
+  if( set == PETSC_TRUE ){
+    macro_mode = TEST_COMM;
+    PetscPrintf( MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
+  }
+  PetscOptionsHasName( NULL,NULL,"-eigensys",&set);
+  if( set == PETSC_TRUE ){
     macro_mode = EIGENSYSTEM;
     PetscPrintf(MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
   }
 
   /* Mesh and Input Options */
   mesh_f = FORMAT_NULL;
-  PetscOptionsHasName(NULL,NULL,"-mesh_gmsh",&set);
+  PetscOptionsHasName( NULL, NULL, "-mesh_gmsh",&set);
   if( set == PETSC_TRUE ) mesh_f = FORMAT_GMSH;
   PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);
   if( set == PETSC_TRUE ) mesh_f = FORMAT_ALYA;
@@ -131,11 +137,70 @@ end_mac_0:
 
   /* structured grid interp */
   PetscOptionsGetInt(NULL, NULL, "-nx_interp", &nx_interp, &set);
-  if(set==PETSC_FALSE) nx_interp=2;
+  if(set==PETSC_FALSE) nx_interp = 2;
   PetscOptionsGetInt(NULL, NULL, "-ny_interp", &ny_interp, &set);
-  if(set==PETSC_FALSE) ny_interp=2;
+  if(set==PETSC_FALSE) ny_interp = 2;
   PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
-  if(set==PETSC_FALSE) nz_interp=2;
+  if(set==PETSC_FALSE) nz_interp = 2;
+
+  /* read function */
+  { 
+    int     nval = 16;
+    double  values[nval];
+    PetscOptionsGetRealArray( NULL, NULL, "-function", values, &nval, &set);
+    if( set == PETSC_TRUE )
+    {
+      if( nval % 2 != 0 ){
+	PetscPrintf(MPI_COMM_SELF,"odd number of argument for -function\n");
+	ierr_1 = 1;
+	goto end_mac_0;
+      }
+      func_bc.fnum = 1;
+      func_bc.n    = nval/2;
+      func_bc.x    = malloc( func_bc.n * sizeof(double));
+      func_bc.y    = malloc( func_bc.n * sizeof(double));
+      for( i = 0 ; i < func_bc.n ; i++ ){
+	func_bc.x[i] = values[2*i+0];
+	func_bc.y[i] = values[2*i+1];
+      }
+    }
+    else if( macro_mode == NORMAL ){
+      PetscPrintf(MPI_COMM_SELF,"-function is request to impose non trivial BC.\n");
+      ierr_1 = 1;
+      goto end_mac_0;
+    }
+  }
+
+  /* read boundary elements */
+  { 
+    list_init( &boundary_list, sizeof(bound_t), NULL );
+
+    int      nval = 64;
+    char     string[nval];
+    char     *data;
+    bound_t  bou;
+    PetscOptionsGetString( NULL, NULL, "-boundary_1", string, nval, &set);
+    if( set == PETSC_TRUE )
+    {
+      data = strtok(string, " \n");
+      bou.name     = strdup(data); 
+      data = strtok(NULL, " \n");
+      bou.kind     = atoi(data);
+      bou.fnum     = malloc(dim * sizeof(int));
+      for( i = 0 ; i < nvoi ; i++ ){
+	data = strtok(NULL, " \n");
+	bou.fnum[i] = atoi(data);
+      }
+      bou.disp_ixs = NULL;
+      bou.disp_val = NULL;
+      list_insertlast( &boundary_list, &bou );
+    }
+    else if( macro_mode == NORMAL ){
+      PetscPrintf(MACRO_COMM,"-boundary_1 should be set.\n");
+      ierr_1 = 1;
+      goto end_mac_0;
+    }
+  }
 
   /* flow execution variables for NORMAL mode */
   if( macro_mode == NORMAL ){
@@ -199,7 +264,6 @@ end_mac_0:
   }
 
   list_init(&physical_list, sizeof(physical_t), NULL);
-  list_init(&function_list, sizeof(physical_t), NULL);
 
   /* Read Physical entities */
   ierr = read_physical_entities(MACRO_COMM, mesh_n, mesh_f);
@@ -214,14 +278,13 @@ end_mac_0:
     PetscPrintf(MACRO_COMM,"Problem determing ids on materials and boundaries\n");
     goto end_mac_1;
   }
-  ierr = check_elm_id();
+//  ierr = check_elm_id();
   if(ierr){
     PetscPrintf(MACRO_COMM,"Problem checking physical ids\n");
     goto end_mac_1;
   }
   
   read_boundary(MACRO_COMM, mesh_n, mesh_f);
-  mac_init_boundary(MACRO_COMM, &boundary_list);
 
   /**************************************************/
   /* initialize global variables*/
@@ -249,7 +312,7 @@ end_mac_0:
   /* alloc the B matrix */
   bmat = malloc( nvoi * sizeof(double*));
   for( i = 0 ; i < nvoi  ; i++ )
-    struct_bmat[i] = malloc( npe*dim * sizeof(double));
+    bmat[i] = malloc( npe_max*dim * sizeof(double));
 
   /* Setting solver options */
   KSPCreate(MACRO_COMM,&ksp);
@@ -260,7 +323,7 @@ end_mac_0:
   /* Init Gauss point shapes functions and derivatives */
   ierr = fem_inigau();
 
-  int      i, j, nr_its = -1;
+  int      nr_its = -1;
   double   norm = -1.0;
   double   limit[6];
 
@@ -317,20 +380,20 @@ end_mac_0:
     }
     ierr = assembly_jacobian_sd(&A);
 
-    int  *dir_idx;
-    int  ndir;
-    node_list_t    *pBound;
-    mac_boundary_t *mac_boundary;
-
-    pBound = boundary_list.head;
-    while(pBound){
-      mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
-      dir_idx = mac_boundary->dir_idx;
-      ndir = mac_boundary->ndir;
-      MatZeroRowsColumns(M, ndir, dir_idx, 1.0, NULL, NULL);
-      MatZeroRowsColumns(A, ndir, dir_idx, 1.0, NULL, NULL);
-      pBound = pBound->next;
-    }
+//    int  *dir_idx;
+//    int  ndir;
+//    node_list_t *pn;
+//    bound_t     *bou;
+//
+//    pBound = boundary_list.head;
+//    while(pBound){
+//      mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
+//      dir_idx = mac_boundary->dir_idx;
+//      ndir = mac_boundary->ndir;
+//      MatZeroRowsColumns(M, ndir, dir_idx, 1.0, NULL, NULL);
+//      MatZeroRowsColumns(A, ndir, dir_idx, 1.0, NULL, NULL);
+//      pBound = pBound->next;
+//    }
     MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd  (M, MAT_FINAL_ASSEMBLY);
     MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
@@ -401,7 +464,7 @@ end_mac_0:
       PetscPrintf(MACRO_COMM,"\ntime step %3d %e seg\n", time_step, t);
 
       /* Setting Displacement on Dirichlet Indeces on <x> */
-      MacroSetDisplacementOnBoundary(t, &x);
+//      MacroSetDisplacementOnBoundary(t, &x);
 
       nr_its = 0; norm = 2*nr_norm_tol;
       while( nr_its < nr_max_its && norm > nr_norm_tol )
@@ -414,7 +477,7 @@ end_mac_0:
 	  PetscPrintf(MACRO_COMM, "problem assembling residual\n");
 	  goto end_mac_1;
 	}
-	MacroSetBoundaryOnResidual(&b);
+//	MacroSetBoundaryOnResidual(&b);
 	VecNorm(b,NORM_2,&norm);
 	PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);
 	VecScale( b, -1.0 );
@@ -424,7 +487,7 @@ end_mac_0:
 	/* Assemblying Jacobian */
 	PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
 	ierr = assembly_jacobian_sd(&A);
-	ierr = MacroSetBoundaryOnJacobian(&A); CHKERRQ(ierr);
+//	ierr = MacroSetBoundaryOnJacobian(&A); CHKERRQ(ierr);
 
 	/* Solving Problem */
 	PetscPrintf(MACRO_COMM, "Solving Linear System\n ");
@@ -447,31 +510,13 @@ end_mac_0:
 
       if( flag_print & (1<<PRINT_VTU) )
       { 
-	strain = malloc( nelm*nvoi * sizeof(double));
-	stress = malloc( nelm*nvoi * sizeof(double));
-	energy = malloc( nelm      * sizeof(double));
-	energy_interp = malloc(nelm* sizeof(double));
-	ierr = assembly_residual_sd(&x, &b);
-	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
-	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
+	ierr = calc_strain_stress_energy( &x, strain, stress, energy);
 	sprintf( filename, "macro_t_%d", time_step );
 	write_vtu( MACRO_COMM, filename, &x, &b, strain, stress, energy );
-	free(stress); free(strain); free(energy);
       }
 
       t += dt;
       time_step ++;
-    }
-  }
-
-end_mac_1:
-
-  /* Stop signal to micro if it is coupled */
-  if(flag_coupling){
-    ierr = mac_send_signal(WORLD_COMM, MIC_END);
-    if(ierr){
-      PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
-      return 1;
     }
   }
 
@@ -493,6 +538,19 @@ end_mac_1:
   for( i = 0 ; i < nvoi  ; i++ )
     free(bmat[i]);
   free(bmat);
+  /**************************************************/
+
+end_mac_1:
+
+  /* Stop signal to micro if it is coupled */
+  if(flag_coupling){
+    ierr = mac_send_signal(WORLD_COMM, MIC_END);
+    if(ierr){
+      PetscPrintf(PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
+      return 1;
+    }
+  }
+
 
   list_clear(&material_list);
   list_clear(&physical_list);

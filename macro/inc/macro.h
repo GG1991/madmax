@@ -5,6 +5,7 @@
 #include "sputnik.h"
 #include "comm.h"
 #include "util.h"
+#include "fun.h"
 
 #define NORMAL      1
 #define EIGENSYSTEM 2
@@ -34,9 +35,7 @@ double      *elem_strain;         // strain at each element
 double      *elem_stress;         // stress at each element
 double      *elem_energy;         // energy at each element
 
-/*****************************************************************************************************
-   MACRO global variables 
-*****************************************************************************************************/
+f1d_t       func_bc;              // boundary function
 
 int         mymicro_rank_worker;
 
@@ -45,9 +44,17 @@ int         nproc_mac;         //  # of macro processes (WORLD_COMM)
 
 char        filename[NBUF];    //  string for different purposes
 
-/*****************************************************************************************************
-   MACRO function definitions
-*****************************************************************************************************/
+typedef struct bound_t_
+{
+  char    *name;
+  int     kind;
+  int     *fnum;
+  int     *disp_ixs;
+  double  *disp_val;
+
+}bound_t;
+
+list_t boundary_list;
 
 // mac_main.c 
 int main(int argc, char **args);

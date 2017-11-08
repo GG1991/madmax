@@ -1,6 +1,3 @@
-/*****************************************************************************************************
-   SPUTNIK external lybraries
-*****************************************************************************************************/
 #ifndef SPUTNIK_H
 #define SPUTNIK_H
 
@@ -13,7 +10,6 @@
 #include "string.h"
 #include "fem.h"
 #include "material.h"
-#include "boundary.h"
 #include <gsl/gsl_linalg.h>
 
 #define PARMETIS_GEOMKWAY   1
@@ -163,21 +159,21 @@ int StrBin2Dec(char *str);
 int isfloat(char *s);
 
 // spu_mesh.c
-int read_mesh_elmv(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f);
-int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n);
-int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n);
+int read_mesh_elmv( MPI_Comm COMM, char *myname, char *mesh_n, int mesh_f);
+int read_mesh_elmv_CSR_GMSH( MPI_Comm COMM, char *myname, char *mesh_n);
+int read_mesh_elmv_CSR_ALYA( MPI_Comm COMM, char *myname, char *mesh_n);
 
-int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f);
-int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n);
-int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n);
+int read_mesh_coord( MPI_Comm COMM, char *mesh_n, int mesh_f);
+int read_mesh_coord_GMSH( MPI_Comm COMM, char *mesh_n);
+int read_mesh_coord_ALYA( MPI_Comm COMM, char *mesh_n);
 
-int read_physical_entities(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f);
-int read_physical_entities_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n);
-int read_physical_entities_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n);
+int read_physical_entities( MPI_Comm COMM, char *mesh_n, int mesh_f);
+int read_physical_entities_GMSH( MPI_Comm COMM, char *mesh_n);
+int read_physical_entities_ALYA( MPI_Comm COMM, char *mesh_n);
 
-int read_boundary(MPI_Comm PROBLEM_COMM, char *mesh_n,int mesh_f);
-int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n);
-int read_boundary_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n);
+int read_boundary( MPI_Comm COMM, char *mesh_n,int mesh_f);
+int read_boundary_GMSH( MPI_Comm COMM, char *mesh_n);
+int read_boundary_ALYA( MPI_Comm COMM, char *mesh_n);
 
 int part_mesh_PARMETIS( MPI_Comm *COMM, char * myname, double * centroid );
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 

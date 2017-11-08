@@ -39,7 +39,6 @@ char        *myname;
 int         nr_max_its;
 double      nr_norm_tol;
 
-
 int         micro_type;
 FILE        *fm_info;
 
