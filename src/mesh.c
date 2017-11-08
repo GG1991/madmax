@@ -1751,7 +1751,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   for(i=0;i<nproc;i++){
     if(i!=rank){
       peer_nod_glo = malloc(peer_sizes[i]*sizeof(int));
-      ierr = MPI_Recv(peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, *comm, &status);
+      ierr = MPI_Recv(peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, *comm, MPI_STATUS_IGNORE);
       give_inter_sort(comm, myname, allnods, mysize, peer_nod_glo, peer_sizes[i], &repeated[i], &nrep[i]);
       free(peer_nod_glo);
     }
@@ -1996,7 +1996,7 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
     // receive from all peer ranks "i"
     if(i!=rank){
       rem_nods = malloc(rem_nnod[i]*sizeof(int));
-      ierr = MPI_Recv(rem_nods, rem_nnod[i], MPI_INT, i, 0, PROBLEM_COMM, &status);
+      ierr = MPI_Recv(rem_nods, rem_nnod[i], MPI_INT, i, 0, PROBLEM_COMM, MPI_STATUS_IGNORE);
       for(j=0;j<nghost;j++){
 	// search this ghost node on <rem_nods>
 	p = bsearch(&ghost[j], rem_nods, rem_nnod[i], sizeof(int), cmpfunc);

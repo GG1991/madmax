@@ -34,10 +34,6 @@ typedef struct _physical_t{
 
 char         *myname;
 
-MPI_Comm     WORLD_COMM;
-MPI_Status   status;
-int          reason;
-
 int          rank_wor;                          //  rank on world comm
 int          nproc_wor;                         //  # of processes (WORLD_COMM)
 int          dim;                               //  problem dimensions 
