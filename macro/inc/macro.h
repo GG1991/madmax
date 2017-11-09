@@ -5,18 +5,19 @@
 #include "sputnik.h"
 #include "comm.h"
 #include "util.h"
+#include "gmsh.h"
 #include "fun.h"
 
 #define NORMAL      1
 #define EIGENSYSTEM 2
 #define TEST_COMM   3
 
-#define NBUF        256            // buffer length
+#define NBUF        256           // buffer length
 
 int         macro_mode;
 
-int         nr_max_its;          // newton raphson maximum number of iterations
-double      nr_norm_tol;         // newton raphson minimum tolerance
+int         nr_max_its;           // newton raphson maximum number of iterations
+double      nr_norm_tol;          // newton raphson minimum tolerance
 
 double      **struct_sh;          // Shape functions
 double      ***struct_dsh;        // Derivative shapes functions

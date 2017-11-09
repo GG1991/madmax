@@ -5,10 +5,11 @@
 #include "slepceps.h"
 #include "list.h"
 #include "stdbool.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "fem.h"
+#include "gmsh.h"
 #include "material.h"
 #include <gsl/gsl_linalg.h>
 

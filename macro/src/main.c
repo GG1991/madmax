@@ -21,9 +21,6 @@ static char help[] =
 "-print_vtu   : prints solutions on .vtu and .pvtu files                                           \n";
 
 int read_bc();
-int get_node_index( const char * phy_name, int * n, int ** ix );
-int which_id( const char * name );
-int funcmp(void *a, void *b);
 
 int main(int argc, char **argv)
 {
@@ -254,10 +251,6 @@ end_mac_0:
   /* coordinate Reading */
   PetscPrintf(MACRO_COMM,"Reading Coordinates\n");
   read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);
-
-  /* read physical entities */
-  list_init(&physical_list, sizeof(physical_t), NULL);
-  read_physical_entities(MACRO_COMM, mesh_n, mesh_f);
 
   /* read boundaries */
   read_bc();
@@ -559,7 +552,7 @@ int read_bc()
   while( pn ){
     bou = ( bound_t * )pn->data;
     int *ix, n;
-    get_node_index( bou->name, &n, &ix );
+    gmsh_get_node_index( mesh_n, bou->name, nmynods, mynods, dim, &n, &ix );
     bou->disp_val = malloc( n * sizeof(double)); 
     pn = pn->next;
   }
@@ -568,125 +561,3 @@ int read_bc()
 }
 
 /****************************************************************************************************/
-
-int get_node_index( const char * bou_name, int * n, int ** ix )
-{
-
-  FILE         *fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
-  int          i, d, npe;
-  int          flag = 0; 
-  int          ntag;
-  int          id_s, id; 
-  int          ns, *nf; 
-  char         buf[NBUF], *data;   
-  list_t       nod_list;
-  node_list_t  *pn;
-
-  list_init( &nod_list, sizeof(int), &funcmp );
-
-  /* searchs in the physical entities the "id" */
-  id_s = which_id( bou_name ); if( id_s < 0 ) return 1;
-
-  while( fgets( buf, NBUF, fm ) != NULL ){
-
-    data = strtok(buf," \n");
-    if( flag == 0 ){
-      if( !strcmp(data,"$Elements"))
-      {
-	fgets( buf, NBUF, fm );
-	flag  = 1;
-      }
-
-    }
-    else{
-
-      data = strtok( NULL, " \n" );
-
-      if( gmsh_is_surf_elm( atoi(data) ) ){
-
-	npe  = gmsh_npe(atoi(data));
-	data = strtok(NULL," \n");
-	ntag = atoi(data);
-	data = strtok(NULL," \n");
-	id   = atoi(data);
-
-	if( id == id_s ){
-
-	  // salteamos los tags y nos vamos derecho para los nodos
-	  d = 1;
-	  while( d < ntag ){
-	    data = strtok(NULL," \n");
-	    d++;
-	  }
-	  i = 0;
-	  while( i < npe ){
-	    data = strtok(NULL," \n");
-	    ns   = atoi(data);
-	    nf   = bsearch( &ns, mynods, nmynods, sizeof(int), cmpfunc);
-	    if( nf )
-	      list_insert_se( &nod_list, nf );
-	    i++;
-	  }
-	}
-
-      }
-      else{
-	*n  = nod_list.sizelist;
-	*ix = malloc( *n * sizeof(int));
-	pn  = nod_list.head;
-	i = 0;
-	while( pn ){
-	  (*ix)[i] = *( int * ) pn->data;
-	  pn = pn->next;
-	}
-	fclose(fm);
-	return 0;   
-      }
-    } 
-    break;
-  }
-
-  return 1;
-}
-
-/****************************************************************************************************/
-
-int which_id( const char * name )
-{
-  FILE         *fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
-  int          id;
-  int          flag = 0; 
-  char         buf[NBUF], *data;   
-
-  while( fgets( buf, NBUF, fm ) != NULL ){
-
-    data = strtok(buf," \n");
-    if( flag == 0 ){
-      if( !strcmp(data,"$Elements"))
-      {
-	fgets( buf, NBUF, fm );
-	flag = 1;
-      }
-    }
-    else{
-
-      data = strtok( NULL, " \n" );
-      data = strtok( NULL, " \n" );
-      id   = atoi(data);
-      data = strtok( NULL, " \"\n" );
-      if( strcmp( name , data ) == 0 )
-	return id;
-
-    }
-  }
-
-  return -1;
-}
-
-/****************************************************************************************************/
-
-int  funcmp(void *a, void *b){
-     if( *(int*)a > *(int*)b ) return  1;
-     if( *(int*)a < *(int*)b ) return -1;
-     return 0;
-}

@@ -516,7 +516,7 @@ int read_boundary_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 	data=strtok(buf," \n");
 	data=strtok(NULL," \n");
 
-	if(gmsh_is_surf_elm(atoi(data))){
+	if(gmsh_is_surf( atoi(data), dim )){
 
 	  NPE = gmsh_npe(atoi(data));
 	  data=strtok(NULL," \n");
@@ -664,42 +664,10 @@ int read_boundary_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
   /**************************************************/
   return 0;   
 }
+
 /****************************************************************************************************/
-int gmsh_npe(int code)
-{
-    switch(code){
-	case 1:  
-	    return 2; 
-	case 2:    
-	    return 3;
-	case 3:    
-	    return 4;
-	case 4:    
-	    return 4;
-	case 5:    
-	    return 8;
-	case 6:   
-	    return 6;
-	case 15:   
-	    return 1;
-	default:    
-	    return -1;
-    }
-}
-/****************************************************************************************************/
-int gmsh_is_surf_elm(int code)
-{
-  // returns 1 if the code corresponds to a surface element, 0 othewhise
-  if(dim == 2){
-    return (code == 1 || code == 15) ? 1 : 0;
-  }
-  else if(dim == 3){
-    return (code == 1 || code == 2 || code == 3 || code == 15) ? 1 : 0;
-  }
-  return 1;
-}
-/****************************************************************************************************/
-int gmsh_is_vol_elm(int code)
+
+int gmsh_is_vol_elm( int code )
 {
   // returns 1 if the code corresponds to a volume element, 0 othewhise
   if(dim == 2){
@@ -710,7 +678,9 @@ int gmsh_is_vol_elm(int code)
   }
   return 1;
 }
+
 /****************************************************************************************************/
+
 int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f)
 {
   /*
