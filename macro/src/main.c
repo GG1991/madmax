@@ -737,12 +737,12 @@ int get_dsh( int dim, int gp, int npe, double *detj )
 {
 
   /* we update "dsh" using "elem_coor" */
-  double ***pdsh;
-  fem_get_dsh_master( npe, dim, &pdsh );
+  double ***dsh_master;
+  fem_get_dsh_master( npe, dim, &dsh_master );
 
-  fem_calc_jac( dim, npe, gp, elem_coor, pdsh, jac );
+  fem_calc_jac( dim, npe, gp, elem_coor, dsh_master, jac );
   fem_invjac( dim, jac, jac_inv, detj );
-  fem_trans_dsh( dim, npe, gp, jac_inv, pdsh, &dsh_gp );
+  fem_trans_dsh( dim, npe, gp, jac_inv, dsh_master, &dsh_gp );
 
   return 0;
 }
