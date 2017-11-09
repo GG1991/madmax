@@ -433,7 +433,7 @@ int FemCalculateJac3D(double coor[8][3],double ***ds, int npe,int gp,double jac[
   return 0;
 }
 /****************************************************************************************************/
-int fem_calc_jac( int dim, int npe, int gp, double * coor, double *** dsh, double * jac )
+int fem_calc_jac( int dim, int npe, int gp, double * coor, double *** dsh, double ** jac )
 {
   int i, j, n;
 
@@ -442,9 +442,9 @@ int fem_calc_jac( int dim, int npe, int gp, double * coor, double *** dsh, doubl
 
   for( i = 0 ; i < dim ; i++ ){
     for( j = 0 ; j < dim ; j++ ){
-      jac[i*dim + j]=0.0;
+      jac[i][j]=0.0;
       for( n = 0 ; n < npe ; n++ )
-	jac[i*dim + j] += dsh[n][i][gp]*coor[n*dim + j];
+	jac[i][j] += dsh[n][i][gp]*coor[n*dim + j];
     }
   }
   return 0;
@@ -477,9 +477,12 @@ int fem_invjac3(double jac[3][3],double ijac[3][3],double *det)
   ijac[2][2]=c22/(*det);
   return 0;
 }
+
 /****************************************************************************************************/
-int fem_invjac(int dim, double jac[3][3],double ijac[3][3],double *det)
+
+int fem_invjac( int dim, double ** jac, double ** ijac, double *det )
 {
+
   double c00,c01,c02,c10,c11,c12,c20,c21,c22;
 
   if( !jac || !ijac ) return 1;
@@ -538,19 +541,17 @@ int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[8][3]
   return 0;
 }
 /****************************************************************************************************/
-int fem_trans_dsh(int dim, double ijac[3][3],int nsh,int gp,double ***ShapeDerivsMaster,double ShapeDerivs[8][3])
+int fem_trans_dsh( int dim, int nsh, int gp, double **ijac, double ***dsh_master, double ***dsh )
 {
   int i, j, sh; 
 
-  if( !ijac || !ShapeDerivsMaster || !ShapeDerivs ) return 1;
+  if( !ijac || !dsh_master || !dsh ) return 1;
 
-  for(sh=0;sh<nsh;sh++){
-    for(i=0;i<dim;i++){
-      ShapeDerivs[sh][i]=0.0;
-      for(j=0;j<dim;j++){
-        ShapeDerivs[sh][i] += ijac[i][j] * ShapeDerivsMaster[sh][j][gp];
-      }
-
+  for( sh = 0 ; sh < nsh ; sh++ ){
+    for( i = 0 ; i < dim ; i++ ){
+      (*dsh)[sh][i]=0.0;
+      for( j = 0 ; j < dim ; j++ )
+        (*dsh)[sh][i] += ijac[i][j] * dsh_master[sh][j][gp];
     }
   }        
   return 0;

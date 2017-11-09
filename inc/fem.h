@@ -12,9 +12,10 @@
 
 int fem_inigau(void);
 int fem_init_struct(double ***sh, double ****dsh, double **wp, double *h, int dim);
+int fem_invjac( int dim, double ** jac, double ** ijac, double *det );
 int fem_caljac3(double coor[8][3],double ***ds, int npe,int gp,double jac[3][3]);
 int fem_invjac3(double jac[3][3],double ijac[3][3],double *det);
-int fem_calc_jac( int dim, int npe, int gp, double * coor, double *** dsh, double * jac );
+int fem_calc_jac( int dim, int npe, int gp, double * coor, double *** dsh, double ** jac );
 int fem_calode(int npe, int dim, double ****oder);
 int fem_calwei(int npe, int dim, double **wp);
 int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[3][3]);
@@ -23,10 +24,8 @@ int fem_vecmod(double *vec, int n, double *mod);
 int fem_dotdsh(int i, int j, double **derivs, int dim, double *p);
 int fem_vcross(double *v1, double *v2, double *vr);
 
-int FemInvertJac3D(double jac[3][3],double ijac[3][3],double *det);
-int fem_trans_dsh(int dim, double ijac[3][3],int nsh,int gp,double ***ShapeDerivsMaster,double ShapeDerivs[8][3]);
+int fem_trans_dsh( int dim, int nsh, int gp, double **ijac, double ***dsh_master, double ***dsh );
 int fem_get_dsh_master( int npe, int dim , double ****dsh );
-double * FemGetPointer2Weight(int npe, int dim);
 int fem_get_sh(int npe, int dim, double ***sh);
 int fem_get_dsh( int npe, int dim, int gp, double **dsh, double *detj );
 
