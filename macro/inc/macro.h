@@ -40,8 +40,8 @@ double      *c;                   // constitutive tensor
 double      **dsh_gp;             // shape functions derivatives at gauss points
 double      **sh_gp;              // shape functions at gauss points
 double      *wp;                  // gauss weights
-double      *jac;
-double      *jac_inv;
+double      **jac;                // elemental jacobian
+double      **jac_inv;            // inverse of elemental jacobian
 
 f1d_t       func_bc;              // boundary function
 

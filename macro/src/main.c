@@ -316,6 +316,16 @@ end_mac_0:
   for( i = 0 ; i < npe_max ; i++ )
     dsh_gp[i] = malloc( ngp_max * sizeof(double));
 
+  /* alloc jac */
+  jac = malloc( dim * sizeof(double*));
+  for( i = 0 ; i < dim ; i++ )
+    jac[i] = malloc( dim * sizeof(double));
+
+  /* alloc jac_inv */
+  jac_inv = malloc( dim * sizeof(double*));
+  for( i = 0 ; i < dim ; i++ )
+    jac_inv[i] = malloc( dim * sizeof(double));
+
 
   /**************************************************/
 
@@ -731,8 +741,8 @@ int get_dsh( int dim, int gp, int npe, double *detj )
   fem_get_dsh_master( npe, dim, &pdsh );
 
   fem_calc_jac( dim, npe, gp, elem_coor, pdsh, jac );
-//  fem_invjac(dim, jac, ijac, detj);
-//  fem_trans_dsh(dim, ijac, npe, gp, ShapeDerivsMaster, dsh);
+  fem_invjac( dim, jac, jac_inv, detj );
+  fem_trans_dsh( dim, npe, gp, jac_inv, pdsh, &dsh_gp );
 
   return 0;
 }
