@@ -24,7 +24,9 @@ double      ***struct_dsh;        // Derivative shapes functions
 double      *struct_wp;           // Weights
 double      **bmat;               // B matrix (Bu = epsilon)
 int         npe_max;              // maximum number of nodes per element
-double      *elem_disp;
+int         ngp_max;              // maximum number of gauss points
+double      *elem_disp;           // elemental displacements
+double      *elem_coor;           // coordinates of the element's verteces
 int         *loc_elem_index;      // local elemental index vector for assembly and reading
 int         *glo_elem_index;      // global elemental index vector for assembly and reading
 double      *strain_gp;           // strain at Gauss point
@@ -35,6 +37,11 @@ double      *elem_stress;         // stress at each element
 double      *elem_energy;         // energy at each element
 double      *k_elem;              // elemental matrix for assembly
 double      *c;                   // constitutive tensor
+double      **dsh_gp;             // shape functions derivatives at gauss points
+double      **sh_gp;              // shape functions at gauss points
+double      *wp;                  // gauss weights
+double      *jac;
+double      *jac_inv;
 
 f1d_t       func_bc;              // boundary function
 
