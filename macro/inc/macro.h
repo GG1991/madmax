@@ -47,12 +47,14 @@ int         mesh_f;               //  mesh format
 
 typedef struct bound_t_
 {
-  char    *name;
-  int     kind;
-  int     *fnum;
-  int     nix;
-  int     *disp_ixs;
-  double  *disp_val;
+  char    *name;                  // boundary name
+  int     kind;                   // boundary kind ( xxx -> to decimal )
+  int     *fnum;                  // funtion number to evaluate
+  int     ndirpn;                 // dirichlet values per node
+  int     nneupn;                 // neumann values per node
+  int     nix;                    // number of nodes of this boundary
+  int     *dir_ixs;               // dirichlet indeces
+  double  *dir_val;               // dirichlet values
 
 }bound_t;
 
