@@ -28,7 +28,7 @@ int gmsh_get_node_index( const char * mesh_n, const char * bou_name, int nmynods
 
     data = strtok(buf," \n");
     if( flag == 0 ){
-      if( !strcmp(data,"$Elements"))
+      if( strcmp(data,"$Elements") == 0 )
       {
 	fgets( buf, NBUF_GMSH, fm );
 	flag  = 1;
@@ -73,7 +73,7 @@ int gmsh_get_node_index( const char * mesh_n, const char * bou_name, int nmynods
 	pn  = nod_list.head;
 	i = 0;
 	while( pn ){
-	  (*ix)[i] = *( int * ) pn->data;
+	  (*ix)[i++] = *( int * ) pn->data;
 	  pn = pn->next;
 	}
 	list_clear( &nod_list );
@@ -81,7 +81,6 @@ int gmsh_get_node_index( const char * mesh_n, const char * bou_name, int nmynods
 	return 0;   
       }
     } 
-    break;
   }
 
   return 1;
