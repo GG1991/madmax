@@ -13,8 +13,6 @@
 
 #define NBUF        256            // buffer length
 
-char        filename[NBUF];
-
 int         macro_mode;
 
 int         nr_max_its;          // newton raphson maximum number of iterations
@@ -39,10 +37,12 @@ f1d_t       func_bc;              // boundary function
 
 int         mymicro_rank_worker;
 
-int         rank_mac;          //  rank on macro comm
-int         nproc_mac;         //  # of macro processes (WORLD_COMM)  
+int         rank_mac;             //  rank on macro comm
+int         nproc_mac;            //  # of macro processes (WORLD_COMM)  
 
-char        filename[NBUF];    //  string for different purposes
+char        filename[NBUF];       //  string for different purposes
+char        mesh_n[NBUF];         //  mesh path
+int         mesh_f;               //  mesh format
 
 typedef struct bound_t_
 {
