@@ -433,16 +433,18 @@ int FemCalculateJac3D(double coor[8][3],double ***ds, int npe,int gp,double jac[
   return 0;
 }
 /****************************************************************************************************/
-int fem_calc_jac(int dim, double coor[8][3],double ***ds, int npe,int gp,double jac[3][3])
+int fem_calc_jac( int dim, int npe, int gp, double * coor, double *** dsh, double * jac )
 {
   int i, j, n;
-  if( !jac || !coor || !ds ) return 1;
-  for(i=0;i<dim;i++){
-    for(j=0;j<dim;j++){
-      jac[i][j]=0.0;
-      for(n=0;n<npe;n++){
-        jac[i][j] += ds[n][i][gp]*coor[n][j];
-      }
+
+  if( !jac || !coor || !dsh ) 
+    return 1;
+
+  for( i = 0 ; i < dim ; i++ ){
+    for( j = 0 ; j < dim ; j++ ){
+      jac[i*dim + j]=0.0;
+      for( n = 0 ; n < npe ; n++ )
+	jac[i*dim + j] += dsh[n][i][gp]*coor[n*dim + j];
     }
   }
   return 0;
@@ -649,46 +651,41 @@ int fem_calode(int npe, int dim, double ****oder){
   return 0;
 }
 /****************************************************************************************************/
-double *** FemGetPointer2ShapeDerivsMaster(int npe, int dim)
+int fem_get_dsh_master( int npe, int dim, double ****dsh )
 {
 
-  switch(dim){
-
-    case 1:
-      printf("FemGetPointer2DeriveMaster\n");
-      return NULL;
+  switch( dim ){
 
     case 2:
-
-      switch(npe){
+      switch( npe ){
         case 3:
-          return ds_tria_3;
+          *dsh = ds_tria_3;
+	  break;
         case 4:
-          return ds_quad_4;
+          *dsh = ds_quad_4;
+	  break;
         default:
-	  printf("FemGetPointer2DeriveMaster\n");
-          return NULL;
+          return 1;
       }
 
     case 3:
 
-      switch(npe){
+      switch( npe ){
         case 4:
-          return ds_tetra_4;
+          *dsh = ds_tetra_4;
         case 6:
-          return ds_prism_6;
+          *dsh = ds_prism_6;
         case 8:
-          return ds_hexa_8;
+          *dsh = ds_hexa_8;
         default:
-	  printf("FemGetPointer2DeriveMaster\n");
-          return NULL;
+          return 1;
       }
 
     default:
-      printf("FemGetPointer2DeriveMaster\n");
-      return NULL;
+      return 1;
   }
 
+  return 0;
 }
 /****************************************************************************************************/
 int fem_get_sh(int npe, int dim, double ***sh)
