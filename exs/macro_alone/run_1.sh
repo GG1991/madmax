@@ -14,7 +14,7 @@ $MPIEXEC -np $NP xterm -e gdb -x file.gdb --args ../../macro/macro \
     -mesh cube_2d.msh \
     -dim 2            \
     -mesh_gmsh        \
-    -normal           \
+    -eigensys         \
     -tf 1.0           \
     -dt 1.0           \
     -pc_type jacobi   \

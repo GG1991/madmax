@@ -29,7 +29,7 @@ int get_global_elem_index( int e, int * glo_elem_index );
 int get_local_elem_index ( int e, int * loc_elem_index );
 int get_strain( int e , int gp, double *strain_gp );;
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
-int get_dsh( int dim, int gp, int npe, double *detj );
+int get_dsh( int dim, int gp, int npe, double ***dsh_gp, double *detj );
 
 int main(int argc, char **argv)
 {
@@ -122,6 +122,11 @@ end_mac_0:
   PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set);
   if( set == PETSC_FALSE ){
     PetscPrintf(MPI_COMM_SELF,"mesh file not given on command line.\n");
+    goto end_mac_1;
+  }
+  FILE *fm = fopen( mesh_n, "r");
+  if( fm == NULL ){
+    PetscPrintf(MPI_COMM_SELF,"mesh file not found.\n");
     goto end_mac_1;
   }
   PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
@@ -274,7 +279,7 @@ end_mac_0:
 
   /**************************************************/
   /* alloc and init variables */
-  PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");
+  PetscPrintf(MACRO_COMM, "allocating \n");
 
   A   = NULL;
   b   = NULL;
@@ -286,6 +291,7 @@ end_mac_0:
   loc_elem_index = malloc( ixpe * sizeof(int));
   glo_elem_index = malloc( ixpe * sizeof(int));
   elem_disp      = malloc( ixpe * sizeof(double));
+  elem_coor      = malloc( ixpe * sizeof(double));
   k_elem         = malloc( ixpe*ixpe * sizeof(double));
   stress_gp      = malloc( nvoi * sizeof(double));
   strain_gp      = malloc( nvoi * sizeof(double));
@@ -373,6 +379,13 @@ end_mac_0:
 
     nlocal = dim * nmynods;
     ntotal = dim * ntotnod;
+
+    MatCreate(MACRO_COMM,&A);
+    MatSetSizes(A,nlocal,nlocal,ntotal,ntotal);
+    MatSetFromOptions(A);
+    MatSeqAIJSetPreallocation(A,117,NULL);
+    MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);
+    MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
     MatCreate(MACRO_COMM,&M);
     MatSetSizes(M,nlocal,nlocal,ntotal,ntotal);
@@ -630,19 +643,19 @@ int assembly_A( void )
     /* set to 0 res_elem */
     for( i = 0 ; i < npe*dim*npe*dim ; i++ )
       k_elem[i] = 0.0;
-
+    
+    /* get local and global index of nodes in vertex */
     get_local_elem_index (e, loc_elem_index);
     get_global_elem_index(e, glo_elem_index);
 
-    /* set "elem_coor" */
+    /* get "elem_coor" */
     for( i = 0 ; i < npe*dim ; i++ )
       elem_coor[i] = coord[loc_elem_index[i]];
-
 
     for( gp = 0; gp < ngp ; gp++ ){
 
       /* using "elem_coor" we update "dsh" at gauss point "gp" */
-      get_dsh( dim, gp, npe, &detj);
+      get_dsh( dim, gp, npe, &dsh_gp, &detj);
 
       /* calc strain gp */
       get_strain( e , gp, strain_gp );
@@ -655,7 +668,7 @@ int assembly_A( void )
 	  for( k = 0; k < nvoi ; k++ ){
 	    for( h = 0; h < nvoi ; h++ )
 	      k_elem[ i*npe*dim + j] += \
-	      bmat[h][i] * c[ h*nvoi + k ] * bmat[k][j] * wp[gp];
+	      bmat[h][i] * c[ h*nvoi + k ] * bmat[k][j] * wp[gp] * detj ;
 	  }
 	}
       }
@@ -667,7 +680,7 @@ int assembly_A( void )
 
   /* communication between processes */
   MatAssemblyBegin( A , MAT_FINAL_ASSEMBLY );
-  MatAssemblyEnd(   A , MAT_FINAL_ASSEMBLY );
+  MatAssemblyEnd  ( A , MAT_FINAL_ASSEMBLY );
 
   return 0;
 }
@@ -689,8 +702,14 @@ int get_strain( int e , int gp, double *strain_gp )
   VecGetArray         ( x_loc, &x_arr );
 
   int  i , v;
-  int  is;
   int  npe = eptr[e+1] - eptr[e];
+  for( i = 0 ; i < npe*dim ; i++ )
+    elem_disp[i] = x_arr[loc_elem_index[i]];
+
+  VecRestoreArray         ( x_loc , &x_arr);
+  VecGhostRestoreLocalForm( x     , &x_loc);
+
+  int  is;
 
   for( is = 0 ; is < npe ; is++ ){
     if( dim == 2 ){
@@ -705,11 +724,6 @@ int get_strain( int e , int gp, double *strain_gp )
 
   /* get the local indeces of the element vertex nodes */
   get_local_elem_index( e, loc_elem_index);
-
-
-  /* get the elemental displacements */
-  for( i = 0 ; i < npe*dim ; i++ )
-    elem_disp[i] = x_arr[loc_elem_index[i]];
 
   /* calc strain gp */
   for( v = 0; v < nvoi ; v++ ){
@@ -733,6 +747,14 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
 
 int get_global_elem_index(int e, int * glo_elem_index)
 {
+
+  int  n, d;
+  int  npe = eptr[e+1] - eptr[e];
+
+  for( n = 0 ; n < npe ; n++ ){
+    for( d = 0 ; d < dim ; d++ )
+      glo_elem_index[n*dim + d] = loc2petsc[eind[n]]*dim + d;
+  }
   return 0;
 }
 
@@ -740,21 +762,31 @@ int get_global_elem_index(int e, int * glo_elem_index)
 
 int get_local_elem_index(int e, int * loc_elem_index)
 {
+
+  int  n, d;
+  int  npe = eptr[e+1] - eptr[e];
+
+  for( n = 0 ; n < npe ; n++ ){
+    for( d = 0 ; d < dim ; d++ )
+      loc_elem_index[n*dim + d] = eind[n]*dim + d;
+  }
   return 0;
 }
 
 /****************************************************************************************************/
 
-int get_dsh( int dim, int gp, int npe, double *detj )
+int get_dsh( int dim, int gp, int npe, double ***dsh_gp, double *detj )
 {
 
   /* we update "dsh" using "elem_coor" */
+
   double ***dsh_master;
+
   fem_get_dsh_master( npe, dim, &dsh_master );
 
   fem_calc_jac( dim, npe, gp, elem_coor, dsh_master, jac );
   fem_invjac( dim, jac, jac_inv, detj );
-  fem_trans_dsh( dim, npe, gp, jac_inv, dsh_master, &dsh_gp );
+  fem_trans_dsh( dim, npe, gp, jac_inv, dsh_master, dsh_gp );
 
   return 0;
 }
