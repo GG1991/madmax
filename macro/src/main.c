@@ -20,13 +20,16 @@ static char help[] =
 "-print_petsc : prints petsc structures on files such as Mat and Vec objects                       \n"
 "-print_vtu   : prints solutions on .vtu and .pvtu files                                           \n";
 
-int read_bc     ( void     );
-int assembly_A  ( void     );
-int assembly_M  ( void     );
-int assembly_b  ( void     );
+int read_bc( void );
+int assembly_A( void );
+int assembly_M( void );
+int assembly_b( void );
 int update_bound( double t );
-int get_global_elem_index(int e, int * glo_elem_index);
-int get_local_elem_index (int e, int * loc_elem_index);
+int get_global_elem_index( int e, int * glo_elem_index );
+int get_local_elem_index ( int e, int * loc_elem_index );
+int get_strain( int e , int gp, double *strain_gp );;
+int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
+int get_dsh( int dim, int gp, int npe, double *detj );
 
 int main(int argc, char **argv)
 {
@@ -128,6 +131,7 @@ end_mac_0:
   }
   nvoi    = (dim == 2) ? 3 : 6;
   npe_max = (dim == 2) ? 4 : 8;
+  ngp_max = npe_max;
 
   /* Printing Options */
   flag_print = 0;
@@ -294,10 +298,23 @@ end_mac_0:
     elem_type    = malloc( nelm      * sizeof(int));
   }
 
-  /* alloc the B matrix */
+  /* alloc B matrix */
   bmat = malloc( nvoi * sizeof(double*));
   for( i = 0 ; i < nvoi  ; i++ )
     bmat[i] = malloc( ixpe * sizeof(double));
+
+  /* alloc wp */
+  wp = malloc( ngp_max * sizeof(double));
+
+  /* alloc dsh_gp */
+  dsh_gp = malloc( npe_max * sizeof(double*));
+  for( i = 0 ; i < npe_max ; i++ )
+    dsh_gp[i] = malloc( dim * sizeof(double));
+
+  /* alloc sh_gp */
+  sh_gp = malloc( npe_max * sizeof(double*));
+  for( i = 0 ; i < npe_max ; i++ )
+    dsh_gp[i] = malloc( ngp_max * sizeof(double));
 
 
   /**************************************************/
@@ -406,8 +423,8 @@ end_mac_0:
 
       if(flag_print & (1<<PRINT_VTU))
       { 
-	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
-	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
+//	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
+//	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
 	sprintf( filename, "macro_eigen_%d", i);
 	ierr = write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
       }
@@ -468,7 +485,7 @@ end_mac_0:
 
       if( flag_print & (1<<PRINT_VTU) )
       { 
-	ierr = calc_strain_stress_energy( &x, strain, stress, energy);
+//	ierr = calc_strain_stress_energy( &x, strain, stress, energy);
 	sprintf( filename, "macro_t_%d", time_step );
 	write_vtu( MACRO_COMM, filename, &x, &b, strain, stress, energy );
       }
@@ -573,6 +590,14 @@ int read_bc()
 }
 
 /****************************************************************************************************/
+int assembly_M( void )
+{
+  return 0;
+}
+int assembly_b( void )
+{
+  return 0;
+}
 
 int assembly_A( void )
 {
@@ -582,6 +607,7 @@ int assembly_A( void )
   int     e, gp;
   int     i, j, k, h;
   int     npe, ngp;
+  double  detj;
 
   for( e = 0 ; e < nelm ; e++ ){
 
@@ -595,6 +621,9 @@ int assembly_A( void )
 
     for( gp = 0; gp < ngp ; gp++ ){
 
+      /* using "elem_coor" we update "dsh" at gauss point "gp" */
+      get_dsh( dim, gp, npe, &detj);
+
       /* calc strain gp */
       get_strain( e , gp, strain_gp );
 
@@ -606,7 +635,7 @@ int assembly_A( void )
 	  for( k = 0; k < nvoi ; k++ ){
 	    for( h = 0; h < nvoi ; h++ )
 	      k_elem[ i*npe*dim + j] += \
-	      bmat[h][i] * c[ h*nvoi + k ] * struct_bmat[k][j] * wp[gp];
+	      bmat[h][i] * c[ h*nvoi + k ] * bmat[k][j] * wp[gp];
 	  }
 	}
       }
@@ -628,16 +657,34 @@ int assembly_A( void )
 int get_strain( int e , int gp, double *strain_gp )
 {
 
-  Vec     x_loc;
-  double  *x_arr;
+  /* 
+     needs that global variable "dsh" being updated at gauss point 
+     previously, this is to save time and not calculate Jacobian
+     twice
+   */
 
+  double  *x_arr; 
+  Vec      x_loc; 
   VecGhostGetLocalForm( x    , &x_loc );
   VecGetArray         ( x_loc, &x_arr );
 
-  int    i , v;
+  int  i , v;
+  int  is;
+  int  npe = eptr[e+1] - eptr[e];
+
+  for( is = 0 ; is < npe ; is++ ){
+    if( dim == 2 ){
+      bmat[0][is*dim + 0] = dsh_gp[is][0];
+      bmat[0][is*dim + 1] = 0            ;
+      bmat[1][is*dim + 0] = 0            ;
+      bmat[1][is*dim + 1] = dsh_gp[is][1];
+      bmat[2][is*dim + 0] = dsh_gp[is][1];
+      bmat[2][is*dim + 1] = dsh_gp[is][0];
+    }
+  }
 
   /* get the local indeces of the element vertex nodes */
-  get_local_elem_index(e, loc_elem_index);
+  get_local_elem_index( e, loc_elem_index);
 
   /* get the elemental displacements */
   for( i = 0 ; i < npe*dim ; i++ )
@@ -647,8 +694,15 @@ int get_strain( int e , int gp, double *strain_gp )
   for( v = 0; v < nvoi ; v++ ){
     strain_gp[v] = 0.0;
     for( i = 0 ; i < npe*dim ; i++ )
-      strain_gp[v] += struct_bmat[v][i][gp] * elem_disp[i];
+      strain_gp[v] += bmat[v][i] * elem_disp[i];
   }
+
+  return 0;
+}
+/****************************************************************************************************/
+
+int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan )
+{
 
   return 0;
 }
@@ -664,6 +718,22 @@ int get_global_elem_index(int e, int * glo_elem_index)
 
 int get_local_elem_index(int e, int * loc_elem_index)
 {
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int get_dsh( int dim, int gp, int npe, double *detj )
+{
+
+  /* we update "dsh" using "elem_coor" */
+  double ***pdsh;
+  fem_get_dsh_master( npe, dim, &pdsh );
+
+  fem_calc_jac( dim, npe, gp, elem_coor, pdsh, jac );
+//  fem_invjac(dim, jac, ijac, detj);
+//  fem_trans_dsh(dim, ijac, npe, gp, ShapeDerivsMaster, dsh);
+
   return 0;
 }
 
