@@ -20,7 +20,13 @@ static char help[] =
 "-print_petsc : prints petsc structures on files such as Mat and Vec objects                       \n"
 "-print_vtu   : prints solutions on .vtu and .pvtu files                                           \n";
 
-int read_bc();
+int read_bc     ( void     );
+int assembly_A  ( void     );
+int assembly_M  ( void     );
+int assembly_b  ( void     );
+int update_bound( double t );
+int get_global_elem_index(int e, int * glo_elem_index);
+int get_local_elem_index (int e, int * loc_elem_index);
 
 int main(int argc, char **argv)
 {
@@ -273,22 +279,26 @@ end_mac_0:
   dx  = NULL;
 
   /* alloc variables*/
-  loc_elem_index = malloc( dim*npe_max * sizeof(int));
-  glo_elem_index = malloc( dim*npe_max * sizeof(int));
-  elem_disp      = malloc( dim*npe_max * sizeof(double));
-  stress_gp      = malloc( nvoi        * sizeof(double));
-  strain_gp      = malloc( nvoi        * sizeof(double));
+  int ixpe = npe_max * dim;  // number of indeces per element
+  loc_elem_index = malloc( ixpe * sizeof(int));
+  glo_elem_index = malloc( ixpe * sizeof(int));
+  elem_disp      = malloc( ixpe * sizeof(double));
+  k_elem         = malloc( ixpe*ixpe * sizeof(double));
+  stress_gp      = malloc( nvoi * sizeof(double));
+  strain_gp      = malloc( nvoi * sizeof(double));
+  c              = malloc( nvoi*nvoi * sizeof(double));
   if( flag_print & ( 1 << PRINT_VTU ) ){
-    elem_strain = malloc( nelm*nvoi * sizeof(double));
-    elem_stress = malloc( nelm*nvoi * sizeof(double));
-    elem_energy = malloc( nelm      * sizeof(double));
-    elem_type   = malloc( nelm      * sizeof(int));
+    elem_strain  = malloc( nelm*nvoi * sizeof(double));
+    elem_stress  = malloc( nelm*nvoi * sizeof(double));
+    elem_energy  = malloc( nelm      * sizeof(double));
+    elem_type    = malloc( nelm      * sizeof(int));
   }
 
   /* alloc the B matrix */
   bmat = malloc( nvoi * sizeof(double*));
   for( i = 0 ; i < nvoi  ; i++ )
-    bmat[i] = malloc( npe_max*dim * sizeof(double));
+    bmat[i] = malloc( ixpe * sizeof(double));
+
 
   /**************************************************/
 
@@ -345,33 +355,26 @@ end_mac_0:
     MatMPIAIJSetPreallocation(M,117,NULL,117,NULL);
     MatSetOption(M,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
-    ierr = assembly_mass(&M);
-    if(ierr){
-      PetscPrintf(MACRO_COMM, "problem assembling mass matrix\n");
-      goto end_mac_1;
+    assembly_M();
+    assembly_A();
+
+    /* set dirichlet bc */
+    node_list_t *pn;
+    bound_t     *bou;
+    pn = boundary_list.head;
+    while( pn )
+    {
+      bou  = (bound_t * )pn->data;
+      MatZeroRowsColumns(M, bou->ndirix, bou->dir_ixs, 1.0, NULL, NULL);
+      MatZeroRowsColumns(A, bou->ndirix, bou->dir_ixs, 1.0, NULL, NULL);
+      pn = pn->next;
     }
-    ierr = assembly_jacobian_sd(&A);
+    MatAssemblyBegin( M, MAT_FINAL_ASSEMBLY );
+    MatAssemblyEnd  ( M, MAT_FINAL_ASSEMBLY );
+    MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
+    MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
 
-//    int  *dir_idx;
-//    int  ndir;
-//    node_list_t *pn;
-//    bound_t     *bou;
-//
-//    pBound = boundary_list.head;
-//    while(pBound){
-//      mac_boundary  = ((boundary_t*)pBound->data)->bvoid;
-//      dir_idx = mac_boundary->dir_idx;
-//      ndir = mac_boundary->ndir;
-//      MatZeroRowsColumns(M, ndir, dir_idx, 1.0, NULL, NULL);
-//      MatZeroRowsColumns(A, ndir, dir_idx, 1.0, NULL, NULL);
-//      pBound = pBound->next;
-//    }
-    MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd  (M, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd  (A, MAT_FINAL_ASSEMBLY);
-
-    if(flag_print & (1<<PRINT_PETSC)){
+    if(flag_print & ( 1<<PRINT_PETSC )){
       PetscViewer  viewer;
       PetscViewerASCIIOpen(MACRO_COMM,"M.dat" ,&viewer); MatView(M ,viewer);
       PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
@@ -380,8 +383,8 @@ end_mac_0:
       PetscViewerASCIIOpen(MACRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
     }
 
-    int nev;   // number of request eigenpairs
-    int nconv; // number of converged eigenpairs
+    int    nev;   // number of request eigenpairs
+    int    nconv; // number of converged eigenpairs
     double error;
 
     EPSCreate(MACRO_COMM,&eps);
@@ -391,8 +394,8 @@ end_mac_0:
     EPSGetDimensions(eps,&nev,NULL,NULL);
     PetscPrintf(MACRO_COMM,"Number of requested eigenvalues: %D\n",nev);
 
-    ierr = EPSSolve(eps);
-    ierr = EPSGetConverged(eps,&nconv);
+    EPSSolve(eps);
+    EPSGetConverged(eps,&nconv);
     PetscPrintf(MACRO_COMM,"Number of converged eigenpairs: %D\n",nconv);
 
     for( i = 0 ; i < nev ; i++ ){
@@ -426,7 +429,6 @@ end_mac_0:
       PetscPrintf(MACRO_COMM,"\ntime step %3d %e seg\n", time_step, t);
 
       /* Setting Displacement on Dirichlet Indeces on <x> */
-//      MacroSetDisplacementOnBoundary(t, &x);
 
       nr_its = 0; norm = 2*nr_norm_tol;
       while( nr_its < nr_max_its && norm > nr_norm_tol )
@@ -434,12 +436,7 @@ end_mac_0:
 
 	/* Assemblying residual */
 	PetscPrintf(MACRO_COMM, "Assembling Residual\n");
-	ierr = assembly_residual_sd(&x, &b);
-	if(ierr){
-	  PetscPrintf(MACRO_COMM, "problem assembling residual\n");
-	  goto end_mac_1;
-	}
-//	MacroSetBoundaryOnResidual(&b);
+	assembly_b();
 	VecNorm(b,NORM_2,&norm);
 	PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);
 	VecScale( b, -1.0 );
@@ -448,8 +445,7 @@ end_mac_0:
 
 	/* Assemblying Jacobian */
 	PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
-	ierr = assembly_jacobian_sd(&A);
-//	ierr = MacroSetBoundaryOnJacobian(&A); CHKERRQ(ierr);
+	assembly_A();
 
 	/* Solving Problem */
 	PetscPrintf(MACRO_COMM, "Solving Linear System\n ");
@@ -545,11 +541,11 @@ int read_bc()
 {
 
   /* 
-  completes the field of each "bound_t" in boundary list 
-  int     nix;
-  int     *disp_ixs;
-  double  *disp_val;
-  */
+     completes the field of each "bound_t" in boundary list 
+     int     nix;
+     int     *disp_ixs;
+     double  *disp_val;
+   */
 
   node_list_t *pn;
   bound_t     *bou;
@@ -560,18 +556,114 @@ int read_bc()
     bou = ( bound_t * )pn->data;
     int *ix, n;
     gmsh_get_node_index( mesh_n, bou->name, nmynods, mynods, dim, &n, &ix );
-    bou->dir_ixs = malloc( n * bou->ndirpn * sizeof(int)); 
+    bou->ndirix  = n * bou->ndirpn;
+    bou->dir_ixs = malloc( bou->ndirix * sizeof(int)); 
+    bou->dir_val = malloc( bou->ndirix * sizeof(double)); 
     for( i = 0 ; i < n ; i++ ){
       da = 0;
       for( d = 0 ; d < dim ; d++ )
 	if( bou->kind & (1<<d) ) 
 	  bou->dir_ixs[i* (bou->ndirpn) + da++] = ix[i] * dim + d;
     }
-    bou->dir_val = malloc( n * bou->ndirpn * sizeof(double)); 
     free(ix);
     pn = pn->next;
   }
 
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int assembly_A( void )
+{
+
+  MatZeroEntries(A);
+
+  int     e, gp;
+  int     i, j, k, h;
+  int     npe, ngp;
+
+  for( e = 0 ; e < nelm ; e++ ){
+
+    ngp = npe = eptr[e+1] - eptr[e];
+
+    /* set to 0 res_elem */
+    for( i = 0 ; i < npe*dim*npe*dim ; i++ )
+      k_elem[i] = 0.0;
+
+    get_global_elem_index(e, glo_elem_index);
+
+    for( gp = 0; gp < ngp ; gp++ ){
+
+      /* calc strain gp */
+      get_strain( e , gp, strain_gp );
+
+      /* we get stress = f(strain) */
+      get_c_tan( NULL , e , gp , strain_gp , c );
+
+      for( i = 0 ; i < npe*dim ; i++ ){
+	for( j = 0 ; j < npe*dim ; j++ ){
+	  for( k = 0; k < nvoi ; k++ ){
+	    for( h = 0; h < nvoi ; h++ )
+	      k_elem[ i*npe*dim + j] += \
+	      bmat[h][i] * c[ h*nvoi + k ] * struct_bmat[k][j] * wp[gp];
+	  }
+	}
+      }
+
+    }
+    MatSetValues( A, npe*dim, glo_elem_index, npe*dim, glo_elem_index, k_elem, ADD_VALUES );
+
+  }
+
+  /* communication between processes */
+  MatAssemblyBegin( A , MAT_FINAL_ASSEMBLY );
+  MatAssemblyEnd(   A , MAT_FINAL_ASSEMBLY );
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int get_strain( int e , int gp, double *strain_gp )
+{
+
+  Vec     x_loc;
+  double  *x_arr;
+
+  VecGhostGetLocalForm( x    , &x_loc );
+  VecGetArray         ( x_loc, &x_arr );
+
+  int    i , v;
+
+  /* get the local indeces of the element vertex nodes */
+  get_local_elem_index(e, loc_elem_index);
+
+  /* get the elemental displacements */
+  for( i = 0 ; i < npe*dim ; i++ )
+    elem_disp[i] = x_arr[loc_elem_index[i]];
+
+  /* calc strain gp */
+  for( v = 0; v < nvoi ; v++ ){
+    strain_gp[v] = 0.0;
+    for( i = 0 ; i < npe*dim ; i++ )
+      strain_gp[v] += struct_bmat[v][i][gp] * elem_disp[i];
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int get_global_elem_index(int e, int * glo_elem_index)
+{
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int get_local_elem_index(int e, int * loc_elem_index)
+{
   return 0;
 }
 

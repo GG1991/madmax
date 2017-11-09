@@ -33,6 +33,8 @@ int         *elem_type;           // type in each element
 double      *elem_strain;         // strain at each element
 double      *elem_stress;         // stress at each element
 double      *elem_energy;         // energy at each element
+double      *k_elem;              // elemental matrix for assembly
+double      *c;                   // constitutive tensor
 
 f1d_t       func_bc;              // boundary function
 
@@ -52,7 +54,7 @@ typedef struct bound_t_
   int     *fnum;                  // funtion number to evaluate
   int     ndirpn;                 // dirichlet values per node
   int     nneupn;                 // neumann values per node
-  int     nix;                    // number of nodes of this boundary
+  int     ndirix;                 // number of dir indeces of this boundary
   int     *dir_ixs;               // dirichlet indeces
   double  *dir_val;               // dirichlet values
 
