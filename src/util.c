@@ -120,3 +120,24 @@ int print_ksp_info(MPI_Comm COMM, KSP ksp)
 #endif
 
 /****************************************************************************************************/
+
+int strbin2dec(char *str)
+{
+  /* 
+     Converts the string in "str" that suppose to have a continuue
+     sequence of "0" and "1" to its decimal representation.
+   */
+
+  int i;
+  int dec = 0; 
+
+  for( i = strlen(str)-1 ; i >= 0 ; i-- ){
+    if(str[i]=='0' || str[i]=='1'){
+      if(str[i] == '1')
+	dec += (int) pow(2,strlen(str)-1-i);
+    }else{
+      return -1;
+    }
+  }
+  return dec;
+}
