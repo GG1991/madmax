@@ -449,34 +449,6 @@ int fem_calc_jac( int dim, int npe, int gp, double * coor, double *** dsh, doubl
   }
   return 0;
 }
-/****************************************************************************************************/
-int fem_invjac3(double jac[3][3],double ijac[3][3],double *det)
-{
-  double c00,c01,c02,c10,c11,c12,c20,c21,c22;
-  if(!jac || !ijac)
-    return 1;
-  c00 = +jac[1][1]*jac[2][2]-jac[2][1]*jac[1][2];
-  c01 = -jac[1][0]*jac[2][2]+jac[2][0]*jac[1][2];
-  c02 = +jac[1][0]*jac[2][1]-jac[2][0]*jac[1][1];
-  c10 = -jac[0][1]*jac[2][2]+jac[2][1]*jac[0][2];
-  c11 = +jac[0][0]*jac[2][2]-jac[2][0]*jac[0][2];
-  c12 = -jac[0][0]*jac[2][1]+jac[2][0]*jac[0][1];
-  c20 = +jac[0][1]*jac[1][2]-jac[1][1]*jac[0][2];
-  c21 = -jac[0][0]*jac[1][2]+jac[1][0]*jac[0][2];
-  c22 = +jac[0][0]*jac[1][1]-jac[1][0]*jac[0][1];
-
-  (*det)=jac[0][0]*c00 + jac[0][1]*c01 + jac[0][2]*c02;
-  ijac[0][0]=c00/(*det);
-  ijac[0][1]=c10/(*det);
-  ijac[0][2]=c20/(*det);
-  ijac[1][0]=c01/(*det);
-  ijac[1][1]=c11/(*det);
-  ijac[1][2]=c21/(*det);
-  ijac[2][0]=c02/(*det);
-  ijac[2][1]=c12/(*det);
-  ijac[2][2]=c22/(*det);
-  return 0;
-}
 
 /****************************************************************************************************/
 
@@ -524,23 +496,9 @@ int fem_invjac( int dim, double ** jac, double ** ijac, double *det )
 
   return 0;
 }
+
 /****************************************************************************************************/
-int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[8][3])
-{
-  int i,j,sh; 
-  if(!ijac || !oder || !der)
-    return 1;
-  for(sh=0;sh<nsh;sh++){
-    for(i=0;i<3;i++){
-      der[sh][i]=0.0;
-      for(j=0;j<3;j++){
-        der[sh][i] += ijac[i][j] * oder[sh][j][gp];
-      }
-    }
-  }        
-  return 0;
-}
-/****************************************************************************************************/
+
 int fem_trans_dsh( int dim, int nsh, int gp, double **ijac, double ***dsh_master, double ***dsh )
 {
   int i, j, sh; 
@@ -556,7 +514,9 @@ int fem_trans_dsh( int dim, int nsh, int gp, double **ijac, double ***dsh_master
   }        
   return 0;
 }
+
 /****************************************************************************************************/
+
 int fem_calshp(int nsh, int npe, int dim, int gp, double *val){
 
   switch(dim){

@@ -13,12 +13,9 @@
 int fem_inigau(void);
 int fem_init_struct(double ***sh, double ****dsh, double **wp, double *h, int dim);
 int fem_invjac( int dim, double ** jac, double ** ijac, double *det );
-int fem_caljac3(double coor[8][3],double ***ds, int npe,int gp,double jac[3][3]);
-int fem_invjac3(double jac[3][3],double ijac[3][3],double *det);
 int fem_calc_jac( int dim, int npe, int gp, double * coor, double *** dsh, double ** jac );
 int fem_calode(int npe, int dim, double ****oder);
 int fem_calwei(int npe, int dim, double **wp);
-int fem_calder3(double ijac[3][3],int nsh,int gp,double ***oder,double der[3][3]);
 int fem_calare(double **pts, int npe, int dim, double *area);
 int fem_vecmod(double *vec, int n, double *mod);
 int fem_dotdsh(int i, int j, double **derivs, int dim, double *p);
