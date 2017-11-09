@@ -604,10 +604,15 @@ int assembly_M( void )
 {
   return 0;
 }
+
+/****************************************************************************************************/
+
 int assembly_b( void )
 {
   return 0;
 }
+
+/****************************************************************************************************/
 
 int assembly_A( void )
 {
@@ -627,7 +632,13 @@ int assembly_A( void )
     for( i = 0 ; i < npe*dim*npe*dim ; i++ )
       k_elem[i] = 0.0;
 
+    get_local_elem_index (e, loc_elem_index);
     get_global_elem_index(e, glo_elem_index);
+
+    /* set "elem_coor" */
+    for( i = 0 ; i < npe*dim ; i++ )
+      elem_coor[i] = coord[loc_elem_index[i]];
+
 
     for( gp = 0; gp < ngp ; gp++ ){
 
@@ -696,6 +707,7 @@ int get_strain( int e , int gp, double *strain_gp )
   /* get the local indeces of the element vertex nodes */
   get_local_elem_index( e, loc_elem_index);
 
+
   /* get the elemental displacements */
   for( i = 0 ; i < npe*dim ; i++ )
     elem_disp[i] = x_arr[loc_elem_index[i]];
@@ -709,6 +721,7 @@ int get_strain( int e , int gp, double *strain_gp )
 
   return 0;
 }
+
 /****************************************************************************************************/
 
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan )
