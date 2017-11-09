@@ -275,7 +275,6 @@ end_mac_0:
   /**************************************************/
   /* alloc and init variables */
   PetscPrintf(MACRO_COMM, "allocating matrices & vectors\n");
-  mac_alloc(MACRO_COMM);
 
   A   = NULL;
   b   = NULL;

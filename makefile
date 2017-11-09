@@ -68,8 +68,7 @@ SPU_OBJ  = $(SPU_OBJ_DIR)/mesh.o     \
            $(SPU_OBJ_DIR)/comm.o    
 
 MAC_OBJ  = ${MAC_OBJ_DIR}/main.o     \
-           $(SPU_OBJ_DIR)/material.o \
-           ${MAC_OBJ_DIR}/alloc.o
+           $(SPU_OBJ_DIR)/material.o
 
 MIC_OBJ  = ${MIC_OBJ_DIR}/main.o \
            ${MIC_OBJ_DIR}/homogenize.o \
