@@ -189,13 +189,19 @@ end_mac_0:
 	bou.name     = strdup(data); 
 	data = strtok(NULL, " \n");
 	bou.kind     = strbin2dec(data);
+	if(dim == 2){
+	  if( bou.kind == 1 || bou.kind == 2 ) bou.ndirpn =  1;
+	  if( bou.kind == 3 )                  bou.ndirpn =  2;
+	  if( bou.kind == 0 )                  bou.ndirpn =  0;
+	}
+	bou.nneupn   = dim - bou.ndirpn;
 	bou.fnum     = malloc(dim * sizeof(int));
 	for( j = 0 ; j < dim ; j++ ){
 	  data = strtok(NULL, " \n");
 	  bou.fnum[j] = atoi(data);
 	}
-	bou.disp_ixs = NULL;
-	bou.disp_val = NULL;
+	bou.dir_ixs = NULL;
+	bou.dir_val = NULL;
 	list_insertlast( &boundary_list, &bou );
       }
     }
@@ -547,13 +553,22 @@ int read_bc()
 
   node_list_t *pn;
   bound_t     *bou;
+  int         i, d, da;
 
   pn = boundary_list.head;
   while( pn ){
     bou = ( bound_t * )pn->data;
     int *ix, n;
     gmsh_get_node_index( mesh_n, bou->name, nmynods, mynods, dim, &n, &ix );
-    bou->disp_val = malloc( n * sizeof(double)); 
+    bou->dir_ixs = malloc( n * bou->ndirpn * sizeof(int)); 
+    for( i = 0 ; i < n ; i++ ){
+      da = 0;
+      for( d = 0 ; d < dim ; d++ )
+	if( bou->kind & (1<<d) ) 
+	  bou->dir_ixs[i* (bou->ndirpn) + da++] = ix[i] * dim + d;
+    }
+    bou->dir_val = malloc( n * bou->ndirpn * sizeof(double)); 
+    free(ix);
     pn = pn->next;
   }
 
