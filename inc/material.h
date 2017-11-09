@@ -40,4 +40,7 @@ typedef struct _type_0{
 
 list_t material_list;
 
+int mat_get_stress( material_t * mat, int dim , double * strain, double * stress );
+int mat_get_c_tang( material_t * mat, int dim , double * strain, double * c_tang );
+
 #endif
