@@ -2351,41 +2351,41 @@ int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], 
   return 0;
 }
 /****************************************************************************************************/
-int interpolate_structured_2d(double limit[2], int nx, int ny, double *field, double *var_interp)
-{
-  /*
-     <field> size should be <nelm>
-  */
-  int      e, es;
-  double   x0 = limit[0];
-  double   x1 = limit[1];
-  double   y0 = limit[2];
-  double   y1 = limit[3];
-  int      nex = (nx-1);
-  int      ney = (ny-1);
-  int      nelm_s = nex*ney;
-  double   dx = (x1-x0)/nex;
-  double   dy = (y1-y0)/ney;
-  double   centroid[2];
-  double   vol;
-  double   *var_interp_struct;
-
-  var_interp_struct = calloc(nelm_s,sizeof(double));
-
-  for(e=0;e<nelm;e++){
-    get_centroid(e, centroid);
-    get_element_structured_2d(centroid, limit, nx, ny, &es);
-    get_elem_vol(e, &vol);
-    var_interp_struct[es] = var_interp_struct[es] + field[e]*vol;
-  }
-  for(e=0;e<nelm;e++){
-    get_centroid(e, centroid);
-    get_element_structured_2d(centroid, limit, nx, ny, &es);
-    var_interp[e] = var_interp_struct[es] / (dx*dy);
-  }
-
-  return 0;
-}
+//int interpolate_structured_2d(double limit[2], int nx, int ny, double *field, double *var_interp)
+//{
+//  /*
+//     <field> size should be <nelm>
+//  */
+//  int      e, es;
+//  double   x0 = limit[0];
+//  double   x1 = limit[1];
+//  double   y0 = limit[2];
+//  double   y1 = limit[3];
+//  int      nex = (nx-1);
+//  int      ney = (ny-1);
+//  int      nelm_s = nex*ney;
+//  double   dx = (x1-x0)/nex;
+//  double   dy = (y1-y0)/ney;
+//  double   centroid[2];
+//  double   vol;
+//  double   *var_interp_struct;
+//
+//  var_interp_struct = calloc(nelm_s,sizeof(double));
+//
+//  for(e=0;e<nelm;e++){
+//    get_centroid(e, centroid);
+//    get_element_structured_2d(centroid, limit, nx, ny, &es);
+//    get_elem_vol(e, &vol);
+//    var_interp_struct[es] = var_interp_struct[es] + field[e]*vol;
+//  }
+//  for(e=0;e<nelm;e++){
+//    get_centroid(e, centroid);
+//    get_element_structured_2d(centroid, limit, nx, ny, &es);
+//    var_interp[e] = var_interp_struct[es] / (dx*dy);
+//  }
+//
+//  return 0;
+//}
 /****************************************************************************************************/
 int get_element_structured_2d(double centroid[2], double limit[4], int nx, int ny, int *es)
 {
