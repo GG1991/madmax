@@ -91,31 +91,40 @@ int gmsh_get_node_index( const char * mesh_n, const char * bou_name, int nmynods
 
 int gmsh_which_id( const char * mesh_n, const char * name )
 {
+
+  /* returns the "id" of a physical entity with name "name" */
+
   FILE         *fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
   int          id;
+  int          i = 0, total;
   int          flag = 0; 
   char         buf[NBUF_GMSH], *data;   
 
   while( fgets( buf, NBUF_GMSH, fm ) != NULL ){
 
     data = strtok(buf," \n");
+
     if( flag == 0 ){
-      if( !strcmp(data,"$Elements"))
+      if( !strcmp(data,"$PhysicalNames"))
       {
 	fgets( buf, NBUF_GMSH, fm );
+	data  = strtok(buf," \n");
+	total = atoi(data);
 	flag = 1;
       }
     }
     else{
 
       data = strtok( NULL, " \n" );
-      data = strtok( NULL, " \n" );
       id   = atoi(data);
       data = strtok( NULL, " \"\n" );
       if( strcmp( name , data ) == 0 )
 	return id;
+      i++;
 
     }
+    if( i == total ) break;
+
   }
 
   return -1;
