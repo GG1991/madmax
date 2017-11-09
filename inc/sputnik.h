@@ -17,6 +17,16 @@
 #define PARMETIS_KWAY       3
 #define PARMETIS_MESHKWAY   4
 
+#define FORMAT_NULL        0
+#define FORMAT_GMSH        1
+#define FORMAT_ALYA        2
+
+#define PRINT_PETSC        0
+#define PRINT_VTK          1
+#define PRINT_VTU          2
+#define PRINT_VTKPART      4
+#define PRINT_ALL          8
+
 int partition_algorithm;
 
 typedef struct _physical_t{
@@ -35,16 +45,10 @@ int          nproc_wor;                         //  # of processes (WORLD_COMM)
 int          dim;                               //  problem dimensions 
 int          nvoi;                              //  number of voigt components (3 if dim=2, 6 if dim=3)
 
-#define PRINT_PETSC        0
-#define PRINT_VTK          1
-#define PRINT_VTU          2
-#define PRINT_VTKPART      4
-#define PRINT_ALL          8
 
 int         flag_print;
 bool        flag_reactions;
 bool        flag_first_alloc;
-
 
 /* Cilindrical Fiber in quad Matrix */
 double      LX, LY, LZ;
@@ -56,19 +60,10 @@ double      fiber_cilin_center_devi[3];
 double      fiber_cilin_vals[4];
 double      center_domain[3];
 
-
 /* Interpolation over structured grids */
 int         nx_interp;
 int         ny_interp;
 int         nz_interp;
-
-
-#define FORMAT_NULL        0
-#define FORMAT_GMSH        1
-#define FORMAT_ALYA        2
-
-int          mesh_f;                   // Mesh format number
-
 
 // Structures to save de mesh on CSR format 
 
