@@ -594,7 +594,7 @@ int get_strain( int e , int gp, double *strain_gp )
   Vec     x_loc;
   double  *x_arr;
 
-  VecGhostGetLocalForm( x , &x_loc );
+  VecGhostGetLocalForm( x    , &x_loc );
   VecGetArray         ( x_loc, &x_arr );
 
   int    i , v;
