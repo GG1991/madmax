@@ -28,22 +28,13 @@
 #define PRINT_VTKPART      4
 #define PRINT_ALL          8
 
-int partition_algorithm;
+int         partition_algorithm;
 
-typedef struct _physical_t{
-    
-    int    dim;
-    int    id;
-    char   *name; 
-    int    FlagFound;
+char        *myname;
 
-}physical_t;
-
-char         *myname;
-
-int          rank_wor;               //  rank on world comm
-int          nproc_wor;              //  # of processes (WORLD_COMM)
-int          dim;                    //  problem dimensions 
+int         rank_wor;               //  rank on world comm
+int         nproc_wor;              //  # of processes (WORLD_COMM)
+int         dim;                    //  problem dimensions 
 
 int         flag_print;
 bool        flag_reactions;
@@ -91,7 +82,6 @@ int          *loc2petsc;              // array of size <nmynods> + <nghost>
 
 // List of different utilities
 list_t function_list;
-list_t physical_list;
 
 /* Communication */
 
