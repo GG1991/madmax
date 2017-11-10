@@ -70,20 +70,5 @@ typedef struct bound_t_
 
 list_t boundary_list;
 
-// mac_main.c 
-int main(int argc, char **args);
-
 // mac_comm.c
 int mac_comm_init(void);
-
-// mac_alloc.c
-int mac_alloc(MPI_Comm PROBLEM_COMM);
-
-// mac_boundary.c
-int mac_init_boundary(MPI_Comm PROBLEM_COMM, list_t *boundary_list);
-int MacroSetDisplacementOnBoundary( double time, Vec *x );
-int MacroSetBoundaryOnJacobian( Mat *J );
-int MacroSetBoundaryOnResidual( Vec *b );
-int macro_parse_boundary(MPI_Comm PROBLEM_COMM, char *input);
-int cmpfunc_mac_bou (void * a, void * b);
-int SetGmshIDOnMaterialsAndBoundaries(MPI_Comm PROBLEM_COMM);
