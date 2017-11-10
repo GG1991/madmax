@@ -392,13 +392,20 @@ end_mac_0:
     MatSetOption(M,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
     MatSetFromOptions(M);
 
-//    ghost_index = malloc( ngho*dim *sizeof(int) );
-//
-//    int i;
-//    for( i = 0 ; i < ngho*dim  ; i++ )
-//      ghost_index[i] = istart - (( dim == 2 )? nx : nx*nz)*dim + i;
-//
-//    VecCreateGhost(MICRO_COMM, dim*nmynods, dim*ntotnod, ngho*dim, ghost_index, &x);
+    int *ghost_index = malloc( nghost*dim *sizeof(int) );
+
+    int d;
+    for( i = 0 ; i < nghost ; i++ ){
+      for( d = 0 ; d < nghost ; d++ )
+	ghost_index[i] = ghost[i]*dim + d;
+    }
+
+    VecCreateGhost(MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x);
+    VecZeroEntries(x);
+
+    /* from the owning processes to the ghosts in the others processes */
+    VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD );
+    VecGhostUpdateEnd  ( x , INSERT_VALUES , SCATTER_FORWARD );
 
     assembly_M();
     assembly_A();
@@ -727,9 +734,6 @@ int get_strain( int e , int gp, double *strain_gp )
       bmat[2][is*dim + 1] = dsh_gp[is][0];
     }
   }
-
-  /* get the local indeces of the element vertex nodes */
-  get_local_elem_index( e, loc_elem_index);
 
   /* calc strain gp */
   for( v = 0; v < nvoi ; v++ ){
