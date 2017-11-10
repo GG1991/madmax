@@ -33,7 +33,7 @@ int partition_algorithm;
 typedef struct _physical_t{
     
     int    dim;
-    int    GmshID;
+    int    id;
     char   *name; 
     int    FlagFound;
 

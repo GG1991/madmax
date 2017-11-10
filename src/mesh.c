@@ -1406,7 +1406,7 @@ int read_physical_entities_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 
 	// GmshID
 	data=strtok(NULL," \n");
-	physical.GmshID = atoi(data);
+	physical.id = atoi(data);
 
 	// name (le sacamos los \" de las puntas)
 	data=strtok(NULL," \n");
@@ -1471,7 +1471,7 @@ int read_physical_entities_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
 	// GmshID
 	data=strtok(NULL," ,:\n");
 	data=strtok(NULL," ,\n");
-	physical.GmshID = atoi(data);
+	physical.id = atoi(data);
 
 	// dimension (do not specify)
 	physical.dim = -1;

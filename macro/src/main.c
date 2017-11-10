@@ -30,6 +30,7 @@ int get_local_elem_index ( int e, int * loc_elem_index );
 int get_strain( int e , int gp, double *strain_gp );;
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
 int get_dsh( int dim, int gp, int npe, double ***dsh_gp, double *detj );
+int get_mat_name( int id, char * name_s );
 
 int main(int argc, char **argv)
 {
@@ -319,6 +320,8 @@ end_mac_0:
 
   /* read boundaries */
   read_bc();
+
+  read_physical_entities(MACRO_COMM, mesh_n, mesh_f);
   
 
   /**************************************************/
@@ -795,15 +798,42 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
 {
 
   node_list_t *pn;
-  material_t  *mat;
+  material_t  *mat_p;
+  char         name_s[64];
   
+  get_mat_name( elm_id[e], name_s );
+
   pn = boundary_list.head;
   while( pn ){
-    mat = ( material_t * )pn->data;
-    if( elm_id[e] == mat->id ) break;
+    mat_p = ( material_t * )pn->data;
+    if( strcmp( name_s, mat_p->name ) == 0 ) break;
     pn = pn->next;
   }
   if( pn == NULL ) return 1;
+
+  /* now that we now the material (mat_p) we calculate stress = f(strain) */
+  mat_get_c_tang( mat_p, dim, strain_gp, c_tan );
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int get_mat_name( int id , char * name_s )
+{
+
+  node_list_t *pn;
+  physical_t  *phy_p;
+  
+  pn = physical_list.head;
+  while( pn ){
+    phy_p = ( physical_t * )pn->data;
+    if( id == phy_p->id ) break;
+    pn = pn->next;
+  }
+  if( pn == NULL ) return 1;
+
+  strcpy( name_s, phy_p->name );
 
   return 0;
 }
