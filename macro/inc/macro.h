@@ -69,6 +69,7 @@ typedef struct bound_t_
 }bound_t;
 
 list_t boundary_list;
+list_t physical_list;
 
 // mac_comm.c
 int mac_comm_init(void);

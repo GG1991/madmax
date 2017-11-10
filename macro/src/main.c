@@ -321,7 +321,8 @@ end_mac_0:
   /* read boundaries */
   read_bc();
 
-  read_physical_entities(MACRO_COMM, mesh_n, mesh_f);
+  list_init( &physical_list, sizeof(physical_t), NULL );
+  gmsh_get_physical_list( mesh_n, &physical_list );
   
 
   /**************************************************/
