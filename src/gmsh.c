@@ -154,8 +154,6 @@ int gmsh_get_physical_list( char *mesh_n, list_t *physical_list )
     }
     else if( flag == 1 ){
 
-      data=strtok(buf," \n");
-      if(!strcmp(data,"$EndPhysicalNames")) break;
       physical.dim = atoi(data);
 
       data=strtok(NULL," \n");
@@ -167,8 +165,8 @@ int gmsh_get_physical_list( char *mesh_n, list_t *physical_list )
       list_insertlast( physical_list , &physical );
       i ++;
 
+      if( i == total ) break;
     }
-    if( i == total ) break;
   }
   return 0;
 }
