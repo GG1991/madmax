@@ -12,6 +12,14 @@
 
 #define NBUF_GMSH 256
 
+typedef struct _physical_t{
+    
+    int    dim;
+    int    id;
+    char   *name;
+
+}physical_t;
+
 int gmsh_get_node_index( const char * mesh_n, const char * phy_name, int nmynods, int *mynods, int dim, int * n, int ** ix );
 int gmsh_get_physical_list( char *mesh_n, list_t *physical_list );
 int gmsh_which_id( const char * mesh_n, const char * name );

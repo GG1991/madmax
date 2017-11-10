@@ -137,17 +137,17 @@ int gmsh_get_physical_list( char *mesh_n, list_t *physical_list )
   FILE  *fm;
   int   i = 0, total;
   int   flag = 0;
-  char  buf[NBUF], *data;
+  char  buf[NBUF_GMSH], *data;
 
   physical_t physical;
 
   fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
 
-  while(fgets(buf,NBUF,fm)!=NULL)
+  while(fgets(buf,NBUF_GMSH,fm)!=NULL)
   {
     data=strtok(buf," \n");
     if( strcmp( data,"$PhysicalNames") == 0 ){
-      fgets( buf, NBUF, fm );
+      fgets( buf, NBUF_GMSH, fm );
       data  = strtok(buf," \n");
       total = atoi(data);
       flag  = 1;
