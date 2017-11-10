@@ -750,6 +750,17 @@ int get_strain( int e , int gp, double *strain_gp )
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan )
 {
 
+  node_list_t *pn;
+  material_t  *mat;
+  
+  pn = boundary_list.head;
+  while( pn ){
+    mat = ( material_t * )pn->data;
+    if( elm_id[e] == mat->id ) break;
+    pn = pn->next;
+  }
+  if( pn == NULL ) return 1;
+
   return 0;
 }
 

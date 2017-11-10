@@ -20,7 +20,7 @@ typedef struct material_t_{
 
   char  *name;
   int   type_id;
-  int   GmshID;
+  int   id;
   void  *type;
 
 }material_t;
