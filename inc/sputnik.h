@@ -41,11 +41,9 @@ typedef struct _physical_t{
 
 char         *myname;
 
-int          rank_wor;                          //  rank on world comm
-int          nproc_wor;                         //  # of processes (WORLD_COMM)
-int          dim;                               //  problem dimensions 
-int          nvoi;                              //  number of voigt components (3 if dim=2, 6 if dim=3)
-
+int          rank_wor;               //  rank on world comm
+int          nproc_wor;              //  # of processes (WORLD_COMM)
+int          dim;                    //  problem dimensions 
 
 int         flag_print;
 bool        flag_reactions;
@@ -74,21 +72,21 @@ int          nelm;                    // # of local elements
 int          *eptr;                   // list of indeces of nodes inside eind
 int          *eind;                   // list of nodes for elem "i" is between 
                                       // eind[eptr[i]] eind[eptr[i+1]] (not including)
-int          *elm_id;             // element property number
+int          *elm_id;                 // element property number
 double       *elmv_centroid;
 
 int          *StartIndexRank;
-int          *allnods;                // all nodes including mynods and ghost
+int          *allnods;                // all nodes including locals and ghosts
 int          nallnods;                // <nmynods> + <nghost>
 int          *mynods;                 // Original (gmsh) numbers of my nodes
-int          nmynods;                 // Number of <mynods> 
-int          *ghost;                  // Original numbers of my ghosts nodes
-int          nghost;                  // Number of my ghost nodes
-int          ntotnod;               // Number of total nodes in the mesh
+int          nmynods;                 // number of local nodes
+int          *ghost;                  // ghosts nodes (global numbering)
+int          nghost;                  // number of ghost nodes
+int          ntotnod;                 // number of total nodes in the mesh
 
 double       *coord;                  // nodes' coordinates
 
-int          *loc2petsc;              // array of size <nmynods>+<nghost>
+int          *loc2petsc;              // array of size <nmynods> + <nghost>
                                       // returns the position in PETSc matrix & vectors
 
 // List of different utilities

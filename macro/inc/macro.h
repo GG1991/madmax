@@ -44,6 +44,7 @@ double      **jac;                // elemental jacobian
 double      **jac_inv;            // inverse of elemental jacobian
 
 f1d_t       func_bc;              // boundary function
+int         nvoi;                 // voigt number
 
 int         mymicro_rank_worker;
 
