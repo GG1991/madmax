@@ -187,9 +187,9 @@ end_mac_0:
     }
   }
 
-  /* read boundary elements */
+  /**************************************************/
   { 
-
+    /* read boundary elements */
     int      nval = 4;
     char     *string[nval];
     char     *data;
@@ -200,10 +200,10 @@ end_mac_0:
     if( set == PETSC_TRUE )
     {
       for( i = 0 ; i < nval ; i++ ){
-	data = strtok(string[i], " \n");
-	bou.name     = strdup(data); 
-	data = strtok(NULL, " \n");
-	bou.kind     = strbin2dec(data);
+	data     = strtok(string[i], " \n");
+	bou.name = strdup(data); 
+	data     = strtok(NULL, " \n");
+	bou.kind = strbin2dec(data);
 	if(dim == 2){
 	  if( bou.kind == 1 || bou.kind == 2 ) bou.ndirpn =  1;
 	  if( bou.kind == 3 )                  bou.ndirpn =  2;
@@ -226,6 +226,50 @@ end_mac_0:
       goto end_mac_0;
     }
   }
+  /**************************************************/
+  {
+    /* Materials by command line 
+       (expect a fiber and a matrix material only)
+     */
+    int    nval = 4;
+    char   *string[nval];
+    char   *data;
+    material_t mat;
+    list_init(&material_list,sizeof(material_t),NULL);
+
+    PetscOptionsGetStringArray( NULL, NULL, "-material", string, &nval, &set );
+    if( set == PETSC_TRUE )
+    {
+      for( i = 0 ; i < nval ; i++ )
+      {
+        data = strtok( string[i] , " \n" );
+	mat.name = strdup( data );
+	data = strtok( NULL , " \n" );
+	if( strcmp( data, "TYPE_0" ) == 0 )
+	{
+	  double E, v;
+	  mat.type_id = TYPE_0;
+	  mat.type    = malloc(sizeof(type_0));
+	  data = strtok( NULL , " \n" );
+	  ((type_0*)mat.type)->rho         = atof(data);
+	  data = strtok( NULL , " \n" );
+	  E = ((type_0*)mat.type)->young   = atof(data);
+	  data = strtok( NULL , " \n" );
+	  v = ((type_0*)mat.type)->poisson = atof(data);
+	  ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
+	  ((type_0*)mat.type)->mu          = E/(2*(1+v));
+	}
+	else if ( strcmp( data, "TYPE_1" ) == 0 )
+	{
+	  mat.type_id = TYPE_1;
+	}
+
+	list_insertlast( &material_list , &mat );
+      }
+    }
+
+  }
+  /**************************************************/
 
   /* flow execution variables for NORMAL mode */
   if( macro_mode == NORMAL ){

@@ -9,7 +9,7 @@
 #include "list.h"
 
 #define TYPE_0    0
-#define TYPE01    1
+#define TYPE_1    1
 
 #define MICRO  2
 
