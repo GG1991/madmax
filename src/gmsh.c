@@ -131,6 +131,50 @@ int gmsh_which_id( const char * mesh_n, const char * name )
 
 /****************************************************************************************************/
 
+int gmsh_get_physical_list( char *mesh_n, list_t *physical_list )
+{
+
+  FILE  *fm;
+  int   i = 0, total;
+  int   flag = 0;
+  char  buf[NBUF], *data;
+
+  physical_t physical;
+
+  fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
+
+  while(fgets(buf,NBUF,fm)!=NULL)
+  {
+    data=strtok(buf," \n");
+    if( strcmp( data,"$PhysicalNames") == 0 ){
+      fgets( buf, NBUF, fm );
+      data  = strtok(buf," \n");
+      total = atoi(data);
+      flag  = 1;
+    }
+    else if( flag == 1 ){
+
+      data=strtok(buf," \n");
+      if(!strcmp(data,"$EndPhysicalNames")) break;
+      physical.dim = atoi(data);
+
+      data=strtok(NULL," \n");
+      physical.id = atoi(data);
+
+      data=strtok(NULL," \"\n");
+      physical.name = strdup( data );
+
+      list_insertlast( physical_list , &physical );
+      i ++;
+
+    }
+    if( i == total ) break;
+  }
+  return 0;
+}
+
+/****************************************************************************************************/
+
 int  gmsh_funcmp_int_a(void *a, void *b){
      if( *(int*)a > *(int*)b ) return  1;
      if( *(int*)a < *(int*)b ) return -1;

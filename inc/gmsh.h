@@ -13,6 +13,7 @@
 #define NBUF_GMSH 256
 
 int gmsh_get_node_index( const char * mesh_n, const char * phy_name, int nmynods, int *mynods, int dim, int * n, int ** ix );
+int gmsh_get_physical_list( char *mesh_n, list_t *physical_list );
 int gmsh_which_id( const char * mesh_n, const char * name );
 int gmsh_is_surf( int code, int dim );
 int gmsh_npe( int code );
