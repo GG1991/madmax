@@ -373,26 +373,32 @@ end_mac_0:
   }
   else if( macro_mode == EIGENSYSTEM ){
 
-    int     nlocal, ntotal;
     double  omega;
     EPS     eps;
 
-    nlocal = dim * nmynods;
-    ntotal = dim * ntotnod;
-
     MatCreate(MACRO_COMM,&A);
-    MatSetSizes(A,nlocal,nlocal,ntotal,ntotal);
-    MatSetFromOptions(A);
+    MatSetSizes(A,dim*nmynods,dim*nmynods,dim*ntotnod,dim*ntotnod);
     MatSeqAIJSetPreallocation(A,117,NULL);
     MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);
+    MatSetUp(A);
     MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+    MatSetFromOptions(A);
 
     MatCreate(MACRO_COMM,&M);
-    MatSetSizes(M,nlocal,nlocal,ntotal,ntotal);
-    MatSetFromOptions(M);
+    MatSetSizes(M,dim*nmynods,dim*nmynods,dim*ntotnod,dim*ntotnod);
     MatSeqAIJSetPreallocation(M,117,NULL);
     MatMPIAIJSetPreallocation(M,117,NULL,117,NULL);
+    MatSetUp(M);
     MatSetOption(M,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+    MatSetFromOptions(M);
+
+//    ghost_index = malloc( ngho*dim *sizeof(int) );
+//
+//    int i;
+//    for( i = 0 ; i < ngho*dim  ; i++ )
+//      ghost_index[i] = istart - (( dim == 2 )? nx : nx*nz)*dim + i;
+//
+//    VecCreateGhost(MICRO_COMM, dim*nmynods, dim*ntotnod, ngho*dim, ghost_index, &x);
 
     assembly_M();
     assembly_A();
