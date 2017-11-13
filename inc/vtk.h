@@ -1,4 +1,3 @@
-
 #ifndef VTK_H_
 #define VTK_H_
 
@@ -11,4 +10,5 @@
 #define   VTK_6N_PRISM      13
 
 int vtkcode( int dim,int npe );
+
 #endif
