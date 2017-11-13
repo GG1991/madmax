@@ -654,11 +654,7 @@ int fem_get_sh(int npe, int dim, double ***sh)
 
   switch(dim){
 
-    case 1:
-      return 1;
-
     case 2:
-
       switch(npe){
         case 3:
           *sh = sh_tria_3;
@@ -671,7 +667,6 @@ int fem_get_sh(int npe, int dim, double ***sh)
       }
 
     case 3:
-
       switch(npe){
         case 4:
           *sh = sh_tetra_4;
