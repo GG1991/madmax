@@ -23,7 +23,6 @@ int get_node_ghost_coor( int n , double * coord );
 int get_local_elem_node( int e , int * n_loc );
 int local_to_global_index( int local );
 int get_averages( double * strain_ave, double * stress_ave );
-int vtkcode( int dim, int npe );
 int get_elem_type( int e , int *type );
 
 int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6] )
@@ -1484,48 +1483,5 @@ int init_shapes( double ***sh, double ****dsh, double **wp )
 
   return 0;
 }
-/****************************************************************************************************/
-#define   VTK_POINT         1
-#define   VTK_LINE          3
-#define   VTK_TRIANGLE      5
-#define   VTK_QUADRANGLE    9
-#define   VTK_TETRAHEDRON   10
-#define   VTK_HEXAHEDRON    12
-#define   VTK_6N_PRISM      13
 
-int vtkcode(int dim,int npe)
-{
-
-  switch(dim){
-    case 1:
-      switch(npe){
-        case 2 :
-          return VTK_LINE;
-        default:
-          return -1;
-      }
-    case 2:
-      switch(npe){
-        case 3 :
-          return VTK_TRIANGLE;
-        case 4 :
-          return VTK_QUADRANGLE;
-        default:
-          return -1;
-      }
-    case 3:
-      switch(npe){
-        case 4 :
-          return VTK_TETRAHEDRON;
-        case 6 :
-          return VTK_6N_PRISM;  
-        case 8 :
-          return VTK_HEXAHEDRON;  
-        default:
-          return -1;
-      }
-    default:
-      return -1;
-  }
-}
 /****************************************************************************************************/

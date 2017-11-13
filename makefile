@@ -37,6 +37,7 @@ DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
 	       ${DEP_DIR}/fun.h \
 	       ${DEP_DIR}/trace.h \
 	       ${DEP_DIR}/gmsh.h \
+	       ${DEP_DIR}/vtk.h \
 	       ${DEP_DIR}/material.h
 
 DEPS_MACMIC =  ${MAC_INC_DIR}/macro.h \
@@ -74,6 +75,7 @@ MIC_OBJ  = ${MIC_OBJ_DIR}/main.o \
            $(SPU_OBJ_DIR)/comm.o \
            $(SPU_OBJ_DIR)/trace.o \
            $(SPU_OBJ_DIR)/material.o \
+           $(SPU_OBJ_DIR)/vtk.o      \
            $(SPU_OBJ_DIR)/list.o
 
 EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o \

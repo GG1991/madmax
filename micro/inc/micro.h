@@ -12,6 +12,7 @@
 #include "material.h"
 #include "comm.h"
 #include "trace.h"
+#include "vtk.h"
 #include <gsl/gsl_linalg.h>
 
 #define TAYLOR_S     1
@@ -133,14 +134,6 @@ int main(int argc, char **args);
 
 // mac_comm.c
 int mic_comm_init(void);
-
-// mic_alloc.c
-int mic_alloc(MPI_Comm comm);
-
-// mic_boundary.c
-int mic_parse_boundary(MPI_Comm PROBLEM_COMM, char *input);
-int mic_init_boundary_list(list_t *boundary_list);
-int micro_check_physical_entities( list_t *physical_list );
 
 int mic_homogenize(MPI_Comm COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
