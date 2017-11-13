@@ -79,17 +79,6 @@ double       *coord;                  // nodes' coordinates
 
 int          *loc2petsc;              // array of size <nmynods> + <nghost>
                                       // returns the position in PETSc matrix & vectors
-/*****************************************************************************************************
-   SPUTNIK function definitions
-*****************************************************************************************************/
-
-// spu_parser.c (common rutines for parser inputs files from MACRO and MICRO)
-int spu_parse_scheme( char *input );
-int parse_material(MPI_Comm PROBLEM_COMM, char *input);
-int check_elm_id(void);
-int parse_function(MPI_Comm PROBLEM_COMM, char *input);
-int StrBin2Dec(char *str);
-int isfloat(char *s);
 
 // spu_mesh.c
 int read_mesh_elmv( MPI_Comm COMM, char *myname, char *mesh_n, int mesh_f);
@@ -133,20 +122,5 @@ int get_domain_center(MPI_Comm PROBLEM_COMM, double *coord, int n, double center
 int interpolate_structured_2d(double limit[2], int nx, int ny, double *field, double *var_interp);
 int get_element_structured_2d(double centroid[2], double limit[4], int nx, int ny, int *es);
 int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], int nx, int ny);
-
-// spu_assembly.c
-int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex);
-int get_elm_coor(int *LocalNod, int n, double elem_coor[8][3]);
-int get_c(const char *name, int e, int gp, double strain[6], double c[6][6]);
-int get_mat_from_elem(int e, material_t **mat);
-int get_mat_from_name(const char *name, material_t **mat);
-int get_elm_disp( int e, double *x, double *elem_disp );
-int get_elem_coor(int e, double elem_coor[8][3]);
-int get_centroid(int e, double centroid[3]);
-int get_elem_vol(int e, double *vol);
-
-// spu_util.c
-int get_nods_bc(int **nods, int *nnods);
-int get_nods_index(int *nods_bc, int nnods_bc, int *ix_loc, int *ix_glo);
 
 #endif
