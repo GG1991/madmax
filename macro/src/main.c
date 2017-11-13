@@ -28,7 +28,7 @@ int update_bound( double t );
 int get_global_elem_index( int e, int * glo_elem_index );
 int get_local_elem_index ( int e, int * loc_elem_index );
 int get_elem_properties( void );
-int get_strain( int e , int gp, double *strain_gp );;
+int get_strain( int e , int gp, int *loc_elem_index, double *strain_gp );;
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
 int get_rho( const char * name, int e , double * rho );
@@ -728,7 +728,7 @@ int assembly_AM( void )
       get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
 
       /* calc strain gp */
-      get_strain( e , gp, strain_gp );
+      get_strain( e , gp, loc_elem_index, strain_gp );
 
       /* we get stress = f(strain) */
       ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
@@ -806,7 +806,7 @@ int assembly_A( void )
       get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
 
       /* calc strain gp */
-      get_strain( e , gp, strain_gp );
+      get_strain( e , gp, loc_elem_index, strain_gp );
 
       /* we get stress = f(strain) */
       ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
@@ -835,7 +835,7 @@ int assembly_A( void )
 
 /****************************************************************************************************/
 
-int get_strain( int e , int gp, double *strain_gp )
+int get_strain( int e , int gp, int *loc_elem_index, double *strain_gp )
 {
 
   /* 
@@ -1070,6 +1070,8 @@ int get_elem_properties( void )
     for ( v = 0 ; v < nvoi ; v++ )
       strain_aux[v] = stress_aux[v] = 0.0;
 
+    get_local_elem_index (e, loc_elem_index);
+
     /* get "elem_coor" */
     for( i = 0 ; i < npe*dim ; i++ )
       elem_coor[i] = coord[loc_elem_index[i]];
@@ -1081,11 +1083,11 @@ int get_elem_properties( void )
       /* using "elem_coor" we update "dsh" at gauss point "gp" */
       get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
 
-      get_strain( e , gp, strain_gp );
+      get_strain( e , gp, loc_elem_index, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );
       for ( v = 0 ; v < nvoi ; v++ ){
-	strain_aux[v] += strain_gp[v] * wp[gp];
-	stress_aux[v] += stress_gp[v] * wp[gp];
+	strain_aux[v] += strain_gp[v] * detj * wp[gp];
+	stress_aux[v] += stress_gp[v] * detj * wp[gp];
       }
       vol_elem += detj*wp[gp];
     }
@@ -1266,9 +1268,9 @@ int macro_pvtu( char *name )
 
   /* <strain> */
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for( e = 0; e < nelm ; e++ ){
+  for( e = 0 ; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
-      fprintf(fm, "%lf ", elem_strain[ e*nvoi + v ]);
+      fprintf( fm, "%lf ", elem_strain[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
