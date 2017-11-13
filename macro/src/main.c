@@ -886,6 +886,8 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 {
 
   char        name_s[64];
+  int         ierr;
+  int         macro_gp = 0;
   material_t  *mat_p;
   get_mat_name( elm_id[e], name_s );
 
@@ -900,8 +902,18 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
     return 1;
   }
 
-  /* now that we now the material (mat_p) we calculate stress = f(strain) */
-  mat_get_stress( mat_p, dim, strain_gp, stress_gp );
+  /* now that we know the material (mat_p) we calculate stress = f(strain) */
+  if( mat_p->type_id == TYPE_1 ){
+
+    /* we have a micro material */
+    ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN); if(ierr) return 1;
+    ierr = mac_send_strain(WORLD_COMM, strain_gp);
+    ierr = mac_send_macro_gp(WORLD_COMM, &macro_gp);
+    ierr = mac_recv_stress(WORLD_COMM, stress_gp);
+
+  }
+  else
+    mat_get_stress( mat_p, dim, strain_gp, stress_gp );
 
   return 0;
 }
@@ -911,6 +923,8 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
 {
 
   char        name_s[64];
+  int         ierr;
+  int         macro_gp = 0;
   material_t  *mat_p;
   get_mat_name( elm_id[e], name_s );
 
@@ -926,7 +940,15 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
   }
 
   /* now that we now the material (mat_p) we calculate stress = f(strain) */
-  mat_get_c_tang( mat_p, dim, strain_gp, c_tan );
+  if( mat_p->type_id == TYPE_1 )
+  {
+    ierr = mac_send_signal(WORLD_COMM, C_HOMO); if(ierr) return 1;
+    ierr = mac_send_strain(WORLD_COMM, strain_gp);
+    ierr = mac_send_macro_gp(WORLD_COMM, &macro_gp);
+    ierr = mac_recv_c_homo(WORLD_COMM, nvoi, c_tan);
+  }
+  else
+    mat_get_c_tang( mat_p, dim, strain_gp, c_tan );
 
   return 0;
 }
@@ -936,13 +958,13 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
 int get_rho( const char * name, int e , double * rho )
 {
 
-  node_list_t *pn;
   material_t  *mat_p;
   char         name_s[64];
+  int          ierr;
 
   get_mat_name( elm_id[e], name_s );
 
-  pn = material_list.head;
+  node_list_t *pn = material_list.head;
   while( pn ){
     mat_p = ( material_t * )pn->data;
     if( strcmp( name_s, mat_p->name ) == 0 ) break;
@@ -953,8 +975,14 @@ int get_rho( const char * name, int e , double * rho )
     return 1;
   }
 
-  /* now that we now the material (mat_p) we calculate stress = f(strain) */
-  mat_get_rho( mat_p, dim, rho );
+  /* now that we now the material (mat_p) we calculate the density */
+  if( mat_p->type_id == TYPE_1 )
+  {
+    ierr = mac_send_signal(WORLD_COMM, RHO); if(ierr) return 1;
+    ierr = mac_recv_rho(WORLD_COMM, rho);
+  }
+  else
+    mat_get_rho( mat_p, dim, rho );
 
   return 0;
 }
