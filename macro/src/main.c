@@ -33,7 +33,7 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
 int get_rho( const char * name, int e , double * rho );
 int get_sh( int dim, int npe, double ***sh );
-int get_dsh( int dim, int gp, int npe, double ***dsh_gp, double *detj );
+int get_dsh( int dim, int gp, int npe, double *elem_coor, double ***dsh_gp, double *detj );
 int get_wp( int dim, int npe, double **wp );
 int get_mat_name( int id, char * name_s );
 int macro_pvtu( char *name );
@@ -522,7 +522,7 @@ end_mac_0:
   }
   else if( macro_mode == NORMAL ){
 
-    /* Begin time dependent loop */
+    /* time dependent loop */
     
     double   t = 0.0;
     int      time_step = 0;
@@ -531,26 +531,26 @@ end_mac_0:
 
       PetscPrintf(MACRO_COMM,"\ntime step %3d %e seg\n", time_step, t);
 
-      /* Setting Displacement on Dirichlet Indeces on <x> */
+      /* setting displacements on dirichlet indeces */
 
       nr_its = 0; norm = 2*nr_norm_tol;
       while( nr_its < nr_max_its && norm > nr_norm_tol )
       {
 
-	/* Assemblying residual */
-	PetscPrintf(MACRO_COMM, "Assembling Residual\n");
+	/* assembly residual */
+	PetscPrintf( MACRO_COMM, "Assembling Residual\n" );
 	assembly_b();
-	VecNorm(b,NORM_2,&norm);
-	PetscPrintf(MACRO_COMM,"|b| = %e\n",norm);
+	VecNorm( b, NORM_2, &norm );
+	PetscPrintf( MACRO_COMM,"|b| = %e\n", norm );
 	VecScale( b, -1.0 );
 
-	if( norm < nr_norm_tol )break;
+	if( norm < nr_norm_tol ) break;
 
-	/* Assemblying Jacobian */
+	/* assembly jacobian */
 	PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
 	assembly_A();
 
-	/* Solving Problem */
+	/* solving problem */
 	PetscPrintf(MACRO_COMM, "Solving Linear System\n ");
 	KSPSolve(ksp,b,dx);
 	print_ksp_info( MACRO_COMM, ksp );
@@ -573,7 +573,7 @@ end_mac_0:
       { 
 	get_elem_properties();
 	sprintf( filename, "macro_t_%d", time_step );
-//	write_vtu( MACRO_COMM, filename, &x, &b, strain, stress, energy );
+	macro_pvtu( filename );
       }
 
       t += dt;
@@ -724,8 +724,8 @@ int assembly_AM( void )
 
     for( gp = 0; gp < ngp ; gp++ ){
 
-      /* using "elem_coor" we update "dsh" at gauss point "gp" */
-      get_dsh( dim, gp, npe, &dsh_gp, &detj);
+      /* we update "dsh" at gauss point "gp" */
+      get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
 
       /* calc strain gp */
       get_strain( e , gp, strain_gp );
@@ -802,8 +802,8 @@ int assembly_A( void )
 
     for( gp = 0; gp < ngp ; gp++ ){
 
-      /* using "elem_coor" we update "dsh" at gauss point "gp" */
-      get_dsh( dim, gp, npe, &dsh_gp, &detj);
+      /* we update "dsh" at gauss point "gp" */
+      get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
 
       /* calc strain gp */
       get_strain( e , gp, strain_gp );
@@ -1012,7 +1012,7 @@ int get_local_elem_index( int e, int * loc_elem_index )
 
 /****************************************************************************************************/
 
-int get_dsh( int dim, int gp, int npe, double ***dsh_gp, double *detj )
+int get_dsh( int dim, int gp, int npe, double *elem_coor, double ***dsh_gp, double *detj )
 {
 
   /* we update "dsh" using "elem_coor" */
@@ -1079,7 +1079,7 @@ int get_elem_properties( void )
     for ( gp = 0 ; gp < ngp ; gp++ ){
 
       /* using "elem_coor" we update "dsh" at gauss point "gp" */
-      get_dsh( dim, gp, npe, &dsh_gp, &detj);
+      get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
 
       get_strain( e , gp, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );
