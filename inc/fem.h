@@ -25,6 +25,7 @@ int fem_trans_dsh( int dim, int nsh, int gp, double **ijac, double ***dsh_master
 int fem_get_dsh_master( int npe, int dim , double ****dsh );
 int fem_get_sh(int npe, int dim, double ***sh);
 int fem_get_dsh( int npe, int dim, int gp, double **dsh, double *detj );
+int fem_get_wp(int npe, int dim, double **wp);
 
 // Segment 2 nodes
 double **xp_segm_2;

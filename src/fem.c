@@ -687,38 +687,41 @@ int fem_get_sh(int npe, int dim, double ***sh)
 
 }
 /****************************************************************************************************/
-double * FemGetPointer2Weight(int npe, int dim)
+int fem_get_wp( int npe, int dim, double **wp )
 {
-  switch(dim)
-  {
-    case 1:
-      return NULL;
+  switch(dim){
 
     case 2:
       switch(npe){
         case 3:
-          return wp_tria_3;
+          *wp = wp_tria_3;
+	  break;
         case 4:
-          return wp_quad_4;
+          *wp = wp_quad_4;
+	  break;
         default:
-	  return NULL;
+	  return 1;
       }
 
     case 3:
       switch(npe){
         case 4:
-          return wp_tetra_4;
+          *wp = wp_tetra_4;
+	  break;
         case 6:
-          return wp_prism_6;
+          *wp = wp_prism_6;
+	  break;
         case 8:
-          return wp_hexa_8;
+          *wp = wp_hexa_8;
+	  break;
         default:
-	  return NULL;
+	  return 1;
       }
 
     default:
-      return NULL;
+      return 1;
   }
+  return 0;
 
 }
 /****************************************************************************************************/
