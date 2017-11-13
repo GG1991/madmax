@@ -7,6 +7,7 @@
 #include "util.h"
 #include "gmsh.h"
 #include "fun.h"
+#include "vtk.h"
 
 #define NORMAL      1
 #define EIGENSYSTEM 2
