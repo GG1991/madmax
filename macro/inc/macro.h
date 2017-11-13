@@ -36,6 +36,7 @@ int         *elem_type;           // type in each element
 double      *elem_strain;         // strain at each element
 double      *elem_stress;         // stress at each element
 double      *elem_energy;         // energy at each element
+double      *res_elem;            // elemental residue
 double      *k_elem;              // elemental steffiness matrix
 double      *m_elem;              // elemental mass matrix
 double      *c;                   // constitutive tensor

@@ -683,6 +683,59 @@ int read_bc()
 
 int assembly_b( void )
 {
+  double *b_arr;
+  Vec     b_loc;
+  int     npe, ngp;
+  int     e, gp, i;
+  double  *wp;
+  double  detj;
+
+  VecZeroEntries(b);
+  VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
+  VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
+  VecGhostGetLocalForm( b    , &b_loc );
+  VecGetArray         ( b_loc, &b_arr );
+
+  for( e = 0 ; e < nelm ; e++ ){
+
+    ngp = npe = eptr[e+1] - eptr[e];
+
+    get_local_elem_index( e, loc_elem_index );
+
+    /* set to 0 res_elem */
+    for( i = 0 ; i < npe*dim*npe*dim ; i++ )
+      m_elem[i] = k_elem[i] = 0.0;
+
+    /* get "elem_coor" */
+    for( i = 0 ; i < npe*dim ; i++ )
+      elem_coor[i] = coord[loc_elem_index[i]];
+
+    get_wp( dim, npe, &wp );
+
+    for( gp = 0; gp < ngp ; gp++ ){
+
+      /* we update "dsh" at gauss point "gp" */
+      get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
+
+      /* calc strain at gp */
+      get_strain( e , gp, loc_elem_index, strain_gp );
+
+      /* calc stress at gp */
+      get_stress( e , gp, strain_gp, stress_gp );
+    }
+
+    for( i = 0 ; i < npe*dim ; i++ )
+      b_arr[loc_elem_index[i]] += res_elem[i];
+
+  }
+
+  VecRestoreArray         ( b_loc , &b_arr );
+  VecGhostRestoreLocalForm( b     , &b_loc );
+
+  /* from the local and ghost part with add to all processes */
+  VecGhostUpdateBegin( b, ADD_VALUES, SCATTER_REVERSE );
+  VecGhostUpdateEnd  ( b, ADD_VALUES, SCATTER_REVERSE );
+
   return 0;
 }
 
@@ -903,14 +956,13 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
   }
 
   /* now that we know the material (mat_p) we calculate stress = f(strain) */
-  if( mat_p->type_id == TYPE_1 ){
-
+  if( mat_p->type_id == TYPE_1 )
+  {
     /* we have a micro material */
     ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN); if(ierr) return 1;
     ierr = mac_send_strain(WORLD_COMM, strain_gp);
     ierr = mac_send_macro_gp(WORLD_COMM, &macro_gp);
     ierr = mac_recv_stress(WORLD_COMM, stress_gp);
-
   }
   else
     mat_get_stress( mat_p, dim, strain_gp, stress_gp );
