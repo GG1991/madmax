@@ -35,7 +35,8 @@ int         *elem_type;           // type in each element
 double      *elem_strain;         // strain at each element
 double      *elem_stress;         // stress at each element
 double      *elem_energy;         // energy at each element
-double      *k_elem;              // elemental matrix for assembly
+double      *k_elem;              // elemental steffiness matrix
+double      *m_elem;              // elemental mass matrix
 double      *c;                   // constitutive tensor
 double      **dsh_gp;             // shape functions derivatives at gauss points
 double      **sh_gp;              // shape functions at gauss points
@@ -54,6 +55,11 @@ int         nproc_mac;            //  # of macro processes (WORLD_COMM)
 char        filename[NBUF];       //  string for different purposes
 char        mesh_n[NBUF];         //  mesh path
 int         mesh_f;               //  mesh format
+
+Mat           A;                  // steffiness matrix          
+Mat           M;                  // mass matrix
+Vec           x, dx, b;           // vectors unknowns and RHS 
+KSP           ksp;                // linear solver context    
 
 typedef struct bound_t_
 {

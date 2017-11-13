@@ -60,7 +60,6 @@ DEP_DIRS = ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
 
 SPU_OBJ  = $(SPU_OBJ_DIR)/mesh.o     \
            $(SPU_OBJ_DIR)/time.o     \
-           $(SPU_OBJ_DIR)/out.o      \
            $(SPU_OBJ_DIR)/util.o     \
            $(SPU_OBJ_DIR)/trace.o    \
            $(SPU_OBJ_DIR)/material.o \

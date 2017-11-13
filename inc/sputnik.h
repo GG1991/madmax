@@ -79,57 +79,6 @@ double       *coord;                  // nodes' coordinates
 
 int          *loc2petsc;              // array of size <nmynods> + <nghost>
                                       // returns the position in PETSc matrix & vectors
-
-// List of different utilities
-list_t function_list;
-
-/* Communication */
-
-#define MACRO         1     // MACRO IDs and colors
-#define MICRO         2     // MICRO IDs and colors
-
-int          color;
-
-#define MIC_END            1
-#define MAC2MIC_STRAIN     2
-#define C_HOMO             3
-#define RHO                4
-
-/*
-   This structure represents a Gauss points
-   in this case it has an element called 
-   <param_d> to store those variable that
-   should be represented by double precision
- */
-
-typedef struct gauss_t_{
-
-  double *param_d;
-
-}gauss_t;
-
-gauss_t * gauss;
-
-/* Global Variables */
-
-int          *remote_ranks;     //  remote ranks if micro processes
-
-int          nstruc_mic;        // number of micro structures
-int          *nproc_per_mic;    // number of processes per micro structure ( size = nstruc_mic )
-int          nproc_mic_group;   // number of micro process in a group = sum_i nproc_per_mic[i]
-int          nmic_worlds;       // number of micro worlds nproc_mic / nproc_mic_group
-int          scheme;            // communication approach
-
-/* Matrices and vectors */
-
-Mat           A;                    // Jacobian matrix          
-Mat           M;                    // Mass matrix
-Vec           x, dx, b;             // Vectors unknowns and RHS 
-KSP           ksp;                  // linear solver context    
-
-double  *stress, *strain, *energy;  // Averange strain, stress and energy on each element
-double  *energy_interp;  
-
 /*****************************************************************************************************
    SPUTNIK function definitions
 *****************************************************************************************************/
@@ -175,7 +124,6 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM);
 int search_position_linear(int *array, int size, int val, int *pos);
 int search_position_logn(int *array, int size, int val, int *pos);
 int cmpfunc(const void * a, const void * b);
-int cmpfunc_for_list(void * a, void * b);
 int gmsh_npe(int code);
 int gmsh_is_surf_elm(int code);
 int gmsh_is_vol_elm(int code);
@@ -186,36 +134,16 @@ int interpolate_structured_2d(double limit[2], int nx, int ny, double *field, do
 int get_element_structured_2d(double centroid[2], double limit[4], int nx, int ny, int *es);
 int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], int nx, int ny);
 
-// spu_out.c
-int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm );
-int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strain, double *Stress);
-int write_pvtu(MPI_Comm PROBLEM_COMM, char *name);
-int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain, double *stress, double *energy);
-int vtkcode(int dim,int npe);
-
-// spu_time.c
-int save_time(MPI_Comm *comm, const char *string, FILE *file, double dt);
-
 // spu_assembly.c
 int GetPETScIndeces(int *LocalNod, int n, int *local2PETSc, int *PETScIndex);
 int get_elm_coor(int *LocalNod, int n, double elem_coor[8][3]);
-int assembly_jacobian_sd(Mat *J);
-int assembly_residual_sd(Vec *x, Vec *b);
-int GetB(int npe, double ShapeDerivs[8][3], double B[6][3*8]);
-int GetWeight(int npe, double **wp);
 int get_c(const char *name, int e, int gp, double strain[6], double c[6][6]);
-int get_rho(const char *name, int e, double *rho);
 int get_mat_from_elem(int e, material_t **mat);
 int get_mat_from_name(const char *name, material_t **mat);
 int get_elm_disp( int e, double *x, double *elem_disp );
-int calc_strain_stress_energy(Vec *x, double *strain, double *stress, double *energy);
-int calc_ave_strain_stress(MPI_Comm PROBLEM_COMM, Vec *x, double strain_ave[6], double stress_ave[6]);
-int calc_rho(MPI_Comm PROBLEM_COMM, double *rho);
 int get_elem_coor(int e, double elem_coor[8][3]);
-int is_inside_fiber_cilin(int e);
 int get_centroid(int e, double centroid[3]);
 int get_elem_vol(int e, double *vol);
-int assembly_mass(Mat *M);
 
 // spu_util.c
 int get_nods_bc(int **nods, int *nnods);
