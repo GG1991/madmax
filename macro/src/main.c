@@ -22,13 +22,15 @@ static char help[] =
 
 int read_bc( void );
 int assembly_A( void );
-int assembly_M( void );
 int assembly_b( void );
+int assembly_AM( void );
 int update_bound( double t );
 int get_global_elem_index( int e, int * glo_elem_index );
 int get_local_elem_index ( int e, int * loc_elem_index );
 int get_strain( int e , int gp, double *strain_gp );;
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
+int get_rho( const char * name, int e , double * rho );
+int get_sh( int dim, int npe, double ***sh );
 int get_dsh( int dim, int gp, int npe, double ***dsh_gp, double *detj );
 int get_mat_name( int id, char * name_s );
 
@@ -341,6 +343,7 @@ end_mac_0:
   elem_disp      = malloc( ixpe * sizeof(double));
   elem_coor      = malloc( ixpe * sizeof(double));
   k_elem         = malloc( ixpe*ixpe * sizeof(double));
+  m_elem         = malloc( ixpe*ixpe * sizeof(double));
   stress_gp      = malloc( nvoi * sizeof(double));
   strain_gp      = malloc( nvoi * sizeof(double));
   c              = malloc( nvoi*nvoi * sizeof(double));
@@ -424,21 +427,21 @@ end_mac_0:
     double  omega;
     EPS     eps;
 
-    MatCreate(MACRO_COMM,&A);
-    MatSetSizes(A,dim*nmynods,dim*nmynods,dim*ntotnod,dim*ntotnod);
-    MatSeqAIJSetPreallocation(A,117,NULL);
-    MatMPIAIJSetPreallocation(A,117,NULL,117,NULL);
-    MatSetUp(A);
-    MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
-    MatSetFromOptions(A);
+    MatCreate( MACRO_COMM, &A );
+    MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
+    MatSeqAIJSetPreallocation( A, 117, NULL );
+    MatMPIAIJSetPreallocation( A, 117, NULL, 117, NULL );
+    MatSetUp( A );
+    MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
+    MatSetFromOptions( A );
 
-    MatCreate(MACRO_COMM,&M);
-    MatSetSizes(M,dim*nmynods,dim*nmynods,dim*ntotnod,dim*ntotnod);
-    MatSeqAIJSetPreallocation(M,117,NULL);
-    MatMPIAIJSetPreallocation(M,117,NULL,117,NULL);
-    MatSetUp(M);
-    MatSetOption(M,MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
-    MatSetFromOptions(M);
+    MatCreate( MACRO_COMM, &M );
+    MatSetSizes( M, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
+    MatSeqAIJSetPreallocation( M, 117, NULL );
+    MatMPIAIJSetPreallocation( M, 117, NULL, 117, NULL );
+    MatSetUp( M );
+    MatSetOption( M, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
+    MatSetFromOptions( M );
 
     int *ghost_index = malloc( nghost*dim *sizeof(int) );
 
@@ -455,8 +458,7 @@ end_mac_0:
     VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD );
     VecGhostUpdateEnd  ( x , INSERT_VALUES , SCATTER_FORWARD );
 
-    assembly_M();
-    assembly_A();
+    ierr = assembly_AM(); if( ierr ) goto end_mac_1;
 
     /* set dirichlet bc */
     node_list_t *pn;
@@ -509,7 +511,7 @@ end_mac_0:
 //	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
 //	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
 	sprintf( filename, "macro_eigen_%d", i);
-	ierr = write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
+//	ierr = write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
       }
 
     }
@@ -570,7 +572,7 @@ end_mac_0:
       { 
 //	ierr = calc_strain_stress_energy( &x, strain, stress, energy);
 	sprintf( filename, "macro_t_%d", time_step );
-	write_vtu( MACRO_COMM, filename, &x, &b, strain, stress, energy );
+//	write_vtu( MACRO_COMM, filename, &x, &b, strain, stress, energy );
       }
 
       t += dt;
@@ -673,17 +675,90 @@ int read_bc()
 }
 
 /****************************************************************************************************/
-int assembly_M( void )
+
+int assembly_b( void )
 {
   return 0;
 }
 
 /****************************************************************************************************/
 
-int assembly_b( void )
+int assembly_AM( void )
 {
+
+  MatZeroEntries(A);
+  MatZeroEntries(M);
+
+  int     e, gp;
+  int     i, j, d, k, h;
+  int     npe, ngp;
+  int     ierr;
+  double  detj;
+  double  rho_gp;
+  double  **sh;
+
+  for( e = 0 ; e < nelm ; e++ ){
+
+    ngp = npe = eptr[e+1] - eptr[e];
+
+    /* set to 0 res_elem */
+    for( i = 0 ; i < npe*dim*npe*dim ; i++ )
+      m_elem[i] = k_elem[i] = 0.0;
+
+    /* get local and global index of nodes in vertex */
+    get_local_elem_index ( e, loc_elem_index );
+    get_global_elem_index( e, glo_elem_index );
+
+    /* get "elem_coor" */
+    for( i = 0 ; i < npe*dim ; i++ )
+      elem_coor[i] = coord[loc_elem_index[i]];
+
+    for( gp = 0; gp < ngp ; gp++ ){
+
+      /* using "elem_coor" we update "dsh" at gauss point "gp" */
+      get_dsh( dim, gp, npe, &dsh_gp, &detj);
+      get_sh( dim, npe, &sh );
+
+      /* calc strain gp */
+      get_strain( e , gp, strain_gp );
+
+      /* we get stress = f(strain) */
+      ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
+      ierr = get_rho  ( NULL , e , &rho_gp );            if( ierr ) return 1;
+
+      for( i = 0 ; i < npe*dim ; i++ ){
+	for( j = 0 ; j < npe*dim ; j++ ){
+	  for( k = 0; k < nvoi ; k++ ){
+	    for( h = 0; h < nvoi ; h++ )
+	      k_elem[ i*npe*dim + j] += \
+	      bmat[h][i] * c[ h*nvoi + k ] * bmat[k][j] * wp[gp] * detj ;
+	  }
+	}
+      }
+
+      for( d = 0 ; d < dim ; d++ ){
+	for( i = 0 ; i < npe; i++ ){
+	  for( j = 0 ; j < npe; j++ )
+	    m_elem[ (i*dim)*(npe*dim) + j*dim + (d*dim*npe + d)] += \
+	    rho_gp * sh[i][gp] * sh[j][gp] * wp[gp] * detj ;
+	}
+      }
+
+    }
+    MatSetValues( A, npe*dim, glo_elem_index, npe*dim, glo_elem_index, k_elem, ADD_VALUES );
+    MatSetValues( M, npe*dim, glo_elem_index, npe*dim, glo_elem_index, m_elem, ADD_VALUES );
+
+  }
+
+  /* communication between processes */
+  MatAssemblyBegin( A , MAT_FINAL_ASSEMBLY );
+  MatAssemblyEnd  ( A , MAT_FINAL_ASSEMBLY );
+  MatAssemblyBegin( M , MAT_FINAL_ASSEMBLY );
+  MatAssemblyEnd  ( M , MAT_FINAL_ASSEMBLY );
+
   return 0;
 }
+
 
 /****************************************************************************************************/
 
@@ -695,6 +770,7 @@ int assembly_A( void )
   int     e, gp;
   int     i, j, k, h;
   int     npe, ngp;
+  int     ierr;
   double  detj;
 
   for( e = 0 ; e < nelm ; e++ ){
@@ -722,7 +798,7 @@ int assembly_A( void )
       get_strain( e , gp, strain_gp );
 
       /* we get stress = f(strain) */
-      get_c_tan( NULL , e , gp , strain_gp , c );
+      ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
 
       for( i = 0 ; i < npe*dim ; i++ ){
 	for( j = 0 ; j < npe*dim ; j++ ){
@@ -804,16 +880,47 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
   
   get_mat_name( elm_id[e], name_s );
 
-  pn = boundary_list.head;
+  pn = material_list.head;
   while( pn ){
     mat_p = ( material_t * )pn->data;
     if( strcmp( name_s, mat_p->name ) == 0 ) break;
     pn = pn->next;
   }
-  if( pn == NULL ) return 1;
+  if( pn == NULL ){
+    PetscPrintf( MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
+    return 1;
+  }
 
   /* now that we now the material (mat_p) we calculate stress = f(strain) */
   mat_get_c_tang( mat_p, dim, strain_gp, c_tan );
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int get_rho( const char * name, int e , double * rho )
+{
+
+  node_list_t *pn;
+  material_t  *mat_p;
+  char         name_s[64];
+
+  get_mat_name( elm_id[e], name_s );
+
+  pn = material_list.head;
+  while( pn ){
+    mat_p = ( material_t * )pn->data;
+    if( strcmp( name_s, mat_p->name ) == 0 ) break;
+    pn = pn->next;
+  }
+  if( pn == NULL ){
+    PetscPrintf( MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
+    return 1;
+  }
+
+  /* now that we now the material (mat_p) we calculate stress = f(strain) */
+  mat_get_rho( mat_p, dim, rho );
 
   return 0;
 }
@@ -883,6 +990,16 @@ int get_dsh( int dim, int gp, int npe, double ***dsh_gp, double *detj )
   fem_calc_jac( dim, npe, gp, elem_coor, dsh_master, jac );
   fem_invjac( dim, jac, jac_inv, detj );
   fem_trans_dsh( dim, npe, gp, jac_inv, dsh_master, dsh_gp );
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int get_sh( int dim, int npe, double ***sh )
+{
+
+  fem_get_sh( npe, dim, sh );
 
   return 0;
 }

@@ -8,9 +8,10 @@ else
   NP=$1;
 fi
 
+#$MPIEXEC -np $NP ../../macro/macro \
 $MPIEXEC -np $NP xterm -e gdb -x file.gdb --args ../../macro/macro \
     -boundary "X0 11 0 0","X1 11 0 1" \
-    -material "FIBER TYPE_0 1.0e6 1.0e6 0.3","MICRO TYPE_1" \
+    -material "MATRIX TYPE_0 1.0e6 1.0e6 0.3","MICRO TYPE_1" \
     -function 0.0,0.0,1.0,0.001       \
     -mesh cube_2d.msh \
     -dim 2            \
