@@ -134,7 +134,7 @@ ${SPU_OBJ_DIR}/%.o: ${SPU_SRC_DIR}/%.c ${DEPS_SPUTNIK} ${PARMETIS_HEA} ${SLEPC_E
 ##############################
 # MACRO OBJECTS
 ${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c ${DEPS_MACMIC}
-	${PETSC_COMPILE} -DPETSC -c ${CFLAGS} -o $@ $< 	${SLEPC_EPS_LIB}
+	${PETSC_COMPILE} -DSLEPC -DPETSC -c ${CFLAGS} -o $@ $< 	${SLEPC_EPS_LIB}
 	@echo ">>> "$@
 
 ##############################

@@ -110,7 +110,12 @@ end_mac_0:
   PetscOptionsHasName( NULL,NULL,"-eigensys",&set);
   if( set == PETSC_TRUE ){
     macro_mode = EIGENSYSTEM;
+#ifndef SLEPC
+    PetscPrintf(MACRO_COMM,"for using -eigensys you shoul compile with SLEPC.\n");
+    goto end_mac_2;
+#else
     PetscPrintf(MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
+#endif
   }
 
   /* Mesh and Input Options */
@@ -785,6 +790,8 @@ int assembly_A( void )
     /* get "elem_coor" */
     for( i = 0 ; i < npe*dim ; i++ )
       elem_coor[i] = coord[loc_elem_index[i]];
+
+    get_wp( dim, npe, &wp );
 
     for( gp = 0; gp < ngp ; gp++ ){
 
