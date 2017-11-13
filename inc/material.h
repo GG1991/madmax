@@ -42,5 +42,6 @@ list_t material_list;
 
 int mat_get_stress( material_t * mat, int dim , double * strain, double * stress );
 int mat_get_c_tang( material_t * mat, int dim , double * strain, double * c_tang );
+int mat_get_rho   ( material_t * mat, int dim , double * rho                     );
 
 #endif

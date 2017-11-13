@@ -66,3 +66,14 @@ int mat_get_c_tang( material_t *mat_p, int dim , double * strain_gp, double * c_
 }
 
 /****************************************************************************************************/
+
+int mat_get_rho( material_t *mat_p, int dim , double * rho )
+{
+
+  if( mat_p->type_id == TYPE_0 )
+    *rho   = ((type_0*)mat_p->type)->rho;
+
+  return 0;
+}
+
+/****************************************************************************************************/
