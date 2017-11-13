@@ -28,6 +28,7 @@ int update_bound( double t );
 int get_global_elem_index( int e, int * glo_elem_index );
 int get_local_elem_index ( int e, int * loc_elem_index );
 int get_strain( int e , int gp, double *strain_gp );;
+int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
 int get_rho( const char * name, int e , double * rho );
 int get_sh( int dim, int npe, double ***sh );
@@ -874,16 +875,39 @@ int get_strain( int e , int gp, double *strain_gp )
 
 /****************************************************************************************************/
 
+int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
+{
+
+  char        name_s[64];
+  material_t  *mat_p;
+  get_mat_name( elm_id[e], name_s );
+
+  node_list_t *pn = material_list.head;
+  while( pn ){
+    mat_p = ( material_t * )pn->data;
+    if( strcmp( name_s, mat_p->name ) == 0 ) break;
+    pn = pn->next;
+  }
+  if( pn == NULL ){
+    PetscPrintf( MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
+    return 1;
+  }
+
+  /* now that we now the material (mat_p) we calculate stress = f(strain) */
+  mat_get_stress( mat_p, dim, strain_gp, stress_gp );
+
+  return 0;
+}
+/****************************************************************************************************/
+
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan )
 {
 
-  node_list_t *pn;
+  char        name_s[64];
   material_t  *mat_p;
-  char         name_s[64];
-  
   get_mat_name( elm_id[e], name_s );
 
-  pn = material_list.head;
+  node_list_t *pn = material_list.head;
   while( pn ){
     mat_p = ( material_t * )pn->data;
     if( strcmp( name_s, mat_p->name ) == 0 ) break;
@@ -1013,6 +1037,59 @@ int get_wp( int dim, int npe, double **wp )
 {
 
   fem_get_wp( npe, dim, wp );
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int get_elem_properties( void )
+{
+
+  /* fills *elem_strain, *elem_stress, *elem_type, *elem_energy */
+
+  int      i, e, v, gp;
+  double  *strain_aux = malloc( nvoi * sizeof(double) );
+  double  *stress_aux = malloc( nvoi * sizeof(double) );
+  double  vol_elem, detj;
+  double  *wp;
+
+  for ( e = 0 ; e < nelm ; e++ ){
+
+    int     npe = eptr[e+1] - eptr[e];
+    int     ngp = npe;
+    vol_elem = 0.0;
+
+    for ( v = 0 ; v < nvoi ; v++ )
+      strain_aux[v] = stress_aux[v] = 0.0;
+
+    /* get "elem_coor" */
+    for( i = 0 ; i < npe*dim ; i++ )
+      elem_coor[i] = coord[loc_elem_index[i]];
+
+    get_wp( dim, npe, &wp );
+
+    for ( gp = 0 ; gp < ngp ; gp++ ){
+
+      /* using "elem_coor" we update "dsh" at gauss point "gp" */
+      get_dsh( dim, gp, npe, &dsh_gp, &detj);
+
+      get_strain( e , gp, strain_gp );
+      get_stress( e , gp, strain_gp, stress_gp );
+      for ( v = 0 ; v < nvoi ; v++ ){
+	strain_aux[v] += strain_gp[v] * wp[gp];
+	stress_aux[v] += stress_gp[v] * wp[gp];
+      }
+      vol_elem += detj*wp[gp];
+    }
+    for ( v = 0 ; v < nvoi ; v++ ){
+      elem_strain[ e*nvoi + v ] = strain_aux[v] / vol_elem;
+      elem_stress[ e*nvoi + v ] = stress_aux[v] / vol_elem;
+    }
+
+    /* fill *elem_type */
+    elem_type[e] = elm_id[e];
+  }
 
   return 0;
 }
