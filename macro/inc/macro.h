@@ -39,8 +39,6 @@ double      *k_elem;              // elemental steffiness matrix
 double      *m_elem;              // elemental mass matrix
 double      *c;                   // constitutive tensor
 double      **dsh_gp;             // shape functions derivatives at gauss points
-double      **sh_gp;              // shape functions at gauss points
-double      *wp;                  // gauss weights
 double      **jac;                // elemental jacobian
 double      **jac_inv;            // inverse of elemental jacobian
 

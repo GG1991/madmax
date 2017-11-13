@@ -32,6 +32,7 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
 int get_rho( const char * name, int e , double * rho );
 int get_sh( int dim, int npe, double ***sh );
 int get_dsh( int dim, int gp, int npe, double ***dsh_gp, double *detj );
+int get_wp( int dim, int npe, double **wp );
 int get_mat_name( int id, char * name_s );
 
 int main(int argc, char **argv)
@@ -359,18 +360,10 @@ end_mac_0:
   for( i = 0 ; i < nvoi  ; i++ )
     bmat[i] = malloc( ixpe * sizeof(double));
 
-  /* alloc wp */
-  wp = malloc( ngp_max * sizeof(double));
-
   /* alloc dsh_gp */
   dsh_gp = malloc( npe_max * sizeof(double*));
   for( i = 0 ; i < npe_max ; i++ )
     dsh_gp[i] = malloc( dim * sizeof(double));
-
-  /* alloc sh_gp */
-  sh_gp = malloc( npe_max * sizeof(double*));
-  for( i = 0 ; i < npe_max ; i++ )
-    dsh_gp[i] = malloc( ngp_max * sizeof(double));
 
   /* alloc jac */
   jac = malloc( dim * sizeof(double*));
@@ -696,6 +689,7 @@ int assembly_AM( void )
   double  detj;
   double  rho_gp;
   double  **sh;
+  double  *wp;
 
   for( e = 0 ; e < nelm ; e++ ){
 
@@ -713,11 +707,13 @@ int assembly_AM( void )
     for( i = 0 ; i < npe*dim ; i++ )
       elem_coor[i] = coord[loc_elem_index[i]];
 
+    get_sh( dim, npe, &sh );
+    get_wp( dim, npe, &wp );
+
     for( gp = 0; gp < ngp ; gp++ ){
 
       /* using "elem_coor" we update "dsh" at gauss point "gp" */
       get_dsh( dim, gp, npe, &dsh_gp, &detj);
-      get_sh( dim, npe, &sh );
 
       /* calc strain gp */
       get_strain( e , gp, strain_gp );
@@ -772,6 +768,7 @@ int assembly_A( void )
   int     npe, ngp;
   int     ierr;
   double  detj;
+  double  *wp;
 
   for( e = 0 ; e < nelm ; e++ ){
 
@@ -1000,6 +997,16 @@ int get_sh( int dim, int npe, double ***sh )
 {
 
   fem_get_sh( npe, dim, sh );
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int get_wp( int dim, int npe, double **wp )
+{
+
+  fem_get_wp( npe, dim, wp );
 
   return 0;
 }
