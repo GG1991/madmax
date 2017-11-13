@@ -224,7 +224,7 @@ end_mac_0:
 	  data = strtok(NULL, " \n");
 	  bou.fnum[j] = atoi(data);
 	}
-	bou.dir_ixs = NULL;
+	bou.dir_loc_ixs = NULL;
 	bou.dir_val = NULL;
 	list_insertlast( &boundary_list, &bou );
       }
@@ -449,8 +449,8 @@ end_mac_0:
 	ghost_index[i] = ghost[i]*dim + d;
     }
 
-    VecCreateGhost(MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x);
-    VecZeroEntries(x);
+    VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
+    VecZeroEntries( x );
 
     /* from the owning processes to the ghosts in the others processes */
     VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD );
@@ -459,14 +459,12 @@ end_mac_0:
     ierr = assembly_AM(); if( ierr ) goto end_mac_1;
 
     /* set dirichlet bc */
-    node_list_t *pn;
-    bound_t     *bou;
-    pn = boundary_list.head;
+    node_list_t *pn = boundary_list.head;
     while( pn )
     {
-      bou  = (bound_t * )pn->data;
-      MatZeroRowsColumns(M, bou->ndirix, bou->dir_ixs, 1.0, NULL, NULL);
-      MatZeroRowsColumns(A, bou->ndirix, bou->dir_ixs, 1.0, NULL, NULL);
+      bound_t * bou = (bound_t * )pn->data;
+      MatZeroRowsColumns( M, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL );
+      MatZeroRowsColumns( A, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL );
       pn = pn->next;
     }
     MatAssemblyBegin( M, MAT_FINAL_ASSEMBLY );
@@ -478,24 +476,21 @@ end_mac_0:
       PetscViewer  viewer;
       PetscViewerASCIIOpen(MACRO_COMM,"M.dat" ,&viewer); MatView(M ,viewer);
       PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
-      PetscViewerASCIIOpen(MACRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
-      PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
-      PetscViewerASCIIOpen(MACRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
     }
 
     int    nev;   // number of request eigenpairs
     int    nconv; // number of converged eigenpairs
     double error;
 
-    EPSCreate(MACRO_COMM,&eps);
-    EPSSetOperators(eps,M,A);
-    EPSSetProblemType(eps,EPS_GHEP);
-    EPSSetFromOptions(eps);
-    EPSGetDimensions(eps,&nev,NULL,NULL);
-    PetscPrintf(MACRO_COMM,"Number of requested eigenvalues: %D\n",nev);
+    EPSCreate( MACRO_COMM, &eps );
+    EPSSetOperators( eps, M, A );
+    EPSSetProblemType( eps, EPS_GHEP );
+    EPSSetFromOptions( eps );
+    EPSGetDimensions( eps, &nev, NULL, NULL );
+    PetscPrintf( MACRO_COMM,"Number of requested eigenvalues: %D\n", nev );
 
-    EPSSolve(eps);
-    EPSGetConverged(eps,&nconv);
+    EPSSolve( eps );
+    EPSGetConverged( eps, &nconv );
     PetscPrintf(MACRO_COMM,"Number of converged eigenpairs: %D\n",nconv);
 
     for( i = 0 ; i < nev ; i++ ){
@@ -656,14 +651,18 @@ int read_bc()
     bou = ( bound_t * )pn->data;
     int *ix, n;
     gmsh_get_node_index( mesh_n, bou->name, nmynods, mynods, dim, &n, &ix );
-    bou->ndirix  = n * bou->ndirpn;
-    bou->dir_ixs = malloc( bou->ndirix * sizeof(int)); 
-    bou->dir_val = malloc( bou->ndirix * sizeof(double)); 
+    bou->ndirix      = n * bou->ndirpn;
+    bou->dir_val     = malloc( bou->ndirix * sizeof(double));
+    bou->dir_loc_ixs = malloc( bou->ndirix * sizeof(int));
+    bou->dir_glo_ixs = malloc( bou->ndirix * sizeof(int));
     for( i = 0 ; i < n ; i++ ){
       da = 0;
       for( d = 0 ; d < dim ; d++ )
-	if( bou->kind & (1<<d) ) 
-	  bou->dir_ixs[i* (bou->ndirpn) + da++] = ix[i] * dim + d;
+	if( bou->kind & (1<<d) ) {
+	  bou->dir_loc_ixs[i* (bou->ndirpn) + da] = (ix[i]-1) * dim + d;
+	  bou->dir_glo_ixs[i* (bou->ndirpn) + da] = loc2petsc[(ix[i]-1)] * dim + d;
+	  da++;
+	}
     }
     free(ix);
     pn = pn->next;
