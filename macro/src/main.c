@@ -27,6 +27,7 @@ int assembly_AM( void );
 int update_bound( double t );
 int get_global_elem_index( int e, int * glo_elem_index );
 int get_local_elem_index ( int e, int * loc_elem_index );
+int get_elem_properties( void );
 int get_strain( int e , int gp, double *strain_gp );;
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
@@ -151,23 +152,23 @@ end_mac_0:
   /* Printing Options */
   flag_print = 0;
   PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
+  if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_PETSC);
   PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
+  if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_VTU);
   
   /* Newton-Raphson solver options */
   PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
-  if(set==PETSC_FALSE) nr_max_its=5;
+  if( set == PETSC_FALSE ) nr_max_its=5;
   PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
-  if(set==PETSC_FALSE) nr_norm_tol=1.0e-7;
+  if( set == PETSC_FALSE ) nr_norm_tol=1.0e-7;
 
   /* structured grid interp */
   PetscOptionsGetInt(NULL, NULL, "-nx_interp", &nx_interp, &set);
-  if(set==PETSC_FALSE) nx_interp = 2;
+  if( set == PETSC_FALSE ) nx_interp = 2;
   PetscOptionsGetInt(NULL, NULL, "-ny_interp", &ny_interp, &set);
-  if(set==PETSC_FALSE) ny_interp = 2;
+  if( set == PETSC_FALSE ) ny_interp = 2;
   PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
-  if(set==PETSC_FALSE) nz_interp = 2;
+  if( set == PETSC_FALSE ) nz_interp = 2;
 
   /* read function */
   { 
@@ -238,9 +239,7 @@ end_mac_0:
   }
   /**************************************************/
   {
-    /* Materials by command line 
-       (expect a fiber and a matrix material only)
-     */
+    /* Materials by command line */
     int    nval = 4;
     char   *string[nval];
     char   *data;
@@ -425,19 +424,20 @@ end_mac_0:
 
     double  omega;
     EPS     eps;
+    int     nnz = ( dim == 2 ) ? dim*9 : dim*27;
 
     MatCreate( MACRO_COMM, &A );
     MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
-    MatSeqAIJSetPreallocation( A, 117, NULL );
-    MatMPIAIJSetPreallocation( A, 117, NULL, 117, NULL );
+    MatSeqAIJSetPreallocation( A, nnz, NULL );
+    MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );
     MatSetUp( A );
     MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
     MatSetFromOptions( A );
 
     MatCreate( MACRO_COMM, &M );
     MatSetSizes( M, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
-    MatSeqAIJSetPreallocation( M, 117, NULL );
-    MatMPIAIJSetPreallocation( M, 117, NULL, 117, NULL );
+    MatSeqAIJSetPreallocation( M, nnz, NULL );
+    MatMPIAIJSetPreallocation( M, nnz, NULL, nnz, NULL );
     MatSetUp( M );
     MatSetOption( M, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
     MatSetFromOptions( M );
@@ -457,7 +457,11 @@ end_mac_0:
     VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD );
     VecGhostUpdateEnd  ( x , INSERT_VALUES , SCATTER_FORWARD );
 
-    ierr = assembly_AM(); if( ierr ) goto end_mac_1;
+    ierr = assembly_AM();
+    if( ierr ){
+      PetscPrintf(MACRO_COMM,"problem during matrix assembly\n");
+      goto end_mac_1;
+    }
 
     /* set dirichlet bc */
     node_list_t *pn = boundary_list.head;
@@ -502,8 +506,7 @@ end_mac_0:
 
       if(flag_print & (1<<PRINT_VTU))
       { 
-//	ierr = calc_strain_stress_energy(&x, strain, stress, energy);
-//	ierr = interpolate_structured_2d(limit, nx_interp, ny_interp, energy, energy_interp);
+	get_elem_properties();
 	sprintf( filename, "macro_eigen_%d", i);
 //	ierr = write_vtu(MACRO_COMM, filename, &x, &b, strain, stress, energy);
       }
@@ -564,7 +567,7 @@ end_mac_0:
 
       if( flag_print & (1<<PRINT_VTU) )
       { 
-//	ierr = calc_strain_stress_energy( &x, strain, stress, energy);
+	get_elem_properties();
 	sprintf( filename, "macro_t_%d", time_step );
 //	write_vtu( MACRO_COMM, filename, &x, &b, strain, stress, energy );
       }
@@ -983,14 +986,14 @@ int get_global_elem_index(int e, int * glo_elem_index)
 
   for( n = 0 ; n < npe ; n++ ){
     for( d = 0 ; d < dim ; d++ )
-      glo_elem_index[n*dim + d] = loc2petsc[eind[n]]*dim + d;
+      glo_elem_index[n*dim + d] = loc2petsc[eind[eptr[e]+n]]*dim + d;
   }
   return 0;
 }
 
 /****************************************************************************************************/
 
-int get_local_elem_index(int e, int * loc_elem_index)
+int get_local_elem_index( int e, int * loc_elem_index )
 {
 
   int  n, d;
@@ -998,7 +1001,7 @@ int get_local_elem_index(int e, int * loc_elem_index)
 
   for( n = 0 ; n < npe ; n++ ){
     for( d = 0 ; d < dim ; d++ )
-      loc_elem_index[n*dim + d] = eind[n]*dim + d;
+      loc_elem_index[n*dim + d] = eind[eptr[e]+n]*dim + d;
   }
   return 0;
 }
