@@ -52,7 +52,7 @@ int main(int argc, char **argv)
      Then we finalize it
   */
   PETSC_COMM_WORLD = WORLD_COMM;
-  ierr = PetscInitialize(&argc,&argv,(char*)0,help);
+  PetscInitialize(&argc,&argv,(char*)0,help);
 
   /* Coupling Options */
   flag_coupling = PETSC_FALSE;
