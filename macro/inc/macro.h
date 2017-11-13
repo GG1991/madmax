@@ -67,7 +67,8 @@ typedef struct bound_t_
   int     ndirpn;                 // dirichlet values per node
   int     nneupn;                 // neumann values per node
   int     ndirix;                 // number of dir indeces of this boundary
-  int     *dir_ixs;               // dirichlet indeces
+  int     *dir_loc_ixs;           // dirichlet indeces (local)
+  int     *dir_glo_ixs;           // dirichlet indeces (global)
   double  *dir_val;               // dirichlet values
 
 }bound_t;
