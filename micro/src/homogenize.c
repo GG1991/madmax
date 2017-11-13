@@ -1314,7 +1314,7 @@ int get_node_ghost_coor( int n , double * coord )
 
 /****************************************************************************************************/
 
-void micro_print_info( void ){
+int micro_print_info( void ){
 
   FILE *fm = fopen("mic_info.dat","w");
 
@@ -1349,7 +1349,7 @@ void micro_print_info( void ){
   }
 
   ierr = MPI_Gather(&nelm, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
-  if(ierr) return;
+  if(ierr) return 1;
 
   if( rank_mic == 0 ){
     fprintf(fm,"%-20s","nelm");
@@ -1359,7 +1359,7 @@ void micro_print_info( void ){
   }
 
   ierr = MPI_Gather(&ney, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
-  if(ierr) return;
+  if(ierr) return 1;
 
   if( rank_mic == 0 ){
     fprintf(fm,"%-20s","eyl");
@@ -1369,7 +1369,7 @@ void micro_print_info( void ){
   }
 
   ierr = MPI_Gather(&nyl, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
-  if(ierr) return;
+  if(ierr) return 1;
 
   if( rank_mic == 0 ){
     fprintf(fm,"%-20s","nyl");
@@ -1379,7 +1379,7 @@ void micro_print_info( void ){
   }
 
   ierr = MPI_Gather(&ny_inf, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
-  if(ierr) return;
+  if(ierr) return 1;
 
   if( rank_mic == 0 ){
     fprintf(fm,"%-20s","ny_inf");
@@ -1389,7 +1389,7 @@ void micro_print_info( void ){
   }
 
   ierr = MPI_Gather(&ngho, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
-  if(ierr) return;
+  if(ierr) return 1;
 
   if( rank_mic == 0 ){
     fprintf(fm,"%-20s","ngho");
@@ -1419,7 +1419,7 @@ void micro_print_info( void ){
   }
 
   fclose(fm);
-  return;
+  return 0;
 }
 /****************************************************************************************************/
 int init_shapes( double ***sh, double ****dsh, double **wp )

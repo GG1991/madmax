@@ -149,7 +149,7 @@ int mic_check_l_us(void);
 
 int micro_pvtu( char *name );
 
-void micro_print_info( void );
-int  get_elem_properties( void );
-int  init_shapes( double ***sh, double ****dsh, double **wp );
+int micro_print_info( void );
+int get_elem_properties( void );
+int init_shapes( double ***sh, double ****dsh, double **wp );
 
