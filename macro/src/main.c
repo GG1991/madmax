@@ -417,10 +417,6 @@ end_mac_0:
 
   /**************************************************/
 
-  /* Setting solver options */
-  KSPCreate(MACRO_COMM,&ksp);
-  KSPSetFromOptions(ksp);
-
   /* Init Gauss point shapes functions and derivatives */
   ierr = fem_inigau();
 
@@ -554,6 +550,7 @@ end_mac_0:
     /* allocate A, x, dx, b */
 
     int     nnz = ( dim == 2 ) ? dim*9 : dim*27;
+    KSP     ksp;
 
     MatCreate( MACRO_COMM, &A );
     MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
@@ -576,6 +573,11 @@ end_mac_0:
     VecDuplicate( x, &dx );
     VecDuplicate( x, &b );
 
+    /* Setting solver options */
+    KSPCreate( MACRO_COMM, &ksp );
+    KSPSetFromOptions( ksp );
+
+
     /* time dependent loop */
     
     double   t = 0.0;
@@ -585,7 +587,7 @@ end_mac_0:
 
     while( t < (normal_mode.tf + 1.0e-10) ){
 
-      PetscPrintf(MACRO_COMM,"\ntime step %3d %e seg\n", time_step, t);
+      PetscPrintf(MACRO_COMM,"\ntime step %-3d %-e seg\n", time_step, t);
 
       /* setting displacements on dirichlet indeces */
       Vec      x_loc;
@@ -616,24 +618,55 @@ end_mac_0:
 	/* assembly residual */
 	PetscPrintf( MACRO_COMM, "MACRO: assembling residual\n" );
 	assembly_b();
+	Vec      b_loc;
+	double  *b_arr;
+	VecGhostGetLocalForm( b    , &b_loc );
+	VecGetArray(          b_loc, &b_arr );
+	pn = boundary_list.head;
+	while( pn )
+	{
+	  bound_t *bou = ( bound_t * )pn->data;
+	  int i;
+	  for( i = 0 ; i < bou->ndirix ; i++ )
+	    b_arr[bou->dir_loc_ixs[i]] = 0.0;
+	  pn = pn->next;
+	}
+	VecRestoreArray         ( b_loc , &b_arr );
+	VecGhostRestoreLocalForm( b     , &b_loc );
+	VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
+	VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
+
 	VecNorm( b, NORM_2, &norm );
-	PetscPrintf( MACRO_COMM,"|b| = %e\n", norm );
+	PetscPrintf( MACRO_COMM,"MACRO: |b| = %e\n", norm );
 	VecScale( b, -1.0 );
 
 	if( norm < nr_norm_tol ) break;
 
 	/* assembly jacobian */
-	PetscPrintf(MACRO_COMM, "MACRO: assembling jacobian\n");
+	PetscPrintf( MACRO_COMM, "MACRO: assembling jacobian\n");
 	assembly_A();
 
+	/* set dirichlet bc */
+	node_list_t *pn = boundary_list.head;
+	while( pn )
+	{
+	  bound_t * bou = (bound_t * )pn->data;
+	  MatZeroRowsColumns( A, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL );
+	  pn = pn->next;
+	}
+	MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
+	MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
+
 	/* solving problem */
-	PetscPrintf(MACRO_COMM, "MACRO: solving system\n ");
+	PetscPrintf( MACRO_COMM, "MACRO: solving system\n");
+	KSPSetOperators( ksp, A, A );
 	KSPSolve( ksp, b, dx );
+	print_ksp_info( MACRO_COMM, ksp);
+	PetscPrintf( MACRO_COMM, "\n");
 	VecAXPY( x, 1.0, dx );
 
 	if(flag_print & (1<<PRINT_PETSC)){
 	  PetscViewer  viewer;
-	  PetscViewerASCIIOpen(MACRO_COMM,"M.dat" ,&viewer); MatView(M ,viewer);
 	  PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
 	  PetscViewerASCIIOpen(MACRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
 	  PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
@@ -653,6 +686,7 @@ end_mac_0:
       t += normal_mode.dt;
       time_step ++;
     }
+    KSPDestroy(&ksp);
   }
 
   /**************************************************/
@@ -693,7 +727,6 @@ end_mac_1:
   MatDestroy(&A);
   VecDestroy(&x);
   VecDestroy(&b);
-  KSPDestroy(&ksp);
 
   PetscPrintf(MACRO_COMM,
       "--------------------------------------------------\n"
@@ -827,14 +860,14 @@ int assembly_AM( void )
   MatZeroEntries(A);
   MatZeroEntries(M);
 
-  int     e, gp;
-  int     i, j, d, k, h;
-  int     npe, ngp;
-  int     ierr;
-  double  detj;
-  double  rho_gp;
+  int       e, gp;
+  int       i, j, d, k, h;
+  int       npe, ngp;
+  int       ierr;
+  double    detj;
+  double    rho_gp;
   double  **sh;
-  double  *wp;
+  double   *wp;
 
   for( e = 0 ; e < nelm ; e++ ){
 
@@ -908,11 +941,11 @@ int assembly_A( void )
 
   MatZeroEntries(A);
 
-  int     e, gp;
-  int     i, j, k, h;
-  int     npe, ngp;
-  int     ierr;
-  double  detj;
+  int      e, gp;
+  int      i, j, k, h;
+  int      npe, ngp;
+  int      ierr;
+  double   detj;
   double  *wp;
 
   for( e = 0 ; e < nelm ; e++ ){
