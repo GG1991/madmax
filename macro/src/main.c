@@ -222,8 +222,8 @@ end_mac_0:
 	f1d.x    = malloc( f1d.n * sizeof(double));
 	f1d.y    = malloc( f1d.n * sizeof(double));
 	for( j = 0 ; j < f1d.n ; j++ ){
-	  data = strtok(NULL," \n"); f1d.x[i] = atof(data);
-	  data = strtok(NULL," \n"); f1d.y[i] = atof(data);
+	  data = strtok(NULL," \n"); f1d.x[j] = atof(data);
+	  data = strtok(NULL," \n"); f1d.y[j] = atof(data);
 	}
 	list_insertlast( &function_list, &f1d );
       }
@@ -549,6 +549,31 @@ end_mac_0:
 
   }
   else if( macro_mode == NORMAL ){
+
+    /* allocate A, x, dx, b */
+
+    int     nnz = ( dim == 2 ) ? dim*9 : dim*27;
+
+    MatCreate( MACRO_COMM, &A );
+    MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
+    MatSeqAIJSetPreallocation( A, nnz, NULL );
+    MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );
+    MatSetUp( A );
+    MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
+    MatSetFromOptions( A );
+
+    int *ghost_index = malloc( nghost*dim *sizeof(int) );
+
+    int d;
+    for( i = 0 ; i < nghost ; i++ ){
+      for( d = 0 ; d < nghost ; d++ )
+	ghost_index[i] = ghost[i]*dim + d;
+    }
+
+    VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
+    VecZeroEntries( x );
+    VecDuplicate( x, &dx );
+    VecDuplicate( x, &b );
 
     /* time dependent loop */
     
@@ -1242,11 +1267,11 @@ int update_boundary( double t , list_t * function_list, list_t * boundary_list )
     f1d_t   * f1d = NULL;
     int i, d;
     for( d = 0 ; d < dim ; d++ ){
-      get_f1d( bou->fnum[d] , function_list , f1d );
+      get_f1d( bou->fnum[d] , function_list , &f1d );
       double val;
       f1d_eval( t , f1d , &val );
       for( i = 0 ; i < bou->ndir ; i++ )
-	bou->dir_val[ i* (bou->ndirpn) ] = val;
+	bou->dir_val[ i* (bou->ndirpn) + d ] = val;
     }
     pn = pn->next;
   }

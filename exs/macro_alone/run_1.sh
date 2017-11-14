@@ -11,31 +11,20 @@ fi
 #$MPIEXEC -np $NP ../../macro/macro \
 $MPIEXEC -np $NP xterm -e gdb -x file.gdb --args ../../macro/macro \
     -boundary "X0 11 0 0","X1 11 0 1" \
-    -material "MATRIX TYPE_0 1.0e6 1.0e6 0.3","MICRO TYPE_1" \
-    -function 0.0,0.0,1.0,0.001       \
+    -material "MATRIX TYPE_0 1.0e7 1.0e6 0.3","MICRO TYPE_1" \
+    -function "0 2 0.0 0.0 0.0 0.0","1 0.0 0.0 0.0 0.001" \
     -mesh cube_2d.msh \
     -dim 2            \
     -mesh_gmsh        \
-    -eigensys         \
+    -normal           \
     -tf 1.0           \
     -dt 1.0           \
     -pc_type jacobi   \
     -ksp_type cg      \
+    -eps_nev  2       \
     -print_vtu        \
+    -print_petsc      \
     -options_left 0
-#: -np 1 xterm -e gdb -x file.gdb --args ../../micro/micro \
-#    -dim 2 \
-#    -struct_n      15,15 \
-#    -struct_l      0.1,0.1 \
-#    -fiber_cilin   0.03,0.0,0.0,0.0   \
-#    -mat_fiber_t0  1.0e6,1.0e7,0.3 \
-#    -mat_matrix_t0 1.0e6,1.0e6,0.3 \
-#    -pc_type       jacobi \
-#    -ksp_type      cg \
-#    -print_vtu \
-#    -homo_us \
-#    -options_left 0
-#    -print_petsc \
 
 #xterm -e gdb --args 
 #xterm -e gdb -x file.gdb --args 
