@@ -28,7 +28,7 @@ int update_bound( double t );
 int get_global_elem_index( int e, int * glo_elem_index );
 int get_local_elem_index ( int e, int * loc_elem_index );
 int get_elem_properties( void );
-int get_strain( int e , int gp, int *loc_elem_index, double *strain_gp );
+int get_strain( int e , int gp, int *loc_elem_index, double **dsh_gp,  double *strain_gp );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
 int get_rho( const char * name, int e , double * rho );
@@ -382,6 +382,7 @@ end_mac_0:
   elem_coor      = malloc( ixpe * sizeof(double));
   k_elem         = malloc( ixpe*ixpe * sizeof(double));
   m_elem         = malloc( ixpe*ixpe * sizeof(double));
+  res_elem       = malloc( ixpe * sizeof(double));
   stress_gp      = malloc( nvoi * sizeof(double));
   strain_gp      = malloc( nvoi * sizeof(double));
   c              = malloc( nvoi*nvoi * sizeof(double));
@@ -586,12 +587,14 @@ end_mac_0:
 
       PetscPrintf(MACRO_COMM,"\ntime step %3d %e seg\n", time_step, t);
 
+      /* setting displacements on dirichlet indeces */
       Vec      x_loc;
       double  *x_arr;
       VecGhostGetLocalForm( x    , &x_loc );
       VecGetArray(          x_loc, &x_arr );
 
       update_boundary( t , &function_list, &boundary_list );
+
       node_list_t * pn = boundary_list.head;
       while( pn )
       {
@@ -601,15 +604,17 @@ end_mac_0:
 	  x_arr[bou->dir_loc_ixs[i]] = bou->dir_val[i];
 	pn = pn->next;
       }
-
-      /* setting displacements on dirichlet indeces */
+      VecRestoreArray         ( x_loc , &x_arr );
+      VecGhostRestoreLocalForm( x     , &x_loc );
+      VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
+      VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
 
       nr_its = 0; norm = 2*nr_norm_tol;
       while( nr_its < nr_max_its && norm > nr_norm_tol )
       {
 
 	/* assembly residual */
-	PetscPrintf( MACRO_COMM, "Assembling Residual\n" );
+	PetscPrintf( MACRO_COMM, "MACRO: assembling residual\n" );
 	assembly_b();
 	VecNorm( b, NORM_2, &norm );
 	PetscPrintf( MACRO_COMM,"|b| = %e\n", norm );
@@ -618,15 +623,13 @@ end_mac_0:
 	if( norm < nr_norm_tol ) break;
 
 	/* assembly jacobian */
-	PetscPrintf(MACRO_COMM, "Assembling Jacobian\n");
+	PetscPrintf(MACRO_COMM, "MACRO: assembling jacobian\n");
 	assembly_A();
 
 	/* solving problem */
-	PetscPrintf(MACRO_COMM, "Solving Linear System\n ");
-	KSPSolve(ksp,b,dx);
-	print_ksp_info( MACRO_COMM, ksp );
-	VecAXPY(x, 1.0, dx);
-
+	PetscPrintf(MACRO_COMM, "MACRO: solving system\n ");
+	KSPSolve( ksp, b, dx );
+	VecAXPY( x, 1.0, dx );
 
 	if(flag_print & (1<<PRINT_PETSC)){
 	  PetscViewer  viewer;
@@ -755,13 +758,13 @@ int read_bc()
 
 int assembly_b( void )
 {
-  double *b_arr;
-  Vec     b_loc;
-  int     npe, ngp;
-  int     e, gp, i;
+  int      npe, ngp;
+  int      e, gp, i, j;
   double  *wp;
-  double  detj;
+  double   detj;
 
+  double  *b_arr;
+  Vec      b_loc;
   VecZeroEntries(b);
   VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
   VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
@@ -775,8 +778,8 @@ int assembly_b( void )
     get_local_elem_index( e, loc_elem_index );
 
     /* set to 0 res_elem */
-    for( i = 0 ; i < npe*dim*npe*dim ; i++ )
-      m_elem[i] = k_elem[i] = 0.0;
+    for( i = 0 ; i < npe*dim ; i++ )
+      res_elem[i] = 0.0;
 
     /* get "elem_coor" */
     for( i = 0 ; i < npe*dim ; i++ )
@@ -790,10 +793,15 @@ int assembly_b( void )
       get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
 
       /* calc strain at gp */
-      get_strain( e , gp, loc_elem_index, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh_gp, strain_gp );
 
       /* calc stress at gp */
       get_stress( e , gp, strain_gp, stress_gp );
+
+      for( i = 0 ; i < npe*dim ; i++ ){
+	for( j = 0; j < nvoi ; j++ )
+	  res_elem[i] += bmat[j][i] * stress_gp[j] * wp[gp] * detj;
+      }
     }
 
     for( i = 0 ; i < npe*dim ; i++ )
@@ -853,7 +861,7 @@ int assembly_AM( void )
       get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
 
       /* calc strain gp */
-      get_strain( e , gp, loc_elem_index, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh_gp, strain_gp );
 
       /* we get stress = f(strain) */
       ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
@@ -911,7 +919,7 @@ int assembly_A( void )
 
     ngp = npe = eptr[e+1] - eptr[e];
 
-    /* set to 0 res_elem */
+    /* set to 0 k_elem */
     for( i = 0 ; i < npe*dim*npe*dim ; i++ )
       k_elem[i] = 0.0;
     
@@ -931,7 +939,7 @@ int assembly_A( void )
       get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
 
       /* calc strain gp */
-      get_strain( e , gp, loc_elem_index, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh_gp, strain_gp );
 
       /* we get stress = f(strain) */
       ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
@@ -960,13 +968,14 @@ int assembly_A( void )
 
 /****************************************************************************************************/
 
-int get_strain( int e , int gp, int *loc_elem_index, double *strain_gp )
+int get_strain( int e , int gp, int *loc_elem_index, double **dsh_gp, double *strain_gp )
 {
 
   /* 
      needs that global variable "dsh" being updated at gauss point 
      previously, this is to save time and not calculate Jacobian
      twice
+     returns bmat (for using in the A and b assembly) and strain_gp
    */
 
   double  *x_arr; 
@@ -1235,7 +1244,7 @@ int get_elem_properties( void )
       /* using "elem_coor" we update "dsh" at gauss point "gp" */
       get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
 
-      get_strain( e , gp, loc_elem_index, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh_gp, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );
       for ( v = 0 ; v < nvoi ; v++ ){
 	strain_aux[v] += strain_gp[v] * detj * wp[gp];
