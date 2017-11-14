@@ -37,6 +37,7 @@ int get_dsh( int dim, int gp, int npe, double *elem_coor, double ***dsh_gp, doub
 int get_wp( int dim, int npe, double **wp );
 int get_mat_name( int id, char * name_s );
 int macro_pvtu( char *name );
+int update_boundary( double t , list_t * function_list, list_t * boundary_list );
 
 int main(int argc, char **argv)
 {
@@ -238,7 +239,7 @@ end_mac_0:
 	  bou.fnum[j] = atoi(data);
 	}
 	bou.dir_loc_ixs = NULL;
-	bou.dir_val = NULL;
+	bou.dir_val     = NULL;
 	list_insertlast( &boundary_list, &bou );
       }
     }
@@ -248,6 +249,7 @@ end_mac_0:
       goto end_mac_0;
     }
   }
+
   /**************************************************/
   {
     /* Materials by command line */
@@ -346,7 +348,7 @@ end_mac_0:
 
   /**************************************************/
   /* alloc and init variables */
-  PetscPrintf(MACRO_COMM, "allocating \n");
+  PetscPrintf(MACRO_COMM, "allocating ");
 
   A   = NULL;
   b   = NULL;
@@ -391,6 +393,7 @@ end_mac_0:
   for( i = 0 ; i < dim ; i++ )
     jac_inv[i] = malloc( dim * sizeof(double));
 
+  PetscPrintf(MACRO_COMM, "ok\n ");
 
   /**************************************************/
 
@@ -534,9 +537,27 @@ end_mac_0:
     double   t = 0.0;
     int      time_step = 0;
 
+    VecZeroEntries( x );
+
     while( t < (tf + 1.0e-10) ){
 
       PetscPrintf(MACRO_COMM,"\ntime step %3d %e seg\n", time_step, t);
+
+      Vec      x_loc;
+      double  *x_arr;
+      VecGhostGetLocalForm( x    , &x_loc );
+      VecGetArray(          x_loc, &x_arr );
+
+      update_boundary( t , &function_list, &boundary_list );
+      node_list_t * pn = boundary_list.head;
+      while( pn )
+      {
+	bound_t *bou = ( bound_t * )pn->data;
+	int i;
+	for( i = 0 ; i < bou->ndirix ; i++ )
+	  x_arr[bou->dir_loc_ixs[i]] = bou->dir_val[i];
+	pn = pn->next;
+      }
 
       /* setting displacements on dirichlet indeces */
 
@@ -619,7 +640,6 @@ end_mac_1:
     }
   }
 
-
   list_clear(&material_list);
   list_clear(&physical_list);
   list_clear(&function_list);
@@ -653,21 +673,22 @@ int read_bc()
 
   /* 
      completes the field of each "bound_t" in boundary list 
-     int     nix;
-     int     *disp_ixs;
+     int      nix;
+     int     *disp_loc_ixs;
+     int     *disp_glo_ixs;
      double  *disp_val;
    */
 
-  node_list_t *pn;
-  bound_t     *bou;
-  int         i, d, da;
+  int        *ix, i, d, da, n;
+  bound_t    *bou;
 
-  pn = boundary_list.head;
-  while( pn ){
+  node_list_t *pn = boundary_list.head;
+  while( pn )
+  {
     bou = ( bound_t * )pn->data;
-    int *ix, n;
     gmsh_get_node_index( mesh_n, bou->name, nmynods, mynods, dim, &n, &ix );
-    bou->ndirix      = n * bou->ndirpn;
+    bou->ndir        = n;
+    bou->ndirix      = bou->ndir * bou->ndirpn;
     bou->dir_val     = malloc( bou->ndirix * sizeof(double));
     bou->dir_loc_ixs = malloc( bou->ndirix * sizeof(int));
     bou->dir_glo_ixs = malloc( bou->ndirix * sizeof(int));
@@ -1186,6 +1207,30 @@ int get_elem_properties( void )
 
     /* fill *elem_type */
     elem_type[e] = elm_id[e];
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
+int update_boundary( double t , list_t * function_list, list_t * boundary_list )
+{
+
+  node_list_t * pn = boundary_list->head;
+  while( pn )
+  {
+    bound_t * bou = ( bound_t * ) pn->data;
+    f1d_t   * f1d = NULL;
+    int i, d;
+    for( d = 0 ; d < dim ; d++ ){
+      get_f1d( bou->fnum[d] , function_list , f1d );
+      double val;
+      f1d_eval( t , f1d , &val );
+      for( i = 0 ; i < bou->ndir ; i++ )
+	bou->dir_val[ i* (bou->ndirpn) ] = val;
+    }
+    pn = pn->next;
   }
 
   return 0;
