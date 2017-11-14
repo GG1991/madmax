@@ -44,7 +44,6 @@ int main(int argc, char **argv)
 
   int        ierr, ierr_1 = 0;
   int        i, j;
-  double     tf, dt;
   PetscBool  set;
 
   myname = strdup("macro");
@@ -94,27 +93,45 @@ end_mac_0:
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
       "--------------------------------------------------\n");
 
-  /* execution mode */
-  macro_mode  = NORMAL;
-  PetscOptionsHasName( NULL, NULL, "-normal", &set );
-  if( set == PETSC_TRUE ){
-    macro_mode = NORMAL;
-    PetscPrintf( MACRO_COMM, "MACRO MODE : NORMAL\n" );
-  }
-  PetscOptionsHasName( NULL, NULL, "-testcomm", &set );
-  if( set == PETSC_TRUE ){
-    macro_mode = TEST_COMM;
-    PetscPrintf( MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
-  }
-  PetscOptionsHasName( NULL,NULL,"-eigensys",&set);
-  if( set == PETSC_TRUE ){
-    macro_mode = EIGENSYSTEM;
+  /**************************************************/
+
+  {
+    /* execution mode */
+    macro_mode  = NORMAL;
+    PetscOptionsHasName( NULL, NULL, "-normal", &set );
+    if( set == PETSC_TRUE ){
+      macro_mode = NORMAL;
+      PetscPrintf( MACRO_COMM, "MACRO MODE : NORMAL\n" );
+      PetscOptionsGetReal(NULL,NULL,"-tf",&normal_mode.tf,&set);
+      if(set == PETSC_FALSE){
+	PetscPrintf(MPI_COMM_SELF,"-tf not given.\n");
+	goto end_mac_1;
+      }
+      PetscOptionsGetReal(NULL,NULL,"-dt",&normal_mode.dt,&set);
+      if(set == PETSC_FALSE){
+	PetscPrintf(MPI_COMM_SELF,"-dt not given.\n");
+	goto end_mac_1;
+      }
+    }
+
+    PetscOptionsHasName( NULL, NULL, "-testcomm", &set );
+    if( set == PETSC_TRUE ){
+      macro_mode = TEST_COMM;
+      PetscPrintf( MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
+    }
+    PetscOptionsHasName( NULL,NULL,"-eigensys",&set);
+    if( set == PETSC_TRUE ){
+      macro_mode = EIGENSYSTEM;
 #ifndef SLEPC
-    PetscPrintf(MACRO_COMM,"for using -eigensys you shoul compile with SLEPC.\n");
-    goto end_mac_2;
+      PetscPrintf(MACRO_COMM,"for using -eigensys you should compile with SLEPC.\n");
+      goto end_mac_2;
 #else
-    PetscPrintf(MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
+      PetscPrintf(MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
+      PetscOptionsGetReal(NULL,NULL,"-eigen_energy",&eigen_mode.energy,&set);
+      if(set == PETSC_FALSE)
+	eigen_mode.energy = 1.0;
 #endif
+    }
   }
 
   /**************************************************/
@@ -306,24 +323,6 @@ end_mac_0:
   /**************************************************/
 
   {
-    /* flow execution variables for NORMAL mode */
-    if( macro_mode == NORMAL ){
-      PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);
-      if(set == PETSC_FALSE){
-	PetscPrintf(MPI_COMM_SELF,"-tf not given.\n");
-	goto end_mac_1;
-      }
-      PetscOptionsGetReal(NULL,NULL,"-dt",&dt,&set);
-      if(set == PETSC_FALSE){
-	PetscPrintf(MPI_COMM_SELF,"-dt not given.\n");
-	goto end_mac_1;
-      }
-    }
-  }
-
-  /**************************************************/
-
-  {
     /* mesh partition options */
     partition_algorithm = PARMETIS_GEOM;
     PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
@@ -456,7 +455,6 @@ end_mac_0:
   }
   else if( macro_mode == EIGENSYSTEM ){
 
-    double  omega;
     EPS     eps;
     int     nnz = ( dim == 2 ) ? dim*9 : dim*27;
 
@@ -517,7 +515,6 @@ end_mac_0:
       PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
     }
 
-    int    nev;   // number of request eigenpairs
     int    nconv; // number of converged eigenpairs
     double error;
 
@@ -525,18 +522,19 @@ end_mac_0:
     EPSSetOperators( eps, M, A );
     EPSSetProblemType( eps, EPS_GHEP );
     EPSSetFromOptions( eps );
-    EPSGetDimensions( eps, &nev, NULL, NULL );
-    PetscPrintf( MACRO_COMM,"Number of requested eigenvalues: %D\n", nev );
+    EPSGetDimensions( eps, &eigen_mode.nev, NULL, NULL );
+    eigen_mode.eigen_vals = malloc( eigen_mode.nev * sizeof(double) );
+    PetscPrintf( MACRO_COMM,"Number of requested eigenvalues: %D\n", eigen_mode.nev );
 
     EPSSolve( eps );
     EPSGetConverged( eps, &nconv );
     PetscPrintf(MACRO_COMM,"Number of converged eigenpairs: %D\n",nconv);
 
-    for( i = 0 ; i < nev ; i++ ){
+    for( i = 0 ; i < eigen_mode.nev ; i++ ){
 
-      EPSGetEigenpair(eps,i,&omega,NULL,x,NULL);
-      EPSComputeError(eps,i,EPS_ERROR_RELATIVE,&error);
-      PetscPrintf(MACRO_COMM, "omega %d = %e   error = %e\n", i, omega, error);
+      EPSGetEigenpair( eps, i, &eigen_mode.eigen_vals[i], NULL, x, NULL );
+      EPSComputeError( eps, i, EPS_ERROR_RELATIVE, &error );
+      PetscPrintf(MACRO_COMM, "omega %d = %e   error = %e\n", i, eigen_mode.eigen_vals[i], error);
 
       if(flag_print & (1<<PRINT_VTU))
       { 
@@ -559,7 +557,7 @@ end_mac_0:
 
     VecZeroEntries( x );
 
-    while( t < (tf + 1.0e-10) ){
+    while( t < (normal_mode.tf + 1.0e-10) ){
 
       PetscPrintf(MACRO_COMM,"\ntime step %3d %e seg\n", time_step, t);
 
@@ -624,7 +622,7 @@ end_mac_0:
 	macro_pvtu( filename );
       }
 
-      t += dt;
+      t += normal_mode.dt;
       time_step ++;
     }
   }

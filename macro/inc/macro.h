@@ -75,6 +75,24 @@ typedef struct bound_t_
 
 }bound_t;
 
+typedef struct eigen_mode_t_
+{
+  int       nev;
+  double   *eigen_vals;          // eigenvalues
+  double    energy;              // elastic energy to perform normalization
+
+}eigen_mode_t;
+
+typedef struct normal_mode_t_
+{
+  double    tf;                  // final time
+  double    dt;                  // time step
+
+}normal_mode_t;
+
+normal_mode_t normal_mode;
+eigen_mode_t  eigen_mode;
+
 list_t      boundary_list;
 list_t      physical_list;
 list_t      function_list;
