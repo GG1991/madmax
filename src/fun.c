@@ -1,8 +1,6 @@
-/*
- * Function utilities routines
- * 
- */
 #include "fun.h"
+
+/****************************************************************************************************/
 
 int f1d_init(double *x, double *y, int n, int inter, f1d_t *f1d){
 
@@ -22,6 +20,8 @@ int f1d_init(double *x, double *y, int n, int inter, f1d_t *f1d){
     }
     return 0;
 }
+
+/****************************************************************************************************/
 
 int f1d_eval(double x, f1d_t *f1d, double *y){
 
@@ -53,6 +53,8 @@ int f1d_eval(double x, f1d_t *f1d, double *y){
     return 0;
 }
 
+/****************************************************************************************************/
+
 int cmp_f1d(void *a, void *b){
     if ( ((f1d_t *)a)->fnum > ((f1d_t *)b)->fnum ){
 	return 1;
@@ -63,20 +65,37 @@ int cmp_f1d(void *a, void *b){
     }
 }
 
-f1d_t * GetFunctionPointer(list_t *function_list, int fnumToSearch)
+/****************************************************************************************************/
+
+int get_f1d ( int fn , list_t * function_list , f1d_t * f1d )
 {
-  /*
-   * Returns a pointer to <f1d_t> element in function list
-   */
 
-   if(!function_list) return NULL;
-   if(!function_list->sizelist) return NULL;
-   node_list_t *pFun;
-   pFun = function_list->head;
-   while(pFun){
-     if( ((f1d_t*)pFun->data)->fnum == fnumToSearch ) break;
-     pFun = pFun->next;
+  /* Returns 0 if was found and 1 if not or error */
+
+   if( function_list == NULL ){
+     f1d = NULL;
+     return 1;
    }
-   return (f1d_t*)pFun->data;
+   if( function_list->sizelist == 0 ){
+     f1d = NULL;
+     return 1;
+   }
 
+   node_list_t * pn = function_list->head;
+   f1d_t * f1d_a;
+   while(pn)
+   {
+     f1d_a = (f1d_t *)pn->data;
+     if( f1d_a->fnum == fn ) break;
+     pn = pn->next;
+   }
+   if( pn == NULL ){
+     f1d = NULL;
+     return 1;
+   }
+   f1d = f1d_a;
+
+   return 0;
 }
+
+/****************************************************************************************************/
