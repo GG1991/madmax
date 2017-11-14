@@ -174,25 +174,31 @@ end_mac_0:
   PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
   if( set == PETSC_FALSE ) nz_interp = 2;
 
-  /* read function */
+  /**************************************************/
   { 
+    /* read function */
+    int     i, j;
     int     nval = 16;
-    double  values[nval];
-    PetscOptionsGetRealArray( NULL, NULL, "-function", values, &nval, &set);
+    char    *string[nval];
+    char    *data;
+    f1d_t   f1d;
+
+    list_init( &function_list, sizeof(f1d_t), NULL );
+    PetscOptionsGetStringArray( NULL, NULL, "-function", string, &nval, &set );
     if( set == PETSC_TRUE )
     {
-      if( nval % 2 != 0 ){
-	PetscPrintf(MPI_COMM_SELF,"odd number of argument for -function\n");
-	ierr_1 = 1;
-	goto end_mac_0;
-      }
-      func_bc.fnum = 1;
-      func_bc.n    = nval/2;
-      func_bc.x    = malloc( func_bc.n * sizeof(double));
-      func_bc.y    = malloc( func_bc.n * sizeof(double));
-      for( i = 0 ; i < func_bc.n ; i++ ){
-	func_bc.x[i] = values[2*i+0];
-	func_bc.y[i] = values[2*i+1];
+      for( i = 0 ; i < nval ; i++ ){
+	data     = strtok( string[i], " \n" );
+	f1d.fnum = atoi(data);
+	data     = strtok(NULL, " \n");
+	f1d.n    = atoi(data);
+	f1d.x    = malloc( f1d.n * sizeof(double));
+	f1d.y    = malloc( f1d.n * sizeof(double));
+	for( j = 0 ; j < f1d.n ; j++ ){
+	  data = strtok(NULL," \n"); f1d.x[i] = atof(data);
+	  data = strtok(NULL," \n"); f1d.y[i] = atof(data);
+	}
+	list_insertlast( &function_list, &f1d );
       }
     }
     else if( macro_mode == NORMAL ){
@@ -205,6 +211,7 @@ end_mac_0:
   /**************************************************/
   { 
     /* read boundary elements */
+    int      i, j;
     int      nval = 4;
     char     *string[nval];
     char     *data;
@@ -615,6 +622,7 @@ end_mac_1:
 
   list_clear(&material_list);
   list_clear(&physical_list);
+  list_clear(&function_list);
 
   MatDestroy(&A);
   VecDestroy(&x);
