@@ -1,20 +1,10 @@
 # sputnik
 
-A high performance program for solving really large multi-scale problems.
+High performance code for solving large multi-scale problems in solids like composite material problems.
 
-To use the PETSc profiling do:
-
-```bash
- mpirun -np <np_mac> macro/macro input.mac -log_view ascii:log_summary_mac.dat :
-        -np <np_mic> micro/micro input.mic -log_view ascii:log_summary_mic.dat 
-```
-
-To plot PETSc trace do:
+Number of code lines:
 
 ```bash
- mpirun -np <np_mac> macro/macro input.mac -log_trace ascii:trace_mac.dat :
-        -np <np_mic> micro/micro input.mic -log_trace ascii:trace_mic.dat 
+wc micro/inc/* micro/src/* macro/src/* macro/inc/* src/* inc/*
 ```
-
-It will gives you one file per processor
 
