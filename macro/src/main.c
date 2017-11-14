@@ -28,7 +28,7 @@ int update_bound( double t );
 int get_global_elem_index( int e, int * glo_elem_index );
 int get_local_elem_index ( int e, int * loc_elem_index );
 int get_elem_properties( void );
-int get_strain( int e , int gp, int *loc_elem_index, double *strain_gp );;
+int get_strain( int e , int gp, int *loc_elem_index, double *strain_gp );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
 int get_rho( const char * name, int e , double * rho );
@@ -54,14 +54,10 @@ int main(int argc, char **argv)
   MPI_Comm_size(WORLD_COMM, &nproc_wor);
   MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
-  /* 
-     We start PETSc before coloring here for using command line reading tools only
-     Then we finalize it
-  */
   PETSC_COMM_WORLD = WORLD_COMM;
   PetscInitialize(&argc,&argv,(char*)0,help);
 
-  /* Coupling Options */
+  /* coupling Options */
   flag_coupling = PETSC_FALSE;
   PetscOptionsHasName(NULL,NULL,"-coupl",&set);
   macmic.type = 0;
@@ -70,7 +66,7 @@ int main(int argc, char **argv)
     macmic.type = COUP_1;
   }
 
-  /* Stablish a new local communicator */
+  /* stablish a new local communicator */
   color = MACRO;
   ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
   if( ierr ){
@@ -78,17 +74,13 @@ int main(int argc, char **argv)
     goto end_mac_0;
   }
 
-  MPI_Comm_size(MACRO_COMM, &nproc_mac);
-  MPI_Comm_rank(MACRO_COMM, &rank_mac);
-  
 end_mac_0:
   PetscFinalize();
   if(ierr_1) goto end_mac_2;
 
-  /*
-     Set PETSc communicator to MACRO_COMM
-     and start again
-  */
+  MPI_Comm_size(MACRO_COMM, &nproc_mac);
+  MPI_Comm_rank(MACRO_COMM, &rank_mac);
+
   PETSC_COMM_WORLD = MACRO_COMM;
 
 #ifdef SLEPC
@@ -125,57 +117,74 @@ end_mac_0:
 #endif
   }
 
-  /* Mesh and Input Options */
-  mesh_f = FORMAT_NULL;
-  PetscOptionsHasName( NULL, NULL, "-mesh_gmsh",&set);
-  if( set == PETSC_TRUE ) mesh_f = FORMAT_GMSH;
-  PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);
-  if( set == PETSC_TRUE ) mesh_f = FORMAT_ALYA;
-  if( mesh_f == FORMAT_NULL ){
-    PetscPrintf(MPI_COMM_SELF,"mesh format not given on command line.\n");
-    goto end_mac_1;
-  }
-  PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set);
-  if( set == PETSC_FALSE ){
-    PetscPrintf(MPI_COMM_SELF,"mesh file not given on command line.\n");
-    goto end_mac_1;
-  }
-  FILE *fm = fopen( mesh_n, "r");
-  if( fm == NULL ){
-    PetscPrintf(MPI_COMM_SELF,"mesh file not found.\n");
-    goto end_mac_1;
-  }
-  PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
-  if( set == PETSC_FALSE ){
-    PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
-    goto end_mac_1;
-  }
-  nvoi    = (dim == 2) ? 3 : 6;
-  npe_max = (dim == 2) ? 4 : 8;
-  ngp_max = npe_max;
+  /**************************************************/
 
-  /* Printing Options */
-  flag_print = 0;
-  PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
-  if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_PETSC);
-  PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
-  if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_VTU);
-  
-  /* Newton-Raphson solver options */
-  PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
-  if( set == PETSC_FALSE ) nr_max_its=5;
-  PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
-  if( set == PETSC_FALSE ) nr_norm_tol=1.0e-7;
-
-  /* structured grid interp */
-  PetscOptionsGetInt(NULL, NULL, "-nx_interp", &nx_interp, &set);
-  if( set == PETSC_FALSE ) nx_interp = 2;
-  PetscOptionsGetInt(NULL, NULL, "-ny_interp", &ny_interp, &set);
-  if( set == PETSC_FALSE ) ny_interp = 2;
-  PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
-  if( set == PETSC_FALSE ) nz_interp = 2;
+  {
+    /* mesh */
+    mesh_f = FORMAT_NULL;
+    PetscOptionsHasName( NULL, NULL, "-mesh_gmsh",&set);
+    if( set == PETSC_TRUE ) mesh_f = FORMAT_GMSH;
+    PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);
+    if( set == PETSC_TRUE ) mesh_f = FORMAT_ALYA;
+    if( mesh_f == FORMAT_NULL ){
+      PetscPrintf(MPI_COMM_SELF,"mesh format not given on command line.\n");
+      goto end_mac_1;
+    }
+    PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set);
+    if( set == PETSC_FALSE ){
+      PetscPrintf(MPI_COMM_SELF,"mesh file not given on command line.\n");
+      goto end_mac_1;
+    }
+    FILE *fm = fopen( mesh_n, "r");
+    if( fm == NULL ){
+      PetscPrintf(MPI_COMM_SELF,"mesh file not found.\n");
+      goto end_mac_1;
+    }
+    PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
+    if( set == PETSC_FALSE ){
+      PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
+      goto end_mac_1;
+    }
+    nvoi    = (dim == 2) ? 3 : 6;
+    npe_max = (dim == 2) ? 4 : 8;
+    ngp_max = npe_max;
+  }
 
   /**************************************************/
+
+  {
+    /* printing */
+    flag_print = 0;
+    PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
+    if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_PETSC);
+    PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
+    if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_VTU);
+  }
+  
+  /**************************************************/
+
+  {
+    /* Newton-Raphson */
+    PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
+    if( set == PETSC_FALSE ) nr_max_its=5;
+    PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
+    if( set == PETSC_FALSE ) nr_norm_tol=1.0e-7;
+  }
+
+  /**************************************************/
+
+  {
+    /* structured grid interp */
+    PetscOptionsGetInt(NULL, NULL, "-nx_interp", &nx_interp, &set);
+    if( set == PETSC_FALSE ) nx_interp = 2;
+    PetscOptionsGetInt(NULL, NULL, "-ny_interp", &ny_interp, &set);
+    if( set == PETSC_FALSE ) ny_interp = 2;
+    PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
+    if( set == PETSC_FALSE ) nz_interp = 2;
+  }
+
+  /**************************************************/
+
   { 
     /* read function */
     int     i, j;
@@ -210,6 +219,7 @@ end_mac_0:
   }
 
   /**************************************************/
+
   { 
     /* read boundary elements */
     int      i, j;
@@ -251,6 +261,7 @@ end_mac_0:
   }
 
   /**************************************************/
+
   {
     /* Materials by command line */
     int    nval = 4;
@@ -291,28 +302,37 @@ end_mac_0:
     }
 
   }
+
   /**************************************************/
 
-  /* flow execution variables for NORMAL mode */
-  if( macro_mode == NORMAL ){
-    PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);
-    if(set == PETSC_FALSE){
-      PetscPrintf(MPI_COMM_SELF,"-tf not given.\n");
-      goto end_mac_1;
-    }
-    PetscOptionsGetReal(NULL,NULL,"-dt",&dt,&set);
-    if(set == PETSC_FALSE){
-      PetscPrintf(MPI_COMM_SELF,"-dt not given.\n");
-      goto end_mac_1;
+  {
+    /* flow execution variables for NORMAL mode */
+    if( macro_mode == NORMAL ){
+      PetscOptionsGetReal(NULL,NULL,"-tf",&tf,&set);
+      if(set == PETSC_FALSE){
+	PetscPrintf(MPI_COMM_SELF,"-tf not given.\n");
+	goto end_mac_1;
+      }
+      PetscOptionsGetReal(NULL,NULL,"-dt",&dt,&set);
+      if(set == PETSC_FALSE){
+	PetscPrintf(MPI_COMM_SELF,"-dt not given.\n");
+	goto end_mac_1;
+      }
     }
   }
 
-  /* Mesh partition algorithms */
-  partition_algorithm = PARMETIS_GEOM;
-  PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
-  if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_MESHKWAY;
-  PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
-  if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_GEOM;
+  /**************************************************/
+
+  {
+    /* mesh partition options */
+    partition_algorithm = PARMETIS_GEOM;
+    PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
+    if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_MESHKWAY;
+    PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
+    if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_GEOM;
+  }
+
+  /**************************************************/
 
   if(flag_coupling)
     PetscPrintf(MACRO_COMM,"MACRO: COUPLING\n");
