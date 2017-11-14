@@ -58,7 +58,6 @@ int         mesh_f;              //  mesh format
 Mat         A;                   // steffiness matrix          
 Mat         M;                   // mass matrix
 Vec         x, dx, b;            // vectors unknowns and RHS 
-KSP         ksp;                 // linear solver context    
 
 typedef struct bound_t_
 {
