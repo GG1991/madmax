@@ -67,7 +67,7 @@ int cmp_f1d(void *a, void *b){
 
 /****************************************************************************************************/
 
-int get_f1d ( int fn , list_t * function_list , f1d_t * f1d )
+int get_f1d ( int fn , list_t * function_list , f1d_t ** f1d )
 {
 
   /* Returns 0 if was found and 1 if not or error */
@@ -93,7 +93,7 @@ int get_f1d ( int fn , list_t * function_list , f1d_t * f1d )
      f1d = NULL;
      return 1;
    }
-   f1d = f1d_a;
+   *f1d = f1d_a;
 
    return 0;
 }
