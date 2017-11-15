@@ -28,12 +28,12 @@ int update_bound( double t );
 int get_global_elem_index( int e, int * glo_elem_index );
 int get_local_elem_index ( int e, int * loc_elem_index );
 int get_elem_properties( void );
-int get_strain( int e , int gp, int *loc_elem_index, double **dsh_gp,  double *strain_gp );
+int get_strain( int e , int gp, int *loc_elem_index, double ***dsh,  double *strain_gp );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
 int get_rho( const char * name, int e , double * rho );
 int get_sh( int dim, int npe, double ***sh );
-int get_dsh( int dim, int gp, int npe, double *elem_coor, double ***dsh_gp, double *detj );
+int get_dsh( int e, int *loc_elem_index, double ***dsh, double *detj );
 int get_wp( int dim, int npe, double **wp );
 int get_mat_name( int id, char * name_s );
 int macro_pvtu( char *name );
@@ -399,9 +399,12 @@ end_mac_0:
     bmat[i] = malloc( ixpe * sizeof(double));
 
   /* alloc dsh_gp */
-  dsh_gp = malloc( npe_max * sizeof(double*));
-  for( i = 0 ; i < npe_max ; i++ )
-    dsh_gp[i] = malloc( dim * sizeof(double));
+  dsh  = malloc( npe_max * sizeof(double**));
+  for( i = 0 ; i < npe_max ; i++ ){
+    dsh[i] = malloc( dim * sizeof(double*));
+    for( j = 0 ; j < dim ; j++ )
+      dsh[i][j] = malloc( ngp_max * sizeof(double));
+  }
 
   /* alloc jac */
   jac = malloc( dim * sizeof(double*));
@@ -412,6 +415,8 @@ end_mac_0:
   jac_inv = malloc( dim * sizeof(double*));
   for( i = 0 ; i < dim ; i++ )
     jac_inv[i] = malloc( dim * sizeof(double));
+
+  detj = malloc( ngp_max * sizeof(double));
 
   PetscPrintf(MACRO_COMM, "ok\n ");
 
@@ -794,7 +799,6 @@ int assembly_b( void )
   int      npe, ngp;
   int      e, gp, i, j;
   double  *wp;
-  double   detj;
 
   double  *b_arr;
   Vec      b_loc;
@@ -804,36 +808,28 @@ int assembly_b( void )
   VecGhostGetLocalForm( b    , &b_loc );
   VecGetArray         ( b_loc, &b_arr );
 
-  for( e = 0 ; e < nelm ; e++ ){
-
-    ngp = npe = eptr[e+1] - eptr[e];
-
-    get_local_elem_index( e, loc_elem_index );
-
-    /* set to 0 res_elem */
+  for( e = 0 ; e < nelm ; e++ )
+  {
     for( i = 0 ; i < npe*dim ; i++ )
       res_elem[i] = 0.0;
 
-    /* get "elem_coor" */
-    for( i = 0 ; i < npe*dim ; i++ )
-      elem_coor[i] = coord[loc_elem_index[i]];
+    get_local_elem_index( e, loc_elem_index );
+    ngp = npe = eptr[e+1] - eptr[e];
 
+    get_dsh( e, loc_elem_index, dsh, detj);
     get_wp( dim, npe, &wp );
 
     for( gp = 0; gp < ngp ; gp++ ){
 
-      /* we update "dsh" at gauss point "gp" */
-      get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
-
       /* calc strain at gp */
-      get_strain( e , gp, loc_elem_index, dsh_gp, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh, strain_gp );
 
       /* calc stress at gp */
       get_stress( e , gp, strain_gp, stress_gp );
 
       for( i = 0 ; i < npe*dim ; i++ ){
 	for( j = 0; j < nvoi ; j++ )
-	  res_elem[i] += bmat[j][i] * stress_gp[j] * wp[gp] * detj;
+	  res_elem[i] += bmat[j][i] * stress_gp[j] * wp[gp] * detj[gp];
       }
     }
 
@@ -864,37 +860,28 @@ int assembly_AM( void )
   int       i, j, d, k, h;
   int       npe, ngp;
   int       ierr;
-  double    detj;
   double    rho_gp;
   double  **sh;
   double   *wp;
 
-  for( e = 0 ; e < nelm ; e++ ){
-
-    ngp = npe = eptr[e+1] - eptr[e];
-
-    /* set to 0 res_elem */
+  for( e = 0 ; e < nelm ; e++ )
+  {
     for( i = 0 ; i < npe*dim*npe*dim ; i++ )
       m_elem[i] = k_elem[i] = 0.0;
+    ngp = npe = eptr[e+1] - eptr[e];
 
     /* get local and global index of nodes in vertex */
     get_local_elem_index ( e, loc_elem_index );
     get_global_elem_index( e, glo_elem_index );
 
-    /* get "elem_coor" */
-    for( i = 0 ; i < npe*dim ; i++ )
-      elem_coor[i] = coord[loc_elem_index[i]];
-
     get_sh( dim, npe, &sh );
+    get_dsh( e, loc_elem_index, dsh, detj);
     get_wp( dim, npe, &wp );
 
     for( gp = 0; gp < ngp ; gp++ ){
 
-      /* we update "dsh" at gauss point "gp" */
-      get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
-
       /* calc strain gp */
-      get_strain( e , gp, loc_elem_index, dsh_gp, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh, strain_gp );
 
       /* we get stress = f(strain) */
       ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
@@ -905,7 +892,7 @@ int assembly_AM( void )
 	  for( k = 0; k < nvoi ; k++ ){
 	    for( h = 0; h < nvoi ; h++ )
 	      k_elem[ i*npe*dim + j] += \
-	      bmat[h][i] * c[ h*nvoi + k ] * bmat[k][j] * wp[gp] * detj ;
+	      bmat[h][i] * c[ h*nvoi + k ] * bmat[k][j] * wp[gp] * detj[gp] ;
 	  }
 	}
       }
@@ -914,7 +901,7 @@ int assembly_AM( void )
 	for( i = 0 ; i < npe; i++ ){
 	  for( j = 0 ; j < npe; j++ )
 	    m_elem[ (i*dim)*(npe*dim) + j*dim + (d*dim*npe + d)] += \
-	    rho_gp * sh[i][gp] * sh[j][gp] * wp[gp] * detj ;
+	    rho_gp * sh[i][gp] * sh[j][gp] * wp[gp] * detj[gp] ;
 	}
       }
 
@@ -945,34 +932,25 @@ int assembly_A( void )
   int      i, j, k, h;
   int      npe, ngp;
   int      ierr;
-  double   detj;
   double  *wp;
 
-  for( e = 0 ; e < nelm ; e++ ){
-
-    ngp = npe = eptr[e+1] - eptr[e];
-
-    /* set to 0 k_elem */
+  for( e = 0 ; e < nelm ; e++ )
+  {
     for( i = 0 ; i < npe*dim*npe*dim ; i++ )
       k_elem[i] = 0.0;
+    ngp = npe = eptr[e+1] - eptr[e];
     
     /* get local and global index of nodes in vertex */
     get_local_elem_index (e, loc_elem_index);
     get_global_elem_index(e, glo_elem_index);
 
-    /* get "elem_coor" */
-    for( i = 0 ; i < npe*dim ; i++ )
-      elem_coor[i] = coord[loc_elem_index[i]];
-
+    get_dsh( e, loc_elem_index, dsh, detj);
     get_wp( dim, npe, &wp );
 
     for( gp = 0; gp < ngp ; gp++ ){
 
-      /* we update "dsh" at gauss point "gp" */
-      get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
-
       /* calc strain gp */
-      get_strain( e , gp, loc_elem_index, dsh_gp, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh, strain_gp );
 
       /* we get stress = f(strain) */
       ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
@@ -982,7 +960,7 @@ int assembly_A( void )
 	  for( k = 0; k < nvoi ; k++ ){
 	    for( h = 0; h < nvoi ; h++ )
 	      k_elem[ i*npe*dim + j] += \
-	      bmat[h][i] * c[ h*nvoi + k ] * bmat[k][j] * wp[gp] * detj ;
+	      bmat[h][i] * c[ h*nvoi + k ] * bmat[k][j] * wp[gp] * detj[gp] ;
 	  }
 	}
       }
@@ -1001,15 +979,8 @@ int assembly_A( void )
 
 /****************************************************************************************************/
 
-int get_strain( int e , int gp, int *loc_elem_index, double **dsh_gp, double *strain_gp )
+int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp, double *strain_gp )
 {
-
-  /* 
-     needs that global variable "dsh" being updated at gauss point 
-     previously, this is to save time and not calculate Jacobian
-     twice
-     returns bmat (for using in the A and b assembly) and strain_gp
-   */
 
   double  *x_arr; 
   Vec      x_loc; 
@@ -1028,12 +999,12 @@ int get_strain( int e , int gp, int *loc_elem_index, double **dsh_gp, double *st
 
   for( is = 0 ; is < npe ; is++ ){
     if( dim == 2 ){
-      bmat[0][is*dim + 0] = dsh_gp[is][0];
-      bmat[0][is*dim + 1] = 0            ;
-      bmat[1][is*dim + 0] = 0            ;
-      bmat[1][is*dim + 1] = dsh_gp[is][1];
-      bmat[2][is*dim + 0] = dsh_gp[is][1];
-      bmat[2][is*dim + 1] = dsh_gp[is][0];
+      bmat[0][is*dim + 0] = dsh[is][0][gp];
+      bmat[0][is*dim + 1] = 0             ;
+      bmat[1][is*dim + 0] = 0             ;
+      bmat[1][is*dim + 1] = dsh[is][1][gp];
+      bmat[2][is*dim + 0] = dsh[is][1][gp];
+      bmat[2][is*dim + 1] = dsh[is][0][gp];
     }
   }
 
@@ -1206,18 +1177,29 @@ int get_local_elem_index( int e, int * loc_elem_index )
 
 /****************************************************************************************************/
 
-int get_dsh( int dim, int gp, int npe, double *elem_coor, double ***dsh_gp, double *detj )
+int get_dsh( int e, int *loc_elem_index, double ***dsh, double *detj )
 {
 
-  /* we update "dsh" using "elem_coor" */
+  /* we update "dsh" using "loc_elem_index" */
 
   double ***dsh_master;
+  int       i, gp;
+  int       npe = eptr[e+1] - eptr[e];
+  int       ngp = npe;
 
-  fem_get_dsh_master( npe, dim, &dsh_master );
+  /* get "elem_coor" */
+  for( i = 0 ; i < npe*dim ; i++ )
+    elem_coor[i] = coord[loc_elem_index[i]];
 
-  fem_calc_jac( dim, npe, gp, elem_coor, dsh_master, jac );
-  fem_invjac( dim, jac, jac_inv, detj );
-  fem_trans_dsh( dim, npe, gp, jac_inv, dsh_master, dsh_gp );
+  for( gp = 0; gp < ngp ; gp++ ){
+
+    fem_get_dsh_master( npe, dim, &dsh_master );
+
+    fem_calc_jac( dim, npe, gp, elem_coor, dsh_master, jac );
+    fem_invjac( dim, jac, jac_inv, &detj[gp] );
+    fem_trans_dsh( dim, npe, gp, jac_inv, dsh_master, dsh );
+
+  }
 
   return 0;
 }
@@ -1249,41 +1231,34 @@ int get_elem_properties( void )
 
   /* fills *elem_strain, *elem_stress, *elem_type, *elem_energy */
 
-  int      i, e, v, gp;
+  int      e, v, gp;
   double  *strain_aux = malloc( nvoi * sizeof(double) );
   double  *stress_aux = malloc( nvoi * sizeof(double) );
-  double  vol_elem, detj;
   double  *wp;
 
   for ( e = 0 ; e < nelm ; e++ ){
 
     int     npe = eptr[e+1] - eptr[e];
     int     ngp = npe;
-    vol_elem = 0.0;
+    double  vol_elem = 0.0;
 
-    for ( v = 0 ; v < nvoi ; v++ )
+    for ( v = 0 ; v < nvoi ; v++ ) 
       strain_aux[v] = stress_aux[v] = 0.0;
 
     get_local_elem_index (e, loc_elem_index);
 
-    /* get "elem_coor" */
-    for( i = 0 ; i < npe*dim ; i++ )
-      elem_coor[i] = coord[loc_elem_index[i]];
-
+    get_dsh( e, loc_elem_index, dsh, detj);
     get_wp( dim, npe, &wp );
 
     for ( gp = 0 ; gp < ngp ; gp++ ){
 
-      /* using "elem_coor" we update "dsh" at gauss point "gp" */
-      get_dsh( dim, gp, npe, elem_coor, &dsh_gp, &detj);
-
-      get_strain( e , gp, loc_elem_index, dsh_gp, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );
       for ( v = 0 ; v < nvoi ; v++ ){
-	strain_aux[v] += strain_gp[v] * detj * wp[gp];
-	stress_aux[v] += stress_gp[v] * detj * wp[gp];
+	strain_aux[v] += strain_gp[v] * detj[gp] * wp[gp];
+	stress_aux[v] += stress_gp[v] * detj[gp] * wp[gp];
       }
-      vol_elem += detj*wp[gp];
+      vol_elem += detj[gp] * wp[gp];
     }
     for ( v = 0 ; v < nvoi ; v++ ){
       elem_strain[ e*nvoi + v ] = strain_aux[v] / vol_elem;

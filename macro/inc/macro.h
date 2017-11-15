@@ -40,7 +40,8 @@ double     *res_elem;            // elemental residue
 double     *k_elem;              // elemental steffiness matrix
 double     *m_elem;              // elemental mass matrix
 double     *c;                   // constitutive tensor
-double    **dsh_gp;              // shape functions derivatives at gauss points
+double   ***dsh;                 // shape functions derivatives at gauss points
+double     *detj;                // jacobian determinants for each gauss point
 double    **jac;                 // elemental jacobian
 double    **jac_inv;             // inverse of elemental jacobian
 
