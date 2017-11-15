@@ -1,9 +1,7 @@
-/* 
-   Routines to Finite Element 
- */
 #include "fem.h"
 
 //--------------------------------------------------
+
 int fem_init_struct(double ***sh, double ****dsh, double **wp, double *h, int dim)
 {
   int nsh = ( dim == 2 ) ? 4 : 8;
@@ -507,9 +505,9 @@ int fem_trans_dsh( int dim, int nsh, int gp, double **ijac, double ***dsh_master
 
   for( sh = 0 ; sh < nsh ; sh++ ){
     for( i = 0 ; i < dim ; i++ ){
-      (*dsh)[sh][i]=0.0;
+      dsh[sh][i][gp] = 0.0;
       for( j = 0 ; j < dim ; j++ )
-        (*dsh)[sh][i] += ijac[i][j] * dsh_master[sh][j][gp];
+        dsh[sh][i][gp] += ijac[i][j] * dsh_master[sh][j][gp];
     }
   }        
   return 0;
