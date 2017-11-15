@@ -37,16 +37,18 @@ struct*
 *tmpi*
 *.swp*
 
-utils/
-
 *_trace.*
 mpitests/IS
 mpitests/matPreAlloc/matpre
 mpirun
 ~
 
-# Special files
-############
+# utils
+utils/fig43_01.tex
+utils/trace_final.*
+utils/trace_half.tex
+
+# meshes
 meshes/cube_unif/cube.geo
 meshes/barbero
 exs/ex1/coupling.sh
