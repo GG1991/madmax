@@ -19,7 +19,11 @@ Geometry : the microstructure is a simple circular fiber.
 
 ### fron_fib
 
-Example where the heterogeneities are solved by the direct method and by the homogenization using:
+Example where the heterogeneities are solved by the direct method :
+
+![direct](../doc/sputnik-man/figures/front_fib_a.jpg?raw=true "Title")
+
+and by the homogenization using:
 
   *  uniform strains 
   *  parallel mixture theory 
@@ -27,6 +31,7 @@ Example where the heterogeneities are solved by the direct method and by the hom
 
 Dimension: 2
 Geometry : A square piece of composite with fiber perpendicular to the plane
+
 
 ### tran_fib
 
