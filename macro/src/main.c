@@ -313,7 +313,8 @@ end_mac_0:
 	{
 	  mat.type_id = TYPE_1;
 	}
-	else{
+	else
+	{
 	  PetscPrintf( MACRO_COMM, "type %s not known.\n", data );
 	  goto end_mac_1;
 	}
@@ -1311,9 +1312,12 @@ int get_elem_properties( void )
     get_local_elem_index (e, loc_elem_index);
 
     get_dsh( e, loc_elem_index, dsh, detj);
+    get_bmat( e, dsh, bmat );
     get_wp( dim, npe, &wp );
 
     for ( gp = 0 ; gp < ngp ; gp++ ){
+
+      detj[gp] = fabs( detj[gp] );
 
       get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );
