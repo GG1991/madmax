@@ -106,8 +106,6 @@ int calculate_ghosts(MPI_Comm * comm, char *myname);
 int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, int *remoterank );
 int is_in_vector(int val, int *vector, int size);
 int reenumerate_PETSc(MPI_Comm PROBLEM_COMM);
-int search_position_linear(int *array, int size, int val, int *pos);
-int search_position_logn(int *array, int size, int val, int *pos);
 int cmpfunc(const void * a, const void * b);
 int gmsh_npe(int code);
 int gmsh_is_surf_elm(int code);

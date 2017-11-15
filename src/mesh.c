@@ -281,7 +281,9 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, char *myname, double *centroid)
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
 {
   /*
@@ -334,7 +336,9 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,
@@ -1159,7 +1163,9 @@ int clean_vector_qsort(int n, int *input, int **output, int *n_notrep)
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep)
 {
   /*
@@ -1228,7 +1234,9 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps)
 {
   /*
@@ -1485,7 +1493,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 {
   /* 
@@ -1600,65 +1610,9 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
   free(request);
   return 0;
 }
+
 /****************************************************************************************************/
-int search_position_linear(int *array, int size, int val, int *pos)
-{
-  /* 
-     Returns> 
-     a) the position <pos> of <val> inside <array> (size <size>)
-     b) <pos> = -1 if <val> does not exist 
-    
-   */
 
-  int   i=0;
-
-  while(i<size){
-    if(array[i] == val){
-      break;
-    }
-    i++;
-  }
-
-  if(i==size){
-    *pos = -1;
-  }
-  else{
-    *pos = i;
-  }
-
-  return 0;
-}
-/****************************************************************************************************/
-int search_position_logn(int *array, int size, int val, int *pos)
-{
-  /* 
-     Returns> 
-     a) the position <pos> of <val> inside <array> (size <size>)
-     b) <pos> = -1 if <val> does not exist 
-
-     Note> the array should be sorted
-   */
-
-  int  left = 0, right = size-1, middle;
-
-  while(left <= right){
-
-    middle = (right + left)/2; 
-    if(array[middle] == val){
-      *pos = middle;
-      return 0;
-    }
-    if(array[middle] < val){
-      left = middle + 1;
-    }
-    else{
-      right = middle - 1;
-    }
-  }
-  *pos = -1;
-  return 0;
-}
-/****************************************************************************************************/
 int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, int *remoterank )
 {
 
@@ -1718,7 +1672,9 @@ int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, i
 
   return -1;	
 }
+
 /****************************************************************************************************/
+
 int is_in_vector(int val, int *vector, int size)
 {
   /*  
@@ -1743,7 +1699,9 @@ int is_in_vector(int val, int *vector, int size)
 
   return -1;
 }
+
 /****************************************************************************************************/
+
 int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z)
 {
   /*
@@ -1778,7 +1736,9 @@ int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z)
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_domain_center(MPI_Comm PROBLEM_COMM, double *coord, int n, double center[3])
 {
   int    rank, nproc, ierr, i;
@@ -1814,7 +1774,9 @@ int get_domain_center(MPI_Comm PROBLEM_COMM, double *coord, int n, double center
   center[2] = (z_abs[1] + z_abs[0]) /2;
   return 0;
 }
+
 /****************************************************************************************************/
+
 int get_bbox_limit_lengths(MPI_Comm PROBLEM_COMM, double *coord, int n, double *lx, double *ly, double *lz)
 {
   int rank, nproc, ierr, i;
@@ -1854,7 +1816,9 @@ int get_bbox_limit_lengths(MPI_Comm PROBLEM_COMM, double *coord, int n, double *
   free(z_all);
   return 0;
 }
+
 /****************************************************************************************************/
+
 int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], int nx, int ny)
 {
   double   x0 = limit[0];
@@ -1895,7 +1859,9 @@ int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], 
 
   return 0;
 }
+
 /****************************************************************************************************/
+
 //int interpolate_structured_2d(double limit[2], int nx, int ny, double *field, double *var_interp)
 //{
 //  /*
@@ -1931,7 +1897,9 @@ int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], 
 //
 //  return 0;
 //}
+
 /****************************************************************************************************/
+
 int get_element_structured_2d(double centroid[2], double limit[4], int nx, int ny, int *es)
 {
   double   x0 = limit[0];
@@ -1971,12 +1939,16 @@ int get_element_structured_2d(double centroid[2], double limit[4], int nx, int n
   *es = i*nex + j;
   return 0;
 }
+
 /****************************************************************************************************/
+
 int cmpfunc (const void * a, const void * b)
 {
   return ( *(int*)a - *(int*)b );
 }
+
 /****************************************************************************************************/
+
 int cmpfunc_for_list (void * a, void * b)
 {
   return ( *(int*)a - *(int*)b );
