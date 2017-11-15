@@ -273,8 +273,7 @@ end_mac_0:
     }
     else if( macro_mode == NORMAL ){
       PetscPrintf(MACRO_COMM,"-boundary should be set.\n");
-      ierr_1 = 1;
-      goto end_mac_0;
+      goto end_mac_1;
     }
   }
 
@@ -286,7 +285,7 @@ end_mac_0:
     char   *string[nval];
     char   *data;
     material_t mat;
-    list_init(&material_list,sizeof(material_t),NULL);
+    list_init( &material_list, sizeof(material_t), NULL );
 
     PetscOptionsGetStringArray( NULL, NULL, "-material", string, &nval, &set );
     if( set == PETSC_TRUE )
@@ -313,6 +312,10 @@ end_mac_0:
 	else if ( strcmp( data, "TYPE_1" ) == 0 )
 	{
 	  mat.type_id = TYPE_1;
+	}
+	else{
+	  PetscPrintf( MACRO_COMM, "type %s not known.\n", data );
+	  goto end_mac_1;
 	}
 
 	list_insertlast( &material_list , &mat );
