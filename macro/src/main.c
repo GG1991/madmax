@@ -28,13 +28,14 @@ int update_bound( double t );
 int get_global_elem_index( int e, int * glo_elem_index );
 int get_local_elem_index ( int e, int * loc_elem_index );
 int get_elem_properties( void );
-int get_strain( int e , int gp, int *loc_elem_index, double ***dsh,  double *strain_gp );
+int get_strain( int e , int gp, int *loc_elem_index, double ***dsh, double ***bmat, double *strain_gp );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
 int get_rho( const char * name, int e , double * rho );
 int get_sh( int dim, int npe, double ***sh );
 int get_dsh( int e, int *loc_elem_index, double ***dsh, double *detj );
 int get_wp( int dim, int npe, double **wp );
+int get_bmat( int e, double ***dsh, double ***bmat );
 int get_mat_name( int id, char * name_s );
 int macro_pvtu( char *name );
 int update_boundary( double t , list_t * function_list, list_t * boundary_list );
@@ -394,9 +395,12 @@ end_mac_0:
   }
 
   /* alloc B matrix */
-  bmat = malloc( nvoi * sizeof(double*));
-  for( i = 0 ; i < nvoi  ; i++ )
-    bmat[i] = malloc( ixpe * sizeof(double));
+  bmat = malloc( nvoi * sizeof(double**));
+  for( i = 0 ; i < nvoi  ; i++ ){
+    bmat[i] = malloc( ixpe * sizeof(double*));
+    for( j = 0 ; j < ixpe ; j++ )
+      bmat[i][j] = malloc( ngp_max * sizeof(double));
+  }
 
   /* alloc dsh_gp */
   dsh  = malloc( npe_max * sizeof(double**));
@@ -817,19 +821,20 @@ int assembly_b( void )
     ngp = npe = eptr[e+1] - eptr[e];
 
     get_dsh( e, loc_elem_index, dsh, detj);
+    get_bmat( e, dsh, bmat );
     get_wp( dim, npe, &wp );
 
     for( gp = 0; gp < ngp ; gp++ ){
 
       /* calc strain at gp */
-      get_strain( e , gp, loc_elem_index, dsh, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
 
       /* calc stress at gp */
       get_stress( e , gp, strain_gp, stress_gp );
 
       for( i = 0 ; i < npe*dim ; i++ ){
 	for( j = 0; j < nvoi ; j++ )
-	  res_elem[i] += bmat[j][i] * stress_gp[j] * wp[gp] * detj[gp];
+	  res_elem[i] += bmat[j][i][gp] * stress_gp[j] * wp[gp] * detj[gp];
       }
     }
 
@@ -876,12 +881,13 @@ int assembly_AM( void )
 
     get_sh( dim, npe, &sh );
     get_dsh( e, loc_elem_index, dsh, detj);
+    get_bmat( e, dsh, bmat );
     get_wp( dim, npe, &wp );
 
     for( gp = 0; gp < ngp ; gp++ ){
 
       /* calc strain gp */
-      get_strain( e , gp, loc_elem_index, dsh, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
 
       /* we get stress = f(strain) */
       ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
@@ -892,7 +898,7 @@ int assembly_AM( void )
 	  for( k = 0; k < nvoi ; k++ ){
 	    for( h = 0; h < nvoi ; h++ )
 	      k_elem[ i*npe*dim + j] += \
-	      bmat[h][i] * c[ h*nvoi + k ] * bmat[k][j] * wp[gp] * detj[gp] ;
+	      bmat[h][i][gp] * c[ h*nvoi + k ] * bmat[k][j][gp] * wp[gp] * detj[gp] ;
 	  }
 	}
       }
@@ -945,12 +951,13 @@ int assembly_A( void )
     get_global_elem_index(e, glo_elem_index);
 
     get_dsh( e, loc_elem_index, dsh, detj);
+    get_bmat( e, dsh, bmat );
     get_wp( dim, npe, &wp );
 
     for( gp = 0; gp < ngp ; gp++ ){
 
       /* calc strain gp */
-      get_strain( e , gp, loc_elem_index, dsh, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
 
       /* we get stress = f(strain) */
       ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
@@ -960,7 +967,7 @@ int assembly_A( void )
 	  for( k = 0; k < nvoi ; k++ ){
 	    for( h = 0; h < nvoi ; h++ )
 	      k_elem[ i*npe*dim + j] += \
-	      bmat[h][i] * c[ h*nvoi + k ] * bmat[k][j] * wp[gp] * detj[gp] ;
+	      bmat[h][i][gp] * c[ h*nvoi + k ] * bmat[k][j][gp] * wp[gp] * detj[gp] ;
 	  }
 	}
       }
@@ -979,7 +986,7 @@ int assembly_A( void )
 
 /****************************************************************************************************/
 
-int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp, double *strain_gp )
+int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat,double *strain_gp )
 {
 
   double  *x_arr; 
@@ -995,24 +1002,11 @@ int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp, double *s
   VecRestoreArray         ( x_loc , &x_arr);
   VecGhostRestoreLocalForm( x     , &x_loc);
 
-  int  is;
-
-  for( is = 0 ; is < npe ; is++ ){
-    if( dim == 2 ){
-      bmat[0][is*dim + 0] = dsh[is][0][gp];
-      bmat[0][is*dim + 1] = 0             ;
-      bmat[1][is*dim + 0] = 0             ;
-      bmat[1][is*dim + 1] = dsh[is][1][gp];
-      bmat[2][is*dim + 0] = dsh[is][1][gp];
-      bmat[2][is*dim + 1] = dsh[is][0][gp];
-    }
-  }
-
   /* calc strain gp */
   for( v = 0; v < nvoi ; v++ ){
     strain_gp[v] = 0.0;
     for( i = 0 ; i < npe*dim ; i++ )
-      strain_gp[v] += bmat[v][i] * elem_disp[i];
+      strain_gp[v] += bmat[v][i][gp] * elem_disp[i];
   }
 
   return 0;
@@ -1206,6 +1200,33 @@ int get_dsh( int e, int *loc_elem_index, double ***dsh, double *detj )
 
 /****************************************************************************************************/
 
+int get_bmat( int e, double ***dsh, double ***bmat )
+{
+
+  /* takes "dsh" and assemblies "bmat" */
+
+  int       i, gp;
+  int       npe = eptr[e+1] - eptr[e];
+  int       ngp = npe;
+
+  if( dim == 2 ){
+    for( i = 0 ; i < npe ; i++ ){
+      for( gp = 0; gp < ngp ; gp++ ){
+	bmat[0][i*dim + 0][gp] = dsh[i][0][gp];
+	bmat[0][i*dim + 1][gp] = 0             ;
+	bmat[1][i*dim + 0][gp] = 0             ;
+	bmat[1][i*dim + 1][gp] = dsh[i][1][gp];
+	bmat[2][i*dim + 0][gp] = dsh[i][1][gp];
+	bmat[2][i*dim + 1][gp] = dsh[i][0][gp];
+      }
+    }
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/
+
 int get_sh( int dim, int npe, double ***sh )
 {
 
@@ -1252,7 +1273,7 @@ int get_elem_properties( void )
 
     for ( gp = 0 ; gp < ngp ; gp++ ){
 
-      get_strain( e , gp, loc_elem_index, dsh, strain_gp );
+      get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );
       for ( v = 0 ; v < nvoi ; v++ ){
 	strain_aux[v] += strain_gp[v] * detj[gp] * wp[gp];

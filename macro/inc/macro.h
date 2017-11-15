@@ -23,7 +23,7 @@ double      nr_norm_tol;         // newton raphson minimum tolerance
 double    **struct_sh;           // Shape functions
 double   ***struct_dsh;          // Derivative shapes functions
 double     *struct_wp;           // Weights
-double    **bmat;                // B matrix (Bu = epsilon)
+double   ***bmat;                // B matrix (Bu = epsilon)
 int         npe_max;             // maximum number of nodes per element
 int         ngp_max;             // maximum number of gauss points
 double     *elem_disp;           // elemental displacements
