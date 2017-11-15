@@ -10,9 +10,9 @@ Geometry : Square, we can use triangles or quads.
 
 Example of a simple homogenization that can be perform using :
 
-  >  uniform strains 
-  >  parallel mixture theory 
-  >  serial mixture theory 
+  *  uniform strains 
+  *  parallel mixture theory 
+  *  serial mixture theory 
 
 Dimension: 2
 Geometry : the microstructure is a simple circular fiber.
@@ -21,9 +21,9 @@ Geometry : the microstructure is a simple circular fiber.
 
 Example where the heterogeneities are solved by the direct method and by the homogenization using:
 
-  >  uniform strains 
-  >  parallel mixture theory 
-  >  serial mixture theory 
+  *  uniform strains 
+  *  parallel mixture theory 
+  *  serial mixture theory 
 
 Dimension: 2
 Geometry : A square piece of composite with fiber perpendicular to the plane
@@ -32,9 +32,9 @@ Geometry : A square piece of composite with fiber perpendicular to the plane
 
 Example where the heterogeneities are solved by the direct method and by the homogenization using:
 
-  >  uniform strains 
-  >  parallel mixture theory 
-  >  serial mixture theory 
+  *  uniform strains 
+  *  parallel mixture theory 
+  *  serial mixture theory 
 
 Dimension: 2
 Geometry : A square piece of composite with fiber transversal to the plane
