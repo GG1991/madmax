@@ -713,9 +713,20 @@ end_mac_0:
   }
 
   /* free the B matrix */
-  for( i = 0 ; i < nvoi  ; i++ )
+  for( i = 0 ; i < nvoi  ; i++ ){
+    for( j = 0 ; j < ixpe ; j++ )
+      free(bmat[i][j]);
     free(bmat[i]);
+  }
   free(bmat);
+
+  /* free dsh */
+  for( i = 0 ; i < npe_max ; i++ ){
+    for( j = 0 ; j < dim ; j++ )
+      free(dsh[i][j]);
+    free(dsh[i]);
+  }
+  free(dsh);
   /**************************************************/
 
 end_mac_1:
