@@ -334,6 +334,15 @@ end_mac_0:
 
   /**************************************************/
 
+  {
+    /* general options */
+    /* non zeros factor */
+    PetscOptionsGetInt(NULL, NULL, "-nnz_factor", &nnz_factor, &set);
+    if( set == PETSC_FALSE ) nnz_factor = 1;
+  }
+
+  /**************************************************/
+
   if(flag_coupling)
     PetscPrintf( MACRO_COMM, "MACRO: COUPLING\n");
   else
@@ -397,6 +406,7 @@ end_mac_0:
     elem_energy  = malloc( nelm      * sizeof(double));
     elem_type    = malloc( nelm      * sizeof(int));
   }
+  flag_neg_detj  = 0;
 
   /* alloc B matrix */
   bmat = malloc( nvoi * sizeof(double**));
@@ -426,7 +436,7 @@ end_mac_0:
 
   detj = malloc( ngp_max * sizeof(double));
 
-  PetscPrintf(MACRO_COMM, "ok\n ");
+  PetscPrintf( MACRO_COMM, "ok\n");
 
   /**************************************************/
 
@@ -562,14 +572,14 @@ end_mac_0:
 
     /* allocate A, x, dx, b */
 
-    int     nnz = ( dim == 2 ) ? dim*9 : dim*27;
+    int     nnz = ( dim == 2 ) ? dim*9 : dim*27; nnz *= nnz_factor;
     KSP     ksp;
 
     MatCreate( MACRO_COMM, &A );
     MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
+    MatSetUp( A );
     MatSeqAIJSetPreallocation( A, nnz, NULL );
     MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );
-    MatSetUp( A );
     MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
     MatSetFromOptions( A );
 
@@ -648,6 +658,8 @@ end_mac_0:
 	VecGhostRestoreLocalForm( b     , &b_loc );
 	VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
 	VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
+	if( flag_neg_detj == 1)
+	  PetscPrintf( MACRO_COMM, "MACRO: warning negative jacobian detected\n");
 
 	VecNorm( b, NORM_2, &norm );
 	PetscPrintf( MACRO_COMM,"MACRO: |b| = %e\n", norm );
@@ -846,6 +858,9 @@ int assembly_b( void )
 
     for( gp = 0; gp < ngp ; gp++ ){
 
+      if( detj[gp] < 0.0 ) flag_neg_detj = 1;
+      detj[gp] = fabs( detj[gp] );
+
       /* calc strain at gp */
       get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
 
@@ -905,6 +920,8 @@ int assembly_AM( void )
     get_wp( dim, npe, &wp );
 
     for( gp = 0; gp < ngp ; gp++ ){
+
+      detj[gp] = fabs( detj[gp] );
 
       /* calc strain gp */
       get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
@@ -975,6 +992,8 @@ int assembly_A( void )
     get_wp( dim, npe, &wp );
 
     for( gp = 0; gp < ngp ; gp++ ){
+
+      detj[gp] = fabs( detj[gp] );
 
       /* calc strain gp */
       get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );

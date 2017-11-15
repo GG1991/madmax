@@ -48,13 +48,15 @@ double    **jac_inv;             // inverse of elemental jacobian
 int         nvoi;                // voigt number
 
 int         mymicro_rank_worker;
+int         flag_neg_detj;       // negative jacobian flag
+int         nnz_factor;          // non zeros factor to multiply the default
 
-int         rank_mac;            //  rank on macro comm
-int         nproc_mac;           //  # of macro processes (WORLD_COMM)  
+int         rank_mac;            // rank on macro comm
+int         nproc_mac;           // # of macro processes (WORLD_COMM)  
 
-char        filename[NBUF];      //  string for different purposes
-char        mesh_n[NBUF];        //  mesh path
-int         mesh_f;              //  mesh format
+char        filename[NBUF];      // string for different purposes
+char        mesh_n[NBUF];        // mesh path
+int         mesh_f;              // mesh format
 
 Mat         A;                   // steffiness matrix          
 Mat         M;                   // mass matrix
