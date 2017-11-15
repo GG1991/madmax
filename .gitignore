@@ -43,6 +43,9 @@ mpitests/matPreAlloc/matpre
 mpirun
 ~
 
+# gdb
+*.gdb
+
 # utils
 utils/fig43_01.tex
 utils/trace_final.*
