@@ -335,32 +335,36 @@ end_mac_0:
   /**************************************************/
 
   if(flag_coupling)
-    PetscPrintf(MACRO_COMM,"MACRO: COUPLING\n");
+    PetscPrintf( MACRO_COMM, "MACRO: COUPLING\n");
   else
-    PetscPrintf(MACRO_COMM,"MACRO: STANDALONE\n");
+    PetscPrintf( MACRO_COMM, "MACRO: STANDALONE\n");
 
   /* read mesh */    
-  PetscPrintf( MACRO_COMM, "Reading mesh elements\n" );
+  PetscPrintf( MACRO_COMM, "reading mesh elements\n" );
   read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
 
   /* partition the mesh */
-  PetscPrintf(MACRO_COMM,"Partitioning and distributing mesh\n");
+  PetscPrintf( MACRO_COMM, "partitioning and distributing mesh\n");
   part_mesh_PARMETIS(&MACRO_COMM, myname, NULL);
 
   /* calculate <*ghosts> and <nghosts> */
-  PetscPrintf(MACRO_COMM,"Calculating Ghost Nodes\n");
+  PetscPrintf( MACRO_COMM, "calculating Ghost Nodes\n");
   calculate_ghosts(&MACRO_COMM, myname);
 
   /* re-number nodes */
-  PetscPrintf(MACRO_COMM,"Reenumering nodes\n");
+  PetscPrintf( MACRO_COMM, "reenumering nodes\n");
   reenumerate_PETSc(MACRO_COMM);
 
   /* read nodes' coordinates */
-  PetscPrintf(MACRO_COMM,"Reading Coordinates\n");
+  PetscPrintf( MACRO_COMM, "reading Coordinates\n");
   read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);
 
   /* read boundaries */
-  read_bc();
+  ierr = read_bc();
+  if( ierr ){
+    PetscPrintf( MACRO_COMM, "problem reading boundary nodes\n" );
+    goto end_mac_1;
+  }
 
   list_init( &physical_list, sizeof(physical_t), NULL );
   gmsh_get_physical_list( mesh_n, &physical_list );
@@ -779,13 +783,18 @@ int read_bc()
    */
 
   int        *ix, i, d, da, n;
+  int         ierr;
   bound_t    *bou;
 
   node_list_t *pn = boundary_list.head;
   while( pn )
   {
     bou = ( bound_t * )pn->data;
-    gmsh_get_node_index( mesh_n, bou->name, nmynods, mynods, dim, &n, &ix );
+    ierr = gmsh_get_node_index( mesh_n, bou->name, nmynods, mynods, dim, &n, &ix );
+    if( ierr ){
+      PetscPrintf( MACRO_COMM, "problem finding nodes of boundary %s on msh file\n", bou->name );
+      return 1;
+    }
     bou->ndir        = n;
     bou->ndirix      = bou->ndir * bou->ndirpn;
     bou->dir_val     = malloc( bou->ndirix * sizeof(double));
