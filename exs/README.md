@@ -26,7 +26,7 @@ Example where the heterogeneities are solved by the direct method :
 <img src="../doc/sputnik-man/figures/front_fib_d.jpg" 
 alt="example with fibers embedded in a matrix" />
 
-[//]: <> (add this to control image size width="400" height="400")
+[//]: # (add this to control image size width="400" height="400")
 
 Using a mesh like:
 
