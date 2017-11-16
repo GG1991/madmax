@@ -24,6 +24,7 @@ Geometry : the microstructure is a simple circular fiber.
 Example where the heterogeneities are solved by the direct method :
 
 ![example with fibers embedded in a matrix](../doc/sputnik-man/figures/front_fib_d.jpg=100x100?raw=true "Title")
+<img src="../doc/sputnik-man/figures/front_fib_d.jpg" alt="example with fibers embedded in a matrix" style="width: 100px;"/>
 
 Using a mesh like:
 
