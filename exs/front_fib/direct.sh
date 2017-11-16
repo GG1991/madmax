@@ -11,8 +11,8 @@ fi
 #$MPIEXEC -np $NP xterm -e gdb -x file.gdb --args ../../macro/macro \
 $MPIEXEC -np $NP ../../macro/macro \
     -boundary "X0 11 0 0","X1 11 1 0" \
-    -material "MATRIX TYPE_0 1.0e7 1.0e6 0.3","FIBER TYPE_0 1.0e8 1.0e6 0.3","MICRO TYPE_1" \
-    -function "0 2 0.0 0.0 1.0 0.0","1 2 0.0 0.0 1.0 0.001" \
+    -material "MATRIX TYPE_0 1.0e7 1.0e6 0.3","FIBER TYPE_0 1.0e7 1.0e6 0.3","MICRO TYPE_1" \
+    -function "0 2 0.0 0.0 1.0 0.0","1 2 0.0 0.0 1.0 0.01" \
     -mesh ../../meshes/front_fib/direct_a.msh \
     -dim 2            \
     -mesh_gmsh        \
@@ -21,7 +21,7 @@ $MPIEXEC -np $NP ../../macro/macro \
     -dt 1.0           \
     -pc_type jacobi   \
     -nnz_factor 3     \
-    -ksp_type cg \
+    -ksp_type cg      \
     -ksp_atol 1.0e-20 \
     -ksp_ktol 1.0e-20 \
     -ksp_rtol 1.0e-13 \
@@ -30,8 +30,8 @@ $MPIEXEC -np $NP ../../macro/macro \
     -options_left 0
 
 #-pc_type  jacobi lu \
-#-ksp_type cg \
-#-ksp_atol 1.0e-22 \
+#-ksp_type cg        \
+#-ksp_atol 1.0e-22   \
 #-boundary_2 "X1 001 0 0 1"
-#-ksp_type cg      \
-#-print_petsc      \
+#-ksp_type cg        \
+#-print_petsc        \
