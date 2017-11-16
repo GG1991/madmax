@@ -80,7 +80,6 @@ double       *coord;                  // nodes' coordinates
 int          *loc2petsc;              // array of size <nmynods> + <nghost>
                                       // returns the position in PETSc matrix & vectors
 
-// spu_mesh.c
 int read_mesh_elmv( MPI_Comm COMM, char *myname, char *mesh_n, int mesh_f);
 int read_mesh_elmv_CSR_GMSH( MPI_Comm COMM, char *myname, char *mesh_n);
 int read_mesh_elmv_CSR_ALYA( MPI_Comm COMM, char *myname, char *mesh_n);

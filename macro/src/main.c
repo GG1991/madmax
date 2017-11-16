@@ -341,36 +341,61 @@ end_mac_0:
   {
     /* general options */
     /* non zeros factor */
-    PetscOptionsGetInt(NULL, NULL, "-nnz_factor", &nnz_factor, &set);
+    PetscOptionsGetInt( NULL, NULL, "-nnz_factor", &nnz_factor, &set );
     if( set == PETSC_FALSE ) nnz_factor = 1;
   }
 
   /**************************************************/
 
   if(flag_coupling)
-    PetscPrintf( MACRO_COMM, "MACRO: COUPLING\n");
+    PetscPrintf( MACRO_COMM, "MACRO: COUPLING\n" );
   else
-    PetscPrintf( MACRO_COMM, "MACRO: STANDALONE\n");
+    PetscPrintf( MACRO_COMM, "MACRO: STANDALONE\n" );
 
   /* read mesh */    
   PetscPrintf( MACRO_COMM, "reading mesh elements\n" );
-  read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
+  ierr = read_mesh_elmv( MACRO_COMM, myname, mesh_n, mesh_f);
+  if( ierr ){
+    PetscPrintf( MACRO_COMM, "problem reading mesh elements\n" );
+    goto end_mac_1;
+  }
+  PetscPrintf( MACRO_COMM, " ok\n");
 
   /* partition the mesh */
-  PetscPrintf( MACRO_COMM, "partitioning and distributing mesh\n");
-  part_mesh_PARMETIS(&MACRO_COMM, myname, NULL);
+  PetscPrintf( MACRO_COMM, "partitioning and distributing mesh");
+  ierr = part_mesh_PARMETIS( MACRO_COMM, myname, NULL);
+  if( ierr ){
+    PetscPrintf( MACRO_COMM, "problem partitioning mesh\n" );
+    goto end_mac_1;
+  }
+  PetscPrintf( MACRO_COMM, " ok\n");
 
   /* calculate <*ghosts> and <nghosts> */
-  PetscPrintf( MACRO_COMM, "calculating Ghost Nodes\n");
-  calculate_ghosts(&MACRO_COMM, myname);
+  PetscPrintf( MACRO_COMM, "calculating ghost nodes");
+  ierr = calculate_ghosts( MACRO_COMM, myname);
+  if( ierr ){
+    PetscPrintf( MACRO_COMM, "problem calculating ghosts\n" );
+    goto end_mac_1;
+  }
+  PetscPrintf( MACRO_COMM, " ok\n");
 
   /* re-number nodes */
-  PetscPrintf( MACRO_COMM, "reenumering nodes\n");
-  reenumerate_PETSc(MACRO_COMM);
+  PetscPrintf( MACRO_COMM, "reenumering nodes");
+  ierr = reenumerate_PETSc( MACRO_COMM );
+  if( ierr ){
+    PetscPrintf( MACRO_COMM, "problem reenumbering nodes\n" );
+    goto end_mac_1;
+  }
+  PetscPrintf( MACRO_COMM, " ok\n");
 
   /* read nodes' coordinates */
-  PetscPrintf( MACRO_COMM, "reading Coordinates\n");
-  read_mesh_coord(MACRO_COMM, mesh_n, mesh_f);
+  PetscPrintf( MACRO_COMM, "reading Coordinates");
+  ierr = read_mesh_coord( MACRO_COMM, mesh_n, mesh_f );
+  if( ierr ){
+    PetscPrintf( MACRO_COMM, "problem reading mesh coordinates\n" );
+    goto end_mac_1;
+  }
+  PetscPrintf( MACRO_COMM, " ok\n");
 
   /* read boundaries */
   ierr = read_bc();

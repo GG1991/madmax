@@ -301,12 +301,10 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
   int *aux_vector;
   int i,p,aux,j;
 
-  if(n==0){
+  if( n == 0 )
     return 0;
-  }
-  else if(vector == NULL || cuts == NULL){
+  else if( vector == NULL || cuts == NULL )
     return 1;
-  }
 
   if(new_vector == NULL){
     aux_vector = vector;
@@ -316,9 +314,9 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
   }
 
   j = 0;
-  for(p=0;p<n;p++){
+  for( p = 0 ; p < n ; p++ ){
     cuts[p] = 0;
-    for(i=0;i<n;i++){
+    for( i = 0 ; i < n ; i++ ){
       if(swap[i] == p){
 	aux=vector[i];
 	aux_vector[i] = vector[j];
@@ -1528,7 +1526,8 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 	eind[i] = nmynods + p - ghost;
       }
       else{
-	SETERRQ1(PROBLEM_COMM,1,"value %d not found on <mynods> neither <ghost>",eind[i]);
+	PetscPrintf(PROBLEM_COMM,"\nvalue %d not found on <mynods> neither <ghost>",eind[i]);
+	return 1;
       }
     }
   }
