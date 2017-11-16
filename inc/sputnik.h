@@ -57,7 +57,6 @@ int         nz_interp;
 
 // Structures to save de mesh on CSR format 
 
-int          *part;
 int          *elmdist;                // number of elements inside each procesor
 int          nelm;                    // # of local elements
 int          *eptr;                   // list of indeces of nodes inside eind
@@ -92,7 +91,7 @@ int read_physical_entities( MPI_Comm COMM, char *mesh_n, int mesh_f);
 int read_physical_entities_GMSH( MPI_Comm COMM, char *mesh_n);
 int read_physical_entities_ALYA( MPI_Comm COMM, char *mesh_n);
 
-int part_mesh_PARMETIS( MPI_Comm COMM, char * myname, double * centroid );
+int part_mesh( MPI_Comm COMM, char * myname, double * centroid );
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,

@@ -12,32 +12,24 @@
 
 #define NBUF 256
 
-int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
+int part_mesh( MPI_Comm COMM, char *myname, double *centroid)
 {
 
   /*
-     Performes the mesh partition mesh saved on the mesh structures.
+     Performes the mesh partition and distribute the elements to the processes
 
-     a) First it builds the dual graph (nodes are elements)  of the 
-     original (nodes are nodes)
-
-     b) Do the partition 
-
-     c) distribute the graph to processes
-
-     Note>
-     -> int *elmdist, int *eptr, int *eind, int *part are globals
+     int *elmdist, int *eptr, int *eind, int *part are globals
    */
 
   int        rank, nproc, i, j, ierr;
-  idx_t    * elmwgt;           // (inp) Element weights
+  idx_t     *elmwgt;           // (inp) Element weights
   idx_t      wgtflag;          // (inp) Element weight flag (0 desactivated)
   idx_t      numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
   idx_t      ncon;             // (inp) number of constrains of the graph ?
   idx_t      ncommonnodes;     // (inp) degree of connectivities among vertices in dual graph
   idx_t      nparts;           // (inp) number of partitions
-  real_t   * tpwgts;           // (inp) array of size "ncon" x "npart" fraction of vertex for each subdomain
-  real_t   * ubvec;            // (inp) array of size "ncon"
+  real_t    *tpwgts;           // (inp) array of size "ncon" x "npart" fraction of vertex for each subdomain
+  real_t    *ubvec;            // (inp) array of size "ncon"
   idx_t      options[3];       // (inp) option parameters
   idx_t      edgecut;          // (out) number of edges cut of the partition
 
@@ -45,23 +37,20 @@ int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
   MPI_Comm_rank( COMM, &rank );
 
   nelm = elmdist[rank+1] - elmdist[rank];
+  int *part = malloc( nelm * sizeof(int) );
 
-  //**************************************************
-  //
-  // Set up some options
-  //    
-  elmwgt  = NULL; // no weights per elements
-  wgtflag = 0;    // no weights per elements
-  numflag = 0;    // C numeration
+  elmwgt  = NULL;  // no weights per elements
+  wgtflag = 0;     // no weights per elements
+  numflag = 0;     // C numeration
 
-  nparts = nproc; // number of partitions 
+  nparts  = nproc; // number of partitions
 
-  ncon = 1;
-  tpwgts = (real_t*)malloc(ncon * nparts * sizeof(real_t));
-  for(i=0; i < ncon * nparts ;i++){
-    // uniform distribution of vertex in all processes
+  ncon    = 1;
+  tpwgts  = malloc( ncon * nparts * sizeof(real_t) );
+
+  // uniform distribution of vertex in all processes
+  for( i = 0 ; i < ncon * nparts ; i++)
     tpwgts[i] = 1.0 / nparts;
-  }
 
   ncommonnodes = 3;
 
@@ -69,21 +58,14 @@ int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
   options[1] = 0; // level of information returned
   options[2] = 0; // random seed
 
-  ubvec = (real_t*)malloc(ncon * sizeof(real_t));
+  ubvec = malloc( ncon * sizeof(real_t) );
   for( i = 0 ; i < ncon ; i++ )
     ubvec[i] = 1.05;
 
-  //**************************************************
-
-  if(partition_algorithm == PARMETIS_GEOMKWAY){
-
-  }
-  else if(partition_algorithm == PARMETIS_GEOM){
+  if(partition_algorithm == PARMETIS_GEOM)
+  {
     /* uses the space-filling curve algorithm */ 
     ParMETIS_V3_PartGeom( elmdist, &dim, (real_t*)elmv_centroid, part, &COMM );
-
-  }
-  else if(partition_algorithm == PARMETIS_KWAY){
 
   }
   else if(partition_algorithm == PARMETIS_MESHKWAY){
@@ -95,9 +77,8 @@ int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
 	options, &edgecut, part, &COMM );
 
   }
-  else{
+  else
     return 1;
-  }
 
   /* 
      Graph distribution
@@ -125,10 +106,9 @@ int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
   int *elm_id_swi;
   int *npe;
 
-  npe = malloc(nelm*sizeof(int));
-  for(i=0;i<nelm;i++){
+  npe = malloc( nelm * sizeof(int) );
+  for( i = 0 ; i < nelm ; i++ )
     npe[i] = eptr[i+1] - eptr[i];
-  }
 
   eind_swi       = malloc(eptr[nelm]*sizeof(int)); 
   npe_swi        = malloc(nelm*sizeof(int)); 
@@ -151,21 +131,22 @@ int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
   // free & reallocate memory for "npe" & "eind"
   int npe_size_new_tot = 0, eind_size_new_tot = 0;
 
-  for(i=0;i<nproc;i++){
+  for( i = 0 ; i < nproc ; i++ ){
     npe_size_new_tot += npe_size_new[i];
     eind_size_new_tot += eind_size_new[i];
   }
   nelm = npe_size_new_tot;
 
-  free(npe);
-  free(eptr);
-  free(eind);
-  free(elm_id);
+  free( npe );
+  free( eptr );
+  free( eind );
+  free( elm_id );
+  free( part );
 
-  npe  = malloc(nelm*sizeof(int));
-  eptr = malloc((nelm+1)*sizeof(int));
-  eind = malloc(eind_size_new_tot * sizeof(int));
-  elm_id = malloc(nelm * sizeof(int));
+  npe    = malloc( nelm              * sizeof(int));
+  eptr   = malloc( (nelm+1)          * sizeof(int));
+  eind   = malloc( eind_size_new_tot * sizeof(int));
+  elm_id = malloc( nelm              * sizeof(int));
 
   /* 
      performe the MPI_Alltoall operation for calculating "npe" & "eind"
@@ -181,8 +162,8 @@ int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
 
   int *sdispls, *rdispls;
 
-  sdispls = malloc(nproc*sizeof(int)); 
-  rdispls = malloc(nproc*sizeof(int)); 
+  sdispls = malloc( nproc * sizeof(int) );
+  rdispls = malloc( nproc * sizeof(int) );
 
   for( i = 0 ; i < nproc ; i++ ){
     sdispls[i] = 0;
@@ -196,10 +177,10 @@ int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
   }
 
   ierr = MPI_Alltoallv( npe_swi, npe_swi_size, sdispls, MPI_INT, 
-      npe, npe_size_new, rdispls, MPI_INT, COMM); if( ierr ) return 1;
+      npe, npe_size_new, rdispls, MPI_INT, COMM ); if( ierr ) return 1;
 
   ierr = MPI_Alltoallv( elm_id_swi, npe_swi_size, sdispls, MPI_INT, 
-      elm_id, npe_size_new, rdispls, MPI_INT, COMM); if( ierr ) return 1;
+      elm_id, npe_size_new, rdispls, MPI_INT, COMM ); if( ierr ) return 1;
 
   // rebuild "eptr"
   eptr[0] = 0;
@@ -213,9 +194,8 @@ int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
   }
   for( i = 0 ; i < nproc ; i++ ){
     rdispls[i] = 0;
-    for( j = 0 ; j < i ; j++ ){
+    for( j = 0 ; j < i ; j++ )
       rdispls[i] += eind_size_new[j];
-    }
   }
 
   ierr = MPI_Alltoallv( eind_swi, eind_swi_size, sdispls, MPI_INT, 
@@ -268,11 +248,9 @@ int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
   free(ubvec);
   free(tpwgts);
 
-  /*
-     We delete repeated nodes and save the <nallnods> values on <allnods> in order
-  */
+  // We delete repeated nodes and save the <nallnods> values on <allnods> in order
   allnods = NULL;
-  clean_vector_qsort(eptr[nelm], eind, &allnods, &nallnods);
+  clean_vector_qsort( eptr[nelm], eind, &allnods, &nallnods );
 
   return 0;
 }
@@ -306,12 +284,10 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
   else if( vector == NULL || cuts == NULL )
     return 1;
 
-  if(new_vector == NULL){
+  if( new_vector == NULL )
     aux_vector = vector;
-  }
-  else{
+  else
     aux_vector = new_vector;
-  }
 
   j = 0;
   for( p = 0 ; p < n ; p++ ){
@@ -651,7 +627,9 @@ int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
   fclose(fm);
   return 0;
 }
+
 /****************************************************************************************************/
+
 int read_mesh_elmv(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n, int mesh_f)
 {
   /*
@@ -815,8 +793,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   nelm           = elmdist[rank+1] - elmdist[rank];
   eptr           = malloc( (nelm + 1) * sizeof(int));
   elmv_centroid  = malloc( nelm * dim * sizeof(double));
-  elm_id     = malloc( nelm * sizeof(int));
-  part           = malloc(nelm * sizeof(int));
+  elm_id         = malloc( nelm * sizeof(int));
   //
   /**************************************************/
 
@@ -839,7 +816,10 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
     data=strtok(NULL," \n");
     npe = -1;
     npe = gmsh_npe(atoi(data));
-    if(npe<0) SETERRQ1(PROBLEM_COMM,1,"element type %d not recognized",atoi(data));
+    if( npe < 0 ){
+      PetscPrintf( PROBLEM_COMM, "\nelement type %d not recognized", atoi(data) );
+      return 1;
+    }
     eptr[i] = eptr[i-1] + npe; 
   }
   eind = malloc( eptr[nelm] * sizeof(int));
@@ -985,7 +965,6 @@ int read_mesh_elmv_CSR_ALYA(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   nelm = elmdist[rank+1] - elmdist[rank];
   eptr = malloc( (nelm + 1) * sizeof(int));
   elm_id = malloc( nelm * sizeof(int));
-  part = malloc(nelm * sizeof(int));
   //
   /**************************************************/
 
@@ -1499,8 +1478,8 @@ int reenumerate_PETSc(MPI_Comm COMM)
   MPI_Comm_rank( COMM, &rank );
   MPI_Comm_size( COMM, &nproc );
 
-  rem_nnod = malloc( nproc * sizeof(int));
-  StartIndexRank = malloc( nproc * sizeof(int));
+  rem_nnod = malloc( nproc * sizeof(int) );
+  StartIndexRank = malloc( nproc * sizeof(int) );
   ierr = MPI_Allgather( &nmynods, 1, MPI_INT, rem_nnod, 1, MPI_INT, COMM ); if( ierr ) return 1;
 
   StartIndexRank[0] = 0;
@@ -1523,7 +1502,7 @@ int reenumerate_PETSc(MPI_Comm COMM)
       if( p != NULL )
 	eind[i] = nmynods + p - ghost;
       else{
-	PetscPrintf(COMM,"\nvalue %d not found on <mynods> neither <ghost>", eind[i] );
+	PetscPrintf( COMM, "\nvalue %d not found on <mynods> neither <ghost>", eind[i] );
 	return 1;
       }
     }
