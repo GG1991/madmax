@@ -4,6 +4,7 @@ Example of a boundary condition problem.
 The "-eigensys" or a "-normal" execution can be selected.
 
 Dimension: 2
+
 Geometry : Square, we can use triangles or quads.
 
 ### micro_hom
@@ -15,28 +16,35 @@ Example of a simple homogenization that can be perform using :
   *  serial mixture theory 
 
 Dimension: 2
+
 Geometry : the microstructure is a simple circular fiber.
 
 ### fron_fib
 
 Example where the heterogeneities are solved by the direct method :
-![example with fibers embedded in a matrix](../doc/sputnik-man/figures/front_fib_d.jpg?raw=true "Title")
+
+![example with fibers embedded in a matrix](../doc/sputnik-man/figures/front_fib_d.jpg=100x100?raw=true "Title")
 
 Using a mesh like:
+
 ![mesh in the *direct* simulation](../doc/sputnik-man/figures/front_fib_c.jpg?raw=true "Title")
 
 If we made a zoom:
+
 ![zoom to the mesh](../doc/sputnik-man/figures/front_fib_b.jpg?raw=true "Title")
 
 Then the solution can be obtain by doing:
+
 ```bash
 ./direct
 ```
 if you check inside you can notice you can vary the material properties:
+
 ```bash
 -material "MATRIX TYPE_0 1.0e7 1.0e6 0.3","FIBER TYPE_0 1.0e7 1.0e6 0.3","MICRO TYPE_1" \
 ```
 and the boundary conditions:
+
 ```bash
 -boundary "X0 11 0 0","X1 11 1 0" \
 ```
@@ -54,9 +62,10 @@ Here we have two functions `0` and `1` (are the first number that appear on each
 Each function has `2` values and we give them as `x0 y0 x1 y1` then the interpolation is linear in time.
 
 Then the solution is given in plot in `macro_t_1.pvtu`
-The stress distribution is
-![stress distribution](../doc/sputnik-man/figures/front_fib_a.jpg?raw=true "Title")
 
+The stress distribution is
+
+![stress distribution](../doc/sputnik-man/figures/front_fib_a.jpg?raw=true "Title")
 
 and by the homogenization using:
 
@@ -65,6 +74,7 @@ and by the homogenization using:
   *  serial mixture theory 
 
 Dimension: 2
+
 Geometry : A square piece of composite with fiber perpendicular to the plane
 
 
@@ -77,4 +87,5 @@ Example where the heterogeneities are solved by the direct method and by the hom
   *  serial mixture theory 
 
 Dimension: 2
+
 Geometry : A square piece of composite with fiber transversal to the plane

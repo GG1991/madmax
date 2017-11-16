@@ -8,3 +8,6 @@ Number of code lines:
 wc micro/inc/* micro/src/* macro/src/* macro/inc/* src/* inc/*
 ```
 
+#Examples
+
+Check these [examples](exs/README.md) to see what you can do.
