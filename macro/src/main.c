@@ -292,7 +292,7 @@ end_mac_0:
     {
       for( i = 0 ; i < nval ; i++ )
       {
-        data = strtok( string[i] , " \n" );
+	data = strtok( string[i] , " \n" );
 	mat.name = strdup( data );
 	data = strtok( NULL , " \n" );
 	if( strcmp( data, "TYPE_0" ) == 0 )
@@ -1332,8 +1332,32 @@ int get_elem_properties( void )
       elem_stress[ e*nvoi + v ] = stress_aux[v] / vol_elem;
     }
 
-    /* fill *elem_type */
-    elem_type[e] = elm_id[e];
+    /* fill *elem_type 
+       we give the type according to the position 
+       we defined by comman line in the material_list
+     */
+    physical_t * phy;
+    node_list_t * pn = physical_list.head;
+    while ( pn )
+    {
+      phy = pn->data;
+      if( phy->id == elm_id[e] ) break;
+      pn = pn->next;
+    }
+    if( !pn ) return 1;
+
+    int type = 0;
+    pn = material_list.head;
+    while ( pn )
+    {
+      material_t *mat = pn->data;
+      if( strcmp( phy->name , mat->name) == 0 ) break;
+      pn = pn->next;
+      type ++;
+    }
+    if( !pn ) return 1;
+
+    elem_type[e] = type;
   }
 
   return 0;
