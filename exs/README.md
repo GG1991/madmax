@@ -31,6 +31,8 @@ alt="example with fibers embedded in a matrix" />
 Using a mesh like:
 
 ![mesh in the *direct* simulation](../doc/sputnik-man/figures/front_fib_c.jpg?raw=true "Title")
+<img src="../doc/sputnik-man/figures/front_fib_c.jpg" 
+alt="mesh" style="width: 50px;" />
 
 If we made a zoom:
 
