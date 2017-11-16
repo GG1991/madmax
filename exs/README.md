@@ -31,12 +31,12 @@ alt="example with fibers embedded in a matrix" />
 Using a mesh like:
 
 ![mesh in the *direct* simulation](../doc/sputnik-man/figures/front_fib_c.jpg?raw=true "Title")
-<img src="../doc/sputnik-man/figures/front_fib_c.jpg" 
-alt="mesh" style="width: 50px;" />
 
 If we made a zoom:
 
-![zoom to the mesh](../doc/sputnik-man/figures/front_fib_b.jpg?raw=true "Title")
+[//]: # (![zoom to the mesh](../doc/sputnik-man/figures/front_fib_b.jpg?raw=true "Title") )
+<img src="../doc/sputnik-man/figures/front_fib_b.jpg" 
+alt="zoom to the mesh" width="400" height="400" />
 
 Then the solution can be obtain by doing:
 

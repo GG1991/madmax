@@ -93,17 +93,20 @@ int read_physical_entities( MPI_Comm COMM, char *mesh_n, int mesh_f);
 int read_physical_entities_GMSH( MPI_Comm COMM, char *mesh_n);
 int read_physical_entities_ALYA( MPI_Comm COMM, char *mesh_n);
 
-int part_mesh_PARMETIS( MPI_Comm *COMM, char * myname, double * centroid );
+int part_mesh_PARMETIS( MPI_Comm COMM, char * myname, double * centroid );
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,
     int *cuts_npe, int *cuts_eind );
 int CSR_give_pointer( int e, int *npe, int *eind, int *p);
 int clean_vector_qsort(int n, int *input, int **output, int *not_rep);
-int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep);
-int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps);
-int calculate_ghosts(MPI_Comm * comm, char *myname);
-int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, int *remoterank );
+int give_repvector_qsort( MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep);
+int give_inter_sort( MPI_Comm comm, char *myname,
+    int *array1, int n1,
+    int *array2, int n2,
+    int **reps, int *nreps);
+int calculate_ghosts( MPI_Comm comm, char *myname);
+int ownership_selec_rule( MPI_Comm comm, int **repeated, int *nrep, int node, int *remoterank );
 int is_in_vector(int val, int *vector, int size);
 int reenumerate_PETSc(MPI_Comm PROBLEM_COMM);
 int cmpfunc(const void * a, const void * b);

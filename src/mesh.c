@@ -12,7 +12,7 @@
 
 #define NBUF 256
 
-int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, char *myname, double *centroid)
+int part_mesh_PARMETIS( MPI_Comm COMM, char *myname, double *centroid)
 {
 
   /*
@@ -29,7 +29,7 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, char *myname, double *centroid)
      -> int *elmdist, int *eptr, int *eind, int *part are globals
    */
 
-  int        rank, nproc, i,j, ierr;
+  int        rank, nproc, i, j, ierr;
   idx_t    * elmwgt;           // (inp) Element weights
   idx_t      wgtflag;          // (inp) Element weight flag (0 desactivated)
   idx_t      numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
@@ -41,8 +41,8 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, char *myname, double *centroid)
   idx_t      options[3];       // (inp) option parameters
   idx_t      edgecut;          // (out) number of edges cut of the partition
 
-  MPI_Comm_size(*PROBLEM_COMM, &nproc);
-  MPI_Comm_rank(*PROBLEM_COMM, &rank);
+  MPI_Comm_size( COMM, &nproc );
+  MPI_Comm_rank( COMM, &rank );
 
   nelm = elmdist[rank+1] - elmdist[rank];
 
@@ -70,9 +70,8 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, char *myname, double *centroid)
   options[2] = 0; // random seed
 
   ubvec = (real_t*)malloc(ncon * sizeof(real_t));
-  for(i=0;i<ncon;i++){
+  for( i = 0 ; i < ncon ; i++ )
     ubvec[i] = 1.05;
-  }
 
   //**************************************************
 
@@ -81,7 +80,7 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, char *myname, double *centroid)
   }
   else if(partition_algorithm == PARMETIS_GEOM){
     /* uses the space-filling curve algorithm */ 
-    ParMETIS_V3_PartGeom(elmdist, &dim, (real_t*)elmv_centroid, part, PROBLEM_COMM);
+    ParMETIS_V3_PartGeom( elmdist, &dim, (real_t*)elmv_centroid, part, &COMM );
 
   }
   else if(partition_algorithm == PARMETIS_KWAY){
@@ -93,7 +92,7 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, char *myname, double *centroid)
     ParMETIS_V3_PartMeshKway (
 	elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
 	&ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
-	options, &edgecut, part, PROBLEM_COMM );
+	options, &edgecut, part, &COMM );
 
   }
   else{
@@ -146,8 +145,8 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, char *myname, double *centroid)
       npe_swi_size, eind_swi_size );CHKERRQ(ierr);
 
 
-  ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
-  ierr = MPI_Alltoall(eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Alltoall( npe_swi_size,  1, MPI_INT, npe_size_new,  1, MPI_INT, COMM ); if( ierr ) return 1;
+  ierr = MPI_Alltoall( eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, COMM ); if( ierr ) return 1;
 
   // free & reallocate memory for "npe" & "eind"
   int npe_size_new_tot = 0, eind_size_new_tot = 0;
@@ -185,46 +184,42 @@ int part_mesh_PARMETIS(MPI_Comm *PROBLEM_COMM, char *myname, double *centroid)
   sdispls = malloc(nproc*sizeof(int)); 
   rdispls = malloc(nproc*sizeof(int)); 
 
-  for(i=0;i<nproc;i++){
+  for( i = 0 ; i < nproc ; i++ ){
     sdispls[i] = 0;
-    for(j=0;j<i;j++){
+    for( j = 0 ; j < i ; j++ )
       sdispls[i] += npe_swi_size[j];
-    }
   }
-  for(i=0;i<nproc;i++){
+  for( i = 0 ; i < nproc ; i++ ){
     rdispls[i] = 0;
-    for(j=0;j<i;j++){
+    for( j = 0 ; j < i ; j++ )
       rdispls[i] += npe_size_new[j];
-    }
   }
 
-  ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
-      npe, npe_size_new, rdispls, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Alltoallv( npe_swi, npe_swi_size, sdispls, MPI_INT, 
+      npe, npe_size_new, rdispls, MPI_INT, COMM); if( ierr ) return 1;
 
-  ierr = MPI_Alltoallv(elm_id_swi, npe_swi_size, sdispls, MPI_INT, 
-      elm_id, npe_size_new, rdispls, MPI_INT, *PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Alltoallv( elm_id_swi, npe_swi_size, sdispls, MPI_INT, 
+      elm_id, npe_size_new, rdispls, MPI_INT, COMM); if( ierr ) return 1;
 
   // rebuild "eptr"
   eptr[0] = 0;
-  for(i=0;i<nelm;i++){
+  for( i = 0 ; i < nelm ; i++ )
     eptr[i+1] = eptr[i] + npe[i];
-  }
 
-  for(i=0;i<nproc;i++){
+  for( i = 0 ; i < nproc ; i++ ){
     sdispls[i] = 0;
-    for(j=0;j<i;j++){
+    for( j = 0 ; j < i ; j++ )
       sdispls[i] += eind_swi_size[j];
-    }
   }
-  for(i=0;i<nproc;i++){
+  for( i = 0 ; i < nproc ; i++ ){
     rdispls[i] = 0;
-    for(j=0;j<i;j++){
+    for( j = 0 ; j < i ; j++ ){
       rdispls[i] += eind_size_new[j];
     }
   }
 
-  ierr = MPI_Alltoallv(eind_swi, eind_swi_size, sdispls, MPI_INT, 
-      eind, eind_size_new, rdispls, MPI_INT, *PROBLEM_COMM);
+  ierr = MPI_Alltoallv( eind_swi, eind_swi_size, sdispls, MPI_INT, 
+      eind, eind_size_new, rdispls, MPI_INT, COMM );
 
   if(flag_print & (1<<PRINT_ALL)){
     printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
@@ -536,7 +531,7 @@ int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
 	}
 	c++;
       }
-      if(c>ntotnod){
+      if( c > ntotnod ){
 	printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", ntotnod, mesh_n, c);
 	return 1;
       }
@@ -924,19 +919,16 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n)
   }
 
   double centroid[3];
-  for(i=0; i<nelm; i++){
+  for( i = 0 ; i < nelm ; i++ ){
     npe = eptr[i+1] - eptr[i];
-    for(d=0;d<dim;d++){
+    for( d = 0 ; d < dim ; d++ )
       centroid[d] = 0.0;
-    }
-    for(n=0; n<npe; n++){
-      for(d=0;d<dim;d++){
+    for( n = 0 ; n < npe ; n++ ){
+      for( d = 0 ; d < dim ; d++ )
 	centroid[d] += coord[(eind[eptr[i]+n]-1)*dim + d];
-      }
     }
-    for(d=0;d<dim;d++){
-      elmv_centroid[d] = centroid[d] / npe;
-    }
+    for( d = 0 ; d < dim ; d++ )
+      elmv_centroid[i*dim + d] = centroid[d] / npe;
   }
   free(coord);
   //
@@ -1237,7 +1229,7 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
 
 /****************************************************************************************************/
 
-int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps)
+int give_inter_sort( MPI_Comm COMM, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps)
 {
   /*
      fills the "reps" array with nodes that repeated in both "array1" & "array2"
@@ -1291,8 +1283,10 @@ int give_inter_sort(MPI_Comm *comm, char *myname, int *array1, int n1, int *arra
 
   return 0;
 }
+
 /****************************************************************************************************/
-int calculate_ghosts(MPI_Comm * comm, char *myname)
+
+int calculate_ghosts( MPI_Comm COMM, char *myname)
 {
   /*
      This function determines which nodes of <*allnods> are <*ghost>
@@ -1313,8 +1307,8 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
 
   MPI_Request  *request;
 
-  MPI_Comm_rank(*comm, &rank);
-  MPI_Comm_size(*comm, &nproc);
+  MPI_Comm_rank( COMM, &rank);
+  MPI_Comm_size( COMM, &nproc);
 
   mysize     = nallnods;
   nghost    = 0;
@@ -1325,28 +1319,26 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   repeated   = calloc(nproc,sizeof(int*));
   nrep       = calloc(nproc,sizeof(int));
 
-  ierr = MPI_Allgather(&mysize, 1, MPI_INT, peer_sizes, 1, MPI_INT, *comm);
+  ierr = MPI_Allgather(&mysize, 1, MPI_INT, peer_sizes, 1, MPI_INT, COMM );
 
-  for(i=0;i<nproc;i++){
-    if(i!=rank){
-      ierr = MPI_Isend(allnods, mysize, MPI_INT, i, 0, *comm, &request[i]);CHKERRQ(ierr);
-    }
+  for( i = 0 ; i < nproc ; i++ ){
+    if( i != rank )
+      ierr = MPI_Isend( allnods, mysize, MPI_INT, i, 0, COMM, &request[i] ); return ierr;
   }
-  for(i=0;i<nproc;i++){
-    if(i!=rank){
+  for( i = 0 ; i < nproc ; i++ ){
+    if( i != rank ){
       peer_nod_glo = malloc(peer_sizes[i]*sizeof(int));
-      ierr = MPI_Recv(peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, *comm, MPI_STATUS_IGNORE);
-      give_inter_sort(comm, myname, allnods, mysize, peer_nod_glo, peer_sizes[i], &repeated[i], &nrep[i]);
-      free(peer_nod_glo);
+      ierr = MPI_Recv( peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE );
+      give_inter_sort( COMM, myname, allnods, mysize, peer_nod_glo, peer_sizes[i], &repeated[i], &nrep[i] );
+      free( peer_nod_glo );
     }
   }
 
   if(flag_print & (1<<PRINT_ALL)){
-    if(rank==0){
+    if( rank == 0 ){
       printf("%-6s r%2d %-20s :", myname, rank, "nrep");
-      for(i=0;i<nproc;i++){
+      for( i = 0 ; i < nproc ; i++ )
 	printf("%8d ", nrep[i]);
-      }
       printf("\n");
     }
   }
@@ -1354,10 +1346,9 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   // condensamos en 1 vector todo lo que hay en repeated
   int *rep_array = NULL, nreptot = 0, *rep_array_clean = NULL, nreptot_clean = 0;
 
-  for(i=0;i<nproc;i++){
-    if(i!=rank){
+  for( i = 0 ; i < nproc ; i++ ){
+    if( i != rank )
       nreptot += nrep[i];
-    }
   }
   rep_array = malloc(nreptot * sizeof(int));
   c = 0;
@@ -1370,11 +1361,10 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     }
   }
 
-  ierr = clean_vector_qsort(nreptot, rep_array, &rep_array_clean, &nreptot_clean);CHKERRQ(ierr);
+  ierr = clean_vector_qsort( nreptot, rep_array, &rep_array_clean, &nreptot_clean );
 
-  if(flag_print & (1<<PRINT_ALL)){
+  if(flag_print & (1<<PRINT_ALL))
     printf("%-6s r%2d %-20s : %8f\n", myname, rank, "nreptot [%]", (nreptot_clean*100.0)/nallnods ); 
-  }
 
   free(rep_array);
 
@@ -1387,7 +1377,7 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
     for(i=0;i<nallnods;i++){
       if(r<nreptot_clean){
 	if(allnods[i] == rep_array_clean[r]){
-	  ismine = ownership_selec_rule( comm, repeated, nrep, allnods[i], &remoterank);
+	  ismine = ownership_selec_rule( COMM, repeated, nrep, allnods[i], &remoterank);
 	  r++;
 	  if(ismine){
 	    nmynods ++;
@@ -1411,20 +1401,19 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
 
   
-  if(flag_print & (1<<PRINT_ALL)){
+  if(flag_print & (1<<PRINT_ALL))
     printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "nghost/nallnods [%]", (nghost*100.0)/nallnods,	"nmynods/nallnods [%]", (nmynods*100.0)/nallnods); 
-  }
 
   mynods = malloc(nmynods*sizeof(int));
   ghost = malloc(nghost*sizeof(int));
 
   c = r = g = 0;
   if(nreptot_clean!=0){
-    for(i=0;i<nallnods;i++){
+    for( i = 0 ; i < nallnods ; i++ ){
       // podria ser un nodo que le pertenece a otro proceso
       if(r<nreptot_clean){
 	if(allnods[i] == rep_array_clean[r]){
-	  ismine = ownership_selec_rule( comm, repeated, nrep, allnods[i], &remoterank);
+	  ismine = ownership_selec_rule( COMM, repeated, nrep, allnods[i], &remoterank );
 	  r++;
 	  if(ismine){
 	    mynods[c] = allnods[i];
@@ -1448,17 +1437,16 @@ int calculate_ghosts(MPI_Comm * comm, char *myname)
   }
   else{
     // no hay repetidos entonces es nuestro
-    for(i=0;i<nallnods;i++){
+    for( i = 0 ;i < nallnods ; i++ ){
       mynods[i] = allnods[i];
     }
   }
 
 
   // free memory for <repeated>
-  for(i=0;i<nproc;i++){
-    if(i!=rank){
+  for( i = 0 ; i < nproc ; i++ ){
+    if( i != rank )
       free(repeated[i]);
-    }
   }
   free(repeated);
   free(nrep);
@@ -1613,7 +1601,7 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 
 /****************************************************************************************************/
 
-int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, int *remoterank )
+int ownership_selec_rule( MPI_Comm COMM, int **repeated, int *nrep, int node, int *remoterank )
 {
 
   /*  
@@ -1636,8 +1624,8 @@ int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, i
 
   int nproc, rank;
 
-  MPI_Comm_rank(*comm, &rank);
-  MPI_Comm_size(*comm, &nproc);
+  MPI_Comm_rank( COMM, &rank);
+  MPI_Comm_size( COMM, &nproc);
 
   int i, rankp;
 
@@ -1654,7 +1642,7 @@ int ownership_selec_rule( MPI_Comm *comm, int **repeated, int *nrep, int node, i
       return 1;
     } 
     else{
-      if(is_in_vector(node, &repeated[rankp][0], nrep[rankp])){
+      if( is_in_vector( node, &repeated[rankp][0], nrep[rankp]) ){
 	// lo encontramos pero está en otro rank
 	*remoterank = rankp;
 	return 0;
