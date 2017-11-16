@@ -34,7 +34,6 @@ Using a mesh like:
 
 If we made a zoom:
 
-[//]: # (![zoom to the mesh](../doc/sputnik-man/figures/front_fib_b.jpg?raw=true "Title") )
 <img src="../doc/sputnik-man/figures/front_fib_b.jpg" 
 alt="zoom to the mesh" width="400" height="400" />
 

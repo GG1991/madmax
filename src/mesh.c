@@ -1482,51 +1482,48 @@ int calculate_ghosts( MPI_Comm COMM, char *myname)
 
 /****************************************************************************************************/
 
-int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
+int reenumerate_PETSc(MPI_Comm COMM)
 {
   /* 
      This routine
 
      a) creates and fills array <loc2petsc> of size <nmynods> + <nghost>
      in each local position <n> is stored the global position in PETSc matrix 
-
    */
 
   int   rank, nproc;
   int   i, j, *p, ierr; 
-  int   *rem_nods;// buffer to receive mynods from the other processes
+  int   *rem_nods;   // buffer to receive mynods from the other processes
   int   *rem_nnod;   // buffers' sizes with nmynodsOrig from every process
 
-  MPI_Comm_rank(PROBLEM_COMM, &rank);
-  MPI_Comm_size(PROBLEM_COMM, &nproc);
+  MPI_Comm_rank( COMM, &rank );
+  MPI_Comm_size( COMM, &nproc );
 
   rem_nnod = malloc( nproc * sizeof(int));
   StartIndexRank = malloc( nproc * sizeof(int));
-  ierr = MPI_Allgather(&nmynods, 1, MPI_INT, rem_nnod, 1, MPI_INT, PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Allgather( &nmynods, 1, MPI_INT, rem_nnod, 1, MPI_INT, COMM ); if( ierr ) return 1;
 
   StartIndexRank[0] = 0;
   i = 1;
-  while(i<nproc){
+  while( i < nproc ){
     StartIndexRank[i] = StartIndexRank[i-1] + rem_nnod[i-1];
     i++;
   }
 
   //**************************************************
   //  reenumeramos <eind>
-  for(i=0;i<eptr[nelm];i++){
-    // is a local node
-    p = bsearch(&eind[i], mynods, nmynods, sizeof(int), cmpfunc);
-    if(p != NULL){
+  for( i = 0 ; i < eptr[nelm] ; i++ ){
+    p = bsearch( &eind[i], mynods, nmynods, sizeof(int), cmpfunc );
+    if( p != NULL )
+      // is a local node
       eind[i] = p - mynods;
-    }
     else{
       // is a ghost node
-      p = bsearch(&eind[i], ghost, nghost, sizeof(int), cmpfunc);
-      if(p != NULL){
+      p = bsearch( &eind[i], ghost, nghost, sizeof(int), cmpfunc );
+      if( p != NULL )
 	eind[i] = nmynods + p - ghost;
-      }
       else{
-	PetscPrintf(PROBLEM_COMM,"\nvalue %d not found on <mynods> neither <ghost>",eind[i]);
+	PetscPrintf(COMM,"\nvalue %d not found on <mynods> neither <ghost>", eind[i] );
 	return 1;
       }
     }
@@ -1536,9 +1533,8 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 
   //**************************************************
   // empezamos con los locales
-  for(i=0;i<nmynods;i++){
+  for( i = 0 ; i < nmynods ; i++ )
     loc2petsc[i] = StartIndexRank[rank] + i;
-  }
 
   /*
     And now ghosts nodes>
@@ -1554,43 +1550,39 @@ int reenumerate_PETSc(MPI_Comm PROBLEM_COMM)
 
   int   *MyGhostGlobalIndex;
 
-  request    = malloc(nproc*sizeof(MPI_Request));
-  MyGhostGlobalIndex = malloc(nghost*sizeof(int));
-  for(i=0;i<nghost;i++){
+  request = malloc( nproc * sizeof(MPI_Request) );
+  MyGhostGlobalIndex = malloc( nghost * sizeof(int) );
+  for( i = 0 ; i < nghost ; i++ )
     MyGhostGlobalIndex[i] = -1;
-  }
 
-  for(i=0;i<nproc;i++){
-    if(i!=rank){
-      ierr = MPI_Isend(mynods, nmynods, MPI_INT, i, 0, PROBLEM_COMM, &request[i]);
-    }
+  for( i = 0 ; i < nproc ; i++ ){
+    if( i != rank )
+      ierr = MPI_Isend( mynods, nmynods, MPI_INT, i, 0, COMM, &request[i] ); if( ierr ) return 1;
   }
-  for(i=0;i<nproc;i++){
+  for( i = 0 ; i < nproc ; i++ ){
     // receive from all peer ranks "i"
-    if(i!=rank){
+    if( i != rank ){
       rem_nods = malloc(rem_nnod[i]*sizeof(int));
-      ierr = MPI_Recv(rem_nods, rem_nnod[i], MPI_INT, i, 0, PROBLEM_COMM, MPI_STATUS_IGNORE);
-      for(j=0;j<nghost;j++){
+      ierr = MPI_Recv(rem_nods, rem_nnod[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE ); if( ierr ) return 1;
+      for( j = 0 ; j < nghost ; j++ ){
 	// search this ghost node on <rem_nods>
-	p = bsearch(&ghost[j], rem_nods, rem_nnod[i], sizeof(int), cmpfunc);
-	if(p!=NULL){
+	p = bsearch( &ghost[j], rem_nods, rem_nnod[i], sizeof(int), cmpfunc );
+	if( p != NULL )
 	  MyGhostGlobalIndex[j] = StartIndexRank[i] + p - rem_nods;
-	}
       }
       free(rem_nods);
     }
   }
 
   // check if all the ghost where found remotely
-  for(i=0;i<nghost;i++){
-    if(MyGhostGlobalIndex[i] == -1){
-      SETERRQ1(PROBLEM_COMM,1,"<ghost> value %d not found remotely",ghost[i]);
-    }
+  for( i = 0 ; i < nghost ; i++ ){
+    if( MyGhostGlobalIndex[i] == -1 )
+      PetscPrintf( COMM,"\n\"ghost\" value %d not found remotely", ghost[i] );
+      return 1;
   }
 
-  for(i=0;i<nghost;i++){
+  for( i = 0 ; i < nghost ; i++ )
     loc2petsc[nmynods + i] =  MyGhostGlobalIndex[i];
-  }
 
   free(rem_nnod);
   free(MyGhostGlobalIndex);
