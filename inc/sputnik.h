@@ -87,11 +87,10 @@ int read_mesh_coord( MPI_Comm COMM, char *mesh_n, int mesh_f);
 int read_mesh_coord_GMSH( MPI_Comm COMM, char *mesh_n);
 int read_mesh_coord_ALYA( MPI_Comm COMM, char *mesh_n);
 
-int read_physical_entities( MPI_Comm COMM, char *mesh_n, int mesh_f);
-int read_physical_entities_GMSH( MPI_Comm COMM, char *mesh_n);
-int read_physical_entities_ALYA( MPI_Comm COMM, char *mesh_n);
-
 int part_mesh( MPI_Comm COMM, char * myname, double * centroid );
+int reenumerate_PETSc( MPI_Comm PROBLEM_COMM );
+int calculate_ghosts( MPI_Comm comm, char *myname);
+int ownership_selec_rule( MPI_Comm comm, int **repeated, int *nrep, int node, int *remoterank );
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,
@@ -103,13 +102,9 @@ int give_inter_sort( MPI_Comm comm, char *myname,
     int *array1, int n1,
     int *array2, int n2,
     int **reps, int *nreps);
-int calculate_ghosts( MPI_Comm comm, char *myname);
-int ownership_selec_rule( MPI_Comm comm, int **repeated, int *nrep, int node, int *remoterank );
 int is_in_vector(int val, int *vector, int size);
-int reenumerate_PETSc(MPI_Comm PROBLEM_COMM);
 int cmpfunc(const void * a, const void * b);
 int gmsh_npe(int code);
-int gmsh_is_surf_elm(int code);
 int gmsh_is_vol_elm(int code);
 int get_bbox_limit_lengths(MPI_Comm PROBLEM_COMM, double *coord, int n, double *lx, double *ly, double *lz);
 int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z);

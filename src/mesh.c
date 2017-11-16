@@ -1459,7 +1459,7 @@ int reenumerate_PETSc(MPI_Comm COMM)
       if( p != NULL )
 	eind[i] = nmynods + p - ghost;
       else{
-	PetscPrintf( COMM, "\nvalue %d not found on <mynods> neither <ghost>", eind[i] );
+	PetscPrintf( COMM, "\nvalue %d not found on <mynods> neither <ghost>\n", eind[i] );
 	return 1;
       }
     }
@@ -1473,7 +1473,7 @@ int reenumerate_PETSc(MPI_Comm COMM)
     loc2petsc[i] = StartIndexRank[rank] + i;
 
   /*
-    And now ghosts nodes>
+    And now ghosts nodes
    
     each process sends <mynods> 
     and each process receives that vector

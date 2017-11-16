@@ -50,16 +50,16 @@ int main(int argc, char **argv)
   myname = strdup("macro");
 
   WORLD_COMM = MPI_COMM_WORLD;
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(WORLD_COMM, &nproc_wor);
-  MPI_Comm_rank(WORLD_COMM, &rank_wor);
+  MPI_Init( &argc, &argv );
+  MPI_Comm_size( WORLD_COMM, &nproc_wor );
+  MPI_Comm_rank( WORLD_COMM, &rank_wor );
 
   PETSC_COMM_WORLD = WORLD_COMM;
-  PetscInitialize(&argc,&argv,(char*)0,help);
+  PetscInitialize( &argc, &argv, (char*)0, help );
 
   /* coupling Options */
   flag_coupling = PETSC_FALSE;
-  PetscOptionsHasName(NULL,NULL,"-coupl",&set);
+  PetscOptionsHasName( NULL, NULL, "-coupl", &set );
   macmic.type = 0;
   if( set == PETSC_TRUE ){
     flag_coupling = PETSC_TRUE;
@@ -68,8 +68,9 @@ int main(int argc, char **argv)
 
   /* stablish a new local communicator */
   color = MACRO;
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM);
+  ierr = macmic_coloring( WORLD_COMM, &color, &macmic, &MACRO_COMM );
   if( ierr ){
+    PetscPrintf( PETSC_COMM_WORLD, "problem in coloring\n" );
     ierr_1 = 1;
     goto end_mac_0;
   }
@@ -353,7 +354,7 @@ end_mac_0:
     PetscPrintf( MACRO_COMM, "MACRO: STANDALONE\n" );
 
   /* read mesh */    
-  PetscPrintf( MACRO_COMM, "reading mesh elements\n" );
+  PetscPrintf( MACRO_COMM, "reading mesh elements" );
   ierr = read_mesh_elmv( MACRO_COMM, myname, mesh_n, mesh_f);
   if( ierr ){
     PetscPrintf( MACRO_COMM, "problem reading mesh elements\n" );
