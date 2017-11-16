@@ -1,10 +1,8 @@
 /*
-
-   SPUTNIK mesh treatment functions
+   mesh treatment functions
 
    Author> Guido Giuntoli
    Date>   08-08-2017
-
  */
 
 #include "sputnik.h"
@@ -12,7 +10,7 @@
 
 #define NBUF 256
 
-int part_mesh( MPI_Comm COMM, char *myname, double *centroid)
+int part_mesh( MPI_Comm COMM, char *myname, double *centroid )
 {
 
   /*
@@ -1263,7 +1261,7 @@ int give_inter_sort( MPI_Comm COMM, char *myname, int *array1, int n1, int *arra
 
 /****************************************************************************************************/
 
-int calculate_ghosts( MPI_Comm COMM, char *myname)
+int calculate_ghosts( MPI_Comm COMM, char *myname )
 {
   /*
      This function determines which nodes of <*allnods> are <*ghost>
@@ -1288,7 +1286,7 @@ int calculate_ghosts( MPI_Comm COMM, char *myname)
   MPI_Comm_size( COMM, &nproc);
 
   mysize     = nallnods;
-  nghost    = 0;
+  nghost     = 0;
   peer_sizes = NULL;
 
   peer_sizes = malloc(nproc*sizeof(int));
@@ -1299,8 +1297,10 @@ int calculate_ghosts( MPI_Comm COMM, char *myname)
   ierr = MPI_Allgather(&mysize, 1, MPI_INT, peer_sizes, 1, MPI_INT, COMM );
 
   for( i = 0 ; i < nproc ; i++ ){
-    if( i != rank )
-      ierr = MPI_Isend( allnods, mysize, MPI_INT, i, 0, COMM, &request[i] ); return ierr;
+    if( i != rank ){
+      ierr = MPI_Isend( allnods, mysize, MPI_INT, i, 0, COMM, &request[i] );
+      return ierr;
+    }
   }
   for( i = 0 ; i < nproc ; i++ ){
     if( i != rank ){
@@ -1308,15 +1308,6 @@ int calculate_ghosts( MPI_Comm COMM, char *myname)
       ierr = MPI_Recv( peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE );
       give_inter_sort( COMM, myname, allnods, mysize, peer_nod_glo, peer_sizes[i], &repeated[i], &nrep[i] );
       free( peer_nod_glo );
-    }
-  }
-
-  if(flag_print & (1<<PRINT_ALL)){
-    if( rank == 0 ){
-      printf("%-6s r%2d %-20s :", myname, rank, "nrep");
-      for( i = 0 ; i < nproc ; i++ )
-	printf("%8d ", nrep[i]);
-      printf("\n");
     }
   }
 
@@ -1329,9 +1320,9 @@ int calculate_ghosts( MPI_Comm COMM, char *myname)
   }
   rep_array = malloc(nreptot * sizeof(int));
   c = 0;
-  for(i=0;i<nproc;i++){
-    if(i!=rank){
-      for(j=0;j<nrep[i];j++){
+  for( i = 0 ; i < nproc ; i++ ){
+    if( i != rank ){
+      for( j = 0 ; j < nrep[i] ; j++ ){
 	rep_array[c] = repeated[i][j];
 	c ++;
       }
@@ -1340,53 +1331,48 @@ int calculate_ghosts( MPI_Comm COMM, char *myname)
 
   ierr = clean_vector_qsort( nreptot, rep_array, &rep_array_clean, &nreptot_clean );
 
-  if(flag_print & (1<<PRINT_ALL))
-    printf("%-6s r%2d %-20s : %8f\n", myname, rank, "nreptot [%]", (nreptot_clean*100.0)/nallnods ); 
-
   free(rep_array);
 
   // calculamos la cantidad de puntos dentro de <allnods> que me pertenecen
 
   int ismine, r, remoterank;
 
-  if(nreptot_clean!=0){
+  if( nreptot_clean != 0 )
+  {
     nmynods = nghost = r = 0;
-    for(i=0;i<nallnods;i++){
-      if(r<nreptot_clean){
-	if(allnods[i] == rep_array_clean[r]){
+    for( i = 0 ; i < nallnods ; i++ )
+    {
+      if( r < nreptot_clean )
+      {
+	if( allnods[i] == rep_array_clean[r] )
+	{
 	  ismine = ownership_selec_rule( COMM, repeated, nrep, allnods[i], &remoterank);
 	  r++;
-	  if(ismine){
+	  if( ismine )
 	    nmynods ++;
-	  }
-	  else{
+	  else
 	    nghost ++;
-	  }
 	}
-	else{
+	else
 	  nmynods ++;
-	}
       }
-      else{
+      else
 	nmynods ++;
-      }
     }
   }
   else{
     nmynods = nallnods;
     nghost = 0;
   }
-
   
-  if(flag_print & (1<<PRINT_ALL))
-    printf("%-6s r%2d %-20s : %8f   %-20s : %8f\n", myname, rank, "nghost/nallnods [%]", (nghost*100.0)/nallnods,	"nmynods/nallnods [%]", (nmynods*100.0)/nallnods); 
-
-  mynods = malloc(nmynods*sizeof(int));
-  ghost = malloc(nghost*sizeof(int));
+  mynods = malloc( nmynods * sizeof(int) );
+  ghost  = malloc( nghost  * sizeof(int) );
 
   c = r = g = 0;
-  if(nreptot_clean!=0){
-    for( i = 0 ; i < nallnods ; i++ ){
+  if( nreptot_clean != 0 )
+  {
+    for( i = 0 ; i < nallnods ; i++ )
+    {
       // podria ser un nodo que le pertenece a otro proceso
       if(r<nreptot_clean){
 	if(allnods[i] == rep_array_clean[r]){
@@ -1414,13 +1400,10 @@ int calculate_ghosts( MPI_Comm COMM, char *myname)
   }
   else{
     // no hay repetidos entonces es nuestro
-    for( i = 0 ;i < nallnods ; i++ ){
+    for( i = 0 ;i < nallnods ; i++ )
       mynods[i] = allnods[i];
-    }
   }
 
-
-  // free memory for <repeated>
   for( i = 0 ; i < nproc ; i++ ){
     if( i != rank )
       free(repeated[i]);
@@ -1429,32 +1412,6 @@ int calculate_ghosts( MPI_Comm COMM, char *myname)
   free(nrep);
   free(request);
   free(peer_sizes);
-
-  // >>>>> PRINT
-  if(flag_print & (1<<PRINT_ALL)){
-    printf("%-6s r%2d %-20s : %8d   %-20s : %8d\n", myname, rank, "nallnods", nallnods, "nmynods", nmynods);
-    printf("%-6s r%2d %-20s : ", myname, rank, "allnods");
-    for(i=0;i<nallnods;i++){
-      printf("%3d ",allnods[i]);
-    }
-    printf("\n");
-    printf("%-6s r%2d %-20s : ", myname, rank, "reps");
-    for(i=0;i<nreptot_clean;i++){
-      printf("%3d ",rep_array_clean[i]);
-    }
-    printf("\n");
-    printf("%-6s r%2d %-20s : ", myname, rank, "mynods");
-    for(i=0;i<nmynods;i++){
-      printf("%3d ",mynods[i]);
-    }
-    printf("\n");
-    printf("%-6s r%2d %-20s : ", myname, rank, "ghost");
-    for(i=0;i<nghost;i++){
-      printf("%3d ",ghost[i]);
-    }
-    printf("\n");
-  }
-  // >>>>> PRINT
 
   return 0;
 }
@@ -1535,8 +1492,10 @@ int reenumerate_PETSc(MPI_Comm COMM)
     MyGhostGlobalIndex[i] = -1;
 
   for( i = 0 ; i < nproc ; i++ ){
-    if( i != rank )
-      ierr = MPI_Isend( mynods, nmynods, MPI_INT, i, 0, COMM, &request[i] ); if( ierr ) return 1;
+    if( i != rank ){
+      ierr = MPI_Isend( mynods, nmynods, MPI_INT, i, 0, COMM, &request[i] );
+      if( ierr ) return 1;
+    }
   }
   for( i = 0 ; i < nproc ; i++ ){
     // receive from all peer ranks "i"
@@ -1620,9 +1579,7 @@ int ownership_selec_rule( MPI_Comm COMM, int **repeated, int *nrep, int node, in
       else{
 	// buscamos siempre a la derecha
 	rankp ++;
-	if(rankp == nproc){
-	  rankp = 0;
-	}
+	if( rankp == nproc ) rankp = 0;
       }
     }
     i ++;
@@ -1670,7 +1627,7 @@ int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z)
      n > number of points (size(coord) = 3*n)
    */
 
-  if(n==0) return 0;
+  if( n == 0 ) return 0;
 
   int i=0;
   x[0] = coord[i*dim+0]; x[1] = coord[i*dim+0];
