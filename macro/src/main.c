@@ -361,9 +361,12 @@ end_mac_0:
   }
   PetscPrintf( MACRO_COMM, " ok\n");
 
-  /* partition the mesh */
+  /*
+     partition the mesh
+     fills "nallnodes" and "allnodes"
+   */
   PetscPrintf( MACRO_COMM, "partitioning and distributing mesh");
-  ierr = part_mesh_PARMETIS( MACRO_COMM, myname, NULL);
+  ierr = part_mesh( MACRO_COMM, myname, NULL);
   if( ierr ){
     PetscPrintf( MACRO_COMM, "problem partitioning mesh\n" );
     goto end_mac_1;
