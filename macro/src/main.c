@@ -532,7 +532,7 @@ end_mac_0:
     int d;
     for( i = 0 ; i < nghost ; i++ ){
       for( d = 0 ; d < dim ; d++ )
-	ghost_index[ i*dim + d ] = ghost[i]*dim + d;
+	ghost_index[ i*dim + d ] = loc2petsc[ghost[i]-1]*dim + d;
     }
 
     VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
@@ -615,17 +615,18 @@ end_mac_0:
     MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );
     MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
     MatSetFromOptions( A );
+    MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
+    MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
 
-    int *ghost_index = malloc( nghost*dim *sizeof(int) );
+    int * ghost_index = malloc( nghost*dim * sizeof(int) );
 
     int d;
     for( i = 0 ; i < nghost ; i++ ){
       for( d = 0 ; d < dim ; d++ )
-	ghost_index[ i*dim + d ] = ghost[i]*dim + d;
+	ghost_index[ i*dim + d ] = loc2petsc[ghost[i]-1]*dim + d;
     }
 
     VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
-    VecZeroEntries( x );
     VecDuplicate( x, &dx );
     VecDuplicate( x, &b );
 
@@ -635,7 +636,6 @@ end_mac_0:
 
 
     /* time dependent loop */
-    
     double   t = 0.0;
     int      time_step = 0;
 
@@ -847,10 +847,11 @@ int read_bc()
     bou->dir_glo_ixs = malloc( bou->ndirix * sizeof(int));
     for( i = 0 ; i < n ; i++ ){
       da = 0;
+      int * p = bsearch( &ix[i], mynods, nmynods, sizeof(int), cmpfunc );
       for( d = 0 ; d < dim ; d++ )
 	if( bou->kind & (1<<d) ) {
-	  bou->dir_loc_ixs[i* (bou->ndirpn) + da] = (ix[i]-1) * dim + d;
-	  bou->dir_glo_ixs[i* (bou->ndirpn) + da] = loc2petsc[(ix[i]-1)] * dim + d;
+	  bou->dir_loc_ixs[i* (bou->ndirpn) + da] = (p - mynods) * dim + d;
+	  bou->dir_glo_ixs[i* (bou->ndirpn) + da] = loc2petsc[(p - mynods)] * dim + d;
 	  da++;
 	}
     }
