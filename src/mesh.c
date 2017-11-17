@@ -1289,17 +1289,17 @@ int calculate_ghosts( MPI_Comm COMM, char *myname )
   nghost     = 0;
   peer_sizes = NULL;
 
-  peer_sizes = malloc(nproc*sizeof(int));
-  request    = malloc(nproc*sizeof(MPI_Request));
-  repeated   = calloc(nproc,sizeof(int*));
-  nrep       = calloc(nproc,sizeof(int));
+  peer_sizes = malloc( nproc * sizeof(int) );
+  request    = malloc( nproc * sizeof(MPI_Request) );
+  repeated   = calloc( nproc,sizeof(int*) );
+  nrep       = calloc( nproc,sizeof(int) );
 
   ierr = MPI_Allgather(&mysize, 1, MPI_INT, peer_sizes, 1, MPI_INT, COMM );
 
   for( i = 0 ; i < nproc ; i++ ){
     if( i != rank ){
       ierr = MPI_Isend( allnods, mysize, MPI_INT, i, 0, COMM, &request[i] );
-      return ierr;
+      if( ierr ) return 1;
     }
   }
   for( i = 0 ; i < nproc ; i++ ){
@@ -1450,10 +1450,12 @@ int reenumerate_PETSc(MPI_Comm COMM)
   //  reenumeramos <eind>
   for( i = 0 ; i < eptr[nelm] ; i++ ){
     p = bsearch( &eind[i], mynods, nmynods, sizeof(int), cmpfunc );
-    if( p != NULL )
+    if( p != NULL ){
       // is a local node
       eind[i] = p - mynods;
-    else{
+    }
+    else
+    {
       // is a ghost node
       p = bsearch( &eind[i], ghost, nghost, sizeof(int), cmpfunc );
       if( p != NULL )
@@ -1497,12 +1499,18 @@ int reenumerate_PETSc(MPI_Comm COMM)
       if( ierr ) return 1;
     }
   }
-  for( i = 0 ; i < nproc ; i++ ){
+  for( i = 0 ; i < nproc ; i++ )
+  {
     // receive from all peer ranks "i"
-    if( i != rank ){
+    if( i != rank )
+    {
       rem_nods = malloc(rem_nnod[i]*sizeof(int));
-      ierr = MPI_Recv(rem_nods, rem_nnod[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE ); if( ierr ) return 1;
-      for( j = 0 ; j < nghost ; j++ ){
+
+      ierr = MPI_Recv(rem_nods, rem_nnod[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE );
+      if( ierr ) return 1;
+
+      for( j = 0 ; j < nghost ; j++ )
+      {
 	// search this ghost node on <rem_nods>
 	p = bsearch( &ghost[j], rem_nods, rem_nnod[i], sizeof(int), cmpfunc );
 	if( p != NULL )
@@ -1514,9 +1522,10 @@ int reenumerate_PETSc(MPI_Comm COMM)
 
   // check if all the ghost where found remotely
   for( i = 0 ; i < nghost ; i++ ){
-    if( MyGhostGlobalIndex[i] == -1 )
+    if( MyGhostGlobalIndex[i] == -1 ){
       PetscPrintf( COMM,"\n\"ghost\" value %d not found remotely", ghost[i] );
       return 1;
+    }
   }
 
   for( i = 0 ; i < nghost ; i++ )
