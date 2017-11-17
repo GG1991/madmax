@@ -531,8 +531,8 @@ end_mac_0:
 
     int d;
     for( i = 0 ; i < nghost ; i++ ){
-      for( d = 0 ; d < nghost ; d++ )
-	ghost_index[i] = ghost[i]*dim + d;
+      for( d = 0 ; d < dim ; d++ )
+	ghost_index[ i*dim + d ] = ghost[i]*dim + d;
     }
 
     VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
@@ -620,8 +620,8 @@ end_mac_0:
 
     int d;
     for( i = 0 ; i < nghost ; i++ ){
-      for( d = 0 ; d < nghost ; d++ )
-	ghost_index[i] = ghost[i]*dim + d;
+      for( d = 0 ; d < dim ; d++ )
+	ghost_index[ i*dim + d ] = ghost[i]*dim + d;
     }
 
     VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
