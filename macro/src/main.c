@@ -917,7 +917,7 @@ int assembly_b( void )
 
   /* from the local and ghost part with add to all processes */
   VecGhostUpdateBegin( b, ADD_VALUES, SCATTER_REVERSE );
-  VecGhostUpdateEnd  ( b, ADD_VALUES, SCATTER_REVERSE );
+  VecGhostUpdateEnd( b, ADD_VALUES, SCATTER_REVERSE );
 
   return 0;
 }
@@ -1438,7 +1438,7 @@ int macro_pvtu( char *name )
 	"<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
 	"<PUnstructuredGrid GhostLevel=\"0\">\n"
 	"<PPoints>\n"
-	"<PDataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\"/>\n"
+	"<PDataArray type=\"Float64\" Name=\"Position\" NumberOfComponents=\"3\"/>\n"
 	"</PPoints>\n"
 	"<PCells>\n"
 	"<PDataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\"/>\n"
@@ -1484,16 +1484,16 @@ int macro_pvtu( char *name )
       "<UnstructuredGrid>\n");
   fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", nallnods, nelm);
   fprintf(fm,"<Points>\n");
-  fprintf(fm,"<DataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+  fprintf(fm,"<DataArray type=\"Float64\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
 
   int    n , d;
 
   for( n = 0 ; n < nallnods ; n++ ){
     for( d = 0 ; d < dim ; d++ )
-      fprintf(fm,"%e ",  coord[n*dim + d] );
+      fprintf( fm,"% 01.6e ",  coord[n*dim + d] );
     for( d = dim ; d < 3 ; d++ )
-      fprintf(fm,"%e ",0.0);
-    fprintf(fm,"\n");
+      fprintf( fm, "% 01.6e ", 0.0 );
+    fprintf( fm, "\n" );
   }
   fprintf(fm,"</DataArray>\n");
   fprintf(fm,"</Points>\n");
@@ -1505,7 +1505,7 @@ int macro_pvtu( char *name )
   for ( e = 0 ; e < nelm ; e++ ){
     npe = eptr[e+1] - eptr[e];
     for ( n = 0 ; n < npe ; n++ )
-      fprintf(fm,"%d ", eind[eptr[e]+n]);
+      fprintf(fm,"%-6d ", eind[eptr[e]+n]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
@@ -1522,7 +1522,7 @@ int macro_pvtu( char *name )
 
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for ( e = 0 ; e < nelm ; e++ )
-    fprintf(fm, "%d ", vtkcode( dim , npe ) );
+    fprintf(fm, "%-3d ", vtkcode( dim , npe ) );
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
@@ -1540,9 +1540,9 @@ int macro_pvtu( char *name )
     VecGetArray( xlocal , &xvalues );
     for( n = 0 ; n < nallnods ; n++ ){
       for( d = 0 ; d < dim ; d++ )
-	fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
+	fprintf(fm, "% 01.6e ", xvalues[ n * dim + d ]);
       for( d = dim ; d < 3 ; d++ )
-	fprintf(fm,"%lf ",0.0);
+	fprintf(fm,"% 01.6e ",0.0);
       fprintf(fm,"\n");
     }
     VecRestoreArray( xlocal , &xvalues );
@@ -1552,16 +1552,16 @@ int macro_pvtu( char *name )
   /* <residual> */
   if( b != NULL ){
     VecGhostUpdateBegin( b , INSERT_VALUES,SCATTER_FORWARD);
-    VecGhostUpdateEnd(   b , INSERT_VALUES,SCATTER_FORWARD);
+    VecGhostUpdateEnd  ( b , INSERT_VALUES,SCATTER_FORWARD);
     VecGhostGetLocalForm(b , &xlocal);
 
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
     VecGetArray(xlocal, &xvalues);
     for( n = 0 ; n < nallnods ; n++ ){
       for( d = 0 ; d < dim ; d++ )
-	fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
+	fprintf(fm, "% 01.6e ", xvalues[ n * dim + d ]);
       for( d = dim ; d < 3 ; d++ )
-	fprintf(fm, "%lf ", 0.0);
+	fprintf(fm, "% 01.6e ", 0.0);
       fprintf(fm,"\n");
     }
     VecRestoreArray( xlocal , &xvalues );
@@ -1584,7 +1584,7 @@ int macro_pvtu( char *name )
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
   for( e = 0 ; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
-      fprintf( fm, "%lf ", elem_strain[ e*nvoi + v ]);
+      fprintf( fm, "% 01.6e ", elem_strain[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
@@ -1593,7 +1593,7 @@ int macro_pvtu( char *name )
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
   for( e = 0; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
-      fprintf(fm, "%lf ", elem_stress[ e*nvoi + v ]);
+      fprintf(fm, "% 01.6e ", elem_stress[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
