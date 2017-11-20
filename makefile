@@ -2,6 +2,14 @@
 # Makefile utilities
 # make --quite : prints only "echos" instruction
 #
+#
+# options:
+# 
+# -DZERO : in macro makes 0 component less than a tolerance
+# 
+# 
+# 
+
 
 PWD:= $(shell pwd)
 

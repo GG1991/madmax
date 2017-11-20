@@ -1,11 +1,15 @@
 /*
-   MACRO main function
+   "macro"
 
-   Program for solving the displacement field inside a solid 
+   program for solving the displacement field inside a solid 
    structure representing the macrostructure
 
-   Author> Guido Giuntoli
-   Date> 28-07-2017
+   Guido Giuntoli 28-07-2017
+
+   compilations options:
+
+   -DZERO : makes 0 component less than a tolerance (can be expensive)
+
  */
 
 #include "macro.h"
@@ -28,12 +32,12 @@ int update_bound( double t );
 int get_global_elem_index( int e, int * glo_elem_index );
 int get_local_elem_index ( int e, int * loc_elem_index );
 int get_elem_properties( void );
-int get_strain( int e , int gp, int *loc_elem_index, double ***dsh, double ***bmat, double *strain_gp );
-int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
+int get_strain( int e , int gp, int * loc_elem_index, double ***dsh, double ***bmat, double *strain_gp );
+int get_stress( int e , int gp, double * strain_gp , double *stress_gp );
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
 int get_rho( const char * name, int e , double * rho );
 int get_sh( int dim, int npe, double ***sh );
-int get_dsh( int e, int *loc_elem_index, double ***dsh, double *detj );
+int get_dsh( int e, int * loc_elem_index, double *** dsh, double * detj );
 int get_wp( int dim, int npe, double **wp );
 int get_bmat( int e, double ***dsh, double ***bmat );
 int get_mat_name( int id, char * name_s );
@@ -656,6 +660,7 @@ end_mac_0:
 
       VecGhostGetLocalForm( x    , &x_loc );
       VecGetArray(          x_loc, &x_arr );
+
       node_list_t * pn = boundary_list.head;
       while( pn )
       {
@@ -664,13 +669,15 @@ end_mac_0:
 	  x_arr[bou->dir_loc_ixs[i]] = bou->dir_val[i];
 	pn = pn->next;
       }
+
       VecRestoreArray         ( x_loc, &x_arr );
       VecGhostRestoreLocalForm( x    , &x_loc );
+
       VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
       VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
 
       /* non-linear iterations */
-      nr_its = 0; norm = 2*nr_norm_tol;
+      nr_its = 0; norm = 2 * nr_norm_tol;
       while( nr_its < nr_max_its && norm > nr_norm_tol )
       {
 
@@ -688,8 +695,8 @@ end_mac_0:
 	    b_arr[bou->dir_loc_ixs[i]] = 0.0;
 	  pn = pn->next;
 	}
-	VecRestoreArray( b_loc , &b_arr );
-	VecGhostRestoreLocalForm( b     , &b_loc );
+	VecRestoreArray         ( b_loc, &b_arr );
+	VecGhostRestoreLocalForm( b    , &b_loc );
 	VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
 	VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
 
@@ -727,17 +734,16 @@ end_mac_0:
 	PetscPrintf( MACRO_COMM, "\n");
 	VecAXPY( x, 1.0, dx );
 
-	if(flag_print & (1<<PRINT_PETSC)){
-	  PetscViewer  viewer;
-	  PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
-	  PetscViewerASCIIOpen(MACRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
-	  PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
-	  PetscViewerASCIIOpen(MACRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
-	}
-
 	nr_its ++;
       }
 
+      if(flag_print & (1<<PRINT_PETSC)){
+	PetscViewer  viewer;
+	PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
+	PetscViewerASCIIOpen(MACRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
+	PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
+	PetscViewerASCIIOpen(MACRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
+      }
 
       if( flag_print & (1<<PRINT_VTU) )
       { 
@@ -886,11 +892,11 @@ int assembly_b( void )
 
   for( e = 0 ; e < nelm ; e++ )
   {
-    for( i = 0 ; i < npe*dim ; i++ )
-      res_elem[i] = 0.0;
-
     get_local_elem_index( e, loc_elem_index );
     ngp = npe = eptr[e+1] - eptr[e];
+
+    for( i = 0 ; i < npe*dim ; i++ )
+      res_elem[i] = 0.0;
 
     get_dsh( e, loc_elem_index, dsh, detj);
     get_bmat( e, dsh, bmat );
@@ -913,8 +919,10 @@ int assembly_b( void )
       }
     }
 
+#ifdef ZERO
     for( i = 0 ; i < (npe * dim) ; i++ ) 
       res_elem[i] = ( fabs(res_elem[i]) < 1.0e-6 ) ? 0.0 : res_elem[i];
+#endif
 
     for( i = 0 ; i < ( npe * dim ) ; i++ )
       b_arr[ loc_elem_index[i] ] += res_elem[i];
@@ -951,9 +959,12 @@ int assembly_AM( void )
 
   for( e = 0 ; e < nelm ; e++ )
   {
-    for( i = 0 ; i < npe*dim*npe*dim ; i++ )
-      m_elem[i] = k_elem[i] = 0.0;
     ngp = npe = eptr[e+1] - eptr[e];
+
+    for( i = 0 ; i < npe*dim*npe*dim ; i++ ){
+      m_elem[i] = 0.0;
+      k_elem[i] = 0.0;
+    }
 
     /* get local and global index of nodes in vertex */
     get_local_elem_index ( e, loc_elem_index );
@@ -1024,9 +1035,10 @@ int assembly_A( void )
 
   for( e = 0 ; e < nelm ; e++ )
   {
+    ngp = npe = eptr[e+1] - eptr[e];
+
     for( i = 0 ; i < npe*dim*npe*dim ; i++ )
       k_elem[i] = 0.0;
-    ngp = npe = eptr[e+1] - eptr[e];
     
     /* get local and global index of nodes in vertex */
     get_local_elem_index (e, loc_elem_index);
@@ -1131,9 +1143,11 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
   else
     mat_get_stress( mat_p, dim, strain_gp, stress_gp );
 
+#ifdef ZERO
   int v;
   for( v = 0 ; v < nvoi ; v++ )
     stress_gp[v] = ( fabs(stress_gp[v]) < 1.0e-6 ) ? 0.0 : stress_gp[v];
+#endif
 
   return 0;
 }
