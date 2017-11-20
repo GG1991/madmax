@@ -608,22 +608,20 @@ end_mac_0:
     int     nnz = ( dim == 2 ) ? dim*9 : dim*27; nnz *= nnz_factor;
     KSP     ksp;
 
-    MatCreate( MACRO_COMM, &A );
-    MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
-    MatSetUp( A );
-    MatSeqAIJSetPreallocation( A, nnz, NULL );
-    MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );
-    MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
-    MatSetFromOptions( A );
-    MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
-    MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
+    ierr = MatCreate( MACRO_COMM, &A );CHKERRQ(ierr);
+    ierr = MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );CHKERRQ(ierr);
+    ierr = MatSetType( A, MATAIJ );CHKERRQ(ierr);
+    ierr = MatSeqAIJSetPreallocation( A, nnz, NULL );CHKERRQ(ierr);
+    ierr = MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );CHKERRQ(ierr);
+    ierr = MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );CHKERRQ(ierr);
+    ierr = MatSetUp( A );CHKERRQ(ierr);
 
     int * ghost_index = malloc( nghost*dim * sizeof(int) );
 
     int d;
     for( i = 0 ; i < nghost ; i++ ){
       for( d = 0 ; d < dim ; d++ )
-	ghost_index[ i*dim + d ] = loc2petsc[ghost[i]-1]*dim + d;
+	ghost_index[ i*dim + d ] = loc2petsc[ nmynods + i ]*dim + d;
     }
 
     VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
@@ -687,10 +685,10 @@ end_mac_0:
 	    b_arr[bou->dir_loc_ixs[i]] = 0.0;
 	  pn = pn->next;
 	}
-	VecRestoreArray         ( b_loc , &b_arr );
+	VecRestoreArray( b_loc , &b_arr );
 	VecGhostRestoreLocalForm( b     , &b_loc );
 	VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
-	VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
+	VecGhostUpdateEnd( b, INSERT_VALUES, SCATTER_FORWARD );
 	if( flag_neg_detj == 1)
 	  PetscPrintf( MACRO_COMM, "MACRO: warning negative jacobian detected\n");
 
@@ -721,7 +719,7 @@ end_mac_0:
 	KSPSolve( ksp, b, dx );
 	print_ksp_info( MACRO_COMM, ksp);
 	PetscPrintf( MACRO_COMM, "\n");
-	VecAXPY( x, 1.0, dx );
+//	VecAXPY( x, 1.0, dx );
 
 	if(flag_print & (1<<PRINT_PETSC)){
 	  PetscViewer  viewer;
@@ -872,11 +870,11 @@ int assembly_b( void )
 
   double  *b_arr;
   Vec      b_loc;
-  VecZeroEntries(b);
-  VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
-  VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
-  VecGhostGetLocalForm( b    , &b_loc );
-  VecGetArray         ( b_loc, &b_arr );
+
+  VecGhostGetLocalForm( b , &b_loc );
+  VecGetArray( b_loc, &b_arr );
+  for( i = 0 ; i < nallnods*dim ; i++ )
+    b_arr[i] = 0.0;
 
   for( e = 0 ; e < nelm ; e++ )
   {
