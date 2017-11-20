@@ -302,7 +302,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   Vec     x_loc;
   double  *x_arr;
   VecGhostGetLocalForm( x    , &x_loc );
-  VecGetArray(          x_loc, &x_arr );
+  VecGetArray         ( x_loc, &x_arr );
 
   int  n , d;
   if( dim == 2 ){
@@ -335,15 +335,20 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
     save_event( MICRO_COMM, "ass_0" );
-    assembly_residual_struct(); // assembly "b" (residue) using "x" (displacement)
 
+    /* assembly "b" (residue) using "x" (displacement) */
+    assembly_residual_struct();
+    
+    /* set dirichlet bc on "b" */
     VecGetArray( b, &b_arr );
     for( i = 0; i < ndir_ix ; i++ )
       b_arr[dir_ix_loc[i]] = 0.0;
     VecRestoreArray( b, &b_arr );
     VecGhostUpdateBegin ( b, INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd   ( b, INSERT_VALUES, SCATTER_FORWARD);
+
     VecNorm( b , NORM_2 , &norm );
+
     if(!flag_coupling)
       PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
 
@@ -359,8 +364,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     KSPSolve( ksp, b, dx );
     save_event( MICRO_COMM, "sol_1" );
     VecAXPY( x, 1.0, dx );
-    VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateBegin ( x, INSERT_VALUES, SCATTER_FORWARD );
+    VecGhostUpdateEnd   ( x, INSERT_VALUES, SCATTER_FORWARD );
 
     nr_its ++;
   }
@@ -444,12 +449,14 @@ int assembly_residual_struct(void)
 
   }
 
-  VecRestoreArray( b_loc , &b_arr);
-  VecGhostRestoreLocalForm( b , &b_loc );
+  VecRestoreArray         ( b_loc, &b_arr );
+  VecGhostRestoreLocalForm( b    , &b_loc );
 
   /* from the local and ghost part with add to all processes */
-  VecGhostUpdateBegin( b, ADD_VALUES, SCATTER_REVERSE );
-  VecGhostUpdateEnd  ( b, ADD_VALUES, SCATTER_REVERSE );
+  VecGhostUpdateBegin( b, ADD_VALUES   , SCATTER_REVERSE );
+  VecGhostUpdateEnd  ( b, ADD_VALUES   , SCATTER_REVERSE );
+  VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
+  VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
 
   return 0;
 }
@@ -1196,8 +1203,8 @@ int micro_pvtu( char *name )
   fprintf(fm,"<PointData Vectors=\"displ\">\n"); // Vectors inside is a filter we should not use this here
 
   /* <displ> */
-  VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD);
-  VecGhostUpdateEnd(   x , INSERT_VALUES , SCATTER_FORWARD);
+  VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD );
+  VecGhostUpdateEnd(   x , INSERT_VALUES , SCATTER_FORWARD );
   VecGhostGetLocalForm(x , &xlocal );
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
@@ -1213,8 +1220,8 @@ int micro_pvtu( char *name )
   fprintf(fm,"</DataArray>\n");
 
   /* <residual> */
-  VecGhostUpdateBegin( b , INSERT_VALUES,SCATTER_FORWARD);
-  VecGhostUpdateEnd(   b , INSERT_VALUES,SCATTER_FORWARD);
+  VecGhostUpdateBegin( b , INSERT_VALUES, SCATTER_FORWARD );
+  VecGhostUpdateEnd  ( b , INSERT_VALUES, SCATTER_FORWARD );
   VecGhostGetLocalForm(b , &xlocal);
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
