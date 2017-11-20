@@ -532,7 +532,7 @@ end_mac_0:
     int d;
     for( i = 0 ; i < nghost ; i++ ){
       for( d = 0 ; d < dim ; d++ )
-	ghost_index[ i*dim + d ] = loc2petsc[ghost[i]-1]*dim + d;
+	ghost_index[ i * dim + d ] = loc2petsc[ nmynods + i ] * dim + d;
     }
 
     VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
@@ -615,13 +615,15 @@ end_mac_0:
     ierr = MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );CHKERRQ(ierr);
     ierr = MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );CHKERRQ(ierr);
     ierr = MatSetUp( A );CHKERRQ(ierr);
+    MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
+    MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
 
     int * ghost_index = malloc( nghost*dim * sizeof(int) );
 
     int d;
     for( i = 0 ; i < nghost ; i++ ){
       for( d = 0 ; d < dim ; d++ )
-	ghost_index[ i*dim + d ] = loc2petsc[ nmynods + i ]*dim + d;
+	ghost_index[ i * dim + d ] = loc2petsc[ nmynods + i ] * dim + d;
     }
 
     VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
@@ -637,34 +639,37 @@ end_mac_0:
     double   t = 0.0;
     int      time_step = 0;
 
+    /* x = 0 */
     VecZeroEntries( x );
+    VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
+    VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
 
     while( t < (normal_mode.tf + 1.0e-10) ){
 
       PetscPrintf(MACRO_COMM,"\ntime step %-3d %-e seg\n", time_step, t);
 
       /* setting displacements on dirichlet indeces */
-      Vec      x_loc;
-      double  *x_arr;
-      VecGhostGetLocalForm( x    , &x_loc );
-      VecGetArray(          x_loc, &x_arr );
-
       update_boundary( t , &function_list, &boundary_list );
 
+      Vec      x_loc,  b_loc;
+      double  *x_arr, *b_arr;
+
+      VecGhostGetLocalForm( x    , &x_loc );
+      VecGetArray(          x_loc, &x_arr );
       node_list_t * pn = boundary_list.head;
       while( pn )
       {
 	bound_t *bou = ( bound_t * )pn->data;
-	int i;
 	for( i = 0 ; i < bou->ndirix ; i++ )
 	  x_arr[bou->dir_loc_ixs[i]] = bou->dir_val[i];
 	pn = pn->next;
       }
-      VecRestoreArray         ( x_loc , &x_arr );
-      VecGhostRestoreLocalForm( x     , &x_loc );
+      VecRestoreArray         ( x_loc, &x_arr );
+      VecGhostRestoreLocalForm( x    , &x_loc );
       VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
       VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
 
+      /* non-linear iterations */
       nr_its = 0; norm = 2*nr_norm_tol;
       while( nr_its < nr_max_its && norm > nr_norm_tol )
       {
@@ -672,15 +677,13 @@ end_mac_0:
 	/* assembly residual */
 	PetscPrintf( MACRO_COMM, "MACRO: assembling residual\n" );
 	assembly_b();
-	Vec      b_loc;
-	double  *b_arr;
+
 	VecGhostGetLocalForm( b    , &b_loc );
-	VecGetArray(          b_loc, &b_arr );
+	VecGetArray         ( b_loc, &b_arr );
 	pn = boundary_list.head;
 	while( pn )
 	{
 	  bound_t *bou = ( bound_t * )pn->data;
-	  int i;
 	  for( i = 0 ; i < bou->ndirix ; i++ )
 	    b_arr[bou->dir_loc_ixs[i]] = 0.0;
 	  pn = pn->next;
@@ -688,13 +691,16 @@ end_mac_0:
 	VecRestoreArray( b_loc , &b_arr );
 	VecGhostRestoreLocalForm( b     , &b_loc );
 	VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
-	VecGhostUpdateEnd( b, INSERT_VALUES, SCATTER_FORWARD );
+	VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
+
 	if( flag_neg_detj == 1)
 	  PetscPrintf( MACRO_COMM, "MACRO: warning negative jacobian detected\n");
 
 	VecNorm( b, NORM_2, &norm );
 	PetscPrintf( MACRO_COMM,"MACRO: |b| = %e\n", norm );
 	VecScale( b, -1.0 );
+	VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
+	VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
 
 	if( norm < nr_norm_tol ) break;
 
@@ -714,12 +720,12 @@ end_mac_0:
 	MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
 
 	/* solving problem */
-	PetscPrintf( MACRO_COMM, "MACRO: solving system\n");
+	PetscPrintf( MACRO_COMM, "MACRO: solving system\n" );
 	KSPSetOperators( ksp, A, A );
 	KSPSolve( ksp, b, dx );
 	print_ksp_info( MACRO_COMM, ksp);
 	PetscPrintf( MACRO_COMM, "\n");
-//	VecAXPY( x, 1.0, dx );
+	VecAXPY( x, 1.0, dx );
 
 	if(flag_print & (1<<PRINT_PETSC)){
 	  PetscViewer  viewer;
@@ -731,6 +737,7 @@ end_mac_0:
 
 	nr_its ++;
       }
+
 
       if( flag_print & (1<<PRINT_VTU) )
       { 
@@ -871,8 +878,9 @@ int assembly_b( void )
   double  *b_arr;
   Vec      b_loc;
 
-  VecGhostGetLocalForm( b , &b_loc );
-  VecGetArray( b_loc, &b_arr );
+  VecGhostGetLocalForm( b    , &b_loc );
+  VecGetArray         ( b_loc, &b_arr );
+
   for( i = 0 ; i < nallnods*dim ; i++ )
     b_arr[i] = 0.0;
 
@@ -905,8 +913,11 @@ int assembly_b( void )
       }
     }
 
-    for( i = 0 ; i < npe*dim ; i++ )
-      b_arr[loc_elem_index[i]] += res_elem[i];
+    for( i = 0 ; i < (npe * dim) ; i++ ) 
+      res_elem[i] = ( fabs(res_elem[i]) < 1.0e-6 ) ? 0.0 : res_elem[i];
+
+    for( i = 0 ; i < ( npe * dim ) ; i++ )
+      b_arr[ loc_elem_index[i] ] += res_elem[i];
 
   }
 
@@ -914,8 +925,10 @@ int assembly_b( void )
   VecGhostRestoreLocalForm( b     , &b_loc );
 
   /* from the local and ghost part with add to all processes */
-  VecGhostUpdateBegin( b, ADD_VALUES, SCATTER_REVERSE );
-  VecGhostUpdateEnd( b, ADD_VALUES, SCATTER_REVERSE );
+  VecGhostUpdateBegin( b, ADD_VALUES   , SCATTER_REVERSE );
+  VecGhostUpdateEnd  ( b, ADD_VALUES   , SCATTER_REVERSE );
+  VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
+  VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
 
   return 0;
 }
@@ -1057,7 +1070,7 @@ int assembly_A( void )
 
 /****************************************************************************************************/
 
-int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat,double *strain_gp )
+int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat, double *strain_gp )
 {
 
   double  *x_arr; 
@@ -1067,8 +1080,8 @@ int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp,  double *
 
   int  i , v;
   int  npe = eptr[e+1] - eptr[e];
-  for( i = 0 ; i < npe*dim ; i++ )
-    elem_disp[i] = x_arr[loc_elem_index[i]];
+  for( i = 0 ; i < ( npe * dim ) ; i++ )
+    elem_disp[i] = x_arr[ loc_elem_index[i] ];
 
   VecRestoreArray         ( x_loc , &x_arr);
   VecGhostRestoreLocalForm( x     , &x_loc);
@@ -1078,6 +1091,7 @@ int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp,  double *
     strain_gp[v] = 0.0;
     for( i = 0 ; i < npe*dim ; i++ )
       strain_gp[v] += bmat[v][i][gp] * elem_disp[i];
+    strain_gp[v] = ( fabs(strain_gp[v]) < 1.0e-6 ) ? 0.0 : strain_gp[v];
   }
 
   return 0;
@@ -1116,6 +1130,10 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
   }
   else
     mat_get_stress( mat_p, dim, strain_gp, stress_gp );
+
+  int v;
+  for( v = 0 ; v < nvoi ; v++ )
+    stress_gp[v] = ( fabs(stress_gp[v]) < 1.0e-6 ) ? 0.0 : stress_gp[v];
 
   return 0;
 }
@@ -1212,7 +1230,7 @@ int get_mat_name( int id , char * name_s )
 
 /****************************************************************************************************/
 
-int get_global_elem_index(int e, int * glo_elem_index)
+int get_global_elem_index( int e, int * glo_elem_index )
 {
 
   int  n, d;
@@ -1220,7 +1238,7 @@ int get_global_elem_index(int e, int * glo_elem_index)
 
   for( n = 0 ; n < npe ; n++ ){
     for( d = 0 ; d < dim ; d++ )
-      glo_elem_index[n*dim + d] = loc2petsc[eind[eptr[e]+n]]*dim + d;
+      glo_elem_index[ n * dim + d ] = loc2petsc[ eind[ eptr[e] + n ] ] * dim + d;
   }
   return 0;
 }
@@ -1235,7 +1253,7 @@ int get_local_elem_index( int e, int * loc_elem_index )
 
   for( n = 0 ; n < npe ; n++ ){
     for( d = 0 ; d < dim ; d++ )
-      loc_elem_index[n*dim + d] = eind[eptr[e]+n]*dim + d;
+      loc_elem_index[ n * dim + d ] = eind[ eptr[e] + n ] * dim + d;
   }
   return 0;
 }

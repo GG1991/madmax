@@ -1418,7 +1418,7 @@ int calculate_ghosts( MPI_Comm COMM, char *myname )
 
 /****************************************************************************************************/
 
-int reenumerate_PETSc(MPI_Comm COMM)
+int reenumerate_PETSc( MPI_Comm COMM )
 {
   /* 
      This routine
