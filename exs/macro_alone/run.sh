@@ -19,13 +19,12 @@ $MPIEXEC -np $NP ../../macro/macro \
     -normal           \
     -tf 1.0           \
     -dt 1.0           \
-    -pc_type jacobi   \
-    -ksp_type cg \
-    -ksp_atol 1.0e-20 \
-    -ksp_ktol 1.0e-20 \
-    -ksp_rtol 1.0e-13 \
-    -eps_nev  2       \
+    -ksp_type cg      \
+    -part_geom        \
+    -nr_max_its  2    \
+    -eps_nev     2    \
     -print_vtu        \
+    -print_petsc      \
     -options_left 0
 
 #xterm -e gdb -x file.gdb --args 
@@ -35,3 +34,10 @@ $MPIEXEC -np $NP ../../macro/macro \
 #-boundary_2 "X1 001 0 0 1"
 #-ksp_type cg      \
 #-print_petsc      \
+#-part_geom        \
+#-normal           \
+#-eigensys         \
+#-pc_type jacobi   \
+#-ksp_atol 1.0e-10 \
+#-ksp_ktol 1.0e-10 \
+#-ksp_rtol 1.0e-10 \
