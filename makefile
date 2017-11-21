@@ -51,11 +51,12 @@ DEPS_MACMIC =  ${MAC_INC_DIR}/macro.h \
 	       ${MIC_INC_DIR}/micro.h \
 	       ${DEP_DIR}/sputnik.h
 
-DEPS_MAC =     ${MIC_INC_DIR}/macro.h \
+DEPS_MAC =     ${MAC_INC_DIR}/macro.h \
                ${DEP_DIR}/sputnik.h \
                ${DEP_DIR}/util.h \
                ${DEP_DIR}/gmsh.h \
                ${DEP_DIR}/comm.h \
+	       ${DEP_DIR}/mesh.h \
                ${DEP_DIR}/material.h \
                ${DEP_DIR}/trace.h
 
@@ -143,7 +144,7 @@ ${SPU_OBJ_DIR}/%.o: ${SPU_SRC_DIR}/%.c ${DEPS_SPUTNIK} ${PARMETIS_HEA} ${SLEPC_E
 
 ##############################
 # MACRO OBJECTS
-${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c ${DEPS_MACMIC}
+${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c ${DEPS_MACMIC} ${DEPS_MAC}
 	${PETSC_COMPILE} -DSLEPC -DPETSC -c ${CFLAGS} -o $@ $< 	${SLEPC_EPS_LIB}
 	@echo ">>> "$@
 

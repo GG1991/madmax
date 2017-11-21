@@ -7,6 +7,7 @@
 
 #include "sputnik.h"
 #include "parmetis.h"
+#include "mesh.h"
 
 #define NBUF 256
 

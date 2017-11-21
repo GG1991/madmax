@@ -13,11 +13,6 @@
 #include "material.h"
 #include <gsl/gsl_linalg.h>
 
-#define PARMETIS_GEOMKWAY   1
-#define PARMETIS_GEOM       2
-#define PARMETIS_KWAY       3
-#define PARMETIS_MESHKWAY   4
-
 #define FORMAT_NULL        0
 #define FORMAT_GMSH        1
 #define FORMAT_ALYA        2
@@ -57,11 +52,6 @@ int         nz_interp;
 
 // Structures to save de mesh on CSR format 
 
-int          *elmdist;                // number of elements inside each procesor
-int          nelm;                    // # of local elements
-int          *eptr;                   // list of indeces of nodes inside eind
-int          *eind;                   // list of nodes for elem "i" is between 
-                                      // eind[eptr[i]] eind[eptr[i+1]] (not including)
 int          *elm_id;                 // element property number
 double       *elmv_centroid;
 
@@ -87,14 +77,6 @@ int read_mesh_coord( MPI_Comm COMM, char *mesh_n, int mesh_f);
 int read_mesh_coord_GMSH( MPI_Comm COMM, char *mesh_n);
 int read_mesh_coord_ALYA( MPI_Comm COMM, char *mesh_n);
 
-int part_mesh( MPI_Comm COMM, char * myname, double * centroid );
-int reenumerate_PETSc( MPI_Comm PROBLEM_COMM );
-int calculate_ghosts( MPI_Comm comm, char *myname);
-int ownership_selec_rule( MPI_Comm comm, int **repeated, int *nrep, int node, int *remoterank );
-int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
-    int *eptr, int *eind, int *elm_id,
-    int *npe_swi, int *eind_swi, int *elm_id_swi,
-    int *cuts_npe, int *cuts_eind );
 int CSR_give_pointer( int e, int *npe, int *eind, int *p);
 int clean_vector_qsort(int n, int *input, int **output, int *not_rep);
 int give_repvector_qsort( MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep);
