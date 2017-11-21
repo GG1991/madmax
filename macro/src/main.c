@@ -43,7 +43,7 @@ int get_bmat( int e, double ***dsh, double ***bmat );
 int get_mat_name( int id, char * name_s );
 int macro_pvtu( char *name );
 int update_boundary( double t , list_t * function_list, list_t * boundary_list );
-int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double *coord );
+int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord );
 
 int main(int argc, char **argv)
 {
@@ -399,7 +399,7 @@ end_mac_0:
 
   /* read nodes' coordinates */
   PetscPrintf( MACRO_COMM, "reading Coordinates");
-  ierr = read_coord( mesh_n, nmynods, mynods, nghost , ghost, coord );
+  ierr = read_coord( mesh_n, nmynods, mynods, nghost , ghost, &coord );
   if( ierr ){
     PetscPrintf( MACRO_COMM, "problem reading mesh coordinates\n" );
     goto end_mac_1;
@@ -686,6 +686,9 @@ end_mac_0:
 	PetscPrintf( MACRO_COMM, "MACRO: assembling residual\n" );
 	assembly_b();
 
+	if( flag_neg_detj == 1)
+	  PetscPrintf( MACRO_COMM, "MACRO: warning negative jacobian detected\n");
+
 	VecGhostGetLocalForm( b    , &b_loc );
 	VecGetArray         ( b_loc, &b_arr );
 	pn = boundary_list.head;
@@ -701,14 +704,10 @@ end_mac_0:
 	VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
 	VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
 
-	if( flag_neg_detj == 1)
-	  PetscPrintf( MACRO_COMM, "MACRO: warning negative jacobian detected\n");
-
 	VecNorm( b, NORM_2, &norm );
-	PetscPrintf( MACRO_COMM,"MACRO: |b| = %e\n", norm );
 	VecScale( b, -1.0 );
-	VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
-	VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
+
+	PetscPrintf( MACRO_COMM,"MACRO: |b| = %e\n", norm );
 
 	if( norm < nr_norm_tol ) break;
 
@@ -733,7 +732,11 @@ end_mac_0:
 	KSPSolve( ksp, b, dx );
 	print_ksp_info( MACRO_COMM, ksp);
 	PetscPrintf( MACRO_COMM, "\n");
+
+        /* x = x + dx */
 	VecAXPY( x, 1.0, dx );
+	VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
+	VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
 
 	nr_its ++;
       }
@@ -876,12 +879,12 @@ int read_bc()
 
 /****************************************************************************************************/
 
-int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double *coord )
+int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord )
 {
 
-  coord = malloc( ( nmynods + nghost )*dim * sizeof(double));
+  (*coord) = malloc( ( nmynods + nghost )*dim * sizeof(double));
 
-  int ierr = gmsh_read_coord_parall( mesh_n, dim, nmynods, mynods, nghost , ghost, coord );
+  int ierr = gmsh_read_coord_parall( mesh_n, dim, nmynods, mynods, nghost , ghost, *coord );
 
   return ierr;
 }
@@ -1042,13 +1045,13 @@ int assembly_A( void )
 
   int      e, gp;
   int      i, j, k, h;
-  int      npe, ngp;
   int      ierr;
   double  *wp;
 
   for( e = 0 ; e < nelm ; e++ )
   {
-    ngp = npe = eptr[e+1] - eptr[e];
+    int npe = eptr[e+1] - eptr[e];
+    int ngp = npe;
 
     for( i = 0 ; i < npe*dim*npe*dim ; i++ )
       k_elem[i] = 0.0;
