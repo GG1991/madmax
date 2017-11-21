@@ -1,6 +1,5 @@
-/*****************************************************************************************************
-   MACRO external lybraries
-*****************************************************************************************************/
+#ifndef MACRO_H
+#define MACRO_H
 
 #include "sputnik.h"
 #include "comm.h"
@@ -99,3 +98,5 @@ eigen_mode_t  eigen_mode;
 list_t      boundary_list;
 list_t      physical_list;
 list_t      function_list;
+
+#endif
