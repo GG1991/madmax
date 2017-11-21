@@ -43,6 +43,7 @@ int get_bmat( int e, double ***dsh, double ***bmat );
 int get_mat_name( int id, char * name_s );
 int macro_pvtu( char *name );
 int update_boundary( double t , list_t * function_list, list_t * boundary_list );
+int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double *coord );
 
 int main(int argc, char **argv)
 {
@@ -378,11 +379,11 @@ end_mac_0:
   }
   PetscPrintf( MACRO_COMM, " ok\n");
 
-  /* calculate <*ghosts> and <nghosts> */
+  /* calculate "ntotnod", "nmynods", "mynods", "nghost", "ghost" */
   PetscPrintf( MACRO_COMM, "calculating ghost nodes");
-  ierr = calculate_ghosts( MACRO_COMM, myname);
+  ierr = calc_local_and_ghost( MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost );
   if( ierr ){
-    PetscPrintf( MACRO_COMM, "problem calculating ghosts\n" );
+    PetscPrintf( MACRO_COMM, "problem calculating mynods and ghosts\n" );
     goto end_mac_1;
   }
   PetscPrintf( MACRO_COMM, " ok\n");
@@ -398,7 +399,7 @@ end_mac_0:
 
   /* read nodes' coordinates */
   PetscPrintf( MACRO_COMM, "reading Coordinates");
-  ierr = read_mesh_coord( MACRO_COMM, mesh_n, mesh_f );
+  ierr = read_coord( mesh_n, nmynods, mynods, nghost , ghost, coord );
   if( ierr ){
     PetscPrintf( MACRO_COMM, "problem reading mesh coordinates\n" );
     goto end_mac_1;
@@ -871,6 +872,18 @@ int read_bc()
   }
 
   return 0;
+}
+
+/****************************************************************************************************/
+
+int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double *coord )
+{
+
+  coord = malloc( ( nmynods + nghost )*dim * sizeof(double));
+
+  int ierr = gmsh_read_coord_parall( mesh_n, dim, nmynods, mynods, nghost , ghost, coord );
+
+  return ierr;
 }
 
 /****************************************************************************************************/

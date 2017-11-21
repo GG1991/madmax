@@ -200,41 +200,6 @@ int part_mesh( MPI_Comm COMM, char *myname, double *centroid )
   ierr = MPI_Alltoallv( eind_swi, eind_swi_size, sdispls, MPI_INT, 
       eind, eind_size_new, rdispls, MPI_INT, COMM );
 
-  if(flag_print & (1<<PRINT_ALL)){
-    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "new # of elements", npe_size_new_tot);
-
-    printf("%-6s r%2d %-20s :", myname, rank, "npe_swi_size");
-    for(i=0;i<nproc;i++){
-      printf("%8d ",npe_swi_size[i]);
-    }
-    printf("\n");
-
-    printf("%-6s r%2d %-20s :", myname, rank, "eind_swi_size");
-    for(i=0;i<nproc;i++){
-      printf("%8d ",eind_swi_size[i]);
-    }
-    printf("\n");
-
-    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "eind_size_new_tot", eind_size_new_tot);
-
-    printf("%-6s r%2d %-20s : ", myname, rank, "eind");
-    for(i=0;i<eptr[nelm];i++){
-      printf("%3d ",eind[i]);
-    }
-    printf("\n");
-
-    printf("%-6s r%2d %-20s :", myname, rank, "npe_size_new");
-    for(i=0;i<nproc;i++){
-      printf("%8d ",npe_size_new[i]);
-    }
-    printf("\n");
-
-    printf("%-6s r%2d %-20s :", myname, rank, "eind_size_new");
-    for(i=0;i<nproc;i++){
-      printf("%8d ",eind_size_new[i]);
-    }
-    printf("\n");
-  }
   free(eind_swi);
   free(npe_swi);
   free(npe_swi_size);
@@ -360,7 +325,6 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
 	j ++;
 
 	// swap eind
-	// CSR_give_pointer( e, npe, eind, &pi);
 	pi = eptr[e];
 
 	for(i=0;i<npe[e];i++){
@@ -386,22 +350,6 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
 
 /****************************************************************************************************/
 
-int CSR_give_pointer( int e, int *npe, int *eind, int *p)
-{
-  /*
-     Returns the position "p" inside "eind" of element "e"
-    
-   */
-  int m;
-  *p = 0;
-  for(m=0;m<e;m++){
-    *p += npe[m];
-  }
-  return 0;
-}
-
-/****************************************************************************************************/
-
 int gmsh_is_vol_elm( int code )
 {
   // returns 1 if the code corresponds to a volume element, 0 othewhise
@@ -412,219 +360,6 @@ int gmsh_is_vol_elm( int code )
     return (code == 4 || code == 5 || code == 6) ? 1 : 0;
   }
   return 1;
-}
-
-/****************************************************************************************************/
-
-int read_mesh_coord(MPI_Comm PROBLEM_COMM, char *mesh_n, int mesh_f)
-{
-  /*
-     Reads the mesh coordinate according to the format specified
-   */
-  if(mesh_f == FORMAT_GMSH){
-    return read_mesh_coord_GMSH(PROBLEM_COMM, mesh_n);
-  }
-  else if(mesh_f == FORMAT_ALYA){
-    return read_mesh_coord_ALYA(PROBLEM_COMM, mesh_n);
-  }
-  else{
-    return 1;
-  }
-}
-/****************************************************************************************************/
-int read_mesh_coord_GMSH(MPI_Comm PROBLEM_COMM, char *mesh_n)
-{
-
-  /* 
-     Info>   Reads the coordinates of the mesh
-
-     Input> 
-     char   * mesh_n   > file name with path
-     MPI_Comm comm     > the communicator of these processes
-
-     Output>
-     int  * coord      > nodes' coordinates
-
-   */
-
-  FILE                 *fm;
-
-  int                  i, c, d; 
-  int                  ln, offset;  // line counter and offset for moving faster in the file
-  int                  rank, nproc;
-
-  char                 buf[NBUF];   
-  char                 *data;
-
-  MPI_Comm_size(PROBLEM_COMM, &nproc);
-  MPI_Comm_rank(PROBLEM_COMM, &rank);
-
-  fm = fopen(mesh_n,"r");
-  if(!fm){
-    PetscPrintf(PROBLEM_COMM,"file %s not found\n",mesh_n);
-    return 1;
-  }
-
-  coord = malloc( nallnods*dim * sizeof(double));
-
-  /**************************************************/
-  //  go to "$Nodes" and then read coordinates 
-  //  of nodes in <mynods> position
-  //
-  offset   = 0;
-  while(fgets(buf,NBUF,fm)!=NULL){
-    offset += strlen(buf); 
-    data=strtok(buf," \n");
-    //
-    // leemos hasta encontrar $Elements
-    //
-    if(strcmp(data,"$Nodes")==0){
-      //
-      // leemos de nodos pero no lo usamos 
-      // solo para hacer verificaciones
-      //
-      fgets(buf,NBUF,fm);
-      offset += strlen(buf); 
-      data  = strtok(buf," \n");
-      ntotnod = atoi(data);
-
-      //
-      // leemos todos los nodos en <mynods>
-      //
-      i = c = 0;
-      while( c < nmynods ){
-	while( i< mynods[c] ){
-	  fgets(buf,NBUF,fm); 
-	  i++;
-	}
-	data=strtok(buf," \n");
-	for( d=0;d<dim;d++){
-	  data=strtok(NULL," \n");
-	  coord[c*dim + d] = atof(data);
-	}
-	c++;
-      }
-      if( c > ntotnod ){
-	printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", ntotnod, mesh_n, c);
-	return 1;
-      }
-      break;
-    }
-    ln ++;
-  }
-  fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
-  //
-  // leemos todos los nodos en <ghost>
-  //
-  i = c = 0;
-  while( c < nghost ){
-    while( i<ghost[c] ){
-      fgets(buf,NBUF,fm); 
-      i++;
-    }
-    data=strtok(buf," \n");
-    for( d=0;d<dim;d++){
-      data=strtok(NULL," \n");
-      coord[ (nmynods + c)*dim + d] = atof(data);
-    }
-    c++;
-  }
-  if(c>ntotnod){
-    printf("read_mesh_coord_GMSH : more nodes (%d) in %s than calculated (%d)\n", ntotnod, mesh_n, c);
-    return 1;
-  }
-  fclose(fm);
-  return 0;
-}
-/****************************************************************************************************/
-int read_mesh_coord_ALYA(MPI_Comm PROBLEM_COMM, char *mesh_n)
-{
-  /* 
-     Info>   Reads the coordinates of the mesh
-
-     Input> 
-     char   * mesh_n   > file name with path
-     MPI_Comm comm     > the communicator of these processes
-
-     Output>
-     int  * coord      > nodes' coordinates
-   */
-
-  FILE  *fm;
-  int   i, c, d; 
-  int   rank, nproc;
-  char  buf[NBUF], file_name[NBUF], *data;
-
-  MPI_Comm_size(PROBLEM_COMM, &nproc);
-  MPI_Comm_rank(PROBLEM_COMM, &rank);
-
-  /**************************************************/
-  /*
-     first open <mesh_n>_SIZES.alya and read nelm_tot
-  */
-  strcpy(file_name,mesh_n);
-  strcat(file_name,"_SIZES.alya");
-  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found\n",file_name);
-  while(fgets(buf,NBUF,fm)!=NULL){
-    data=strtok(buf," \n");
-    if(!strcmp(data,"NODAL_POINTS=")){
-      data=strtok(NULL," \n");
-      ntotnod = atoi(data);
-      break;
-    }
-  }
-  fclose(fm);
-  //
-  /**************************************************/
-
-  /**************************************************/
-  /*
-     first open <mesh_n>_SIZES.alya and read nelm_tot
-  */
-  coord = malloc( nallnods*3 * sizeof(double));
-
-  strcpy(file_name,mesh_n);
-  strcat(file_name,"_COORDINATES.alya");
-  fm = fopen(file_name,"r"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s not found",file_name);
-
-  /*
-     leemos todos los nodos en <mynods>
-  */
-  if(!fgets(buf,NBUF,fm))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name);
-  i = c = 0;
-  while( c < nmynods ){
-    while( i< mynods[c] ){
-      if(!fgets(buf,NBUF,fm))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name);
-      i++;
-    }
-    data=strtok(buf," \n");
-    for( d=0;d<3;d++){
-      data=strtok(NULL," \n");
-      coord[c*3 + d] = atof(data);
-    }
-    c++;
-  }
-
-  /*
-     leemos todos los nodos en <ghost>
-  */
-  rewind(fm);
-  if(!fgets(buf,NBUF,fm))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name);
-  i = c = 0;
-  while( c < nghost ){
-    while( i<ghost[c] ){
-      if(!fgets(buf,NBUF,fm))SETERRQ1(PROBLEM_COMM,1,"format error on %s",file_name);
-      i++;
-    }
-    data=strtok(buf," \n");
-    for( d=0;d<3;d++){
-      data=strtok(NULL," \n");
-      coord[ (nmynods + c)*3 + d] = atof(data);
-    }
-    c++;
-  }
-  fclose(fm);
-  return 0;
 }
 
 /****************************************************************************************************/
@@ -1176,10 +911,6 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
     val_o = aux[i];
   }
   (*output) = malloc( (*nrep) * sizeof(int));
-  if(flag_print & (1<<PRINT_ALL)){
-    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "n", n);
-    printf("%-6s r%2d %-20s : %8d\n", myname, rank, "nrep" , *nrep);
-  }
 
   c = 0;
   val_o = aux[0];
@@ -1205,7 +936,7 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
 
 /****************************************************************************************************/
 
-int give_inter_sort( MPI_Comm COMM, char *myname, int *array1, int n1, int *array2, int n2, int **reps, int *nreps)
+int give_inter_sort( MPI_Comm COMM, int *array1, int n1, int *array2, int n2, int **reps, int *nreps)
 {
   /*
      fills the "reps" array with nodes that repeated in both "array1" & "array2"
@@ -1262,20 +993,15 @@ int give_inter_sort( MPI_Comm COMM, char *myname, int *array1, int n1, int *arra
 
 /****************************************************************************************************/
 
-int calculate_ghosts( MPI_Comm COMM, char *myname )
+int calculate_ghosts( MPI_Comm COMM, int nallnods, int *allnods,
+    int *ntotnod, int *nmynods, int **mynods, int *nghost , int **ghost )
 {
   /*
-     This function determines which nodes of <*allnods> are <*ghost>
-
-     strategy 
-
-     1) Allgather operation sending <nallnods>
-
-     2) all processes sends to all (using Isend) the array <allnods> 
-
+     determines using "allnods" which are going to be local nodes ("*mynods" & "nmynods") 
+     and ghost nodes ("*ghost" & "nghost")
    */
 
-  int   i, j, c, g, rank, nproc;
+  int   i, j, c, g;
   int   ierr;
 
   int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <nallnods> coming from all the processes
@@ -1283,11 +1009,12 @@ int calculate_ghosts( MPI_Comm COMM, char *myname )
 
   MPI_Request  *request;
 
+  int  rank, nproc;
   MPI_Comm_rank( COMM, &rank);
   MPI_Comm_size( COMM, &nproc);
 
   mysize     = nallnods;
-  nghost     = 0;
+  (*nghost)  = -1;
   peer_sizes = NULL;
 
   peer_sizes = malloc( nproc * sizeof(int) );
@@ -1307,7 +1034,7 @@ int calculate_ghosts( MPI_Comm COMM, char *myname )
     if( i != rank ){
       peer_nod_glo = malloc(peer_sizes[i]*sizeof(int));
       ierr = MPI_Recv( peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE );
-      give_inter_sort( COMM, myname, allnods, mysize, peer_nod_glo, peer_sizes[i], &repeated[i], &nrep[i] );
+      give_inter_sort( COMM, allnods, mysize, peer_nod_glo, peer_sizes[i], &repeated[i], &nrep[i] );
       free( peer_nod_glo );
     }
   }
@@ -1340,7 +1067,7 @@ int calculate_ghosts( MPI_Comm COMM, char *myname )
 
   if( nreptot_clean != 0 )
   {
-    nmynods = nghost = r = 0;
+    (*nmynods) = (*nghost) = r = 0;
     for( i = 0 ; i < nallnods ; i++ )
     {
       if( r < nreptot_clean )
@@ -1350,24 +1077,29 @@ int calculate_ghosts( MPI_Comm COMM, char *myname )
 	  ismine = ownership_selec_rule( COMM, repeated, nrep, allnods[i], &remoterank);
 	  r++;
 	  if( ismine )
-	    nmynods ++;
+	    (*nmynods) ++;
 	  else
-	    nghost ++;
+	    (*nghost) ++;
 	}
 	else
-	  nmynods ++;
+	  (*nmynods) ++;
       }
       else
-	nmynods ++;
+	(*nmynods) ++;
     }
   }
   else{
-    nmynods = nallnods;
-    nghost = 0;
+    (*nmynods) = nallnods;
+    (*nghost) = 0;
   }
+
+  /* determine ntotnods */
+  ierr = MPI_Allreduce( nmynods, ntotnod, 1, MPI_INT, MPI_SUM, COMM );
+  if( ierr ) return 1;
+
   
-  mynods = malloc( nmynods * sizeof(int) );
-  ghost  = malloc( nghost  * sizeof(int) );
+  *mynods = malloc( (*nmynods) * sizeof(int) );
+  *ghost  = malloc( (*nghost)  * sizeof(int) );
 
   c = r = g = 0;
   if( nreptot_clean != 0 )
@@ -1375,26 +1107,26 @@ int calculate_ghosts( MPI_Comm COMM, char *myname )
     for( i = 0 ; i < nallnods ; i++ )
     {
       // podria ser un nodo que le pertenece a otro proceso
-      if(r<nreptot_clean){
-	if(allnods[i] == rep_array_clean[r]){
+      if( r < nreptot_clean ){
+	if( allnods[i] == rep_array_clean[r] ){
 	  ismine = ownership_selec_rule( COMM, repeated, nrep, allnods[i], &remoterank );
 	  r++;
 	  if(ismine){
-	    mynods[c] = allnods[i];
+	    (*mynods)[c] = allnods[i];
 	    c ++;
 	  }
 	  else{
-	    ghost[g] = allnods[i];
+	    (*ghost)[g] = allnods[i];
 	    g ++;
 	  }
 	}
 	else{
 	  // no está en la lista de repetidos
-	  mynods[c] = allnods[i];
+	  (*mynods)[c] = allnods[i];
 	  c ++;
 	}
       }else{
-	mynods[c] = allnods[i];
+	(*mynods)[c] = allnods[i];
 	c ++;
       }
     }
@@ -1402,7 +1134,7 @@ int calculate_ghosts( MPI_Comm COMM, char *myname )
   else{
     // no hay repetidos entonces es nuestro
     for( i = 0 ;i < nallnods ; i++ )
-      mynods[i] = allnods[i];
+      (*mynods)[i] = allnods[i];
   }
 
   for( i = 0 ; i < nproc ; i++ ){

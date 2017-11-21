@@ -27,7 +27,10 @@ int      *loc2petsc;   // array of size <nmynods> + <nghost>
 
 int part_mesh( MPI_Comm COMM, char *myname, double *centroid );
 int reenumerate_PETSc( MPI_Comm COMM );
-int calculate_ghosts( MPI_Comm COMM, char *myname );
+
+int calc_local_and_ghost( MPI_Comm COMM, int nallnods, int *allnods,
+    int *ntotnod, int *nmynods, int **mynods, int *nghost , int **ghost );
+
 int ownership_selec_rule( MPI_Comm COMM, int **repeated, int *nrep, int node, int *remoterank );
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *elm_id,

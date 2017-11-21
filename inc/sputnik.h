@@ -59,17 +59,12 @@ int read_mesh_elmv( MPI_Comm COMM, char *myname, char *mesh_n, int mesh_f);
 int read_mesh_elmv_CSR_GMSH( MPI_Comm COMM, char *myname, char *mesh_n);
 int read_mesh_elmv_CSR_ALYA( MPI_Comm COMM, char *myname, char *mesh_n);
 
-int read_mesh_coord( MPI_Comm COMM, char *mesh_n, int mesh_f);
-int read_mesh_coord_GMSH( MPI_Comm COMM, char *mesh_n);
-int read_mesh_coord_ALYA( MPI_Comm COMM, char *mesh_n);
-
-int CSR_give_pointer( int e, int *npe, int *eind, int *p);
 int clean_vector_qsort(int n, int *input, int **output, int *not_rep);
 int give_repvector_qsort( MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep);
-int give_inter_sort( MPI_Comm comm, char *myname,
-    int *array1, int n1,
-    int *array2, int n2,
-    int **reps, int *nreps);
+
+int give_inter_sort( MPI_Comm COMM,
+    int *array1, int n1, int *array2, int n2, int **reps, int *nreps);
+
 int is_in_vector(int val, int *vector, int size);
 int cmpfunc(const void * a, const void * b);
 int gmsh_npe(int code);
