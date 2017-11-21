@@ -16,13 +16,15 @@ $MPIEXEC -np $NP ../../macro/macro \
     -mesh cube_2d.msh \
     -dim 2            \
     -mesh_gmsh        \
-    -normal           \
+    -eigen            \
     -tf 1.0           \
     -dt 1.0           \
     -ksp_type cg      \
+    -pc_type jacobi   \
     -part_geom        \
     -nr_max_its  2    \
     -eps_nev     2    \
+    -eps_type    power  \
     -print_vtu        \
     -print_petsc      \
     -options_left 0
@@ -36,8 +38,7 @@ $MPIEXEC -np $NP ../../macro/macro \
 #-print_petsc      \
 #-part_geom        \
 #-normal           \
-#-eigensys         \
-#-pc_type jacobi   \
+#-eigen            \
 #-ksp_atol 1.0e-10 \
 #-ksp_ktol 1.0e-10 \
 #-ksp_rtol 1.0e-10 \

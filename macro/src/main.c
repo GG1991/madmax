@@ -20,7 +20,7 @@ static char help[] =
 "-coupl       : coupled with \"micro\" code for solving multiscale problem                         \n"
 "-normal      : normal execution, solves a time dependent boundary condition problem               \n"
 "-testcomm    : communication testing with the \"micro\" code                                      \n"
-"-eigensys    : calculates the eigensystem Mx = -(1/omega)Kx                                       \n"
+"-eigen       : calculates the eigensystem Mx = -(1/omega)Kx                                       \n"
 "-print_petsc : prints petsc structures on files such as Mat and Vec objects                       \n"
 "-print_vtu   : prints solutions on .vtu and .pvtu files                                           \n";
 
@@ -126,7 +126,7 @@ end_mac_0:
       macro_mode = TEST_COMM;
       PetscPrintf( MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
     }
-    PetscOptionsHasName( NULL,NULL,"-eigensys",&set);
+    PetscOptionsHasName( NULL,NULL,"-eigen",&set);
     if( set == PETSC_TRUE ){
       macro_mode = EIGENSYSTEM;
 #ifndef SLEPC
@@ -518,19 +518,23 @@ end_mac_0:
 
     MatCreate( MACRO_COMM, &A );
     MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
+    MatSetType( A, MATAIJ );
     MatSeqAIJSetPreallocation( A, nnz, NULL );
     MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );
-    MatSetUp( A );
     MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
-    MatSetFromOptions( A );
+    MatSetUp( A );
+    MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
+    MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
 
     MatCreate( MACRO_COMM, &M );
     MatSetSizes( M, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
+    MatSetType( M, MATAIJ );
     MatSeqAIJSetPreallocation( M, nnz, NULL );
     MatMPIAIJSetPreallocation( M, nnz, NULL, nnz, NULL );
-    MatSetUp( M );
     MatSetOption( M, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
-    MatSetFromOptions( M );
+    MatSetUp( M );
+    MatAssemblyBegin( M, MAT_FINAL_ASSEMBLY );
+    MatAssemblyEnd  ( M, MAT_FINAL_ASSEMBLY );
 
     int *ghost_index = malloc( nghost*dim *sizeof(int) );
 
@@ -613,13 +617,13 @@ end_mac_0:
     int     nnz = ( dim == 2 ) ? dim*9 : dim*27; nnz *= nnz_factor;
     KSP     ksp;
 
-    ierr = MatCreate( MACRO_COMM, &A );CHKERRQ(ierr);
-    ierr = MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );CHKERRQ(ierr);
-    ierr = MatSetType( A, MATAIJ );CHKERRQ(ierr);
-    ierr = MatSeqAIJSetPreallocation( A, nnz, NULL );CHKERRQ(ierr);
-    ierr = MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );CHKERRQ(ierr);
-    ierr = MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );CHKERRQ(ierr);
-    ierr = MatSetUp( A );CHKERRQ(ierr);
+    MatCreate( MACRO_COMM, &A );
+    MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
+    MatSetType( A, MATAIJ );
+    MatSeqAIJSetPreallocation( A, nnz, NULL );
+    MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );
+    MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
+    MatSetUp( A );
     MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
     MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
 
