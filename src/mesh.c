@@ -993,7 +993,7 @@ int give_inter_sort( MPI_Comm COMM, int *array1, int n1, int *array2, int n2, in
 
 /****************************************************************************************************/
 
-int calculate_ghosts( MPI_Comm COMM, int nallnods, int *allnods,
+int calc_local_and_ghost( MPI_Comm COMM, int nallnods, int *allnods,
     int *ntotnod, int *nmynods, int **mynods, int *nghost , int **ghost )
 {
   /*
