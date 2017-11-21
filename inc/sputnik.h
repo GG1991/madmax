@@ -55,20 +55,6 @@ int         nz_interp;
 int          *elm_id;                 // element property number
 double       *elmv_centroid;
 
-int          *StartIndexRank;
-int          *allnods;                // all nodes including locals and ghosts
-int          nallnods;                // <nmynods> + <nghost>
-int          *mynods;                 // Original (gmsh) numbers of my nodes
-int          nmynods;                 // number of local nodes
-int          *ghost;                  // ghosts nodes (global numbering)
-int          nghost;                  // number of ghost nodes
-int          ntotnod;                 // number of total nodes in the mesh
-
-double       *coord;                  // nodes' coordinates
-
-int          *loc2petsc;              // array of size <nmynods> + <nghost>
-                                      // returns the position in PETSc matrix & vectors
-
 int read_mesh_elmv( MPI_Comm COMM, char *myname, char *mesh_n, int mesh_f);
 int read_mesh_elmv_CSR_GMSH( MPI_Comm COMM, char *myname, char *mesh_n);
 int read_mesh_elmv_CSR_ALYA( MPI_Comm COMM, char *myname, char *mesh_n);

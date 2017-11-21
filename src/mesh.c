@@ -1422,28 +1422,25 @@ int calculate_ghosts( MPI_Comm COMM, char *myname )
 int reenumerate_PETSc( MPI_Comm COMM )
 {
   /* 
-     This routine
-
      a) creates and fills array <loc2petsc> of size <nmynods> + <nghost>
      in each local position <n> is stored the global position in PETSc matrix 
    */
 
-  int   rank, nproc;
-  int   i, j, *p, ierr; 
-  int   *rem_nods;   // buffer to receive mynods from the other processes
-  int   *rem_nnod;   // buffers' sizes with nmynodsOrig from every process
+  int i, j, *p, ierr;
+  int *rem_nods;   // buffer to receive mynods from the other processes
 
+  int  rank, nproc;
   MPI_Comm_rank( COMM, &rank );
   MPI_Comm_size( COMM, &nproc );
 
-  rem_nnod = malloc( nproc * sizeof(int) );
-  StartIndexRank = malloc( nproc * sizeof(int) );
+  int *rem_nnod  = malloc( nproc * sizeof(int) ); // buffers' sizes with nmynodsOrig from every process
+  int *disp_nods = malloc( nproc * sizeof(int) );
   ierr = MPI_Allgather( &nmynods, 1, MPI_INT, rem_nnod, 1, MPI_INT, COMM ); if( ierr ) return 1;
 
-  StartIndexRank[0] = 0;
+  disp_nods[0] = 0;
   i = 1;
   while( i < nproc ){
-    StartIndexRank[i] = StartIndexRank[i-1] + rem_nnod[i-1];
+    disp_nods[i] = disp_nods[i-1] + rem_nnod[i-1];
     i++;
   }
 
@@ -1473,7 +1470,7 @@ int reenumerate_PETSc( MPI_Comm COMM )
   //**************************************************
   // empezamos con los locales
   for( i = 0 ; i < nmynods ; i++ )
-    loc2petsc[i] = StartIndexRank[rank] + i;
+    loc2petsc[i] = disp_nods[rank] + i;
 
   /*
     And now ghosts nodes
@@ -1515,7 +1512,7 @@ int reenumerate_PETSc( MPI_Comm COMM )
 	// search this ghost node on <rem_nods>
 	p = bsearch( &ghost[j], rem_nods, rem_nnod[i], sizeof(int), cmpfunc );
 	if( p != NULL )
-	  MyGhostGlobalIndex[j] = StartIndexRank[i] + p - rem_nods;
+	  MyGhostGlobalIndex[j] = disp_nods[i] + p - rem_nods;
       }
       free(rem_nods);
     }
