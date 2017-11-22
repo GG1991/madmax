@@ -338,9 +338,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     save_event( MICRO_COMM, "ass_0" );
 
     /* assembly "b" (residue) using "x" (displacement) */
-    assembly_residual_struct();
+    assembly_b();
     
-    /* set dirichlet bc on "b" */
     VecGetArray( b, &b_arr );
     for( i = 0; i < ndir_ix ; i++ )
       b_arr[dir_ix_loc[i]] = 0.0;
@@ -356,7 +355,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     if( !(norm > nr_norm_tol) ) break;
 
     VecScale( b, -1.0 );
-    assembly_jacobian_struct(); // assembly "A" (jacobian) using "x" (displacement)
+    assembly_A(); // assembly "A" (jacobian) using "x" (displacement)
     MatZeroRowsColumns( A, ndir_ix, dir_ix_glo, 1.0, NULL, NULL );
     save_event( MICRO_COMM, "ass_1" );
 
@@ -403,7 +402,7 @@ int strain_x_coord( double * strain , double * coord , double * u )
 
 /****************************************************************************************************/
 
-int assembly_residual_struct(void)
+int assembly_b(void)
 {
 
   VecZeroEntries(b);
@@ -465,7 +464,7 @@ int assembly_residual_struct(void)
 
 /****************************************************************************************************/
 
-int assembly_jacobian_struct( void )
+int assembly_A( void )
 {
 
   MatZeroEntries(A);

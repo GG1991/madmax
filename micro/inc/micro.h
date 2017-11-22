@@ -144,8 +144,8 @@ int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36]);
 
 int get_local_elem_index( int e, int *loc_index );
 int get_global_elem_index( int e, int *glo_elem_index );
-int assembly_residual_struct( void );
-int assembly_jacobian_struct( void );
+int assembly_b( void );
+int assembly_A( void );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_strain( int e , int gp, double *strain_gp );
 int get_c_tan( const char * name , int e , int gp, double *strain_gp , double *c_tan );
