@@ -73,8 +73,8 @@ do:
 ```
 The results are stored in files `macro_eigen_*.pvtu` and you can see the solution in `paraview`
 
-<img src="../doc/sputnik-man/figures/macro_alone_a.jpg"/>
-<img src="../doc/sputnik-man/figures/macro_alone_b.jpg"/>
+![first eigenmode](../doc/sputnik-man/figures/macro_alone_a.jpg?raw=true "Title")
+![second eigenmode](../doc/sputnik-man/figures/macro_alone_b.jpg?raw=true "Title")
 
 ## Normal execution
 
@@ -113,8 +113,8 @@ Execute in parallel with :
 ./run.sh 2
 ...
 ```
-<img src="../doc/sputnik-man/figures/macro_alone_d.jpg" alt="domain partition with parmetis usign kway algorithm (not too good in this case)" width="400" height="400" />
-<img src="../doc/sputnik-man/figures/macro_alone_c.jpg"/>
+![domain partition with parmetis usign kway algorithm (not too good in this case)](../doc/sputnik-man/figures/macro_alone_d.jpg?raw=true "Title")
+![solution in normal mode](../doc/sputnik-man/figures/macro_alone_c.jpg?raw=true "Title")
 
 ### micro_hom
 
