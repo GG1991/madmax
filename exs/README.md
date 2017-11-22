@@ -113,8 +113,7 @@ Execute in parallel with :
 ./run.sh 2
 ...
 ```
-<img src="../doc/sputnik-man/figures/macro_alone_d.jpg"
-alt="domain partition with parmetis usign kway algorithm (not too good in this case)" width="400" height="400" />
+<img src="../doc/sputnik-man/figures/macro_alone_d.jpg" alt="domain partition with parmetis usign kway algorithm (not too good in this case)" width="400" height="400" />
 <img src="../doc/sputnik-man/figures/macro_alone_c.jpg"/>
 
 ### micro_hom
