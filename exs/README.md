@@ -113,10 +113,12 @@ Execute in parallel with :
 ./run.sh 2
 ...
 ```
+
 ![domain partition with parmetis usign kway algorithm (not too good in this case)](../doc/sputnik-man/figures/macro_alone_d.jpg?raw=true "Title")
 ![solution in normal mode](../doc/sputnik-man/figures/macro_alone_c.jpg?raw=true "Title")
 
-### micro_hom
+### micro_alone
+
 
 Example of a simple homogenization that can be perform using :
 
@@ -124,9 +126,26 @@ Example of a simple homogenization that can be perform using :
   *  parallel mixture theory 
   *  serial mixture theory 
 
+Needs : `PETSC`, `MPI`, `Gmsh`
+
 Dimension: 2
 
 Geometry : the microstructure is a simple circular fiber.
+
+```bash
+cd micro_alone
+./run.sh 4
+```
+
+```bash
+Constitutive Average Tensor
+2.050980e+06 7.787895e+05 0.000000e+00
+7.786073e+05 2.050987e+06 0.000000e+00
+0.000000e+00 0.000000e+00 6.080510e+05
+```
+
+![domain partition](../doc/sputnik-man/figures/micro_alone_a.jpg?raw=true "Title")
+![stress distribution](../doc/sputnik-man/figures/micro_alone_b.jpg?raw=true "Title")
 
 ### fron_fib
 
