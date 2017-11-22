@@ -355,7 +355,10 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     if( !(norm > nr_norm_tol) ) break;
 
     VecScale( b, -1.0 );
-    assembly_A(); // assembly "A" (jacobian) using "x" (displacement)
+
+    /* assembly "A" (jacobian) using "x" (displacement) */
+    assembly_A();
+
     MatZeroRowsColumns( A, ndir_ix, dir_ix_glo, 1.0, NULL, NULL );
     save_event( MICRO_COMM, "ass_1" );
 

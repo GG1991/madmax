@@ -124,13 +124,8 @@ typedef struct _cilin_fiber_t
 
 cilin_fiber_t cilin_fiber;
 
-/*****************************************************************************************************
-   MICRO function definitions
-*****************************************************************************************************/
-
 int mic_homogenize(MPI_Comm COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
-int mic_homogenize_unif_strain(MPI_Comm COMM, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
 int mic_homog_us(MPI_Comm COMM, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
 int voigt2mat(double voigt[6], double matrix[3][3]);
 
