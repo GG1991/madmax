@@ -129,27 +129,34 @@ cilin_fiber_t cilin_fiber;
    MICRO function definitions
 *****************************************************************************************************/
 
-// mic_main.c 
-int main(int argc, char **args);
-
-// mac_comm.c
-int mic_comm_init(void);
-
 int mic_homogenize(MPI_Comm COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int mic_homogenize_unif_strain(MPI_Comm COMM, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
 int mic_homog_us(MPI_Comm COMM, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
-int mic_homogenize_ld_lagran(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int voigt2mat(double voigt[6], double matrix[3][3]);
+
+int micro_print_info( void );
+int micro_pvtu( char *name );
 
 int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]);
 int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36]);
-int mic_check_l_us(void);
 
-int micro_pvtu( char *name );
-
-int micro_print_info( void );
+int get_local_elem_index( int e, int *loc_index );
+int get_global_elem_index( int e, int *glo_elem_index );
+int assembly_residual_struct( void );
+int assembly_jacobian_struct( void );
+int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
+int get_strain( int e , int gp, double *strain_gp );
+int get_c_tan( const char * name , int e , int gp, double *strain_gp , double *c_tan );
+int get_centroid_struct( int e, double *centroid );
+int is_in_fiber( int e );
+int strain_x_coord( double * strain , double * coord , double * u );
+int get_node_local_coor( int n , double * coord );
+int get_node_ghost_coor( int n , double * coord );
+int get_local_elem_node( int e , int * n_loc );
+int local_to_global_index( int local );
+int get_averages( double * strain_ave, double * stress_ave );
+int get_elem_type( int e , int *type );
 int get_elem_properties( void );
 int init_shapes( double ***sh, double ****dsh, double **wp );
-
