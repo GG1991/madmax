@@ -105,7 +105,16 @@ time between (0,1) sec.
 This is the material definition. The first argument is the material name (`MATRIX`) then the material type `TYPE_0` this
 is a linear elastic material and `1.0e7 1.0e6 0.3` are the density, *Young* modulus and *poisson* modulus respectively.
 
-<img src="../doc/sputnik-man/figures/macro_alone_d.jpg"/>
+
+Execute in parallel with :
+
+```bash
+./run.sh
+./run.sh 2
+...
+```
+<img src="../doc/sputnik-man/figures/macro_alone_d.jpg"
+alt="domain partition with parmetis usign kway algorithm (not too good in this case)" width="400" height="400" />
 <img src="../doc/sputnik-man/figures/macro_alone_c.jpg"/>
 
 ### micro_hom
