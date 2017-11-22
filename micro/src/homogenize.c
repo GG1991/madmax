@@ -181,9 +181,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     dir_ix_glo  = malloc ( ndir_ix * sizeof(int));
     coor_dir    = malloc ( ndir_ix * sizeof(double));
 
-    int n, d, c;
-
-    c = 0;
+    /* fill the array of dirichlet indeces "dir_ix_loc" and the coordinates "coor_dir" */
+    int n, d, c = 0;
     if(rank_mic == 0){
 
       /* y = 0 */
@@ -208,7 +207,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     }
     if( nproc_mic > 1)
     {
-      if( rank_mic == 0 || rank_mic == (nproc_mic - 1) )
+      if( rank_mic == 0 )
       {
 	/* x = 0 */
 	for( n = 0 ; n < (nyl - 1) ; n++ ){
@@ -225,6 +224,26 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 	    dir_ix_loc[c*dim + d] = (2*nx-1)*dim + n*nx*dim + d;
 	  coor_dir[c*dim + 0] = lx;
 	  coor_dir[c*dim + 1] = (ny_inf + n + 1)*hy;
+	  c++;
+	}
+      }
+      else if( rank_mic == (nproc_mic - 1) )
+      {
+	/* x = 0 */
+	for( n = 0 ; n < (nyl - 1) ; n++ ){
+	  for( d = 0 ; d < dim ; d++ )
+	    dir_ix_loc[c*dim + d] = n*nx*dim + d;
+	  coor_dir[c*dim + 0] = 0;
+	  coor_dir[c*dim + 1] = (ny_inf + n)*hy;
+	  c++;
+	}
+
+	/* x = lx */
+	for( n = 0 ; n < (nyl - 1) ; n++ ){
+	  for( d = 0 ; d < dim ; d++ )
+	    dir_ix_loc[c*dim + d] = (nx-1)*dim + n*nx*dim + d;
+	  coor_dir[c*dim + 0] = lx;
+	  coor_dir[c*dim + 1] = (ny_inf + n)*hy;
 	  c++;
 	}
       }
