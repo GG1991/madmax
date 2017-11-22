@@ -146,6 +146,8 @@ Constitutive Average Tensor
 
 ![domain partition](../doc/sputnik-man/figures/micro_alone_a.jpg?raw=true "Title")
 ![stress distribution](../doc/sputnik-man/figures/micro_alone_b.jpg?raw=true "Title")
+![trace on Marenostrum 4](../doc/sputnik-man/figures/trace_final.jpg?raw=true "Title")
+![total time on Marenostrum 4](../doc/sputnik-man/figures/times.png?raw=true "Title")
 
 ### fron_fib
 

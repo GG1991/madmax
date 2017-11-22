@@ -19,7 +19,7 @@ if [ -e "trace_half.tex" ]; then
    rm trace_half.tex
 fi
 
-scale_x=5;
+scale_x=100;
 width=0.1;
 sep=0.1;
 
@@ -61,4 +61,4 @@ cat trace_head.tex >  trace_final.tex
 cat trace_half.tex >> trace_final.tex
 cat trace_tail.tex >> trace_final.tex
 
-#pdflatex trace_final.tex
+pdflatex trace_final.tex
