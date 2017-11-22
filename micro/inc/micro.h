@@ -102,10 +102,7 @@ KSP          ksp;                 // linear solver context
 
 
 #define PRINT_PETSC        0
-#define PRINT_VTK          1
-#define PRINT_VTU          2
-#define PRINT_VTKPART      4
-#define PRINT_ALL          8
+#define PRINT_VTU          1
 
 int         flag_print;
 bool        flag_first_alloc;
@@ -116,11 +113,13 @@ bool        flag_first_alloc;
 
 double      center_domain[3];
 
-typedef struct _cilin_fiber_t{
+typedef struct _cilin_fiber_t
+{
   double radius;
   double deviation[3];
   int    nx;
   int    ny;
+
 }cilin_fiber_t;
 
 cilin_fiber_t cilin_fiber;

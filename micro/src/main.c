@@ -89,14 +89,11 @@ end_mic_0:
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
   /* 
-     Dimension, mesh and input Options 
+     dimension, mesh and input options 
 
-     The problem can be execute using the options
+     the problem can be execute using the options
      -struct_mesh <nx,ny> (if dim=2)
      -struct_size <lx,ly> (if dim=2)
-
-     or given unstructured meshes as gmsh format
-   
    */
   PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
   if(set == PETSC_FALSE){
@@ -105,6 +102,8 @@ end_mic_0:
     goto end_mic_1;
   }
   nvoi = (dim == 2) ? 3 : 6;
+
+  /**************************************************/
 
   {
     /* struct mesh */
@@ -118,11 +117,12 @@ end_mic_0:
 
     if( dim == 2 ) nval_expect = nval = 2;
     if( dim == 3 ) nval_expect = nval = 3;
-    PetscOptionsGetIntArray(NULL, NULL, "-struct_n",struct_mesh_n,&nval,&set);
+
+    PetscOptionsGetIntArray( NULL, NULL, "-struct_n", struct_mesh_n, &nval, &set );
     if( set == PETSC_TRUE ){
 
       if( nval != nval_expect ){
-	PetscPrintf(MPI_COMM_SELF,"-struct_n should include %d double arguments\n", nval_expect);
+	PetscPrintf(MPI_COMM_SELF,"-struct_n should include %d arguments\n", nval_expect);
 	ierr_1 = 1;
 	goto end_mic_0;
       }
@@ -203,7 +203,58 @@ end_mic_0:
 
   }
 
-  /* Homogenization Options */
+  /**************************************************/
+
+  {
+    /* Materials by command line */
+    int    nval = 4;
+    char   *string[nval];
+    char   *data;
+    material_t mat;
+    list_init( &material_list, sizeof(material_t), NULL );
+
+    PetscOptionsGetStringArray( NULL, NULL, "-material", string, &nval, &set );
+    if( set == PETSC_TRUE )
+    {
+      for( i = 0 ; i < nval ; i++ )
+      {
+	data = strtok( string[i] , " \n" );
+	mat.name = strdup( data );
+	data = strtok( NULL , " \n" );
+	if( strcmp( data, "TYPE_0" ) == 0 )
+	{
+	  double E, v;
+	  mat.type_id = TYPE_0;
+	  mat.type    = malloc(sizeof(type_0));
+	  data = strtok( NULL , " \n" );
+	  ((type_0*)mat.type)->rho         = atof(data);
+	  data = strtok( NULL , " \n" );
+	  E = ((type_0*)mat.type)->young   = atof(data);
+	  data = strtok( NULL , " \n" );
+	  v = ((type_0*)mat.type)->poisson = atof(data);
+	  ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
+	  ((type_0*)mat.type)->mu          = E/(2*(1+v));
+	}
+	else if ( strcmp( data, "TYPE_1" ) == 0 )
+	{
+	  PetscPrintf( MACRO_COMM, "TYPE_1 not allowed in micro code.\n" );
+	  goto end_mic_1;
+	}
+	else
+	{
+	  PetscPrintf( MACRO_COMM, "type %s not known.\n", data );
+	  goto end_mic_1;
+	}
+
+	list_insertlast( &material_list , &mat );
+      }
+    }
+
+  }
+
+  /**************************************************/
+
+  /* homogenization options */
   homo_type=0;
   PetscOptionsHasName(NULL,NULL,"-homo_tp",&set);
   if(set==PETSC_TRUE) homo_type = TAYLOR_P;
@@ -217,19 +268,22 @@ end_mic_0:
     goto end_mic_0;
   }
 
-  /* Solver Options */
+  /**************************************************/
+
+  /* solver options */
   PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
   if(set==PETSC_FALSE) nr_max_its = 5;
   PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if(set==PETSC_FALSE) nr_norm_tol = 1.0e-5;
 
+  /**************************************************/
+
   /* 
-     Geometry specifications or material distribution
+     geometry specifications or material distribution
      inside the rve
 
      we should assign a value to "micro_type"
    */
-
 
   {
     /* 
@@ -266,72 +320,14 @@ end_mic_0:
   }
 
   /**************************************************/
-  {
-    /* Materials by command line 
-       (expect a fiber and a matrix material only)
-     */
-    double E, v;
-    material_t mat;
-    list_init(&material_list,sizeof(material_t),NULL);
 
-    nval = 3;
-    PetscOptionsGetRealArray(NULL, NULL, "-mat_fiber_t0",mat_fiber_t0,&nval,&set);
-    if( set == PETSC_TRUE )
-    {
-      if( nval != 3 ){
-	PetscPrintf(MPI_COMM_SELF,"-mat_fiber_t0 should include 3 double arguments\n");
-	ierr_1 = 1;
-	goto end_mic_0;
-      }
-
-      mat.type_id = TYPE_0;
-      mat.name = strdup("FIBER");
-      mat.type = malloc(sizeof(type_0));
-      ((type_0*)mat.type)->rho         = mat_fiber_t0[0];
-      E = ((type_0*)mat.type)->young   = mat_fiber_t0[1];
-      v = ((type_0*)mat.type)->poisson = mat_fiber_t0[2];
-      ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
-      ((type_0*)mat.type)->mu          = E/(2*(1+v));
-
-      list_insertlast( &material_list , &mat );
-    }
-
-    PetscOptionsGetRealArray(NULL,NULL,"-mat_matrix_t0",mat_matrix_t0,&nval,&set);
-    if( set == PETSC_TRUE )
-    {
-      if( nval != 3 ){
-	PetscPrintf(MPI_COMM_SELF,"-mat_matrix_t0 should include 3 double arguments\n");
-	ierr_1 = 1;
-	goto end_mic_0;
-      }
-
-      mat.type_id = TYPE_0;
-      mat.name = strdup("MATRIX");
-      mat.type = malloc(sizeof(type_0));
-      ((type_0*)mat.type)->rho         = mat_matrix_t0[0];
-      E = ((type_0*)mat.type)->young   = mat_matrix_t0[1];
-      v = ((type_0*)mat.type)->poisson = mat_matrix_t0[2];
-      ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
-      ((type_0*)mat.type)->mu          = E/(2*(1+v));
-
-      list_insertlast( &material_list , &mat );
-    }
-  }
-  /**************************************************/
-
-  /**************************************************/
-  /* Printing Options */
+  /* printing options */
   flag_print = 0;
   PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
-  PetscOptionsHasName(NULL,NULL,"-print_vtk",&set);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTK);
-  PetscOptionsHasName(NULL,NULL,"-print_part",&set);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTKPART);
   PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
-  PetscOptionsHasName(NULL,NULL,"-print_all",&set);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_ALL);
+
   /**************************************************/
 
   if(!flag_coupling){
@@ -342,6 +338,7 @@ end_mic_0:
   }
 
   /**************************************************/
+
   /* initialize global variables*/
   A   = NULL;
   b   = NULL;
