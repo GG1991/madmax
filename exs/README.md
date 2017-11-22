@@ -2,13 +2,32 @@
 
 Example of a boundary condition problem using the macro code. 
 
+Dimension: 2
+
+Geometry : Square, we can use triangles or quads.
+
 Needs : `PETSC`, `SLEPC`, `ParMETIS`, `MPI`, `Gmsh`
 
-The "-eigen" or a "-normal" execution can be selected.
+In this problem we are going to test two executions modes available in *macro*:
+   * The *normal* execution mode (`-normal`) : it is a quasi-static simulation that depends on time dependent boundary
+     conditions.
+   * The *eigen-system* execution mode (`-eigen`) : is the calculation of the eigen-modes of the problem.
 
 ```bash
 cd macro_alone
 ```
+
+On the execution file `run.sh` you can see a line:
+
+```bash
+    -dim 2            \
+    -mesh_gmsh        \
+    -mesh cube_2d.msh \
+```
+
+These are arguments to the program and indicate that the mesh file has `gmsh` format and 
+that the path to the file is `cube_2d.msh`.
+
 
 ## Eigensystem
 
@@ -20,6 +39,12 @@ of elements in *x* and *y* directions ( `vim cube_2d.geo`):
 N = 30;
 ```
 
+If you want triangles on your mesh comment the line
+
+```bash
+//Recombine Surface {6};
+```
+
 then:
 
 ```bash
@@ -28,26 +53,60 @@ gmsh -2 cube_2d.geo
 
 will generate `cube_2d.msh`.
 
+The line in `run.sh`:
+
+```bash
+    -boundary "X0 11 0 0","X1 11 1 0" \
+```
+indicates that on all nodes of `X0` and `X1` we are going to put Dirichlet boundary conditions and this is 
+important in this problem. In fact at least we need *one* Dirichlet degree of freedom for 
+this problem to have a unique solution.
+
 time to run the eigensystem ! Only configure in `run.sh` the option `-eigen` to appear
 as an argument, `-normal` should *not* appear for this case. You can select the number 
-of eigenvalues to compute with the option `-eps_nev 2`. Remember to comfigure your `mpiexec` 
+of eigenvalues to compute with the option `-eps_nev 2`. Remember to comfigure in `run.sh` your `mpiexec` 
 path correctly in the line `MPIEXEC="/home/guido/libs/openmpi-install/bin/mpiexec"`. Finally
 do:
 
 ```bash
 ./run.sh
 ```
-The results are stored in files `macro_eigen_*.pvtu` and you can see the solution in paraview 
+The results are stored in files `macro_eigen_*.pvtu` and you can see the solution in `paraview`
 
 <img src="../doc/sputnik-man/figures/macro_alone_a.jpg"/>
 <img src="../doc/sputnik-man/figures/macro_alone_b.jpg"/>
 
 ## Normal execution
 
+In this problem we impose time dependent boundary conditions and we solve the quasi-static elasticity equation without
+inertial forces. The most important lines here are:
 
-Dimension: 2
+```bash
+    -boundary "X0 11 0 0","X1 11 1 0" \
+```
 
-Geometry : Square, we can use triangles or quads.
+this is boundary conditions that indicate the physical entity `X0` first follow by a code `11` that means that we
+are going to impose Dirichlet on `y` and `x` directions on every node of `X0` ( 0 for Neumann ) and then a function
+number ` 1 0` that means to put function 1 on `x` and function 0 on `y` ( these numbers are not taken into account in
+`-eigen` mode ). All the boundaries should have a function associated even if they are null for all time, we should
+define the 0 function as we show below.
+
+```bash
+    -function "0 2 0.0 0.0 1.0 0.0","1 2 0.0 0.0 1.0 0.001" \
+```
+The functions used. The first number is the function number (`0`) the second is the number of points that define it
+(`2`) and the others are the two points defined in the format `x0 y0 x1 y1`. Notice that function `0`  is  0 for all
+time between (0,1) sec. 
+
+```bash
+    -material "MATRIX TYPE_0 1.0e7 1.0e6 0.3" \
+```
+
+This is the material definition. The first argument is the material name (`MATRIX`) then the material type `TYPE_0` this
+is a linear elastic material and `1.0e7 1.0e6 0.3` are the density, *Young* modulus and *poisson* modulus respectively.
+
+<img src="../doc/sputnik-man/figures/macro_alone_d.jpg"/>
+<img src="../doc/sputnik-man/figures/macro_alone_c.jpg"/>
 
 ### micro_hom
 
