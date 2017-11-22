@@ -1,7 +1,49 @@
 ### macro_alone
 
-Example of a boundary condition problem. 
-The "-eigensys" or a "-normal" execution can be selected.
+Example of a boundary condition problem using the macro code. 
+
+Needs : `PETSC`, `SLEPC`, `ParMETIS`, `MPI`, `Gmsh`
+
+The "-eigen" or a "-normal" execution can be selected.
+
+```bash
+cd macro_alone
+```
+
+## Eigensystem
+
+Lets solve the eigen-system associated with this problem. First we run `gmsh` and
+generate `cube_2d.msh`. You can change the mesh parameters, for example, the number 
+of elements in *x* and *y* directions ( `vim cube_2d.geo`):
+
+```bash
+N = 30;
+```
+
+then:
+
+```bash
+gmsh -2 cube_2d.geo
+```
+
+will generate `cube_2d.msh`.
+
+time to run the eigensystem ! Only configure in `run.sh` the option `-eigen` to appear
+as an argument, `-normal` should *not* appear for this case. You can select the number 
+of eigenvalues to compute with the option `-eps_nev 2`. Remember to comfigure your `mpiexec` 
+path correctly in the line `MPIEXEC="/home/guido/libs/openmpi-install/bin/mpiexec"`. Finally
+do:
+
+```bash
+./run.sh
+```
+The results are stored in files `macro_eigen_*.pvtu` and you can see the solution in paraview 
+
+<img src="../doc/sputnik-man/figures/macro_alone_a.jpg"/>
+<img src="../doc/sputnik-man/figures/macro_alone_b.jpg"/>
+
+## Normal execution
+
 
 Dimension: 2
 
