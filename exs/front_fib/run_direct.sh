@@ -11,7 +11,7 @@ fi
 #$MPIEXEC -np $NP xterm -e gdb -x file.gdb --args ../../macro/macro \
 $MPIEXEC -np $NP ../../macro/macro \
     -boundary "X0 11 0 0","X1 11 1 0" \
-    -material "MATRIX TYPE_0 1.0e7 1.0e6 0.3","FIBER TYPE_0 1.0e7 1.0e6 0.3","MICRO TYPE_1" \
+    -material "MATRIX TYPE_0 1.0e7 1.0e6 0.3","FIBER TYPE_0 1.0e7 1.0e6 0.3"\
     -function "0 2 0.0 0.0 1.0 0.0","1 2 0.0 0.0 1.0 0.01" \
     -mesh ../../meshes/front_fib/direct_a.msh \
     -dim 2            \

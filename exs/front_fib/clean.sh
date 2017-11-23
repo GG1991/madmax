@@ -1,2 +1,2 @@
 #!/bin/bash
-rm -f *.vtk *ro_trace.* *.dat *.vtu *.pvtu *.out *.msh *.pdf *.out *.dat
+rm -f *.vtk *.dat *.vtu *.pvtu *.out *.msh *.pdf *.out *.dat
