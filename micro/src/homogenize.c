@@ -234,7 +234,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 	  for( d = 0 ; d < dim ; d++ )
 	    dir_ix_loc[c*dim + d] = n*nx*dim + d;
 	  coor_dir[c*dim + 0] = 0;
-	  coor_dir[c*dim + 1] = (ny_inf + n)*hy;
+	  coor_dir[c*dim + 1] = ( ny_inf + n )*hy;
 	  c++;
 	}
 
@@ -243,7 +243,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 	  for( d = 0 ; d < dim ; d++ )
 	    dir_ix_loc[c*dim + d] = (nx-1)*dim + n*nx*dim + d;
 	  coor_dir[c*dim + 0] = lx;
-	  coor_dir[c*dim + 1] = (ny_inf + n)*hy;
+	  coor_dir[c*dim + 1] = ( ny_inf + n )*hy;
 	  c++;
 	}
       }
@@ -255,7 +255,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 	  for( d = 0 ; d < dim ; d++ )
 	    dir_ix_loc[c*dim + d] = n*nx*dim + d;
 	  coor_dir[c*dim + 0] = 0;
-	  coor_dir[c*dim + 1] = (ny_inf + n + 1)*hy;
+	  coor_dir[c*dim + 1] = ( ny_inf + n )*hy;
 	  c++;
 	}
 
@@ -264,7 +264,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 	  for( d = 0 ; d < dim ; d++ )
 	    dir_ix_loc[c*dim + d] = (nx-1)*dim + n*nx*dim + d;
 	  coor_dir[c*dim + 0] = lx;
-	  coor_dir[c*dim + 1] = (ny_inf + n + 1)*hy;
+	  coor_dir[c*dim + 1] = ( ny_inf + n )*hy;
 	  c++;
 	}
       }
@@ -299,6 +299,8 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   /* Set the displacement boundary conditions "u = E . X" */
 
   VecZeroEntries( x );
+  VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD);
 
   Vec     x_loc;
   double  *x_arr;
@@ -408,9 +410,7 @@ int strain_x_coord( double * strain , double * coord , double * u )
 int assembly_b(void)
 {
 
-  VecZeroEntries(b);
-
-  /* from the owning processes to the ghosts in the others processes */
+  VecZeroEntries( b);
   VecGhostUpdateBegin( b , INSERT_VALUES , SCATTER_FORWARD );
   VecGhostUpdateEnd  ( b , INSERT_VALUES , SCATTER_FORWARD );
 
@@ -847,8 +847,8 @@ int get_local_elem_index( int e, int *loc_elem_index )
 	n0 = (e%nex) + (e/nex)*nx;
 	loc_elem_index[ 0*dim + d ] = ( n0 + nl     ) * dim + d ; // is a ghost
 	loc_elem_index[ 1*dim + d ] = ( n0 + nl + 1 ) * dim + d ; // is a ghost
-	loc_elem_index[ 2*dim + d ] = ( n0 + 1 )      * dim + d ;
-	loc_elem_index[ 3*dim + d ] = ( n0     )      * dim + d ;
+	loc_elem_index[ 2*dim + d ] = ( n0 + 1      ) * dim + d ;
+	loc_elem_index[ 3*dim + d ] = ( n0          ) * dim + d ;
       }
     }
   }
