@@ -36,7 +36,7 @@ OPT = 0
 ifeq ($(OPT),1)
 CFLAGS=-O3
 else
-CFLAGS=-g -O0
+CFLAGS=-g -O0 -DWITH_MPI
 endif
 
 DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
@@ -63,6 +63,7 @@ DEPS_MAC =     ${MAC_INC_DIR}/macro.h \
 DEPS_MIC =     ${MIC_INC_DIR}/micro.h \
                ${DEP_DIR}/comm.h \
                ${DEP_DIR}/material.h \
+               ${DEP_DIR}/myio.h \
                ${DEP_DIR}/trace.h
 
 DEP_DIRS =     ${DEP_DIR} ${MAC_INC_DIR} ${MIC_INC_DIR}
@@ -72,11 +73,11 @@ SPU_OBJ  =     $(SPU_OBJ_DIR)/mesh.o     \
                $(SPU_OBJ_DIR)/util.o     \
                $(SPU_OBJ_DIR)/trace.o    \
                $(SPU_OBJ_DIR)/material.o \
-               $(SPU_OBJ_DIR)/gmsh.o     \
                $(SPU_OBJ_DIR)/comm.o    
 
 MAC_OBJ  =     ${MAC_OBJ_DIR}/main.o     \
                $(SPU_OBJ_DIR)/material.o \
+               $(SPU_OBJ_DIR)/gmsh.o     \
                $(SPU_OBJ_DIR)/vtk.o
 
 MIC_OBJ  = ${MIC_OBJ_DIR}/main.o \
@@ -85,6 +86,7 @@ MIC_OBJ  = ${MIC_OBJ_DIR}/main.o \
            $(SPU_OBJ_DIR)/trace.o \
            $(SPU_OBJ_DIR)/material.o \
            $(SPU_OBJ_DIR)/vtk.o      \
+           $(SPU_OBJ_DIR)/myio.o      \
            $(SPU_OBJ_DIR)/list.o
 
 EXT_OBJ  = $(SPU_OBJ_DIR)/fem.o \

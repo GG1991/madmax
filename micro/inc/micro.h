@@ -12,6 +12,7 @@
 #include "material.h"
 #include "comm.h"
 #include "trace.h"
+#include "myio.h"
 #include "vtk.h"
 #include <gsl/gsl_linalg.h>
 

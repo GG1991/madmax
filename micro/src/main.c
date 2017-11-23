@@ -72,7 +72,7 @@ int main(int argc, char **argv)
   ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM); /* color can change */
   if(ierr){
     ierr_1 = 1;
-    PetscPrintf(MICRO_COMM,"micro: problem during coloring\n");
+    printf_p(MICRO_COMM,"micro: problem during coloring\n");
     goto end_mic_0;
   }
 
@@ -97,7 +97,7 @@ end_mic_0:
    */
   PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
   if(set == PETSC_FALSE){
-    PetscPrintf(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
+    printf_p(MPI_COMM_SELF,"dimension (-dim <dim>) not given\n");
     ierr_1 = 1;
     goto end_mic_1;
   }
@@ -122,7 +122,7 @@ end_mic_0:
     if( set == PETSC_TRUE ){
 
       if( nval != nval_expect ){
-	PetscPrintf(MPI_COMM_SELF,"-struct_n should include %d arguments\n", nval_expect);
+	printf_p(MPI_COMM_SELF,"-struct_n should include %d arguments\n", nval_expect);
 	ierr_1 = 1;
 	goto end_mic_0;
       }
@@ -148,14 +148,14 @@ end_mic_0:
       npe  = ( dim == 2 ) ? 4 : 8;
       ngp  = ( dim == 2 ) ? 4 : 8;
       if( !( ny > nproc_mic ) ){
-	PetscPrintf(MPI_COMM_SELF,"ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
+	printf_p(MPI_COMM_SELF,"ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
 	ierr_1 = 1;
 	goto end_mic_0;
       }
 
     }
     else{
-	PetscPrintf(MPI_COMM_SELF,"-struct_n is request\n");
+	printf_p(MPI_COMM_SELF,"-struct_n is request\n");
 	ierr_1 = 1;
 	goto end_mic_0;
     }
@@ -164,7 +164,7 @@ end_mic_0:
     if( set == PETSC_TRUE )
     {
       if( nval != nval_expect ){
-	PetscPrintf(MPI_COMM_SELF,"-struct_l should include %d double arguments\n", nval_expect);
+	printf_p(MPI_COMM_SELF,"-struct_l should include %d double arguments\n", nval_expect);
 	ierr_1 = 1;
 	goto end_mic_0;
       }
@@ -173,7 +173,7 @@ end_mic_0:
       if( dim == 3 ) lz = struct_mesh_l[2];
     }
     else{
-	PetscPrintf(MPI_COMM_SELF,"-struct_l is request\n");
+	printf_p(MPI_COMM_SELF,"-struct_l is request\n");
 	ierr_1 = 1;
 	goto end_mic_0;
     }
@@ -237,12 +237,12 @@ end_mic_0:
 	}
 	else if ( strcmp( data, "TYPE_1" ) == 0 )
 	{
-	  PetscPrintf( MACRO_COMM, "TYPE_1 not allowed in micro code.\n" );
+	  printf_p( MACRO_COMM, "TYPE_1 not allowed in micro code.\n" );
 	  goto end_mic_1;
 	}
 	else
 	{
-	  PetscPrintf( MACRO_COMM, "type %s not known.\n", data );
+	  printf_p( MACRO_COMM, "type %s not known.\n", data );
 	  goto end_mic_1;
 	}
 
@@ -263,7 +263,7 @@ end_mic_0:
   PetscOptionsHasName(NULL,NULL,"-homo_us",&set);
   if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
   if(homo_type==0){
-    PetscPrintf(MPI_COMM_SELF,"no homogenization option specified\n");
+    printf_p(MPI_COMM_SELF,"no homogenization option specified\n");
     ierr_1 = 1;
     goto end_mic_0;
   }
@@ -304,7 +304,7 @@ end_mic_0:
 	  cilin_fiber.deviation[i] = 0.0;
       }
       else if(nval==0){
-	PetscPrintf(MPI_COMM_SELF,"-fiber_cilin specified with no argument\n");
+	printf_p(MPI_COMM_SELF,"-fiber_cilin specified with no argument\n");
 	ierr_1 = 1;
 	goto end_mic_0;
       }
@@ -331,7 +331,7 @@ end_mic_0:
   /**************************************************/
 
   if(!flag_coupling){
-    PetscPrintf(MICRO_COMM,
+    printf_p(MICRO_COMM,
 	"--------------------------------------------------\n"
 	"  MICRO: STANDALONE \n"
 	"--------------------------------------------------\n");
@@ -440,7 +440,7 @@ end_mic_0:
 	  break;
 
 	default:
-	  PetscPrintf(MICRO_COMM,"MICRO:signal %d not identified\n",signal);
+	  printf_p(MICRO_COMM,"MICRO:signal %d not identified\n",signal);
 	  goto end_mic_1;
 
       }
@@ -459,14 +459,14 @@ end_mic_0:
       ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
       if(ierr) goto end_mic_1;
 
-      PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
+      printf_p(MICRO_COMM,"\nstrain_ave = ");
       for( j = 0 ; j < nvoi ; j++ )
-	PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
+	printf_p(MICRO_COMM,"%e ",strain_ave[j]);
 
-      PetscPrintf(MICRO_COMM,"\nstress_ave = ");
+      printf_p(MICRO_COMM,"\nstress_ave = ");
       for( j = 0 ; j < nvoi ; j++ )
-	PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
-      PetscPrintf(MICRO_COMM,"\n");
+	printf_p(MICRO_COMM,"%e ",stress_ave[j]);
+      printf_p(MICRO_COMM,"\n");
 
       for( j = 0 ; j < nvoi ; j++ )
 	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
@@ -477,19 +477,19 @@ end_mic_0:
 	sprintf(filename,"micro_exp%d",i);
 	ierr = micro_pvtu( filename );
 	if(ierr){
-	  PetscPrintf(MICRO_COMM,"Problem writing vtu file\n");
+	  printf_p(MICRO_COMM,"Problem writing vtu file\n");
 	  goto end_mic_1;
 	}
       }
 
     }
-    PetscPrintf(MICRO_COMM,"\nConstitutive Average Tensor\n");
+    printf_p(MICRO_COMM,"\nConstitutive Average Tensor\n");
     for( i = 0 ; i < nvoi ; i++ ){
       for( j = 0 ; j < nvoi ; j++ )
-	PetscPrintf(MICRO_COMM,"%e ",(fabs(c_homo[i*nvoi+j])>1.0)?c_homo[i*nvoi+j]:0.0);
-      PetscPrintf(MICRO_COMM,"\n");
+	printf_p(MICRO_COMM,"%e ",(fabs(c_homo[i*nvoi+j])>1.0)?c_homo[i*nvoi+j]:0.0);
+      printf_p(MICRO_COMM,"\n");
     }
-    PetscPrintf(MICRO_COMM,"\n");
+    printf_p(MICRO_COMM,"\n");
 
     /*
        Experiment to test if the homogenization with <strain_mac>
@@ -499,21 +499,21 @@ end_mic_0:
     strain_mac[0] = 0.01; strain_mac[1] = -0.02; strain_mac[2] = +0.03;
     strain_mac[3] = 0.01; strain_mac[4] = -0.02; strain_mac[5] = +0.03;
     ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-    PetscPrintf(MICRO_COMM,"\nstrain_ave = ");
+    printf_p(MICRO_COMM,"\nstrain_ave = ");
     for( j = 0 ; j < nvoi ; j++ )
-      PetscPrintf(MICRO_COMM,"%e ",strain_ave[j]);
-    PetscPrintf(MICRO_COMM,"\nstress_ave = ");
+      printf_p(MICRO_COMM,"%e ",strain_ave[j]);
+    printf_p(MICRO_COMM,"\nstress_ave = ");
     for( j = 0 ; j < nvoi ; j++ )
-      PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
+      printf_p(MICRO_COMM,"%e ",stress_ave[j]);
     for( i = 0 ; i < nvoi ; i++ ){
       stress_ave[i] = 0.0;
 	for( j = 0 ; j < nvoi ; j++ )
 	stress_ave[i] +=  c_homo[i*nvoi+j] * strain_mac[j];
     }
-    PetscPrintf(MICRO_COMM,"\nstress_ave = ");
+    printf_p(MICRO_COMM,"\nstress_ave = ");
     for( j = 0 ; j < nvoi ; j++ )
-      PetscPrintf(MICRO_COMM,"%e ",stress_ave[j]);
-    PetscPrintf(MICRO_COMM," (c_homo*strain_mac)\n");
+      printf_p(MICRO_COMM,"%e ",stress_ave[j]);
+    printf_p(MICRO_COMM," (c_homo*strain_mac)\n");
 
   }
 
@@ -547,7 +547,7 @@ end_mic_0:
 end_mic_1:
 
   if(!flag_coupling){
-    PetscPrintf(MICRO_COMM,
+    printf_p(MICRO_COMM,
 	"--------------------------------------------------\n"
 	"  MICRO: FINISH COMPLETE\n"
 	"--------------------------------------------------\n");
@@ -729,7 +729,7 @@ int micro_pvtu( char *name )
   sprintf( file_name, "%s_%d.vtu", name, rank_mic);
   fm = fopen(file_name,"w"); 
   if(!fm){
-    PetscPrintf(PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
+    printf_p(PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
     return 1;
   }
 
