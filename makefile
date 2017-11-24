@@ -46,21 +46,22 @@ DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h      \
 	       ${DEP_DIR}/vtk.h          \
 	       ${DEP_DIR}/material.h
 
-DEPS_MAC = ${MAC_INC_DIR}/macro.h    \
-           ${DEP_DIR}/sputnik.h      \
-           ${DEP_DIR}/util.h         \
-           ${DEP_DIR}/gmsh.h         \
-           ${DEP_DIR}/comm.h         \
-	   ${DEP_DIR}/mesh.h         \
-           ${DEP_DIR}/material.h     \
-           ${DEP_DIR}/vtk.h          \
+DEPS_MAC = ${MAC_INC_DIR}/macro.h        \
+           ${DEP_DIR}/sputnik.h          \
+           ${DEP_DIR}/util.h             \
+           ${DEP_DIR}/gmsh.h             \
+           ${DEP_DIR}/comm.h             \
+	   ${DEP_DIR}/mesh.h             \
+           ${DEP_DIR}/material.h         \
+           ${DEP_DIR}/vtk.h              \
            ${DEP_DIR}/trace.h
 
-DEPS_MIC = ${MIC_INC_DIR}/micro.h    \
-           ${DEP_DIR}/comm.h         \
-           ${DEP_DIR}/material.h     \
-           ${DEP_DIR}/myio.h         \
-           ${DEP_DIR}/vtk.h          \
+DEPS_MIC = ${MIC_INC_DIR}/micro.h        \
+	   ${MIC_INC_DIR}/micro_struct.h \
+           ${DEP_DIR}/comm.h             \
+           ${DEP_DIR}/material.h         \
+           ${DEP_DIR}/myio.h             \
+           ${DEP_DIR}/vtk.h              \
            ${DEP_DIR}/trace.h
 
 MAC_OBJ  = ${MAC_OBJ_DIR}/main.o         \

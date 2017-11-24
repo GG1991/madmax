@@ -1,19 +1,21 @@
 /*
    MICRO external lybraries
 */
+
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "petscksp.h"
 #include "petscsys.h"
 #include "slepceps.h"
 #include "list.h"
-#include "stdbool.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
 #include "material.h"
 #include "comm.h"
 #include "trace.h"
 #include "myio.h"
 #include "vtk.h"
+#include "micro_struct.h"
 #include <gsl/gsl_linalg.h>
 
 #define TAYLOR_S     1
@@ -108,7 +110,7 @@ KSP          ksp;                 // linear solver context
 int         flag_print;
 bool        flag_first_alloc;
 
-/* Micro figure type */
+/* micro figure type */
 
 #define CIRCULAR_FIBER 1
 
@@ -124,6 +126,8 @@ typedef struct _cilin_fiber_t
 }cilin_fiber_t;
 
 cilin_fiber_t cilin_fiber;
+
+micro_struct_t micro_struct;
 
 int mic_homogenize(MPI_Comm COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
