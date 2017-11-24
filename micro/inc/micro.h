@@ -26,12 +26,6 @@
 
 char        filename[NBUF];    //  string for different purposes
 
-/*
-   Internal Variables on Gauss Points are going to be saved on 
-   this vector
-*/
-double      *gauss_param_d;
-
 /* Variables Send by <macro> */
 
 int         rank_mic;          //  rank on macro comm
@@ -66,7 +60,7 @@ double      **struct_sh;          // Shape functions
 double      ***struct_dsh;        // Derivative shapes functions
 double      *struct_wp;           // Weights
 double      ***struct_bmat;       // B matrix (Bu = epsilon)
-double      *elem_disp;
+double      *elem_disp;           // elemental displacements
 int         *loc_elem_index;      // local elemental index vector for assembly and reading
 int         *glo_elem_index;      // global elemental index vector for assembly and reading
 int         istart, iend;         // starting and ending index of matrices
@@ -77,7 +71,7 @@ int         ndir_ix;              // number of dirichlet indeces
 double      *coor_dir;            // coordinates of dirichlet nodes
 double      *strain_gp;           // strain at Gauss point
 double      *stress_gp;           // stress at Gauss point
-int         *elem_type;           // type in each element (depends on the micro structure "micro_type")
+int         *elem_type;           // type in each element (depends on the micro_struc)
 double      *elem_strain;         // strain at each element
 double      *elem_stress;         // stress at each element
 double      *elem_energy;         // energy at each element

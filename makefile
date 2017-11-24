@@ -77,6 +77,7 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/main.o         \
 
 MIC_OBJ  = ${MIC_OBJ_DIR}/main.o         \
            ${MIC_OBJ_DIR}/homogenize.o   \
+           ${MIC_OBJ_DIR}/micro_struct.o \
            $(SPU_OBJ_DIR)/comm.o         \
            $(SPU_OBJ_DIR)/trace.o        \
            $(SPU_OBJ_DIR)/material.o     \
