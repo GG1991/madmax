@@ -2,9 +2,14 @@
 
 #include "myio.h"
 
-/* we defined printf_p (printf parallel) that makes 
-   that only rank 0 print on stdout, if MPI is not 
-   defined it behaves as printf.
+/* 
+   we defined printf_p (printf parallel) 
+   only rank 0 print on stdout, if MPI is not 
+   defined it behaves as printf and can be called
+   as 
+
+   printf_p( NULL, format[], ... );
+
  */
 
 

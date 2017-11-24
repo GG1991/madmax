@@ -39,13 +39,10 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
     }
     ierr = MPI_Allreduce( &vol_ia, &vol_i, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
     ierr = MPI_Allreduce( &vol_ma, &vol_m, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
-    vi   = vol_i / vol_tot;                   // inclusion fraction
-    vm   = vol_m / vol_tot;                   // matrix fraction
-    PetscPrintf(MICRO_COMM,"vi = %lf \n",vi);
-    PetscPrintf(MICRO_COMM,"vm = %lf \n",vm);
-    //    PetscPrintf(MICRO_COMM,"vol_i = %lf \n",vol_i);
-    //    PetscPrintf(MICRO_COMM,"vol_m = %lf \n",vol_m);
-    //    printf("[%d] nelm = %d ne_i = %d ne_m = %d \n", rank_mic, nelm, ne_i, ne_m);
+    vi   = vol_i / vol_tot;              // inclusion fraction
+    vm   = vol_m / vol_tot;              // matrix fraction
+    printf_p( &MICRO_COMM, "vi = %lf \n", vi );
+    printf_p( &MICRO_COMM, "vm = %lf \n", vm );
   }
   get_c_tan("FIBER" , 0, 0, NULL, c_i);  //returns c_i of FIBER
   get_c_tan("MATRIX", 0, 0, NULL, c_m);  //returns c_m of MATRIX
@@ -333,7 +330,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
   VecNorm( x , NORM_2 , &norm );
   if(!flag_coupling)
-    PetscPrintf(MICRO_COMM,"|x| = %lf \n",norm);
+    printf_p( &MICRO_COMM,"|x| = %lf \n",norm);
 
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
@@ -352,7 +349,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     VecNorm( b , NORM_2 , &norm );
 
     if(!flag_coupling)
-      PetscPrintf(MICRO_COMM,"|b| = %lf \n",norm);
+      printf_p( &MICRO_COMM,"|b| = %lf \n",norm);
 
     if( !(norm > nr_norm_tol) ) break;
 
