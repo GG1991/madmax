@@ -9,8 +9,8 @@
 #define FIBER_CILIN  1
 #define FIBER_PLANAR 2
 
-#define MATRIX_ID 0
-#define FIBER_ID  1
+#define ID_MATRIX 0
+#define ID_FIBER  1
 
 /*
    represents a square with a circular fibers in the middle
@@ -24,11 +24,10 @@
 typedef struct _fiber_cilin_t
 {
 
-  double  *size;        // size of the rve
   double  *desv;        // desviation of the fiber from the center
   double   radio;       // radius of the fiber
-  int      nx;          // number of fibers in x
-  int      ny;          // number of fibers in y
+  int      nx_fib;      // number of fibers in x
+  int      ny_fib;      // number of fibers in y
 
 }fiber_cilin_t;
 
@@ -47,7 +46,6 @@ typedef struct _fiber_cilin_t
 typedef struct _fiber_planar_t
 {
 
-  double  *size;         // size of the rve
   int      ntype;        // number of types 
   double  *angles;       // angle for each type ( 1 value in 2d (theta), 2 values in 3d (theta and phy))
   double  *seps;         // separation for each type
@@ -63,12 +61,20 @@ typedef struct _fiber_planar_t
 typedef struct _micro_struct_t
 {
 
-  int      type;
-  void    *data;
+  int      type;         // micro structure type
+  double  *size;         // size of the rve
+  void    *data;         // data of the micro structure
 
 }micro_struct_t;
 
-int init_micro_structure( int dim, micro_struct_t * micro_struct_t, char * format );
-int get_elem_id( int dim, micro_struct_t *micro_struct_t, double *elem_centroid, int *elem_id );
+int micro_struct_init( int dim, micro_struct_t *micro_struct, char *format );
+int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *elem_centroid, int *elem_id );
+
+int micro_struct_init_elem_type(
+    micro_struct_t *micro_struct,
+    int dim,
+    int nelm,
+    int (*get_centroid)( int e, int dim, double *elem_centroid ),
+    int *elem_type );
 
 #endif
