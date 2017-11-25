@@ -33,7 +33,7 @@ MIC_INC_DIR= ${MIC_DIR}/inc
 
 OPT = 0
 ifeq ($(OPT),1)
-CFLAGS=-O3
+CFLAGS=-O3 -DWITH_MPI
 else
 CFLAGS=-g -O0 -DWITH_MPI -lm
 endif
