@@ -95,11 +95,6 @@ PARMETIS_INC = -I${PARMETIS_DIR}/include \
 
 PARMETIS_HEA = ${PARMETIS_DIR}/include/parmetis.h ${PARMETIS_DIR}/metis/include/metis.h
 
-LDFLAG = ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis/libparmetis.a \
-         ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libmetis/libmetis.a       \
-         ${HOME}/libs/slepc-3.7.4/arch-linux-opt/lib/libslepc.so                  \
-	 -lgsl -lgslcblas -lm
-
 INC_FLAG = -I${DEP_DIR} ${PARMETIS_INC} -I${SPU_INC_DIR}  -I${MAC_INC_DIR} -I${MIC_INC_DIR} 
 
 .PHONY: clean_ all
@@ -110,14 +105,23 @@ all: ${MAC_DIR}/macro ${MIC_DIR}/micro
 
 ##############################
 # MACRO
+
+MAC_LDFLAG = ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libparmetis/libparmetis.a \
+             ${HOME}/libs/parmetis-4.0.3/build/Linux-x86_64/libmetis/libmetis.a       \
+             ${HOME}/libs/slepc-3.7.4/arch-linux-opt/lib/libslepc.so                  \
+	     -lgsl -lgslcblas -lm
+
 ${MAC_DIR}/macro: ${MAC_OBJ}
-	gcc -o ${MAC_DIR}/macro $^ ${PETSC_KSP_LIB} ${LDFLAG} ${SLEPC_EPS_LIB}
+	gcc -o ${MAC_DIR}/macro $^ ${PETSC_KSP_LIB} ${MAC_LDFLAG} ${SLEPC_EPS_LIB}
 	@echo "MACRO great :) !" 
 
 ##############################
 # MICRO
+
+MIC_LDFLAG = -lgsl -lgslcblas -lm
+
 ${MIC_DIR}/micro: ${MIC_OBJ}
-	gcc -o ${MIC_DIR}/micro $^ ${PETSC_KSP_LIB} ${LDFLAG}
+	gcc -o ${MIC_DIR}/micro $^ ${PETSC_KSP_LIB} ${MIC_LDFLAG}
 	@echo "MICRO great :) !" 
 
 ##############################
@@ -135,7 +139,7 @@ ${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c ${DEPS_MAC}
 ##############################
 # MICRO OBJECTS
 ${MIC_OBJ_DIR}/%.o: ${MIC_SRC_DIR}/%.c ${DEPS_MIC}
-	${PETSC_COMPILE} -c ${CFLAGS} ${INC_FLAG} -o $@ $< ${SLEPC_EPS_LIB}
+	${PETSC_COMPILE} -c ${CFLAGS} ${INC_FLAG} -o $@ $<
 	@echo ">>> "$@
 
 vars:
