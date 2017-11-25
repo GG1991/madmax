@@ -88,16 +88,19 @@ end_mic_0:
   PETSC_COMM_WORLD = MICRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
 
-  /* 
-     dimension, mesh and input options 
+  /**************************************************/
 
-     the problem can be execute using the options
-     -struct_mesh <nx,ny> (if dim=2)
-     -struct_size <lx,ly> (if dim=2)
-   */
+  nx = ny = nz = -1;
+  hx = hy = hz = -1;
+  lx = ly = lz = -1;
+
+  /**************************************************/
+
+  /* dimension */
+
   PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
-  if(set == PETSC_FALSE){
-    printf_p(&MICRO_COMM,"dimension (-dim <dim>) not given\n");
+  if( set == PETSC_FALSE ){
+    printf_p( &MICRO_COMM, "dimension (-dim <dim>) not given\n" );
     ierr_1 = 1;
     goto end_mic_1;
   }
@@ -105,102 +108,99 @@ end_mic_0:
 
   /**************************************************/
 
-  {
-    /* struct mesh */
+  /* micro_struct */
 
-    int    nval_expect;
-    int    struct_mesh_n[3];
-    double struct_mesh_l[3];
-    nx = ny = nz = 1;
-    hx = hy = hz = -1;
-    lx = ly = lz = -1;
+  char format[256];
 
-    if( dim == 2 ) nval_expect = nval = 2;
-    if( dim == 3 ) nval_expect = nval = 3;
+  PetscOptionsGetString( NULL, NULL, "-micro_struct", format, 256, &set );
+  if( set == PETSC_FALSE ){
+    printf_p( &MICRO_COMM, "micro structure ( -micro_struct <format> ) not given\n" );
+    ierr_1 = 1;
+    goto end_mic_1;
+  }
+  micro_struct_init( dim, &micro_struct, format );
 
-    PetscOptionsGetIntArray( NULL, NULL, "-struct_n", struct_mesh_n, &nval, &set );
-    if( set == PETSC_TRUE ){
+  lx = micro_struct.size[0];
+  ly = micro_struct.size[1];
+  lz = ( dim == 3 ) ? micro_struct.size[2] : -1;
 
-      if( nval != nval_expect ){
-	printf_p(&MICRO_COMM,"-struct_n should include %d arguments\n", nval_expect);
-	ierr_1 = 1;
-	goto end_mic_0;
-      }
-      nx   = struct_mesh_n[0];
-      ny   = struct_mesh_n[1];
-      if( dim == 3 ) nz = struct_mesh_n[2];
-      nn   = nx*ny*nz;
-      nex  = (nx-1);
-      ney  = (ny-1) / nproc_mic + (((ny-1) % nproc_mic > rank_mic) ? 1:0); // local number of elements in y direction
-      nez  = (nz-1);
-      nelm = ( dim == 2 ) ? nex*ney : nex*ney*nez;                         // number of local elements
-      nyl  = ( rank_mic == 0 ) ? ney+1 : ney;                              // local number of nodes in y direction
-      nl   = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;                            // local number of nodes
+  /**************************************************/
 
-      int *nyl_arr = malloc(nproc_mic * sizeof(int));
-      ierr = MPI_Allgather( &nyl, 1, MPI_INT, nyl_arr, 1, MPI_INT, MICRO_COMM); if(ierr) return 1;
-      ny_inf = 0;
-      for( i = 0 ; i < rank_mic ; i++ ){
-	ny_inf += nyl_arr[i];
-      }
-      free(nyl_arr);
+  /* struct mesh */
 
-      npe  = ( dim == 2 ) ? 4 : 8;
-      ngp  = ( dim == 2 ) ? 4 : 8;
-      if( !( ny > nproc_mic ) ){
-	printf_p(&MICRO_COMM,"ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
-	ierr_1 = 1;
-	goto end_mic_0;
-      }
+  int    nval_expect;
+  int    struct_mesh_n[3];
 
+  if( dim == 2 ) nval_expect = nval = 2;
+  if( dim == 3 ) nval_expect = nval = 3;
+
+  PetscOptionsGetIntArray( NULL, NULL, "-struct_n", struct_mesh_n, &nval, &set );
+  if( set == PETSC_TRUE ){
+
+    if( nval != nval_expect ){
+      printf_p(&MICRO_COMM,"-struct_n should include %d arguments\n", nval_expect);
+      ierr_1 = 1;
+      goto end_mic_0;
     }
-    else{
-	printf_p(&MICRO_COMM,"-struct_n is request\n");
-	ierr_1 = 1;
-	goto end_mic_0;
-    }
+    nx   = struct_mesh_n[0];
+    ny   = struct_mesh_n[1];
+    nz   = ( dim == 3 ) ? struct_mesh_n[2] : 1;
 
-    PetscOptionsGetRealArray(NULL, NULL, "-struct_l",struct_mesh_l,&nval,&set);
-    if( set == PETSC_TRUE )
-    {
-      if( nval != nval_expect ){
-	printf_p(&MICRO_COMM,"-struct_l should include %d double arguments\n", nval_expect);
-	ierr_1 = 1;
-	goto end_mic_0;
-      }
-      lx = struct_mesh_l[0];
-      ly = struct_mesh_l[1];
-      if( dim == 3 ) lz = struct_mesh_l[2];
-    }
-    else{
-	printf_p(&MICRO_COMM,"-struct_l is request\n");
-	ierr_1 = 1;
-	goto end_mic_0;
-    }
+    nn   = nx*ny*nz;
+    nex  = (nx-1);
+
+    /* local number of elements in y direction */
+    ney  = (ny-1)/nproc_mic + (((ny-1) % nproc_mic > rank_mic) ? 1:0); 
+    nez  = (nz-1);
+    nelm = ( dim == 2 ) ? nex*ney : nex*ney*nez;       // number of local elements
+    nyl  = ( rank_mic == 0 ) ? ney+1 : ney;            // local number of nodes in y direction
+    nl   = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;          // local number of nodes
 
     /* set the elements' size */
-    hx = lx/nex;
-    hy = ly/(ny-1);
-    if( dim == 3 ) hz = lz/nez;
+    hx   = lx/nex;
+    hy   = ly/(ny-1);
+    hz   = ( dim == 3 ) ? (lz/nez) : -1;
 
-    /* set volumes and center*/
-    center_coor = malloc ( dim * sizeof(double));
-    if ( dim == 2 ){
-      center_coor[0] = lx / 2;
-      center_coor[1] = ly / 2;
-      vol_elem = hx*hy;
-      vol_tot  = lx * ly;
-      vol_loc  = lx * (hy*ney);
+    int *nyl_arr = malloc(nproc_mic * sizeof(int));
+    ierr = MPI_Allgather( &nyl, 1, MPI_INT, nyl_arr, 1, MPI_INT, MICRO_COMM); if(ierr) return 1;
+    ny_inf = 0;
+    for( i = 0 ; i < rank_mic ; i++ ){
+      ny_inf += nyl_arr[i];
     }
-    else{
-      center_coor[0] = lx / 2;
-      center_coor[1] = ly / 2;
-      center_coor[2] = lz / 2;
-      vol_elem = hx*hy*hz;
-      vol_tot  = lx * ly       * lz;
-      vol_loc  = lx * (hy*ney) * lz;
+    free(nyl_arr);
+
+    npe  = ( dim == 2 ) ? 4 : 8;
+    ngp  = ( dim == 2 ) ? 4 : 8;
+    if( !( ny > nproc_mic ) ){
+      printf_p( &MICRO_COMM, "ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
+      ierr_1 = 1;
+      goto end_mic_0;
     }
 
+  }
+  else{
+    printf_p(&MICRO_COMM,"-struct_n is request\n");
+    ierr_1 = 1;
+    goto end_mic_0;
+  }
+
+
+  /* set volumes and center*/
+  center_coor = malloc ( dim * sizeof(double));
+  if ( dim == 2 ){
+    center_coor[0] = lx / 2;
+    center_coor[1] = ly / 2;
+    vol_elem = hx*hy;
+    vol_tot  = lx * ly;
+    vol_loc  = lx * (hy*ney);
+  }
+  else{
+    center_coor[0] = lx / 2;
+    center_coor[1] = ly / 2;
+    center_coor[2] = lz / 2;
+    vol_elem = hx*hy*hz;
+    vol_tot  = lx * ly       * lz;
+    vol_loc  = lx * (hy*ney) * lz;
   }
 
   /**************************************************/
@@ -255,6 +255,7 @@ end_mic_0:
   /**************************************************/
 
   /* homogenization options */
+
   homo_type=0;
   PetscOptionsHasName(NULL,NULL,"-homo_tp",&set);
   if(set==PETSC_TRUE) homo_type = TAYLOR_P;
@@ -271,6 +272,7 @@ end_mic_0:
   /**************************************************/
 
   /* solver options */
+
   PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
   if(set==PETSC_FALSE) nr_max_its = 5;
   PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
@@ -278,50 +280,8 @@ end_mic_0:
 
   /**************************************************/
 
-  /* 
-     geometry specifications or material distribution
-     inside the rve
-
-     we should assign a value to "micro_type"
-   */
-
-  {
-    /* 
-       CIRCULAR_FIBER 
-       -fiber_cilin x,y,z,r
-       -fiber_nx <n> (optional)
-       -fiber_ny <n> (optional)
-     */
-    int     nval = 4;
-    double  fiber_cilin_vals[4];
-    PetscOptionsGetRealArray(NULL, NULL, "-fiber_cilin", fiber_cilin_vals, &nval,&set);
-
-    if( set == PETSC_TRUE ){
-      micro_type = CIRCULAR_FIBER;
-      cilin_fiber.radius = fiber_cilin_vals[0];
-      if(nval==1){
-	for( i = 0 ; i < dim ; i++ )
-	  cilin_fiber.deviation[i] = 0.0;
-      }
-      else if(nval==0){
-	printf_p( &MICRO_COMM, "-fiber_cilin specified with no argument\n" );
-	ierr_1 = 1;
-	goto end_mic_0;
-      }
-      else{
-	for( i = 0 ; i < dim ; i++ )
-	  cilin_fiber.deviation[i] = fiber_cilin_vals[1+i];
-      }
-    }
-    PetscOptionsGetInt(NULL, NULL, "-fiber_nx", &cilin_fiber.nx, &set);
-    if( set == PETSC_FALSE ) cilin_fiber.nx = 1;
-    PetscOptionsGetInt(NULL, NULL, "-fiber_ny", &cilin_fiber.ny, &set);
-    if( set == PETSC_FALSE ) cilin_fiber.ny = 1;
-  }
-
-  /**************************************************/
-
   /* printing options */
+
   flag_print = 0;
   PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
@@ -340,12 +300,14 @@ end_mic_0:
   /**************************************************/
 
   /* initialize global variables*/
+
   A   = NULL;
   b   = NULL;
   x   = NULL;
   dx  = NULL;
 
   /* alloc variables*/
+
   loc_elem_index = malloc( dim*npe * sizeof(int));
   glo_elem_index = malloc( dim*npe * sizeof(int));
   elem_disp      = malloc( dim*npe * sizeof(double));
@@ -355,8 +317,10 @@ end_mic_0:
     elem_strain = malloc( nelm*nvoi * sizeof(double));
     elem_stress = malloc( nelm*nvoi * sizeof(double));
     elem_energy = malloc( nelm      * sizeof(double));
-    elem_type   = malloc( nelm      * sizeof(int));
   }
+  elem_type   = malloc( nelm      * sizeof(int));
+  micro_struct_init_elem_type( &micro_struct, dim, nelm, &get_elem_centroid, elem_type );
+
   /* Initilize shape functions, derivatives, jacobian, b_matrix */
 
   init_shapes( &struct_sh, &struct_dsh, &struct_wp );
@@ -385,9 +349,11 @@ end_mic_0:
   }
 
   init_trace( MICRO_COMM, "micro_trace.dat" );
+
   /**************************************************/
 
   /* Setting solver options */
+
   ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
 

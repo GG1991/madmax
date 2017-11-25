@@ -9,10 +9,9 @@
 
 int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6] )
 {
-  /* Mixture theory */
+  /* mixture theory */
     
   int          i, j, e, ierr;
-  int          elem_type;
   int          ne_i = 0, ne_m = 0;
   double       *c_i = malloc( nvoi*nvoi * sizeof(double));
   double       *c_m = malloc( nvoi*nvoi * sizeof(double));
@@ -24,10 +23,7 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
 
     for( e = 0 ; e < nelm ; e++ ){
 
-      /* get element type */
-      get_elem_type( e, &elem_type );
-
-      if( elem_type == 1 ){
+      if( elem_type[e] == 1 ){
 	vol_ia += vol_elem;
 	ne_i++;
       }
@@ -532,10 +528,13 @@ int get_averages( double * strain_ave, double * stress_ave )
   {
     for( gp = 0; gp < ngp ; gp++ )
     {
+
       /* calc strain gp */
       get_strain( e , gp, strain_gp );
+
       /* we get stress = f(strain) */
       get_stress( e , gp , strain_gp , stress_gp );
+
       for( i = 0; i < nvoi ; i++ )
       {
 	stress_part[i] += stress_gp[i] * struct_wp[gp];
@@ -586,8 +585,6 @@ int get_elem_properties( void )
       elem_stress[ e*nvoi + v ] = stress_aux[v] / vol_elem;
     }
 
-    /* fill *elem_type */
-    get_elem_type( e, &elem_type[e]);
   }
 
   return 0;
@@ -625,72 +622,37 @@ int get_strain( int e , int gp, double *strain_gp )
 
 /****************************************************************************************************/
 
-int get_elem_type( int e , int *type )
-{
-  /* 
-  Returns the elem type 
-  > CIRCULAR_FIBER :  FIBER = 1 , MATRIX = 0
-  */
-
-  switch( micro_type )
-  {
-    /**************************************************/
-    case CIRCULAR_FIBER:
-      *type = ( is_in_fiber( e ) ) ? 1 : 0;
-      break;
-    /**************************************************/
-
-    default:
-      return 1;
-
-  }
-  return 0;
-}
-
-/****************************************************************************************************/
-
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 {
 
   /* returns the stress according to the elemet type */
 
-  material_t  *mat_p;
-  node_list_t *pm;
+  char *word_to_search;
 
-  switch( micro_type )
+  if( elem_type[e] == ID_FIBER )
   {
-    case CIRCULAR_FIBER:
-      if(is_in_fiber( e ))
-      { /* is in the fiber */
-	pm = material_list.head;
-	while( pm ){
-          /* search FIBER */
-	  mat_p = (material_t *)pm->data;
-	  if( strcmp ( mat_p->name , "FIBER" ) == 0 ) break;
-	  pm = pm->next;
-	}
-	if( !pm ) return 1;
-      }
-      else
-      { /* is in the matrix */
-	pm = material_list.head;
-	while( pm ){
-          /* search MATRIX */
-	  mat_p = (material_t *)pm->data;
-	  if( strcmp ( mat_p->name , "MATRIX" ) == 0 ) break;
-	  pm = pm->next;
-	}
-	if( !pm ) return 1;
-      }
-
-      break;
-
-    default:
-      return 1;
-
+    word_to_search = strdup( "FIBER" );
+  }
+  else if( elem_type[e] == ID_MATRIX )
+  {
+    word_to_search = strdup( "MATRIX" );
   }
 
-  /* now that we now the material (mat_p) we calculate stress = f(strain) */
+  material_t  *mat_p;
+  node_list_t *pm = material_list.head;
+
+  while( pm )
+  {
+    mat_p = (material_t *)pm->data;
+    if( strcmp ( mat_p->name , word_to_search ) == 0 ) break;
+    pm = pm->next;
+  }
+  if( !pm ) return 1;
+
+  /*
+     now that we now the material (mat_p) we calculate
+     stress = f(strain)
+   */
   mat_get_stress( mat_p, dim, strain_gp, stress_gp );
 
   return 0;
@@ -701,61 +663,37 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 int get_c_tan( const char *name, int e , int gp, double *strain_gp , double *c_tan )
 {
 
-  /* returns the stress according to the elemet type */
+  /*
+     returns the c_tan (tangent constitutive tensor)
+     according to the elemet type
+   */
 
+  char *word_to_search;
+
+  if( elem_type[e] == ID_FIBER )
+  {
+    word_to_search = strdup( "FIBER" );
+  }
+  else if( elem_type[e] == ID_MATRIX )
+  {
+    word_to_search = strdup( "MATRIX" );
+  }
 
   material_t  *mat_p;
-  node_list_t *pm;
+  node_list_t *pm = material_list.head;
 
-  if( name != NULL ){
-    /* it is being asked by name */
-
-    pm = material_list.head;
-    while( pm ){
-      /* search FIBER */
-      mat_p = (material_t *)pm->data;
-      if( strcmp ( mat_p->name , name ) == 0 ) break;
-      pm = pm->next;
-    }
-    if( !pm ) return 1;
-
+  while( pm )
+  {
+    mat_p = (material_t *)pm->data;
+    if( strcmp ( mat_p->name , word_to_search ) == 0 ) break;
+    pm = pm->next;
   }
-  else{
-    switch( micro_type )
-    {
-      case CIRCULAR_FIBER:
+  if( !pm ) return 1;
 
-	if(is_in_fiber( e ))
-	{	/* is in the fiber */
-	  pm = material_list.head;
-	  while( pm ){
-	    /* search FIBER */
-	    mat_p = (material_t *)pm->data;
-	    if( strcmp ( mat_p->name , "FIBER" ) == 0 ) break;
-	    pm = pm->next;
-	  }
-	  if( !pm ) return 1;
-	}
-	else
-	{ /* is in the matrix */
-	  pm = material_list.head;
-	  while( pm ){
-	    /* search MATRIX */
-	    mat_p = (material_t *)pm->data;
-	    if( strcmp ( mat_p->name , "MATRIX" ) == 0 ) break;
-	    pm = pm->next;
-	  }
-	  if( !pm ) return 1;
-	}
-	break;
-
-      default:
-	return 1;
-
-    }
-  }
-
-  /* now that we now the material (mat_p) we calculate stress = f(strain) */
+  /*
+     now that we now the material (mat_p) we calculate
+     stress = f(strain)
+   */
   mat_get_c_tang( mat_p, dim, strain_gp, c_tan );
 
   return 0;
@@ -763,32 +701,7 @@ int get_c_tan( const char *name, int e , int gp, double *strain_gp , double *c_t
 
 /****************************************************************************************************/
 
-int is_in_fiber( int e )
-{
-
-  int    i, j, d;
-  double centroid[3];
-  double deviation[2];
-
-  get_centroid_struct( e, centroid );
-
-  for( i = 0 ; i < cilin_fiber.nx ; i++ ){
-    for( j = 0 ; j < cilin_fiber.ny ; j++ ){
-      deviation[0] = cilin_fiber.deviation[0] - lx/2 + (lx/cilin_fiber.nx)/2 + i*(lx/cilin_fiber.nx);
-      deviation[1] = cilin_fiber.deviation[1] - ly/2 + (ly/cilin_fiber.ny)/2 + j*(ly/cilin_fiber.ny);
-      double l = 0.0;
-      for( d = 0 ; d < 2 ; d++ )
-	l = l + pow( centroid[d] - (center_coor[d] + deviation[d]), 2 );
-      l = sqrt(l);
-      return ( l <= cilin_fiber.radius ) ? 1:0;
-    }
-  }
-  return 0;
-}
-
-/****************************************************************************************************/
-
-int get_centroid_struct( int e, double *centroid )
+int get_elem_centroid( int e, int dim, double *centroid )
 {
 
   /* formula only valid for sequencial now */

@@ -1,6 +1,4 @@
-/*
-   MICRO external lybraries
-*/
+/* MICRO external libraries */
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -26,7 +24,7 @@
 
 char        filename[NBUF];    //  string for different purposes
 
-/* Variables Send by <macro> */
+/* variables send by <macro> */
 
 int         rank_mic;          //  rank on macro comm
 int         nproc_mic;         //  # of micro processes (MICRO_COMM)
@@ -41,6 +39,7 @@ int         micro_type;
 FILE        *fm_info;
 
 /* structured mesh */
+
 bool        flag_struct_mesh;
 int         nx, ny, nz, nn;       // number of nodes 
 int         nl;                   // number of local nodes
@@ -142,7 +141,7 @@ int assembly_A( void );
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_strain( int e , int gp, double *strain_gp );
 int get_c_tan( const char * name , int e , int gp, double *strain_gp , double *c_tan );
-int get_centroid_struct( int e, double *centroid );
+int get_elem_centroid( int e, int dim, double *centroid );
 int is_in_fiber( int e );
 int strain_x_coord( double * strain , double * coord , double * u );
 int get_node_local_coor( int n , double * coord );
