@@ -118,7 +118,7 @@ end_mic_0:
     ierr_1 = 1;
     goto end_mic_1;
   }
-  micro_struct_init( dim, &micro_struct, format );
+  micro_struct_init( dim, format, &micro_struct );
 
   lx = micro_struct.size[0];
   ly = micro_struct.size[1];

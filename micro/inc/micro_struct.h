@@ -14,11 +14,6 @@
 
 /*
    represents a square with a circular fibers in the middle
-
-   from command line this should be defined for 2d
-
-   -micro_struct "fiber_cilin <size[0]> <size[1]> <nx> <ny> <radio> <desv[0]> <desv[1]>"
-
 */
 
 typedef struct _fiber_cilin_t
@@ -34,13 +29,6 @@ typedef struct _fiber_cilin_t
 
 /*
    represents a square with a planar fibers in the middle
-
-   from command line this should be defined for 2d
-
-   -micro_struct "fiber_planar <size[0]> <size[1]> <ntype> <angle[0]> <seps[0]> <width[0]> <desv[0]> <numb[0]>
-                                                           <angle[1]> <seps[1]> <width[1]> <desv[1]> <numb[1]>
-      						     ..."
-
  */
 
 typedef struct _fiber_planar_t
@@ -67,13 +55,15 @@ typedef struct _micro_struct_t
 
 }micro_struct_t;
 
-int micro_struct_init( int dim, micro_struct_t *micro_struct, char *format );
-int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *elem_centroid, int *elem_id );
 
-int micro_struct_init_elem_type(
-    micro_struct_t *micro_struct,
-    int dim,
-    int nelm,
+int micro_struct_init( int dim, const char *string,
+    micro_struct_t *micro_struct );
+
+int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct,
+    double *elem_centroid, int *elem_id );
+
+int micro_struct_init_elem_type( micro_struct_t *micro_struct,
+    int dim, int nelm,
     int (*get_centroid)( int e, int dim, double *elem_centroid ),
     int *elem_type );
 

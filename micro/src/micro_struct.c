@@ -1,54 +1,74 @@
+/*
+ * micro_struct.c - functions to represent the geometrical micro-structure
+ * pattern of a solid. The description of what each micro-structure 
+ * represents can be found on micro_struc.h.
+ * 
+ *
+ * author : Guido Giuntoli
+ * date   : 26 - 11 - 2017
+ *
+ */
+
 #include "micro_struct.h"
 
 /**********************************************************************/
 
-int micro_struct_init( int dim, micro_struct_t *micro_struct, char *format )
+int micro_struct_init( int dim, const char *string, micro_struct_t *micro_struct )
 {
 
-  /* initializates the micro_struct parsing the format line */
+  /*
+   * Initializates the micro_struct parsing "string" the first word
+   * indicates the kind of "micro_struct" type. Then a convention 
+   * is implemented to filled all the structure.
+   *
+   *
+   * string = { "type" , "parameters" }
+   *
+   */
 
-  char   *data = strtok( format, " \n" );
+  char   *stra = strdup( string );
+  char   *data = strtok( stra, " \n" );
   double *size = malloc( dim * sizeof(double) );
   int     d;
 
-  if( ! strcmp( data, "fiber_cilin" ) )
+  if( !strcmp(data, "fiber_cilin") )
   {
 
-    /* -micro_struct "fiber_cilin <size[0]> <size[1]> <nx_fib> <ny_fib> <radio> <desv[0]> <desv[1]>" */
+    /* "size"[dim] "nx_fib" "ny_fib" "radio" "desv"[2] */
 
-    fiber_cilin_t *fiber_cilin = malloc( sizeof(fiber_cilin_t) );
+    fiber_cilin_t *fiber_cilin = malloc(sizeof(fiber_cilin_t));
+    fiber_cilin->desv          = malloc(dim*sizeof(double));
 
-    fiber_cilin->desv = malloc( dim * sizeof(double) );
-
-    for( d = 0 ; d < dim ; d++ ){
-      data = strtok( NULL, " \n" );
+    /* read and write */
+    for( d = 0 ; d < dim ; d++ )
+    {
+      data = strtok( NULL, " \n" ); if( !data ) return 1;
       size[d] = atof( data );
     }
-
-    data = strtok( NULL, " \n" );
+    data = strtok( NULL, " \n" ); if( !data ) return 1;
     fiber_cilin->nx_fib = atoi( data );
-    data = strtok( NULL, " \n" );
+    data = strtok( NULL, " \n" ); if( !data ) return 1;
     fiber_cilin->ny_fib = atoi( data );
-
-    data = strtok( NULL, " \n" );
+    data = strtok( NULL, " \n" ); if( !data ) return 1;
     fiber_cilin->radio = atof( data );
-
-    for( d = 0 ; d < 2 ; d++ ){
-      data = strtok( NULL, " \n" );
+    for( d = 0 ; d < 2 ; d++ )
+    {
+      data = strtok( NULL, " \n" ); if( !data ) return 1;
       fiber_cilin->desv[d] = atof( data );
     }
 
+    /* assign to micro_struct */
     micro_struct->type = FIBER_CILIN;
     micro_struct->data = fiber_cilin;
 
   }
-  else if( ! strcmp( data, "fiber_planar" ) )
+  else if( !strcmp(data, "fiber_planar") )
   {
 
    /*
-   -micro_struct "fiber_planar <size[0]> <size[1]> <ntype> <angle[0]> <seps[0]> <width[0]> <desv[0]> <numb[0]>
-                                                           <angle[1]> <seps[1]> <width[1]> <desv[1]> <numb[1]>
-      						     ..."
+   "<size[0]> <size[1]> <ntype> <angle[0]> <seps[0]> <width[0]> <desv[0]> <numb[0]>
+                                <angle[1]> <seps[1]> <width[1]> <desv[1]> <numb[1]>
+                                ..."
     */
 
     micro_struct->type = FIBER_PLANAR;
