@@ -31,7 +31,7 @@ int geom_2d_line_side( const double n_line[2], const double p_line[2], const dou
   double side = 0;
 
   for( i=0 ; i<2 ; i++ )
-    side += n_line[2] * (p_line[i] - point[i]);
+    side += n_line[i] * (p_line[i] - point[i]);
 
   if( fabs(side) < GEOM_TOL ) return  0; /* is in the line ? */
   else if( side > 0 )         return  1;
