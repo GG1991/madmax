@@ -199,51 +199,47 @@ end_mic_0:
 
   /**************************************************/
 
+  nval = 4;
+  char *string[4];
+  char *data;
+  material_t mat;
+  list_init( &material_list, sizeof(material_t), NULL );
+
+  PetscOptionsGetStringArray( NULL, NULL, "-material", string, &nval, &set );
+  if( set == PETSC_TRUE )
   {
-    /* Materials by command line */
-    int    nval = 4;
-    char   *string[nval];
-    char   *data;
-    material_t mat;
-    list_init( &material_list, sizeof(material_t), NULL );
-
-    PetscOptionsGetStringArray( NULL, NULL, "-material", string, &nval, &set );
-    if( set == PETSC_TRUE )
+    for( i = 0 ; i < nval ; i++ )
     {
-      for( i = 0 ; i < nval ; i++ )
+      data = strtok( string[i] , " \n" );
+      mat.name = strdup( data );
+      data = strtok( NULL , " \n" );
+      if( strcmp( data, "TYPE_0" ) == 0 )
       {
-	data = strtok( string[i] , " \n" );
-	mat.name = strdup( data );
+	double E, v;
+	mat.type_id = TYPE_0;
+	mat.type    = malloc(sizeof(type_0));
 	data = strtok( NULL , " \n" );
-	if( strcmp( data, "TYPE_0" ) == 0 )
-	{
-	  double E, v;
-	  mat.type_id = TYPE_0;
-	  mat.type    = malloc(sizeof(type_0));
-	  data = strtok( NULL , " \n" );
-	  ((type_0*)mat.type)->rho         = atof(data);
-	  data = strtok( NULL , " \n" );
-	  E = ((type_0*)mat.type)->young   = atof(data);
-	  data = strtok( NULL , " \n" );
-	  v = ((type_0*)mat.type)->poisson = atof(data);
-	  ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
-	  ((type_0*)mat.type)->mu          = E/(2*(1+v));
-	}
-	else if ( strcmp( data, "TYPE_1" ) == 0 )
-	{
-	  printf_p( &MICRO_COMM, "TYPE_1 not allowed in micro code.\n" );
-	  goto end_mic_1;
-	}
-	else
-	{
-	  printf_p( &MICRO_COMM, "type %s not known.\n", data );
-	  goto end_mic_1;
-	}
-
-	list_insertlast( &material_list , &mat );
+	((type_0*)mat.type)->rho         = atof(data);
+	data = strtok( NULL , " \n" );
+	E = ((type_0*)mat.type)->young   = atof(data);
+	data = strtok( NULL , " \n" );
+	v = ((type_0*)mat.type)->poisson = atof(data);
+	((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
+	((type_0*)mat.type)->mu          = E/(2*(1+v));
       }
-    }
+      else if ( strcmp( data, "TYPE_1" ) == 0 )
+      {
+	printf_p( &MICRO_COMM, "TYPE_1 not allowed in micro code.\n" );
+	goto end_mic_1;
+      }
+      else
+      {
+	printf_p( &MICRO_COMM, "type %s not known.\n", data );
+	goto end_mic_1;
+      }
 
+      list_insertlast( &material_list , &mat );
+    }
   }
 
   /**************************************************/
@@ -253,8 +249,10 @@ end_mic_0:
   homo_type=0;
   PetscOptionsHasName(NULL,NULL,"-homo_tp",&set);
   if(set==PETSC_TRUE) homo_type = TAYLOR_P;
+
   PetscOptionsHasName(NULL,NULL,"-homo_ts",&set);
   if(set==PETSC_TRUE) homo_type = TAYLOR_S;
+
   PetscOptionsHasName(NULL,NULL,"-homo_us",&set);
   if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
   if(homo_type==0){
