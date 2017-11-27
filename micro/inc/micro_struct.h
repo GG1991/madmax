@@ -7,44 +7,46 @@
 #include "util.h"
 
 #define FIBER_CILIN  1
-#define FIBER_PLANAR 2
+#define FIBER_LINE   2
 
 #define ID_MATRIX 0
 #define ID_FIBER  1
 
-/*
-   represents a square with a circular fibers in the middle
-*/
+/* Represents a square with a circular fibers in the middle
+ *
+ * note : for 2d and 3d
+ */
 
 typedef struct _fiber_cilin_t
 {
 
-  double  *desv;        // desviation of the fiber from the center
-  double   radio;       // radius of the fiber
-  int      nx_fib;      // number of fibers in x
-  int      ny_fib;      // number of fibers in y
+  double  *desv;         // desviation of the fiber from the center
+  double   radio;        // radius of the fiber
+  int      nx_fib;       // number of fibers in x
+  int      ny_fib;       // number of fibers in y
 
 }fiber_cilin_t;
 
 
-/*
-   represents a square with a planar fibers in the middle
+/* Represents a square with a linear fibers
+ *
+ * note : only for 2d
  */
 
-typedef struct _fiber_planar_t
+typedef struct _fiber_line_t
 {
 
   int      ntype;        // number of types 
-  double  *angles;       // angle for each type ( 1 value in 2d (theta), 2 values in 3d (theta and phy))
-  double  *seps;         // separation for each type
-  double  *width;        // width for each type
-  double  *desv;         // desviation from the center for each type ( 1 value in 2d and 3d ("y" displacement) )
-  int     *numb;         // total number of fibers for each type
+  int     *nfib;         // fiber number               (for each type)
+  double  *theta;        // fiber angle                (for each type)
+  double  *seps;         // fiber separation           (for each type)
+  double  *width;        // fiber width                (for each type)
+  double  *desv;         // fiber central desviation   (for each type)
 
-}fiber_planar_t;
+}fiber_line_t;
 
 
-/* micro structure */
+/* Main micro-structure for representing the arrange of material on the domain */
 
 typedef struct _micro_struct_t
 {
