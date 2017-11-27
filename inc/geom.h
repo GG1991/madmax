@@ -1,5 +1,5 @@
-#ifndef GEOM_H_
-#define GEOM_H_
+#ifndef GEOM_H
+#define GEOM_H
 
 #define GEOM_TOL 1.0e-10
 
