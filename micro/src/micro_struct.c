@@ -24,6 +24,10 @@ int micro_struct_init( int dim, const char *string, micro_struct_t *micro_struct
    *
    * string = { "type" , "parameters" }
    *
+   * return 0 if success
+   * return 1 if non-specific error
+   * return 2 if format error
+   *
    */
 
   char   *stra = strdup( string );
@@ -42,18 +46,27 @@ int micro_struct_init( int dim, const char *string, micro_struct_t *micro_struct
     /* read and write */
     for( d = 0 ; d < dim ; d++ )
     {
-      data = strtok( NULL, " \n" ); if( !data ) return 1;
+      data = strtok( NULL, " \n" ); 
+      if(!data) return 2;
       size[d] = atof( data );
     }
-    data = strtok( NULL, " \n" ); if( !data ) return 1;
+
+    data = strtok( NULL, " \n" );
+    if(!data) return 2;
     fiber_cilin->nx_fib = atoi( data );
-    data = strtok( NULL, " \n" ); if( !data ) return 1;
+
+    data = strtok( NULL, " \n" );
+    if(!data) return 2;
     fiber_cilin->ny_fib = atoi( data );
-    data = strtok( NULL, " \n" ); if( !data ) return 1;
+
+    data = strtok( NULL, " \n" );
+    if(!data) return 2;
     fiber_cilin->radio = atof( data );
+
     for( d = 0 ; d < 2 ; d++ )
     {
-      data = strtok( NULL, " \n" ); if( !data ) return 1;
+      data = strtok( NULL, " \n" );
+      if(!data) return 2;
       fiber_cilin->desv[d] = atof( data );
     }
 
@@ -65,11 +78,7 @@ int micro_struct_init( int dim, const char *string, micro_struct_t *micro_struct
   else if( !strcmp(data, "fiber_planar") )
   {
 
-   /*
-   "<size[0]> <size[1]> <ntype> <angle[0]> <seps[0]> <width[0]> <desv[0]> <numb[0]>
-                                <angle[1]> <seps[1]> <width[1]> <desv[1]> <numb[1]>
-                                ..."
-    */
+   /* "size"[dim] "ntype" "num[ntype]" "seps[ntype]" "tetha[ntype]" "desv[ntype]" */
 
     micro_struct->type = FIBER_PLANAR;
 
