@@ -40,7 +40,7 @@ typedef struct _fiber_line_t
   int      ntype;        // number of types 
   int     *nfib;         // fiber number               (for each type)
   double  *theta;        // fiber angle                (for each type)
-  double  *seps;         // fiber separation           (for each type)
+  double  *sep;          // fiber separation           (for each type)
   double  *width;        // fiber width                (for each type)
   double  *desv;         // fiber central desviation   (for each type)
 
