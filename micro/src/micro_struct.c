@@ -157,18 +157,24 @@ int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *ele
 
   /* returns elem_id as a function of the centroid coordinate */
 
+  int    i, j, d;
+
   if( micro_struct->type == FIBER_CILIN )
   {
 
-      fiber_cilin_t * fiber_cilin = ( fiber_cilin_t * )micro_struct->data;
+      fiber_cilin_t * fiber_cilin = (fiber_cilin_t *)micro_struct->data;
 
-      int    i, j, d;
       double deviation[2];
       double center[2];
       double lx = micro_struct->size[0];
       double ly = micro_struct->size[1];
       center[0] = lx / 2;
       center[1] = ly / 2;
+
+      /* as default is in the matrix */
+      *elem_id = ID_MATRIX;
+
+      /* check if it is inside one of the fibers */
       for( i = 0 ; i < fiber_cilin->nx_fib ; i++ )
       {
 	for( j = 0 ; j < fiber_cilin->ny_fib ; j++ )
@@ -180,9 +186,30 @@ int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *ele
 	    l = l + pow( elem_centroid[d] - (center[d] + deviation[d]), 2 );
 	  }
 	  l = sqrt(l);
-	  *elem_id = ( l <= fiber_cilin->radio ) ? ID_FIBER : ID_MATRIX;
+	  if( l <= fiber_cilin->radio ){
+	    *elem_id = ID_FIBER ;
+	    return 0;
+	  }
+
 	}
       }
+
+  }
+  else if( micro_struct->type == FIBER_LINE )
+  {
+
+    fiber_line_t * fiber_line = (fiber_line_t *)micro_struct->data;
+
+    /* as default is in the matrix */
+    *elem_id = ID_MATRIX;
+
+    /* check if it is inside one of the fibers */
+    for( i=0 ; i<fiber_line->ntype ; i++ ){
+      for( j=0 ; j<fiber_line->nfib[i] ; j++ )
+      {
+
+      }
+    }
 
   }
 
