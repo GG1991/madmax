@@ -90,21 +90,28 @@ int micro_struct_init( int dim, const char *string, micro_struct_t *micro_struct
     fiber_line_t *fiber_line = malloc(sizeof(fiber_line_t));
 
     /* read and write */
-    data = strtok( NULL, " \n" );
-    if(!data) return 2;
-    fiber_line->ntype = ntype = atoi( data );
-
-    fiber_line->theta = malloc(ntype*sizeof(double));
-    fiber_line->seps  = malloc(ntype*sizeof(double));
-    fiber_line->width = malloc(ntype*sizeof(double));
-    fiber_line->desv  = malloc(ntype*sizeof(double));
-    fiber_line->nfib  = malloc(ntype*sizeof(double));
-
     for( d=0 ; d<dim ; d++ )
     {
       data = strtok( NULL, " \n" );
       if(!data) return 2;
       size[d] = atof( data );
+    }
+
+    data = strtok( NULL, " \n" );
+    if(!data) return 2;
+    fiber_line->ntype = ntype = atoi( data );
+
+    fiber_line->theta = malloc(ntype*sizeof(double));
+    fiber_line->sep   = malloc(ntype*sizeof(double));
+    fiber_line->width = malloc(ntype*sizeof(double));
+    fiber_line->desv  = malloc(ntype*sizeof(double));
+    fiber_line->nfib  = malloc(ntype*sizeof(double));
+
+    for( d=0 ; d<ntype ; d++ )
+    {
+      data = strtok( NULL, " \n" );
+      if(!data) return 2;
+      fiber_line->nfib[d] = atoi( data );
     }
 
     for( d=0 ; d<ntype ; d++ )
@@ -118,7 +125,7 @@ int micro_struct_init( int dim, const char *string, micro_struct_t *micro_struct
     {
       data = strtok( NULL, " \n" );
       if(!data) return 2;
-      fiber_line->seps[d] = atoi( data );
+      fiber_line->sep[d] = atoi( data );
     }
 
     for( d=0 ; d<ntype ; d++ )
@@ -158,6 +165,8 @@ int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *ele
   /* returns elem_id as a function of the centroid coordinate */
 
   int    i, j, d;
+  double lx = micro_struct->size[0];
+  double ly = micro_struct->size[1];
 
   if( micro_struct->type == FIBER_CILIN )
   {
@@ -166,8 +175,6 @@ int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *ele
 
       double deviation[2];
       double center[2];
-      double lx = micro_struct->size[0];
-      double ly = micro_struct->size[1];
       center[0] = lx / 2;
       center[1] = ly / 2;
 
@@ -215,17 +222,19 @@ int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *ele
       for( j=0 ; j<fiber_line->nfib[i] ; j++ )
       {
 	/* normal vector of the line */
-	n_line[0] = cos(fiber_line->theta[i]);
-	n_line[1] = sin(fiber_line->theta[i]);
+	n_line[0] = sin(fiber_line->theta[i]);
+	n_line[1] = cos(fiber_line->theta[i]);
 
-	/* line 1 (below) p_line = ( 0 , desv[i] - width[i]/2 ) */
-	p_line[0] = 0.0;
-	p_line[1] = fiber_line->desv[i] + fiber_line->width[i]/2;
+	/* line 1 (below) p_line = ( 0 , ly/2 + fiber_line->sep[i] + desv[i] - width[i]/2 ) */
+	p_line[0] = lx/2;
+	p_line[1] = ly/2 + fiber_line->sep[i]*(j-fiber_line->nfib[i]+1) \
+		    + fiber_line->desv[i] + fiber_line->width[i]/2;
 	side_1 = geom_2d_line_side( n_line, p_line, point );
 
-	/* line 1 (upper) p_line = ( 0 , desv[i] + width[i]/2 ) */
-	p_line[0] = 0.0;
-	p_line[1] = fiber_line->desv[i] - fiber_line->width[i]/2;
+	/* line 1 (upper) p_line = ( 0 , ly/2 + fiber_line->sep[i] + desv[i] + width[i]/2 ) */
+	p_line[0] = lx/2;
+	p_line[1] = ly/2 + fiber_line->sep[i]*(j-fiber_line->nfib[i]+1) \
+		    + fiber_line->desv[i] - fiber_line->width[i]/2;
 	side_2 = geom_2d_line_side( n_line, p_line, point );
 
 	if( side_1 == 0 || side_2 == 0 || (side_1*side_2) == -1 ){
