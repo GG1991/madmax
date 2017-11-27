@@ -18,16 +18,10 @@ static char help[] =
 "It has the capability of being couple with MACRO.                                            \n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]                                       \n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
-"-mat_fiber_t0  [E,nu] : material \"FIBER\" type_0 given by command line                      \n"
-"-mat_matrix_t0 [E,nu] : material \"FIBER\" type_0 given by command line                      \n"
 "-homo_ts     : c =  vi ci + vm cm            (serial)                                        \n"
 "-homo_tp     : c = (vi ci^-1 + vm cm^-1)^-1  (parallel)                                      \n"
 "-homo_us     : homogenization using uniform strains approach                                 \n"
-"-fiber_cilin <r,dx,dy,dz>                                                                    \n"
-"-fiber_nx <nx>                                                                               \n"
-"-fiber_ny <ny>                                                                               \n"
 "-struct_n [<nx,ny>] if dim = 2                                                               \n"
-"-struct_l [<lx,ly>] if dim = 2                                                               \n"
 "-print_petsc                                                                                 \n"
 "-print_vtk                                                                                   \n"
 "-print_vtu                                                                                   \n"
@@ -237,12 +231,12 @@ end_mic_0:
 	}
 	else if ( strcmp( data, "TYPE_1" ) == 0 )
 	{
-	  printf_p( MACRO_COMM, "TYPE_1 not allowed in micro code.\n" );
+	  printf_p( &MICRO_COMM, "TYPE_1 not allowed in micro code.\n" );
 	  goto end_mic_1;
 	}
 	else
 	{
-	  printf_p( MACRO_COMM, "type %s not known.\n", data );
+	  printf_p( &MICRO_COMM, "type %s not known.\n", data );
 	  goto end_mic_1;
 	}
 
