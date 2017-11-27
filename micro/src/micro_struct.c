@@ -203,10 +203,35 @@ int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *ele
     /* as default is in the matrix */
     *elem_id = ID_MATRIX;
 
+    double  p_line[2];
+    double  n_line[2];
+    double *point = elem_centroid;
+    int     side_1, side_2;
+
+
     /* check if it is inside one of the fibers */
-    for( i=0 ; i<fiber_line->ntype ; i++ ){
+    for( i=0 ; i<fiber_line->ntype ; i++ )
+    {
       for( j=0 ; j<fiber_line->nfib[i] ; j++ )
       {
+	/* normal vector of the line */
+	n_line[0] = cos(fiber_line->theta[i]);
+	n_line[1] = sin(fiber_line->theta[i]);
+
+	/* line 1 (below) p_line = ( 0 , desv[i] - width[i]/2 ) */
+	p_line[0] = 0.0;
+	p_line[1] = fiber_line->desv[i] + fiber_line->width[i]/2;
+	side_1 = geom_2d_line_side( n_line, p_line, point );
+
+	/* line 1 (upper) p_line = ( 0 , desv[i] + width[i]/2 ) */
+	p_line[0] = 0.0;
+	p_line[1] = fiber_line->desv[i] - fiber_line->width[i]/2;
+	side_2 = geom_2d_line_side( n_line, p_line, point );
+
+	if( side_1 == 0 || side_2 == 0 || (side_1*side_2) == -1 ){
+	    *elem_id = ID_FIBER ;
+	    return 0;
+	}
 
       }
     }
