@@ -108,7 +108,7 @@ end_mic_0:
 
   PetscOptionsGetString( NULL, NULL, "-micro_struct", format, 256, &set );
   if( set == PETSC_FALSE ){
-    printf_p( &MICRO_COMM, "micro structure ( -micro_struct <format> ) not given\n" );
+    printf_p(&MICRO_COMM,"micro structure ( -micro_struct <format> ) not given\n");
     ierr_1 = 1;
     goto end_mic_1;
   }
@@ -686,10 +686,10 @@ int micro_pvtu( char *name )
 
   } // rank = 0
 
-  sprintf( file_name, "%s_%d.vtu", name, rank_mic);
+  sprintf(file_name,"%s_%d.vtu",name,rank_mic);
   fm = fopen(file_name,"w"); 
   if(!fm){
-    printf_p(PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
+    printf_p(&MICRO_COMM,"Problem trying to opening file %s for writing\n", file_name);
     return 1;
   }
 
