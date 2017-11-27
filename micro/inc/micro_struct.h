@@ -59,11 +59,16 @@ typedef struct _micro_struct_t
 }micro_struct_t;
 
 
-int micro_struct_init( int dim, const char *string,
+int micro_struct_init(
+    const int dim,
+    const char *string,
     micro_struct_t *micro_struct );
 
-int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct,
-    double *elem_centroid, int *elem_id );
+int micro_struct_get_elem_id(
+    const int dim,
+    const micro_struct_t *micro_struct,
+    const double *elem_centroid,
+    int *elem_id );
 
 int micro_struct_init_elem_type( micro_struct_t *micro_struct,
     int dim, int nelm,

@@ -13,7 +13,10 @@
 
 /**********************************************************************/
 
-int micro_struct_init( int dim, const char *string, micro_struct_t *micro_struct )
+int micro_struct_init(
+    const int dim,
+    const char *string,
+    micro_struct_t *micro_struct )
 {
 
   /*
@@ -125,7 +128,7 @@ int micro_struct_init( int dim, const char *string, micro_struct_t *micro_struct
     {
       data = strtok( NULL, " \n" );
       if(!data) return 2;
-      fiber_line->sep[d] = atoi( data );
+      fiber_line->sep[d] = atof( data );
     }
 
     for( d=0 ; d<ntype ; d++ )
@@ -159,7 +162,11 @@ int micro_struct_init( int dim, const char *string, micro_struct_t *micro_struct
 
 /**********************************************************************/
 
-int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *elem_centroid, int *elem_id )
+int micro_struct_get_elem_id(
+    const int dim,
+    const micro_struct_t *micro_struct,
+    const double *elem_centroid,
+    int *elem_id )
 {
 
   /* returns elem_id as a function of the centroid coordinate */
@@ -212,8 +219,8 @@ int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *ele
 
     double  p_line[2];
     double  n_line[2];
-    double *point = elem_centroid;
     int     side_1, side_2;
+    const double *point = elem_centroid;
 
 
     /* check if it is inside one of the fibers */
@@ -227,13 +234,13 @@ int micro_struct_get_elem_id( int dim, micro_struct_t *micro_struct, double *ele
 
 	/* line 1 (below) p_line = ( 0 , ly/2 + fiber_line->sep[i] + desv[i] - width[i]/2 ) */
 	p_line[0] = lx/2;
-	p_line[1] = ly/2 + fiber_line->sep[i]*(j-fiber_line->nfib[i]+1) \
+	p_line[1] = ly/2 + fiber_line->sep[i]*(j-fiber_line->nfib[i]/2) \
 		    + fiber_line->desv[i] + fiber_line->width[i]/2;
 	side_1 = geom_2d_line_side( n_line, p_line, point );
 
 	/* line 1 (upper) p_line = ( 0 , ly/2 + fiber_line->sep[i] + desv[i] + width[i]/2 ) */
 	p_line[0] = lx/2;
-	p_line[1] = ly/2 + fiber_line->sep[i]*(j-fiber_line->nfib[i]+1) \
+	p_line[1] = ly/2 + fiber_line->sep[i]*(j-fiber_line->nfib[i]/2) \
 		    + fiber_line->desv[i] - fiber_line->width[i]/2;
 	side_2 = geom_2d_line_side( n_line, p_line, point );
 
