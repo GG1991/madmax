@@ -40,8 +40,8 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
     printf_p( &MICRO_COMM, "vi = %lf \n", vi );
     printf_p( &MICRO_COMM, "vm = %lf \n", vm );
   }
-  get_c_tan("FIBER" , 0, 0, NULL, c_i);  //returns c_i of FIBER
-  get_c_tan("MATRIX", 0, 0, NULL, c_m);  //returns c_m of MATRIX
+  get_c_tan("FIBER" , -1, -1, NULL, c_i);  //returns c_i of FIBER
+  get_c_tan("MATRIX", -1, -1, NULL, c_m);  //returns c_m of MATRIX
  
   if( homo_type == TAYLOR_P ){
 
@@ -670,13 +670,16 @@ int get_c_tan( const char *name, int e , int gp, double *strain_gp , double *c_t
 
   char *word_to_search;
 
-  if( elem_type[e] == ID_FIBER )
+  if(name != NULL){
+    word_to_search = strdup(name);
+  }
+  else if( elem_type[e] == ID_FIBER )
   {
-    word_to_search = strdup( "FIBER" );
+    word_to_search = strdup("FIBER");
   }
   else if( elem_type[e] == ID_MATRIX )
   {
-    word_to_search = strdup( "MATRIX" );
+    word_to_search = strdup("MATRIX");
   }
 
   material_t  *mat_p;
@@ -688,7 +691,7 @@ int get_c_tan( const char *name, int e , int gp, double *strain_gp , double *c_t
     if( strcmp ( mat_p->name , word_to_search ) == 0 ) break;
     pm = pm->next;
   }
-  if( !pm ) return 1;
+  if(!pm) return 1;
 
   /*
      now that we now the material (mat_p) we calculate
