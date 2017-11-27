@@ -1,2 +1,2 @@
 #!/bin/bash
-rm -f *.vtu *.pvtu *.dat
+rm -rf *.vtu *.pvtu *.dat micro_*
