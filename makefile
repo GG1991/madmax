@@ -54,6 +54,7 @@ DEPS_MAC = ${MAC_INC_DIR}/macro.h        \
 	   ${DEP_DIR}/mesh.h             \
            ${DEP_DIR}/material.h         \
            ${DEP_DIR}/vtk.h              \
+           ${DEP_DIR}/myio.h             \
            ${DEP_DIR}/trace.h
 
 DEPS_MIC = ${MIC_INC_DIR}/micro.h        \
@@ -74,6 +75,7 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/main.o         \
            $(SPU_OBJ_DIR)/mesh.o         \
            $(SPU_OBJ_DIR)/fem.o          \
            $(SPU_OBJ_DIR)/fun.o          \
+           $(SPU_OBJ_DIR)/myio.o         \
            $(SPU_OBJ_DIR)/vtk.o
 
 MIC_OBJ  = ${MIC_OBJ_DIR}/main.o         \
