@@ -7,6 +7,7 @@
 #include "gmsh.h"
 #include "fun.h"
 #include "vtk.h"
+#include "myio.h"
 #include "mesh.h"
 
 #define NORMAL      1
