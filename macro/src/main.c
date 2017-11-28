@@ -143,41 +143,34 @@ end_mac_0:
 
   /**************************************************/
 
-  {
-    /* mesh */
-    mesh_f = FORMAT_NULL;
-    PetscOptionsHasName( NULL, NULL, "-mesh_gmsh",&set);
-    if( set == PETSC_TRUE ) mesh_f = FORMAT_GMSH;
-    PetscOptionsHasName(NULL,NULL,"-mesh_alya",&set);
-    if( set == PETSC_TRUE ) mesh_f = FORMAT_ALYA;
-    if( mesh_f == FORMAT_NULL ){
-      printf_p(&MACRO_COMM,"mesh format not given on command line.\n");
-      goto end_mac_1;
-    }
-    PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set);
-    if( set == PETSC_FALSE ){
-      printf_p(&MACRO_COMM,"mesh file not given on command line.\n");
-      goto end_mac_1;
-    }
-    FILE *fm = fopen( mesh_n, "r");
-    if( fm == NULL ){
-      printf_p(&MACRO_COMM,"mesh file not found.\n");
-      goto end_mac_1;
-    }
-    PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
-    if( set == PETSC_FALSE ){
-      printf_p(&MACRO_COMM,"dimension (-dim <dim>) not given\n");
-      goto end_mac_1;
-    }
-    nvoi    = (dim == 2) ? 3 : 6;
-    npe_max = (dim == 2) ? 4 : 8;
-    ngp_max = npe_max;
+  /* mesh */
+
+  mesh_f = FORMAT_GMSH;
+
+  PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set);
+  if( set == PETSC_FALSE ){
+    printf_p(&MACRO_COMM,"mesh file not given on command line.\n");
+    goto end_mac_1;
   }
+  FILE *fm = fopen( mesh_n, "r");
+  if( fm == NULL ){
+    printf_p(&MACRO_COMM,"mesh file not found.\n");
+    goto end_mac_1;
+  }
+  PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
+  if( set == PETSC_FALSE ){
+    printf_p(&MACRO_COMM,"dimension (-dim <dim>) not given\n");
+    goto end_mac_1;
+  }
+  nvoi    = (dim == 2) ? 3 : 6;
+  npe_max = (dim == 2) ? 4 : 8;
+  ngp_max = npe_max;
 
   /**************************************************/
 
   {
     /* printing */
+
     flag_print = 0;
     PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
     if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_PETSC);
@@ -188,7 +181,8 @@ end_mac_0:
   /**************************************************/
 
   {
-    /* Newton-Raphson */
+    /* Newton-Raphson options */
+
     PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
     if( set == PETSC_FALSE ) nr_max_its=5;
     PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
@@ -197,138 +191,115 @@ end_mac_0:
 
   /**************************************************/
 
+  /* read function */
+
+  int     nval = 16;
+  char    *string[16];
+  char    *data;
+  f1d_t   f1d;
+
+  list_init( &function_list, sizeof(f1d_t), NULL );
+  PetscOptionsGetStringArray( NULL, NULL, "-function", string, &nval, &set );
+  if( set == PETSC_TRUE )
   {
-    /* structured grid interp */
-    PetscOptionsGetInt(NULL, NULL, "-nx_interp", &nx_interp, &set);
-    if( set == PETSC_FALSE ) nx_interp = 2;
-    PetscOptionsGetInt(NULL, NULL, "-ny_interp", &ny_interp, &set);
-    if( set == PETSC_FALSE ) ny_interp = 2;
-    PetscOptionsGetInt(NULL, NULL, "-nz_interp", &nz_interp, &set);
-    if( set == PETSC_FALSE ) nz_interp = 2;
-  }
-
-  /**************************************************/
-
-  { 
-    /* read function */
-    int     i, j;
-    int     nval = 16;
-    char    *string[nval];
-    char    *data;
-    f1d_t   f1d;
-
-    list_init( &function_list, sizeof(f1d_t), NULL );
-    PetscOptionsGetStringArray( NULL, NULL, "-function", string, &nval, &set );
-    if( set == PETSC_TRUE )
-    {
-      for( i = 0 ; i < nval ; i++ ){
-	data     = strtok( string[i], " \n" );
-	f1d.fnum = atoi(data);
-	data     = strtok(NULL, " \n");
-	f1d.n    = atoi(data);
-	f1d.x    = malloc( f1d.n * sizeof(double));
-	f1d.y    = malloc( f1d.n * sizeof(double));
-	for( j = 0 ; j < f1d.n ; j++ ){
-	  data = strtok(NULL," \n"); f1d.x[j] = atof(data);
-	  data = strtok(NULL," \n"); f1d.y[j] = atof(data);
-	}
-	list_insertlast( &function_list, &f1d );
+    for( i = 0 ; i < nval ; i++ ){
+      data     = strtok( string[i], " \n" );
+      f1d.fnum = atoi(data);
+      data     = strtok(NULL, " \n");
+      f1d.n    = atoi(data);
+      f1d.x    = malloc( f1d.n * sizeof(double));
+      f1d.y    = malloc( f1d.n * sizeof(double));
+      for( j = 0 ; j < f1d.n ; j++ ){
+	data = strtok(NULL," \n"); f1d.x[j] = atof(data);
+	data = strtok(NULL," \n"); f1d.y[j] = atof(data);
       }
+      list_insertlast( &function_list, &f1d );
     }
-    else if( macro_mode == NORMAL ){
-      printf_p(&MACRO_COMM,"-function is request to impose non trivial BC.\n");
-      ierr_1 = 1;
-      goto end_mac_0;
-    }
+  }
+  else if( macro_mode == NORMAL ){
+    printf_p(&MACRO_COMM,"-function is request to impose non trivial BC.\n");
+    ierr_1 = 1;
+    goto end_mac_0;
   }
 
   /**************************************************/
 
-  { 
-    /* read boundary elements */
-    int      i, j;
-    int      nval = 4;
-    char     *string[nval];
-    char     *data;
-    bound_t  bou;
+  /* read boundary elements */
 
-    list_init( &boundary_list, sizeof(bound_t), NULL );
-    PetscOptionsGetStringArray( NULL, NULL, "-boundary", string, &nval, &set );
-    if( set == PETSC_TRUE )
-    {
-      for( i = 0 ; i < nval ; i++ ){
-	data     = strtok(string[i], " \n");
-	bou.name = strdup(data); 
-	data     = strtok(NULL, " \n");
-	bou.kind = strbin2dec(data);
-	if(dim == 2){
-	  if( bou.kind == 1 || bou.kind == 2 ) bou.ndirpn =  1;
-	  if( bou.kind == 3 )                  bou.ndirpn =  2;
-	  if( bou.kind == 0 )                  bou.ndirpn =  0;
-	}
-	bou.nneupn   = dim - bou.ndirpn;
-	bou.fnum     = malloc(dim * sizeof(int));
-	for( j = 0 ; j < dim ; j++ ){
-	  data = strtok(NULL, " \n");
-	  bou.fnum[j] = atoi(data);
-	}
-	bou.dir_loc_ixs = NULL;
-	bou.dir_val     = NULL;
-	list_insertlast( &boundary_list, &bou );
-      }
-    }
-    else if( macro_mode == NORMAL ){
-      printf_p(&MACRO_COMM,"-boundary should be set.\n");
-      goto end_mac_1;
-    }
-  }
+  bound_t  bou;
 
-  /**************************************************/
+  list_init( &boundary_list, sizeof(bound_t), NULL );
 
+  PetscOptionsGetStringArray( NULL, NULL, "-boundary", string, &nval, &set );
+  if( set == PETSC_TRUE )
   {
-    /* Materials by command line */
-    int    nval = 4;
-    char   *string[nval];
-    char   *data;
-    material_t mat;
-    list_init( &material_list, sizeof(material_t), NULL );
+    for( i = 0 ; i < nval ; i++ ){
+      data     = strtok(string[i], " \n");
+      bou.name = strdup(data); 
+      data     = strtok(NULL, " \n");
+      bou.kind = strbin2dec(data);
+      if(dim == 2){
+	if( bou.kind == 1 || bou.kind == 2 ) bou.ndirpn =  1;
+	if( bou.kind == 3 )                  bou.ndirpn =  2;
+	if( bou.kind == 0 )                  bou.ndirpn =  0;
+      }
+      bou.nneupn   = dim - bou.ndirpn;
+      bou.fnum     = malloc(dim * sizeof(int));
+      for( j = 0 ; j < dim ; j++ ){
+	data = strtok(NULL, " \n");
+	bou.fnum[j] = atoi(data);
+      }
+      bou.dir_loc_ixs = NULL;
+      bou.dir_val     = NULL;
+      list_insertlast( &boundary_list, &bou );
+    }
+  }
+  else if( macro_mode == NORMAL ){
+    printf_p(&MACRO_COMM,"-boundary should be set.\n");
+    goto end_mac_1;
+  }
 
-    PetscOptionsGetStringArray( NULL, NULL, "-material", string, &nval, &set );
-    if( set == PETSC_TRUE )
+  /**************************************************/
+
+  /* Materials by command line */
+
+  material_t mat;
+  list_init( &material_list, sizeof(material_t), NULL );
+
+  PetscOptionsGetStringArray( NULL, NULL, "-material", string, &nval, &set );
+  if( set == PETSC_TRUE )
+  {
+    for( i = 0 ; i < nval ; i++ )
     {
-      for( i = 0 ; i < nval ; i++ )
+      data = strtok( string[i] , " \n" );
+      mat.name = strdup( data );
+      data = strtok( NULL , " \n" );
+      if( strcmp( data, "TYPE_0" ) == 0 )
       {
-	data = strtok( string[i] , " \n" );
-	mat.name = strdup( data );
+	double E, v;
+	mat.type_id = TYPE_0;
+	mat.type    = malloc(sizeof(type_0));
 	data = strtok( NULL , " \n" );
-	if( strcmp( data, "TYPE_0" ) == 0 )
-	{
-	  double E, v;
-	  mat.type_id = TYPE_0;
-	  mat.type    = malloc(sizeof(type_0));
-	  data = strtok( NULL , " \n" );
-	  ((type_0*)mat.type)->rho         = atof(data);
-	  data = strtok( NULL , " \n" );
-	  E = ((type_0*)mat.type)->young   = atof(data);
-	  data = strtok( NULL , " \n" );
-	  v = ((type_0*)mat.type)->poisson = atof(data);
-	  ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
-	  ((type_0*)mat.type)->mu          = E/(2*(1+v));
-	}
-	else if ( strcmp( data, "TYPE_1" ) == 0 )
-	{
-	  mat.type_id = TYPE_1;
-	}
-	else
-	{
-	  printf_p(&MACRO_COMM, "type %s not known.\n", data );
-	  goto end_mac_1;
-	}
-
-	list_insertlast( &material_list , &mat );
+	((type_0*)mat.type)->rho         = atof(data);
+	data = strtok( NULL , " \n" );
+	E = ((type_0*)mat.type)->young   = atof(data);
+	data = strtok( NULL , " \n" );
+	v = ((type_0*)mat.type)->poisson = atof(data);
+	((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
+	((type_0*)mat.type)->mu          = E/(2*(1+v));
       }
-    }
+      else if ( strcmp( data, "TYPE_1" ) == 0 )
+      {
+	mat.type_id = TYPE_1;
+      }
+      else
+      {
+	printf_p(&MACRO_COMM, "type %s not known.\n", data );
+	goto end_mac_1;
+      }
 
+      list_insertlast( &material_list , &mat );
+    }
   }
 
   /**************************************************/

@@ -15,7 +15,6 @@ $MPIEXEC -np $NP ../../macro/macro \
     -function "0 2 0.0 0.0 1.0 0.0","1 2 0.0 0.0 1.0 0.001" \
     -mesh cube_2d.msh \
     -dim 2            \
-    -mesh_gmsh        \
     -eigen            \
     -tf 1.0           \
     -dt 1.0           \
