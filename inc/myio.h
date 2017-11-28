@@ -1,3 +1,6 @@
+#ifndef MYIO_H
+#define MYIO_H
+
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -7,3 +10,4 @@
 
 int printf_p( void *COMM, const char format[], ... );
 
+#endif
