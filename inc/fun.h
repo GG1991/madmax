@@ -1,6 +1,5 @@
-/*
- *  Function declarations and prototypes
- *
+/* Function declarations and prototypes
+ *  
  */
  
 
@@ -9,6 +8,9 @@
 
 #include "stdlib.h"
 #include "list.h"
+#include "myio.h"
+
+#define MAX_NUM_OF_FUNCTIONS 4
 
 enum {INTER1,INTER2}; 
 
@@ -23,9 +25,10 @@ typedef struct _f1d_t{
     
 }f1d_t;
 
-int f1d_init( double * x , double * y , int n , int inter , f1d_t * f1d );
-int f1d_eval( double   x , f1d_t * f1d , double * y );
-int cmp_f1d ( void *a, void *b);
-int get_f1d ( int fn , list_t * function_list , f1d_t ** f1d );
+int f1d_init(double *x, double *y, int n, int inter, f1d_t * f1d);
+int f1d_eval(double x, f1d_t *f1d, double * y);
+int cmp_f1d (void *a, void *b);
+int get_f1d (int fn , list_t * function_list , f1d_t ** f1d);
+int function_fill_list_from_command_line(int argc, const char **argv, list_t *function_list);
 
 #endif

@@ -108,3 +108,37 @@ int get_f1d ( int fn , list_t * function_list , f1d_t ** f1d )
 }
 
 /****************************************************************************************************/
+
+int function_fill_list_from_command_line(int argc, const char **argv, list_t *function_list)
+{
+
+  list_init(function_list, sizeof(f1d_t), NULL);
+
+  char **string_array, *data;
+  int    found, n_str_found;
+  f1d_t  fun;
+  found = myio_get_string_array_command_line(argc, argv, "-function", MAX_NUM_OF_FUNCTIONS, &string_array, &n_str_found);
+
+  if(found || !n_str_found)
+    return 1;
+
+  int i, j;
+  for( i = 0 ; i < n_str_found ; i++ )
+  {
+    data     = strtok(string_array[i]," \n");
+    fun.fnum = atoi(data);
+    data     = strtok(NULL, " \n");
+    fun.n    = atoi(data);
+    fun.x    = malloc(fun.n*sizeof(double));
+    fun.y    = malloc(fun.n*sizeof(double));
+    for( j = 0 ; j < fun.n ; j++ ){
+      data = strtok(NULL," \n"); fun.x[j] = atof(data);
+      data = strtok(NULL," \n"); fun.y[j] = atof(data);
+    }
+    list_insertlast(function_list, &fun);
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/
