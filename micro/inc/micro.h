@@ -88,14 +88,10 @@ int          first_time_homo;
 double       c_homo_lineal[36];
 double       rho;
 
-double       mat_fiber_t0[3];     // array of properties for type_0 fiber
-double       mat_matrix_t0[3];    // array of properties for type_0 matrix
-
 Mat          A, J;                // petsc matrices
 Vec          x, b;                // petsc vectors
 Vec          dx;
 KSP          ksp;                 // linear solver context
-
 
 #define PRINT_PETSC        0
 #define PRINT_VTU          1
@@ -105,22 +101,7 @@ bool        flag_first_alloc;
 
 /* micro figure type */
 
-#define CIRCULAR_FIBER 1
-
 double      center_domain[3];
-
-typedef struct _cilin_fiber_t
-{
-  double radius;
-  double deviation[3];
-  int    nx;
-  int    ny;
-
-}cilin_fiber_t;
-
-cilin_fiber_t cilin_fiber;
-
-micro_struct_t micro_struct;
 
 int mic_homogenize(MPI_Comm COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
 int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);

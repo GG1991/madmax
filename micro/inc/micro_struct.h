@@ -58,6 +58,7 @@ typedef struct _micro_struct_t
 
 }micro_struct_t;
 
+micro_struct_t micro_struct;
 
 int micro_struct_init(
     const int dim,
