@@ -3,17 +3,17 @@
 #include "myio.h"
 
 /* 
-   we defined printf_p (printf parallel) 
+   we defined myio_printf (printf parallel) 
    only rank 0 print on stdout, if MPI is not 
    defined it behaves as printf and can be called
    as 
 
-   printf_p( NULL, format[], ... );
+   myio_printf( NULL, format[], ... );
 
  */
 
 
-int printf_p( void* COMM, const char format[], ... )
+int myio_printf( void* COMM, const char format[], ... )
 {
   va_list arg;
   int     done;

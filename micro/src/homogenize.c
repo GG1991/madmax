@@ -37,8 +37,8 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
     ierr = MPI_Allreduce( &vol_ma, &vol_m, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
     vi   = vol_i / vol_tot;              // inclusion fraction
     vm   = vol_m / vol_tot;              // matrix fraction
-    printf_p( &MICRO_COMM, "vi = %lf \n", vi );
-    printf_p( &MICRO_COMM, "vm = %lf \n", vm );
+    myio_printf(&MICRO_COMM, "vi = %lf \n", vi );
+    myio_printf(&MICRO_COMM, "vm = %lf \n", vm );
   }
   get_c_tan("FIBER" , -1, -1, NULL, c_i);  //returns c_i of FIBER
   get_c_tan("MATRIX", -1, -1, NULL, c_m);  //returns c_m of MATRIX
@@ -326,7 +326,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
   VecNorm( x , NORM_2 , &norm );
   if(!flag_coupling)
-    printf_p( &MICRO_COMM,"|x| = %lf \n",norm);
+    myio_printf(&MICRO_COMM,"|x| = %lf \n",norm);
 
   while( nr_its < nr_max_its && norm > nr_norm_tol )
   {
@@ -345,7 +345,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     VecNorm( b , NORM_2 , &norm );
 
     if(!flag_coupling)
-      printf_p( &MICRO_COMM,"|b| = %lf \n",norm);
+      myio_printf(&MICRO_COMM,"|b| = %lf \n",norm);
 
     if( !(norm > nr_norm_tol) ) break;
 

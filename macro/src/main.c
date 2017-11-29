@@ -75,7 +75,7 @@ int main(int argc, char **argv)
   color = MACRO;
   ierr = macmic_coloring( WORLD_COMM, &color, &macmic, &MACRO_COMM );
   if( ierr ){
-    printf_p(&PETSC_COMM_WORLD, "problem in coloring\n" );
+    myio_printf(&PETSC_COMM_WORLD, "problem in coloring\n" );
     ierr_1 = 1;
     goto end_mac_0;
   }
@@ -95,7 +95,7 @@ end_mac_0:
   PetscInitialize(&argc,&argv,(char*)0,help);
 #endif
 
-  printf_p(&MACRO_COMM,
+  myio_printf(&MACRO_COMM,
       "--------------------------------------------------\n"
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
       "--------------------------------------------------\n");
@@ -108,15 +108,15 @@ end_mac_0:
     PetscOptionsHasName( NULL, NULL, "-normal", &set );
     if( set == PETSC_TRUE ){
       macro_mode = NORMAL;
-      printf_p(&MACRO_COMM, "MACRO MODE : NORMAL\n" );
+      myio_printf(&MACRO_COMM, "MACRO MODE : NORMAL\n" );
       PetscOptionsGetReal(NULL,NULL,"-tf",&normal_mode.tf,&set);
       if(set == PETSC_FALSE){
-	printf_p(&MACRO_COMM,"-tf not given.\n");
+	myio_printf(&MACRO_COMM,"-tf not given.\n");
 	goto end_mac_1;
       }
       PetscOptionsGetReal(NULL,NULL,"-dt",&normal_mode.dt,&set);
       if(set == PETSC_FALSE){
-	printf_p(&MACRO_COMM,"-dt not given.\n");
+	myio_printf(&MACRO_COMM,"-dt not given.\n");
 	goto end_mac_1;
       }
     }
@@ -124,16 +124,16 @@ end_mac_0:
     PetscOptionsHasName( NULL, NULL, "-testcomm", &set );
     if( set == PETSC_TRUE ){
       macro_mode = TEST_COMM;
-      printf_p(&MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
+      myio_printf(&MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
     }
     PetscOptionsHasName( NULL,NULL,"-eigen",&set);
     if( set == PETSC_TRUE ){
       macro_mode = EIGENSYSTEM;
 #ifndef SLEPC
-      printf_p(&MACRO_COMM,"for using -eigensys you should compile with SLEPC.\n");
+      myio_printf(&MACRO_COMM,"for using -eigensys you should compile with SLEPC.\n");
       goto end_mac_2;
 #else
-      printf_p(&MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
+      myio_printf(&MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
       PetscOptionsGetReal(NULL,NULL,"-eigen_energy",&eigen_mode.energy,&set);
       if(set == PETSC_FALSE)
 	eigen_mode.energy = 1.0;
@@ -149,17 +149,17 @@ end_mac_0:
 
   PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set);
   if( set == PETSC_FALSE ){
-    printf_p(&MACRO_COMM,"mesh file not given on command line.\n");
+    myio_printf(&MACRO_COMM,"mesh file not given on command line.\n");
     goto end_mac_1;
   }
   FILE *fm = fopen( mesh_n, "r");
   if( fm == NULL ){
-    printf_p(&MACRO_COMM,"mesh file not found.\n");
+    myio_printf(&MACRO_COMM,"mesh file not found.\n");
     goto end_mac_1;
   }
   PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
   if( set == PETSC_FALSE ){
-    printf_p(&MACRO_COMM,"dimension (-dim <dim>) not given\n");
+    myio_printf(&MACRO_COMM,"dimension (-dim <dim>) not given\n");
     goto end_mac_1;
   }
   nvoi    = (dim == 2) ? 3 : 6;
@@ -217,7 +217,7 @@ end_mac_0:
     }
   }
   else if( macro_mode == NORMAL ){
-    printf_p(&MACRO_COMM,"-function is request to impose non trivial BC.\n");
+    myio_printf(&MACRO_COMM,"-function is request to impose non trivial BC.\n");
     ierr_1 = 1;
     goto end_mac_0;
   }
@@ -255,7 +255,7 @@ end_mac_0:
     }
   }
   else if( macro_mode == NORMAL ){
-    printf_p(&MACRO_COMM,"-boundary should be set.\n");
+    myio_printf(&MACRO_COMM,"-boundary should be set.\n");
     goto end_mac_1;
   }
 
@@ -294,7 +294,7 @@ end_mac_0:
       }
       else
       {
-	printf_p(&MACRO_COMM, "type %s not known.\n", data );
+	myio_printf(&MACRO_COMM, "type %s not known.\n", data );
 	goto end_mac_1;
       }
 
@@ -325,62 +325,62 @@ end_mac_0:
   /**************************************************/
 
   if(flag_coupling)
-    printf_p(&MACRO_COMM, "MACRO: COUPLING\n" );
+    myio_printf(&MACRO_COMM, "MACRO: COUPLING\n" );
   else
-    printf_p(&MACRO_COMM, "MACRO: STANDALONE\n" );
+    myio_printf(&MACRO_COMM, "MACRO: STANDALONE\n" );
 
   /* read mesh */    
-  printf_p(&MACRO_COMM, "reading mesh elements" );
+  myio_printf(&MACRO_COMM, "reading mesh elements" );
   ierr = read_mesh_elmv( MACRO_COMM, myname, mesh_n, mesh_f);
   if( ierr ){
-    printf_p(&MACRO_COMM, "problem reading mesh elements\n" );
+    myio_printf(&MACRO_COMM, "problem reading mesh elements\n" );
     goto end_mac_1;
   }
-  printf_p(&MACRO_COMM, " ok\n");
+  myio_printf(&MACRO_COMM, " ok\n");
 
   /*
      partition the mesh
      fills "nallnodes" and "allnodes"
    */
-  printf_p(&MACRO_COMM, "partitioning and distributing mesh");
+  myio_printf(&MACRO_COMM, "partitioning and distributing mesh");
   ierr = part_mesh( MACRO_COMM, myname, NULL);
   if( ierr ){
-    printf_p(&MACRO_COMM, "problem partitioning mesh\n" );
+    myio_printf(&MACRO_COMM, "problem partitioning mesh\n" );
     goto end_mac_1;
   }
-  printf_p(&MACRO_COMM, " ok\n");
+  myio_printf(&MACRO_COMM, " ok\n");
 
   /* calculate "ntotnod", "nmynods", "mynods", "nghost", "ghost" */
-  printf_p(&MACRO_COMM, "calculating ghost nodes");
+  myio_printf(&MACRO_COMM, "calculating ghost nodes");
   ierr = calc_local_and_ghost( MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost );
   if( ierr ){
-    printf_p(&MACRO_COMM, "problem calculating mynods and ghosts\n" );
+    myio_printf(&MACRO_COMM, "problem calculating mynods and ghosts\n" );
     goto end_mac_1;
   }
-  printf_p(&MACRO_COMM, " ok\n");
+  myio_printf(&MACRO_COMM, " ok\n");
 
   /* re-number nodes */
-  printf_p(&MACRO_COMM, "reenumering nodes");
+  myio_printf(&MACRO_COMM, "reenumering nodes");
   ierr = reenumerate_PETSc( MACRO_COMM );
   if( ierr ){
-    printf_p(&MACRO_COMM, "problem reenumbering nodes\n" );
+    myio_printf(&MACRO_COMM, "problem reenumbering nodes\n" );
     goto end_mac_1;
   }
-  printf_p(&MACRO_COMM, " ok\n");
+  myio_printf(&MACRO_COMM, " ok\n");
 
   /* read nodes' coordinates */
-  printf_p(&MACRO_COMM, "reading Coordinates");
+  myio_printf(&MACRO_COMM, "reading Coordinates");
   ierr = read_coord( mesh_n, nmynods, mynods, nghost , ghost, &coord );
   if( ierr ){
-    printf_p(&MACRO_COMM, "problem reading mesh coordinates\n" );
+    myio_printf(&MACRO_COMM, "problem reading mesh coordinates\n" );
     goto end_mac_1;
   }
-  printf_p(&MACRO_COMM, " ok\n");
+  myio_printf(&MACRO_COMM, " ok\n");
 
   /* read boundaries */
   ierr = read_bc();
   if( ierr ){
-    printf_p(&MACRO_COMM, "problem reading boundary nodes\n" );
+    myio_printf(&MACRO_COMM, "problem reading boundary nodes\n" );
     goto end_mac_1;
   }
 
@@ -390,7 +390,7 @@ end_mac_0:
 
   /**************************************************/
   /* alloc and init variables */
-  printf_p(&MACRO_COMM, "allocating ");
+  myio_printf(&MACRO_COMM, "allocating ");
 
   A   = NULL;
   b   = NULL;
@@ -445,7 +445,7 @@ end_mac_0:
 
   detj = malloc( ngp_max * sizeof(double));
 
-  printf_p(&MACRO_COMM, "ok\n");
+  myio_printf(&MACRO_COMM, "ok\n");
 
   /**************************************************/
 
@@ -457,10 +457,10 @@ end_mac_0:
   double   limit[6];
 
   ierr = get_bbox_local_limits(coord, nallnods, &limit[0], &limit[2], &limit[4]);
-  printf_p(&MACRO_COMM,"Limit = ");
+  myio_printf(&MACRO_COMM,"Limit = ");
   for( i = 0 ; i < nvoi ; i++ )
-    printf_p(&MACRO_COMM,"%lf ",limit[i]);
-  printf_p(&MACRO_COMM,"\n");
+    myio_printf(&MACRO_COMM,"%lf ",limit[i]);
+  myio_printf(&MACRO_COMM,"\n");
 
   if(macro_mode == TEST_COMM){
 
@@ -475,10 +475,10 @@ end_mac_0:
       ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);
       ierr = mac_send_strain(WORLD_COMM, strain_mac    );
       ierr = mac_recv_stress(WORLD_COMM, stress_mac    );
-      printf_p(&MACRO_COMM,"\nstress_ave = ");
+      myio_printf(&MACRO_COMM,"\nstress_ave = ");
       for( j = 0 ; j < nvoi ; j++ )
-	printf_p(&MACRO_COMM,"%e ",stress_mac[j]);
-      printf_p(&MACRO_COMM,"\n");
+	myio_printf(&MACRO_COMM,"%e ",stress_mac[j]);
+      myio_printf(&MACRO_COMM,"\n");
     }
 
   }
@@ -524,7 +524,7 @@ end_mac_0:
 
     ierr = assembly_AM();
     if( ierr ){
-      printf_p(&MACRO_COMM,"problem during matrix assembly\n");
+      myio_printf(&MACRO_COMM,"problem during matrix assembly\n");
       goto end_mac_1;
     }
 
@@ -557,17 +557,17 @@ end_mac_0:
     EPSSetFromOptions( eps );
     EPSGetDimensions( eps, &eigen_mode.nev, NULL, NULL );
     eigen_mode.eigen_vals = malloc( eigen_mode.nev * sizeof(double) );
-    printf_p(&MACRO_COMM,"Number of requested eigenvalues: %d\n", eigen_mode.nev );
+    myio_printf(&MACRO_COMM,"Number of requested eigenvalues: %d\n", eigen_mode.nev );
 
     EPSSolve( eps );
     EPSGetConverged( eps, &nconv );
-    printf_p(&MACRO_COMM,"Number of converged eigenpairs: %d\n",nconv);
+    myio_printf(&MACRO_COMM,"Number of converged eigenpairs: %d\n",nconv);
 
     for( i = 0 ; i < eigen_mode.nev ; i++ ){
 
       EPSGetEigenpair( eps, i, &eigen_mode.eigen_vals[i], NULL, x, NULL );
       EPSComputeError( eps, i, EPS_ERROR_RELATIVE, &error );
-      printf_p(&MACRO_COMM, "omega %d = %e   error = %e\n", i, eigen_mode.eigen_vals[i], error);
+      myio_printf(&MACRO_COMM, "omega %d = %e   error = %e\n", i, eigen_mode.eigen_vals[i], error);
 
       if(flag_print & (1<<PRINT_VTU))
       { 
@@ -626,7 +626,7 @@ end_mac_0:
 
     while( t < (normal_mode.tf + 1.0e-10) ){
 
-      printf_p(&MACRO_COMM,"\ntime step %-3d %-e seg\n", time_step, t);
+      myio_printf(&MACRO_COMM,"\ntime step %-3d %-e seg\n", time_step, t);
 
       /* setting displacements on dirichlet indeces */
       update_boundary( t , &function_list, &boundary_list );
@@ -658,11 +658,11 @@ end_mac_0:
       {
 
 	/* assembly residual */
-	printf_p(&MACRO_COMM, "MACRO: assembling residual\n" );
+	myio_printf(&MACRO_COMM, "MACRO: assembling residual\n" );
 	assembly_b();
 
 	if( flag_neg_detj == 1)
-	  printf_p(&MACRO_COMM, "MACRO: warning negative jacobian detected\n");
+	  myio_printf(&MACRO_COMM, "MACRO: warning negative jacobian detected\n");
 
 	VecGhostGetLocalForm( b    , &b_loc );
 	VecGetArray         ( b_loc, &b_arr );
@@ -682,12 +682,12 @@ end_mac_0:
 	VecNorm( b, NORM_2, &norm );
 	VecScale( b, -1.0 );
 
-	printf_p(&MACRO_COMM,"MACRO: |b| = %e\n", norm );
+	myio_printf(&MACRO_COMM,"MACRO: |b| = %e\n", norm );
 
 	if( norm < nr_norm_tol ) break;
 
 	/* assembly jacobian */
-	printf_p(&MACRO_COMM, "MACRO: assembling jacobian\n");
+	myio_printf(&MACRO_COMM, "MACRO: assembling jacobian\n");
 	assembly_A();
 
 	/* set dirichlet bc */
@@ -702,11 +702,11 @@ end_mac_0:
 	MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
 
 	/* solving problem */
-	printf_p(&MACRO_COMM, "MACRO: solving system\n" );
+	myio_printf(&MACRO_COMM, "MACRO: solving system\n" );
 	KSPSetOperators( ksp, A, A );
 	KSPSolve( ksp, b, dx );
 	print_ksp_info( MACRO_COMM, ksp);
-	printf_p(&MACRO_COMM, "\n");
+	myio_printf(&MACRO_COMM, "\n");
 
         /* x = x + dx */
 	VecAXPY( x, 1.0, dx );
@@ -774,7 +774,7 @@ end_mac_1:
   if(flag_coupling){
     ierr = mac_send_signal(WORLD_COMM, MIC_END);
     if(ierr){
-      printf_p(&PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
+      myio_printf(&PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
       return 1;
     }
   }
@@ -787,7 +787,7 @@ end_mac_1:
   VecDestroy(&x);
   VecDestroy(&b);
 
-  printf_p(&MACRO_COMM,
+  myio_printf(&MACRO_COMM,
       "--------------------------------------------------\n"
       "  MACRO: FINISH COMPLETE\n"
       "--------------------------------------------------\n");
@@ -827,7 +827,7 @@ int read_bc()
     bou = ( bound_t * )pn->data;
     ierr = gmsh_get_node_index( mesh_n, bou->name, nmynods, mynods, dim, &n, &ix );
     if( ierr ){
-      printf_p(&MACRO_COMM, "problem finding nodes of boundary %s on msh file\n", bou->name );
+      myio_printf(&MACRO_COMM, "problem finding nodes of boundary %s on msh file\n", bou->name );
       return 1;
     }
     bou->ndir        = n;
@@ -1118,7 +1118,7 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
     pn = pn->next;
   }
   if( pn == NULL ){
-    printf_p(&MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
+    myio_printf(&MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
     return 1;
   }
 
@@ -1160,7 +1160,7 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
     pn = pn->next;
   }
   if( pn == NULL ){
-    printf_p(&MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
+    myio_printf(&MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
     return 1;
   }
 
@@ -1196,7 +1196,7 @@ int get_rho( const char * name, int e , double * rho )
     pn = pn->next;
   }
   if( pn == NULL ){
-    printf_p(&MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
+    myio_printf(&MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
     return 1;
   }
 
@@ -1495,7 +1495,7 @@ int macro_pvtu( char *name )
   sprintf( file_name, "%s_%d.vtu", name, rank_mac);
   fm = fopen(file_name,"w"); 
   if(!fm){
-    printf_p(&PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
+    myio_printf(&PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
     return 1;
   }
 
