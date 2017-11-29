@@ -1363,9 +1363,9 @@ int update_boundary( double t , list_t * function_list, list_t * boundary_list )
     f1d_t   * f1d = NULL;
     int i, d;
     for( d = 0 ; d < dim ; d++ ){
-      get_f1d( bou->fnum[d] , function_list , &f1d );
+      function_get_from_list( bou->fnum[d] , function_list , &f1d );
       double val;
-      f1d_eval( t , f1d , &val );
+      function_eval( t , f1d , &val );
       for( i = 0 ; i < bou->ndir ; i++ )
 	bou->dir_val[ i* (bou->ndirpn) + d ] = val;
     }

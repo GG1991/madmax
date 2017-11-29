@@ -2,7 +2,6 @@
  *  
  */
  
-
 #ifndef FUN_H
 #define FUN_H
 
@@ -25,10 +24,10 @@ typedef struct _f1d_t{
     
 }f1d_t;
 
-int f1d_init(double *x, double *y, int n, int inter, f1d_t * f1d);
-int f1d_eval(double x, f1d_t *f1d, double * y);
-int cmp_f1d (void *a, void *b);
-int get_f1d (int fn , list_t * function_list , f1d_t ** f1d);
+int function_init(double *x, double *y, int n, int inter, f1d_t * f1d);
+int function_eval(double x, f1d_t *f1d, double * y);
+int function_comp(void *a, void *b);
+int function_get_from_list(int fn , list_t *function_list, f1d_t **f1d);
 int function_fill_list_from_command_line(int argc, const char **argv, list_t *function_list);
 
 #endif

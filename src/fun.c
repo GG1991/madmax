@@ -2,7 +2,7 @@
 
 /****************************************************************************************************/
 
-int f1d_init( double *x, double *y, int n, int inter, f1d_t *f1d ){
+int function_init(double *x, double *y, int n, int inter, f1d_t *f1d){
 
   if( n == 0 || x == NULL || y == NULL || f1d == NULL )
     return 1;
@@ -24,7 +24,7 @@ int f1d_init( double *x, double *y, int n, int inter, f1d_t *f1d ){
 
 /****************************************************************************************************/
 
-int f1d_eval(double x, f1d_t *f1d, double *y)
+int function_eval(double x, f1d_t *f1d, double *y)
 {
 
 
@@ -63,7 +63,7 @@ int f1d_eval(double x, f1d_t *f1d, double *y)
 
 /****************************************************************************************************/
 
-int cmp_f1d( void *a, void *b )
+int function_comp(void *a, void *b)
 {
   if ( ((f1d_t *)a)->fnum > ((f1d_t *)b)->fnum )
     return 1;
@@ -76,7 +76,7 @@ int cmp_f1d( void *a, void *b )
 
 /****************************************************************************************************/
 
-int get_f1d ( int fn , list_t * function_list , f1d_t ** f1d )
+int function_get_from_list(int fn, list_t *function_list, f1d_t **f1d)
 {
 
   /* returns 0 if was found and 1 if not or error */
