@@ -1,8 +1,4 @@
-/*
- *  Materials definition types
- * 
- *  material_t material;
- *  lambda = ((type_0*)material.type)->lambda
+/* Materials for solid structures calculation
  * 
  */
 
@@ -41,7 +37,7 @@ list_t material_list;
 
 int material_get_stress(material_t *mat, int dim, double *strain, double *stress);
 int material_get_c_tang(material_t *mat, int dim, double *strain, double *c_tang);
-int material_get_rho   (material_t *mat, int dim, double *rho                   );
+int material_get_rho(material_t *mat, int dim, double *rho);
 int material_are_linear(list_t * material_list);
 int material_fill_list_from_command_line(int argc, const char **argv, list_t *material_list);
 
