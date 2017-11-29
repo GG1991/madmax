@@ -117,7 +117,7 @@ int material_fill_list_from_command_line(int argc, const char **argv, list_t *ma
     }
     else
     {
-      myio_printf(NULL,"type %s not known.\n",data);
+      printf("type %s not known.\n",data);
       return 1;
     }
 

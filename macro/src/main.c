@@ -102,43 +102,41 @@ end_mac_0:
 
   /**************************************************/
 
-  {
-    /* execution mode */
-    macro_mode  = NORMAL;
-    PetscOptionsHasName( NULL, NULL, "-normal", &set );
-    if( set == PETSC_TRUE ){
-      macro_mode = NORMAL;
-      myio_printf(&MACRO_COMM, "MACRO MODE : NORMAL\n" );
-      PetscOptionsGetReal(NULL,NULL,"-tf",&normal_mode.tf,&set);
-      if(set == PETSC_FALSE){
-	myio_printf(&MACRO_COMM,"-tf not given.\n");
-	goto end_mac_1;
-      }
-      PetscOptionsGetReal(NULL,NULL,"-dt",&normal_mode.dt,&set);
-      if(set == PETSC_FALSE){
-	myio_printf(&MACRO_COMM,"-dt not given.\n");
-	goto end_mac_1;
-      }
+  /* execution mode */
+  macro_mode  = NORMAL;
+  PetscOptionsHasName( NULL, NULL, "-normal", &set );
+  if( set == PETSC_TRUE ){
+    macro_mode = NORMAL;
+    myio_printf(&MACRO_COMM, "MACRO MODE : NORMAL\n" );
+    PetscOptionsGetReal(NULL,NULL,"-tf",&normal_mode.tf,&set);
+    if(set == PETSC_FALSE){
+      myio_printf(&MACRO_COMM,"-tf not given.\n");
+      goto end_mac_1;
     }
+    PetscOptionsGetReal(NULL,NULL,"-dt",&normal_mode.dt,&set);
+    if(set == PETSC_FALSE){
+      myio_printf(&MACRO_COMM,"-dt not given.\n");
+      goto end_mac_1;
+    }
+  }
 
-    PetscOptionsHasName( NULL, NULL, "-testcomm", &set );
-    if( set == PETSC_TRUE ){
-      macro_mode = TEST_COMM;
-      myio_printf(&MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
-    }
-    PetscOptionsHasName( NULL,NULL,"-eigen",&set);
-    if( set == PETSC_TRUE ){
-      macro_mode = EIGENSYSTEM;
+  PetscOptionsHasName( NULL, NULL, "-testcomm", &set );
+  if( set == PETSC_TRUE ){
+    macro_mode = TEST_COMM;
+    myio_printf(&MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
+  }
+  PetscOptionsHasName( NULL,NULL,"-eigen",&set);
+  if( set == PETSC_TRUE ){
+    macro_mode = EIGENSYSTEM;
 #ifndef SLEPC
-      myio_printf(&MACRO_COMM,"for using -eigensys you should compile with SLEPC.\n");
-      goto end_mac_2;
+    myio_printf(&MACRO_COMM,"for using -eigensys you should compile with SLEPC.\n");
+    goto end_mac_2;
 #else
-      myio_printf(&MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
-      PetscOptionsGetReal(NULL,NULL,"-eigen_energy",&eigen_mode.energy,&set);
-      if(set == PETSC_FALSE)
-	eigen_mode.energy = 1.0;
+    myio_printf(&MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
+    PetscOptionsGetReal(NULL,NULL,"-eigen_energy",&eigen_mode.energy,&set);
+    if(set == PETSC_FALSE)
+      eigen_mode.energy = 1.0;
 #endif
-    }
   }
 
   /**************************************************/
@@ -242,7 +240,11 @@ end_mac_0:
 
   /* Read materials  */
 
-  material_fill_list_from_command_line(argc, argv_dup, &material_list);
+  ierr = material_fill_list_from_command_line(argc, argv_dup, &material_list);
+  if(ierr){
+    myio_printf(&MACRO_COMM,"error reading material from command line.\n");
+    goto end_mac_1;
+  }
 
   /**************************************************/
 
