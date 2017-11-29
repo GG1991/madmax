@@ -199,48 +199,12 @@ end_mic_0:
 
   /**************************************************/
 
-  nval = 4;
-  char *string[4];
-  char *data;
-  material_t mat;
-  list_init( &material_list, sizeof(material_t), NULL );
+  const char **argv_dup;
+  myio_duplicate_argv_char_to_const_char(argc, argv, &argv_dup);
 
-  PetscOptionsGetStringArray( NULL, NULL, "-material", string, &nval, &set );
-  if( set == PETSC_TRUE )
-  {
-    for( i = 0 ; i < nval ; i++ )
-    {
-      data = strtok( string[i] , " \n" );
-      mat.name = strdup( data );
-      data = strtok( NULL , " \n" );
-      if( strcmp( data, "MAT_ELASTIC" ) == 0 )
-      {
-	double E, v;
-	mat.type_id = MAT_ELASTIC;
-	mat.type    = malloc(sizeof(type_0));
-	data = strtok( NULL , " \n" );
-	((type_0*)mat.type)->rho         = atof(data);
-	data = strtok( NULL , " \n" );
-	E = ((type_0*)mat.type)->young   = atof(data);
-	data = strtok( NULL , " \n" );
-	v = ((type_0*)mat.type)->poisson = atof(data);
-	((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
-	((type_0*)mat.type)->mu          = E/(2*(1+v));
-      }
-      else if ( strcmp( data, "TYPE_1" ) == 0 )
-      {
-	myio_printf( &MICRO_COMM, "TYPE_1 not allowed in micro code.\n" );
-	goto end_mic_1;
-      }
-      else
-      {
-	myio_printf( &MICRO_COMM, "type %s not known.\n", data );
-	goto end_mic_1;
-      }
+  /* Read materials  */
 
-      list_insertlast( &material_list , &mat );
-    }
-  }
+  mat_fill_list_from_command_line(argc, argv_dup, &material_list);
 
   /**************************************************/
 

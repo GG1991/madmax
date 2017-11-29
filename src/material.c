@@ -77,3 +77,54 @@ int mat_get_rho( material_t *mat_p, int dim , double * rho )
 }
 
 /****************************************************************************************************/
+
+int mat_fill_list_from_command_line(int argc, const char **argv, list_t *material_list)
+{
+
+  list_init(material_list, sizeof(material_t), NULL);
+
+  char **string_array;
+  int    found, n_str_found;
+  found = myio_get_string_array_command_line(argc, argv, "-material", MAX_NUM_OF_MATERIALS, &string_array, &n_str_found);
+
+  if(found || !n_str_found)
+    return 1;
+
+  int i;
+  for( i = 0 ; i < n_str_found ; i++ )
+  {
+    char       *data;
+    material_t  mat;
+    data = strtok(string_array[i]," \n");
+    mat.name = strdup( data );
+    data = strtok(NULL," \n");
+    if(!strcmp(data,"MAT_ELASTIC"))
+    {
+      double E, v;
+      mat.type_id = MAT_ELASTIC;
+      mat.type    = malloc(sizeof(type_0));
+      data = strtok( NULL , " \n" );
+      ((type_0*)mat.type)->rho         = atof(data);
+      data = strtok( NULL , " \n" );
+      E = ((type_0*)mat.type)->young   = atof(data);
+      data = strtok( NULL , " \n" );
+      v = ((type_0*)mat.type)->poisson = atof(data);
+      ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
+      ((type_0*)mat.type)->mu          = E/(2*(1+v));
+    }
+    else if (!strcmp(data,"MAT_MICRO")){
+      mat.type_id = MAT_MICRO;
+    }
+    else
+    {
+      myio_printf(NULL,"type %s not known.\n",data);
+      return 1;
+    }
+
+    list_insertlast(material_list, &mat);
+  }
+
+  return 0;
+}
+
+/****************************************************************************************************/

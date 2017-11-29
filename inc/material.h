@@ -15,6 +15,7 @@
 #define MAT_ELASTIC    0
 #define MAT_MICRO      1
 
+#define MAX_NUM_OF_MATERIALS 4
 
 typedef struct material_t_{
 
@@ -42,6 +43,6 @@ int mat_get_stress(material_t *mat, int dim, double *strain, double *stress);
 int mat_get_c_tang(material_t *mat, int dim, double *strain, double *c_tang);
 int mat_get_rho   (material_t *mat, int dim, double *rho                   );
 int mat_are_linear(list_t * material_list);
-int mat_parse_from_command_line(int argc, int **argv, list_t *material_list);
+int mat_fill_list_from_command_line(int argc, const char **argv, list_t *material_list);
 
 #endif
