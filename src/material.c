@@ -3,7 +3,7 @@
 int mat_get_stress( material_t *mat_p, int dim , double * strain_gp, double * stress_gp )
 {
 
-  if( mat_p->type_id == TYPE_0 ){
+  if( mat_p->type_id == MAT_ELASTIC ){
 
     /* is a linear material stress = C * strain */
 
@@ -40,7 +40,7 @@ int mat_get_stress( material_t *mat_p, int dim , double * strain_gp, double * st
 int mat_get_c_tang( material_t *mat_p, int dim , double * strain_gp, double * c_tan )
 {
 
-  if( mat_p->type_id == TYPE_0 ){
+  if( mat_p->type_id == MAT_ELASTIC ){
 
     /* is a linear material stress = C * strain */
     double  young   = ((type_0*)mat_p->type)->young;
@@ -70,7 +70,7 @@ int mat_get_c_tang( material_t *mat_p, int dim , double * strain_gp, double * c_
 int mat_get_rho( material_t *mat_p, int dim , double * rho )
 {
 
-  if( mat_p->type_id == TYPE_0 )
+  if( mat_p->type_id == MAT_ELASTIC )
     *rho   = ((type_0*)mat_p->type)->rho;
 
   return 0;

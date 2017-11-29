@@ -274,10 +274,10 @@ end_mac_0:
       data = strtok( string[i] , " \n" );
       mat.name = strdup( data );
       data = strtok( NULL , " \n" );
-      if( strcmp( data, "TYPE_0" ) == 0 )
+      if( strcmp( data, "MAT_ELASTIC" ) == 0 )
       {
 	double E, v;
-	mat.type_id = TYPE_0;
+	mat.type_id = MAT_ELASTIC;
 	mat.type    = malloc(sizeof(type_0));
 	data = strtok( NULL , " \n" );
 	((type_0*)mat.type)->rho         = atof(data);
@@ -288,9 +288,9 @@ end_mac_0:
 	((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
 	((type_0*)mat.type)->mu          = E/(2*(1+v));
       }
-      else if ( strcmp( data, "TYPE_1" ) == 0 )
+      else if ( strcmp( data, "MAT_MICRO" ) == 0 )
       {
-	mat.type_id = TYPE_1;
+	mat.type_id = MAT_MICRO;
       }
       else
       {
@@ -1123,7 +1123,7 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
   }
 
   /* now that we know the material (mat_p) we calculate stress = f(strain) */
-  if( mat_p->type_id == TYPE_1 )
+  if( mat_p->type_id == MAT_MICRO )
   {
     /* we have a micro material */
     ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN); if(ierr) return 1;
@@ -1165,7 +1165,7 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
   }
 
   /* now that we now the material (mat_p) we calculate stress = f(strain) */
-  if( mat_p->type_id == TYPE_1 )
+  if( mat_p->type_id == MAT_MICRO )
   {
     ierr = mac_send_signal(WORLD_COMM, C_HOMO); if(ierr) return 1;
     ierr = mac_send_strain(WORLD_COMM, strain_gp);
@@ -1201,7 +1201,7 @@ int get_rho( const char * name, int e , double * rho )
   }
 
   /* now that we now the material (mat_p) we calculate the density */
-  if( mat_p->type_id == TYPE_1 )
+  if( mat_p->type_id == MAT_MICRO )
   {
     ierr = mac_send_signal(WORLD_COMM, RHO); if(ierr) return 1;
     ierr = mac_recv_rho(WORLD_COMM, rho);

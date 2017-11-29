@@ -1,20 +1,19 @@
 /*
-   Materials definition types
-  
-   material_t material;
-   lambda = ((type_0*)material.type)->lambda
-  
+ *  Materials definition types
+ * 
+ *  material_t material;
+ *  lambda = ((type_0*)material.type)->lambda
+ * 
  */
+
+#ifndef MATERIAL_H
+#define MATERIAL_H
 
 #include "list.h"
 
-#define TYPE_0    0
-#define TYPE_1    1
+#define MAT_ELASTIC    0
+#define MAT_MICRO      1
 
-#define MICRO  2
-
-#ifndef _MATERIALH_
-#define _MATERIALH_
 
 typedef struct material_t_{
 
@@ -25,9 +24,7 @@ typedef struct material_t_{
 
 }material_t;
 
-/*
-   Linear Elastic Material
- */
+/* Linear Elastic Material */
 typedef struct _type_0{
 
   double young;
@@ -40,8 +37,10 @@ typedef struct _type_0{
 
 list_t material_list;
 
-int mat_get_stress( material_t * mat, int dim , double * strain, double * stress );
-int mat_get_c_tang( material_t * mat, int dim , double * strain, double * c_tang );
-int mat_get_rho   ( material_t * mat, int dim , double * rho                     );
+int mat_get_stress(material_t *mat, int dim, double *strain, double *stress);
+int mat_get_c_tang(material_t *mat, int dim, double *strain, double *c_tang);
+int mat_get_rho   (material_t *mat, int dim, double *rho                   );
+int mat_are_linear(list_t * material_list);
+int mat_parse_from_command_line(int argc, int **argv, list_t *material_list);
 
 #endif

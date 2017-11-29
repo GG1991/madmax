@@ -213,10 +213,10 @@ end_mic_0:
       data = strtok( string[i] , " \n" );
       mat.name = strdup( data );
       data = strtok( NULL , " \n" );
-      if( strcmp( data, "TYPE_0" ) == 0 )
+      if( strcmp( data, "MAT_ELASTIC" ) == 0 )
       {
 	double E, v;
-	mat.type_id = TYPE_0;
+	mat.type_id = MAT_ELASTIC;
 	mat.type    = malloc(sizeof(type_0));
 	data = strtok( NULL , " \n" );
 	((type_0*)mat.type)->rho         = atof(data);
