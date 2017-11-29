@@ -192,40 +192,19 @@ end_mac_0:
   /**************************************************/
 
   /* read function */
+  
+  const char **argv_dup;
+  myio_duplicate_argv_char_to_const_char(argc, argv, &argv_dup);
 
-  int     nval = 16;
-  char    *string[16];
-  char    *data;
-  f1d_t   f1d;
-
-  list_init( &function_list, sizeof(f1d_t), NULL );
-  PetscOptionsGetStringArray( NULL, NULL, "-function", string, &nval, &set );
-  if( set == PETSC_TRUE )
-  {
-    for( i = 0 ; i < nval ; i++ ){
-      data     = strtok( string[i], " \n" );
-      f1d.fnum = atoi(data);
-      data     = strtok(NULL, " \n");
-      f1d.n    = atoi(data);
-      f1d.x    = malloc( f1d.n * sizeof(double));
-      f1d.y    = malloc( f1d.n * sizeof(double));
-      for( j = 0 ; j < f1d.n ; j++ ){
-	data = strtok(NULL," \n"); f1d.x[j] = atof(data);
-	data = strtok(NULL," \n"); f1d.y[j] = atof(data);
-      }
-      list_insertlast( &function_list, &f1d );
-    }
-  }
-  else if( macro_mode == NORMAL ){
-    myio_printf(&MACRO_COMM,"-function is request to impose non trivial BC.\n");
-    ierr_1 = 1;
-    goto end_mac_0;
-  }
+  function_fill_list_from_command_line(argc, argv_dup, &function_list);
 
   /**************************************************/
 
   /* read boundary elements */
 
+  char *string[4];
+  int   nval=4;
+  char *data;
   bound_t  bou;
 
   list_init( &boundary_list, sizeof(bound_t), NULL );
@@ -261,34 +240,24 @@ end_mac_0:
 
   /**************************************************/
 
-  /* Read materials */
-
-  const char **argv_dup;
-  myio_duplicate_argv_char_to_const_char(argc, argv, &argv_dup);
-
   /* Read materials  */
 
-  mat_fill_list_from_command_line(argc, argv_dup, &material_list);
+  material_fill_list_from_command_line(argc, argv_dup, &material_list);
 
   /**************************************************/
 
-  {
-    /* mesh partition options */
-    partition_algorithm = PARMETIS_GEOM;
-    PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
-    if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_MESHKWAY;
-    PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
-    if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_GEOM;
-  }
+  /* mesh partition options */
+  partition_algorithm = PARMETIS_GEOM;
+  PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
+  if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_MESHKWAY;
+  PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
+  if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_GEOM;
 
   /**************************************************/
 
-  {
-    /* general options */
-    /* non zeros factor */
-    PetscOptionsGetInt( NULL, NULL, "-nnz_factor", &nnz_factor, &set );
-    if( set == PETSC_FALSE ) nnz_factor = 1;
-  }
+  /* non zeros factor */
+  PetscOptionsGetInt( NULL, NULL, "-nnz_factor", &nnz_factor, &set );
+  if( set == PETSC_FALSE ) nnz_factor = 1;
 
   /**************************************************/
 
