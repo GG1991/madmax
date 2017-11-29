@@ -15,10 +15,9 @@ $MPIEXEC -np $NP ../../macro/macro \
     -function "0 2 0.0 0.0 1.0 0.0","1 2 0.0 0.0 1.0 0.01" \
     -mesh ../../meshes/front_fib/direct_a.msh \
     -dim 2            \
-    -mesh_gmsh        \
     -normal           \
-    -tf 1.0           \
-    -dt 1.0           \
+    -tf 0.5           \
+    -dt 0.1           \
     -pc_type jacobi   \
     -nnz_factor 3     \
     -ksp_type cg      \

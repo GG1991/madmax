@@ -9,7 +9,7 @@ then
    exit 1
 fi
 
-ending="_rep"
+ending="_replaced"
 final_file="${1:0:$(( ${#1} - 4 ))}$ending.msh"
 
 sed -e 's/MATRIX_[0-9]*/MATRIX/g' -e ' s/FIBER_[0-9]*/FIBER/g' $1 > $final_file
