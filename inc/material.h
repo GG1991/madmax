@@ -10,6 +10,7 @@
 #define MATERIAL_H
 
 #include "list.h"
+#include "myio.h"
 
 #define MAT_ELASTIC    0
 #define MAT_MICRO      1
