@@ -5,7 +5,7 @@
 #include "comm.h"
 #include "util.h"
 #include "gmsh.h"
-#include "fun.h"
+#include "function.h"
 #include "vtk.h"
 #include "myio.h"
 #include "mesh.h"
