@@ -1069,7 +1069,7 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
     ierr = mac_recv_stress(WORLD_COMM, stress_gp);
   }
   else
-    mat_get_stress( mat_p, dim, strain_gp, stress_gp );
+    material_get_stress( mat_p, dim, strain_gp, stress_gp );
 
 #ifdef ZERO
   int v;
@@ -1110,7 +1110,7 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
     ierr = mac_recv_c_homo(WORLD_COMM, nvoi, c_tan);
   }
   else
-    mat_get_c_tang( mat_p, dim, strain_gp, c_tan );
+    material_get_c_tang( mat_p, dim, strain_gp, c_tan );
 
   return 0;
 }
@@ -1144,7 +1144,7 @@ int get_rho( const char * name, int e , double * rho )
     ierr = mac_recv_rho(WORLD_COMM, rho);
   }
   else
-    mat_get_rho( mat_p, dim, rho );
+    material_get_rho( mat_p, dim, rho );
 
   return 0;
 }

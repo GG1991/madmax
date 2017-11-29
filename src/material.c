@@ -1,6 +1,6 @@
 #include "material.h"
 
-int mat_get_stress( material_t *mat_p, int dim , double * strain_gp, double * stress_gp )
+int material_get_stress( material_t *mat_p, int dim , double * strain_gp, double * stress_gp )
 {
 
   if( mat_p->type_id == MAT_ELASTIC ){
@@ -37,7 +37,7 @@ int mat_get_stress( material_t *mat_p, int dim , double * strain_gp, double * st
 
 /****************************************************************************************************/
 
-int mat_get_c_tang( material_t *mat_p, int dim , double * strain_gp, double * c_tan )
+int material_get_c_tang( material_t *mat_p, int dim , double * strain_gp, double * c_tan )
 {
 
   if( mat_p->type_id == MAT_ELASTIC ){
@@ -67,7 +67,7 @@ int mat_get_c_tang( material_t *mat_p, int dim , double * strain_gp, double * c_
 
 /****************************************************************************************************/
 
-int mat_get_rho( material_t *mat_p, int dim , double * rho )
+int material_get_rho( material_t *mat_p, int dim , double * rho )
 {
 
   if( mat_p->type_id == MAT_ELASTIC )
@@ -78,7 +78,7 @@ int mat_get_rho( material_t *mat_p, int dim , double * rho )
 
 /****************************************************************************************************/
 
-int mat_fill_list_from_command_line(int argc, const char **argv, list_t *material_list)
+int material_fill_list_from_command_line(int argc, const char **argv, list_t *material_list)
 {
 
   list_init(material_list, sizeof(material_t), NULL);

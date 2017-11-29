@@ -204,7 +204,7 @@ end_mic_0:
 
   /* Read materials  */
 
-  mat_fill_list_from_command_line(argc, argv_dup, &material_list);
+  material_fill_list_from_command_line(argc, argv_dup, &material_list);
 
   /**************************************************/
 

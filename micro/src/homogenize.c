@@ -653,7 +653,7 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
      now that we now the material (mat_p) we calculate
      stress = f(strain)
    */
-  mat_get_stress( mat_p, dim, strain_gp, stress_gp );
+  material_get_stress( mat_p, dim, strain_gp, stress_gp );
 
   return 0;
 }
@@ -697,7 +697,7 @@ int get_c_tan( const char *name, int e , int gp, double *strain_gp , double *c_t
      now that we now the material (mat_p) we calculate
      stress = f(strain)
    */
-  mat_get_c_tang( mat_p, dim, strain_gp, c_tan );
+  material_get_c_tang( mat_p, dim, strain_gp, c_tan );
 
   return 0;
 }
