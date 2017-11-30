@@ -2,61 +2,61 @@
 
 /****************************************************************************************************/
 
-int function_init(double *x, double *y, int n, int inter, f1d_t *f1d){
+int function_init(double *x, double *y, int n, int inter, function_t *function){
 
-  if( n == 0 || x == NULL || y == NULL || f1d == NULL )
+  if( n == 0 || x == NULL || y == NULL || function == NULL )
     return 1;
 
-  f1d->n     = n;
-  f1d->inter = inter;
-  f1d->fnum  = -1;
-  f1d->x     = calloc(n,sizeof(double));
-  f1d->y     = calloc(n,sizeof(double));
-  if( !f1d->x || !f1d->y )
+  function->n     = n;
+  function->inter = inter;
+  function->fnum  = -1;
+  function->x     = calloc(n,sizeof(double));
+  function->y     = calloc(n,sizeof(double));
+  if( !function->x || !function->y )
     return 1;
   int i;
   for( i = 0 ; i < n ; i++ ){
-    f1d->x[i] = x[i];
-    f1d->y[i] = y[i];
+    function->x[i] = x[i];
+    function->y[i] = y[i];
   }
   return 0;
 }
 
 /****************************************************************************************************/
 
-int function_eval(double x, f1d_t *f1d, double *y)
+int function_eval(double x, function_t *function, double *y)
 {
 
 
-  if( f1d == NULL ) return 1;
+  if( function == NULL ) return 1;
 
-  if( f1d->n < 1 ) return 1;
+  if( function->n < 1 ) return 1;
 
-  if( f1d->n == 1 ){
-    *y=f1d->y[0];
+  if( function->n == 1 ){
+    *y=function->y[0];
     return 0;
   }
-  if( x < f1d->x[0] ){
-    *y = f1d->y[0];
+  if( x < function->x[0] ){
+    *y = function->y[0];
     return 0;
   }
-  if( x > f1d->x[1] ){
-    *y = f1d->y[1];
+  if( x > function->x[1] ){
+    *y = function->y[1];
     return 0;
   }
 
   int i = 1;
-  while( i < f1d->n ){
-    if( f1d->x[i-1] <= x && x < f1d->x[i] )
+  while( i < function->n ){
+    if( function->x[i-1] <= x && x < function->x[i] )
       break;
     i++;
   }
-  if( i == f1d->n ){
-    *y=f1d->y[i-1];
+  if( i == function->n ){
+    *y=function->y[i-1];
     return 0;
   }
 
-  *y = ( f1d->y[i] - f1d->y[i-1] )*( x - f1d->x[i-1] )/( f1d->x[i] - f1d->x[i-1] ) + f1d->y[i-1];
+  *y = ( function->y[i] - function->y[i-1] )*( x - function->x[i-1] )/( function->x[i] - function->x[i-1] ) + function->y[i-1];
 
   return 0;
 }
@@ -65,9 +65,9 @@ int function_eval(double x, f1d_t *f1d, double *y)
 
 int function_comp(void *a, void *b)
 {
-  if ( ((f1d_t *)a)->fnum > ((f1d_t *)b)->fnum )
+  if ( ((function_t *)a)->fnum > ((function_t *)b)->fnum )
     return 1;
-  else if( ((f1d_t*)a)->fnum == ((f1d_t*)b)->fnum )
+  else if( ((function_t*)a)->fnum == ((function_t*)b)->fnum )
     return 0;
   else
     return -1;
@@ -76,33 +76,33 @@ int function_comp(void *a, void *b)
 
 /****************************************************************************************************/
 
-int function_get_from_list(int fn, list_t *function_list, f1d_t **f1d)
+int function_get_from_list(int fn, list_t *function_list, function_t **function)
 {
 
   /* returns 0 if was found and 1 if not or error */
 
    if( function_list == NULL ){
-     f1d = NULL;
+     function = NULL;
      return 1;
    }
    if( function_list->sizelist == 0 ){
-     f1d = NULL;
+     function = NULL;
      return 1;
    }
 
    node_list_t * pn = function_list->head;
-   f1d_t * f1d_a;
+   function_t * function_a;
    while(pn)
    {
-     f1d_a = (f1d_t *)pn->data;
-     if( f1d_a->fnum == fn ) break;
+     function_a = (function_t *)pn->data;
+     if( function_a->fnum == fn ) break;
      pn = pn->next;
    }
    if( pn == NULL ){
-     f1d = NULL;
+     function = NULL;
      return 1;
    }
-   *f1d = f1d_a;
+   *function = function_a;
 
    return 0;
 }
@@ -112,11 +112,11 @@ int function_get_from_list(int fn, list_t *function_list, f1d_t **f1d)
 int function_fill_list_from_command_line(int argc, const char **argv, list_t *function_list)
 {
 
-  list_init(function_list, sizeof(f1d_t), NULL);
+  list_init(function_list, sizeof(function_t), NULL);
 
   char **string_array, *data;
   int    found, n_str_found;
-  f1d_t  fun;
+  function_t  fun;
   found = myio_get_string_array_command_line(argc, argv, "-function", MAX_NUM_OF_FUNCTIONS, &string_array, &n_str_found);
 
   if(found || !n_str_found)
