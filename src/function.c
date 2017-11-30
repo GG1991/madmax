@@ -114,16 +114,17 @@ int function_fill_list_from_command_line(int argc, const char **argv, list_t *fu
 
   list_init(function_list, sizeof(function_t), NULL);
 
-  char **string_array, *data;
-  int    found, n_str_found;
-  function_t  fun;
-  found = myio_get_string_array_command_line(argc, argv, "-function", MAX_NUM_OF_FUNCTIONS, &string_array, &n_str_found);
+  char **string_array, *data; bool flag_found; int n_str_found;
+  myio_get_string_array_command_line(\
+      argc, argv, "-function", MAX_NUM_OF_FUNCTIONS, &string_array, &flag_found, &n_str_found);
 
-  if(found || !n_str_found)
+  if(!flag_found || !n_str_found)
     return 1;
 
+  function_t  fun;
+
   int i, j;
-  for( i = 0 ; i < n_str_found ; i++ )
+  for( i=0 ; i<n_str_found ; i++ )
   {
     data     = strtok(string_array[i]," \n");
     fun.fnum = atoi(data);

@@ -83,11 +83,11 @@ int material_fill_list_from_command_line(int argc, const char **argv, list_t *ma
 
   list_init(material_list, sizeof(material_t), NULL);
 
-  char **string_array;
-  int    found, n_str_found;
-  found = myio_get_string_array_command_line(argc, argv, "-material", MAX_NUM_OF_MATERIALS, &string_array, &n_str_found);
+  char **string_array; bool flag_found; int n_str_found;
+  myio_get_string_array_command_line(\
+      argc, argv, "-material", MAX_NUM_OF_MATERIALS, &string_array, &flag_found, &n_str_found);
 
-  if(found || !n_str_found)
+  if(!flag_found || !n_str_found)
     return 1;
 
   int i;
