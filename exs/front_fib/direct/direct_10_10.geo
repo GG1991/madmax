@@ -4,15 +4,13 @@
 
 Geometry.CopyMeshingMethod = 1;
 
-lc=1.5;
-lx=1.5;
-ly=1.5;
-lz=lx*2*3;
-r = 0.75;
-Nc = 3;
-Next = 10;
-Nint = 3;
-Nz = 1;
+lc   = 1.5;
+lx   = 1.5;
+ly   = 1.5;
+r    = 0.75;
+Nc   = 3;
+Next = 3*Nc;
+Nint = Nc;
 sin45=0.707106781;
 
 Point(1) = {0.0           ,0.0          ,0.0,0.1};
