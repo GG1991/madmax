@@ -39,20 +39,12 @@ int myio_printf( void* COMM, const char format[], ... )
 
 /************************************************************/
 
-/* Get string array from the command line, they should be after
- * "option_name" and each one should be enclose with \"
- * symbol * and separated by commas (,).
- *
- * int    argc : number of command line arguments
- * char **argv : command line arguments
- * const char *option_name : string to search previous to the string array
- *
- */
-
-int myio_get_string_array_command_line(int argc, const char **argv, const char *option_name, int n_str_expect, char ***strings, int *n_str_found)
+int myio_get_string_array_command_line(int argc, const char **argv, const char *option_name, int n_str_expect, char ***strings, bool *flag_found, int *n_str_found)
 {
 
   char *str_token;
+
+  *flag_found = false;
 
   if(!argc || !n_str_expect){
     strings = NULL;
@@ -70,6 +62,7 @@ int myio_get_string_array_command_line(int argc, const char **argv, const char *
     argv_elem_dup  = strdup(argv[i]);
     str_token = strtok(argv_elem_dup," \"\n");
     if(!strcmp(str_token, option_name)){
+      *flag_found = true;
       free(argv_elem_dup);
       break;
     }
