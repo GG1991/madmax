@@ -203,9 +203,9 @@ end_mac_0:
   char *string[4];
   int   nval=4;
   char *data;
-  bound_t  bou;
+  mesh_boundary_t  bou;
 
-  list_init( &boundary_list, sizeof(bound_t), NULL );
+  list_init( &boundary_list, sizeof(mesh_boundary_t), NULL );
 
   PetscOptionsGetStringArray( NULL, NULL, "-boundary", string, &nval, &set );
   if( set == PETSC_TRUE )
@@ -471,7 +471,7 @@ end_mac_0:
     node_list_t *pn = boundary_list.head;
     while( pn )
     {
-      bound_t * bou = (bound_t * )pn->data;
+      mesh_boundary_t * bou = (mesh_boundary_t * )pn->data;
       MatZeroRowsColumns( M, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL );
       MatZeroRowsColumns( A, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL );
       pn = pn->next;
@@ -579,7 +579,7 @@ end_mac_0:
       node_list_t * pn = boundary_list.head;
       while( pn )
       {
-	bound_t *bou = ( bound_t * )pn->data;
+	mesh_boundary_t *bou = ( mesh_boundary_t * )pn->data;
 	for( i = 0 ; i < bou->ndirix ; i++ )
 	  x_arr[bou->dir_loc_ixs[i]] = bou->dir_val[i];
 	pn = pn->next;
@@ -608,7 +608,7 @@ end_mac_0:
 	pn = boundary_list.head;
 	while( pn )
 	{
-	  bound_t *bou = ( bound_t * )pn->data;
+	  mesh_boundary_t *bou = ( mesh_boundary_t * )pn->data;
 	  for( i = 0 ; i < bou->ndirix ; i++ )
 	    b_arr[bou->dir_loc_ixs[i]] = 0.0;
 	  pn = pn->next;
@@ -633,7 +633,7 @@ end_mac_0:
 	node_list_t *pn = boundary_list.head;
 	while( pn )
 	{
-	  bound_t * bou = (bound_t * )pn->data;
+	  mesh_boundary_t * bou = (mesh_boundary_t * )pn->data;
 	  MatZeroRowsColumns( A, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL );
 	  pn = pn->next;
 	}
@@ -749,7 +749,7 @@ int read_bc()
 {
 
   /* 
-     completes the field of each "bound_t" in boundary list 
+     completes the field of each "mesh_boundary_t" in boundary list 
      int      nix;
      int     *disp_loc_ixs;
      int     *disp_glo_ixs;
@@ -758,12 +758,12 @@ int read_bc()
 
   int        *ix, i, d, da, n;
   int         ierr;
-  bound_t    *bou;
+  mesh_boundary_t    *bou;
 
   node_list_t *pn = boundary_list.head;
   while( pn )
   {
-    bou = ( bound_t * )pn->data;
+    bou = ( mesh_boundary_t * )pn->data;
     ierr = gmsh_get_node_index( mesh_n, bou->name, nmynods, mynods, dim, &n, &ix );
     if( ierr ){
       myio_printf(&MACRO_COMM, "problem finding nodes of boundary %s on msh file\n", bou->name );
@@ -1361,13 +1361,13 @@ int update_boundary( double t , list_t * function_list, list_t * boundary_list )
   node_list_t * pn = boundary_list->head;
   while( pn )
   {
-    bound_t * bou = ( bound_t * ) pn->data;
-    f1d_t   * f1d = NULL;
+    mesh_boundary_t * bou = ( mesh_boundary_t * ) pn->data;
+    function_t   * function = NULL;
     int i, d;
     for( d = 0 ; d < dim ; d++ ){
-      function_get_from_list( bou->fnum[d] , function_list , &f1d );
+      function_get_from_list( bou->fnum[d] , function_list , &function );
       double val;
-      function_eval( t , f1d , &val );
+      function_eval( t , function , &val );
       for( i = 0 ; i < bou->ndir ; i++ )
 	bou->dir_val[ i* (bou->ndirpn) + d ] = val;
     }

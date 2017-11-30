@@ -1,6 +1,8 @@
 #ifndef MESH_H
 #define MESH_H
 
+#include "list.h"
+
 #define PARMETIS_GEOMKWAY   1
 #define PARMETIS_GEOM       2
 #define PARMETIS_KWAY       3
@@ -23,6 +25,37 @@ double   *coord;       // nodes' coordinates
 
 int      *loc2petsc;   // array of size <nmynods> + <nghost>
                        // returns the position in PETSc matrix & vectors
+
+typedef struct mesh_boundary_t_
+{
+  char     *name;
+  int       kind;                // boundary kind ( xxx -> to decimal )
+  int      *fnum;                // funtion numbers to evaluate
+  int       ndirpn;              // dirichlet values per node
+  int       nneupn;              // neumann values per node
+  int       ndirix;              // number of dir indeces
+  int       ndir;                // number of dir nodes
+  int      *dir_loc_ixs;         // dirichlet indeces (local)
+  int      *dir_glo_ixs;         // dirichlet indeces (global)
+  double   *dir_val;             // dirichlet values
+
+}mesh_boundary_t;
+
+typedef struct mesh_t_
+{
+  int dim;
+  int n_elem_local;
+  int n_elem_total;
+  int n_node_local;
+  int n_node_total;
+  int *local_nodes;
+  int *ghost_nodes;
+  int *local_ghost_nodes;
+  double *coord;
+  list_t boundary_list;
+}mesh_t;
+
+mesh_t mesh;
 
 
 int part_mesh( MPI_Comm COMM, char *myname, double *centroid );

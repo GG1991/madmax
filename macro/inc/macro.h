@@ -63,21 +63,6 @@ Mat         A;                   // steffiness matrix
 Mat         M;                   // mass matrix
 Vec         x, dx, b;            // vectors unknowns and RHS 
 
-typedef struct bound_t_
-{
-  char     *name;                // boundary name
-  int       kind;                // boundary kind ( xxx -> to decimal )
-  int      *fnum;                // funtion numbers to evaluate
-  int       ndirpn;              // dirichlet values per node
-  int       nneupn;              // neumann values per node
-  int       ndirix;              // number of dir indeces
-  int       ndir;                // number of dir nodes
-  int      *dir_loc_ixs;         // dirichlet indeces (local)
-  int      *dir_glo_ixs;         // dirichlet indeces (global)
-  double   *dir_val;             // dirichlet values
-
-}bound_t;
-
 typedef struct eigen_mode_t_
 {
   int       nev;
@@ -98,6 +83,5 @@ eigen_mode_t  eigen_mode;
 
 list_t      boundary_list;
 list_t      physical_list;
-list_t      function_list;
 
 #endif
