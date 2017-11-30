@@ -200,39 +200,9 @@ end_mac_0:
 
   /* read boundary elements */
 
-  char *string[4];
-  int   nval=4;
-  char *data;
-  mesh_boundary_t  bou;
-
-  list_init( &boundary_list, sizeof(mesh_boundary_t), NULL );
-
-  PetscOptionsGetStringArray( NULL, NULL, "-boundary", string, &nval, &set );
-  if( set == PETSC_TRUE )
-  {
-    for( i = 0 ; i < nval ; i++ ){
-      data     = strtok(string[i], " \n");
-      bou.name = strdup(data); 
-      data     = strtok(NULL, " \n");
-      bou.kind = strbin2dec(data);
-      if(dim == 2){
-	if( bou.kind == 1 || bou.kind == 2 ) bou.ndirpn =  1;
-	if( bou.kind == 3 )                  bou.ndirpn =  2;
-	if( bou.kind == 0 )                  bou.ndirpn =  0;
-      }
-      bou.nneupn   = dim - bou.ndirpn;
-      bou.fnum     = malloc(dim * sizeof(int));
-      for( j = 0 ; j < dim ; j++ ){
-	data = strtok(NULL, " \n");
-	bou.fnum[j] = atoi(data);
-      }
-      bou.dir_loc_ixs = NULL;
-      bou.dir_val     = NULL;
-      list_insertlast( &boundary_list, &bou );
-    }
-  }
-  else if( macro_mode == NORMAL ){
-    myio_printf(&MACRO_COMM,"-boundary should be set.\n");
+  ierr = mesh_fill_boundary_list_from_command_line(argc, argv_dup, &boundary_list);
+  if(ierr){
+    myio_printf(&MACRO_COMM,"error reading boundary from command line.\n");
     goto end_mac_1;
   }
 
