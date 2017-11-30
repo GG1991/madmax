@@ -11,6 +11,50 @@
 
 #define NBUF 256
 
+/**************************************************/
+
+int mesh_fill_boundary_list_from_command_line(int argc, const char **argv, list_t *boundary_list)
+{
+
+  list_init(boundary_list, sizeof(mesh_boundary_t), NULL);
+
+  char **string_array, *str_token;
+  bool flag_found; int n_str_found;
+  myio_get_string_array_command_line(argc, argv, "-boundary", MAX_NUM_OF_BOUNDARIES, &string_array, &flag_found, &n_str_found);
+
+  if(!flag_found || !n_str_found)
+    return 1;
+
+  mesh_boundary_t  bou;
+
+  int i;
+  for( i=0 ; i<n_str_found ; i++ ){
+    str_token     = strtok(string_array[i]," \n");
+    bou.name  = strdup(str_token);
+    str_token = strtok(NULL," \n");
+    bou.kind  = strbin2dec(str_token);
+    if(dim == 2){
+      if( bou.kind == 1 || bou.kind == 2 ) bou.ndirpn =  1;
+      if( bou.kind == 3 )                  bou.ndirpn =  2;
+      if( bou.kind == 0 )                  bou.ndirpn =  0;
+    }
+    bou.nneupn   = dim - bou.ndirpn;
+    bou.fnum     = malloc(dim * sizeof(int));
+    int d;
+    for( d=0 ; d<dim ; d++ ){
+      str_token = strtok(NULL," \n");
+      bou.fnum[d] = atoi(str_token);
+    }
+    bou.dir_loc_ixs = NULL;
+    bou.dir_val     = NULL;
+    list_insertlast(boundary_list, &bou);
+  }
+
+  return 0;
+}
+
+/**************************************************/
+
 int part_mesh( MPI_Comm COMM, char *myname, double *centroid )
 {
 
