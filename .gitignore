@@ -17,7 +17,7 @@
 *.svg
 *.csv
 
-exs/ex3/run_*
+exs/*
 
 null
 
