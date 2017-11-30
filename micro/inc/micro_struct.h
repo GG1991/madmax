@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "util.h"
-#include "geom.h"
+#include "geometry.h"
 
 #define FIBER_CILIN  1
 #define FIBER_LINE   2
