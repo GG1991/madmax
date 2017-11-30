@@ -7,7 +7,7 @@
  *
  */
 
-#include "geom.h"
+#include "geometry.h"
 
 int geom_2d_line_side( const double n_line[2], const double p_line[2], const double point[2] )
 {
