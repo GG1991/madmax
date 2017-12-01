@@ -1,21 +1,6 @@
-/* parallel implementation of some io functions */
-
 #include "myio.h"
 
-/************************************************************/
-
-/* 
-   we defined myio_printf (printf for MPI case) 
-   only rank 0 print on stdout, if MPI is not 
-   defined it behaves as printf and can be called
-   as 
-
-   myio_printf( NULL, format[], ... );
-
- */
-
-
-int myio_printf( void* COMM, const char format[], ... )
+int myio_printf(void* COMM, const char format[], ...)
 {
   va_list arg;
   int     done;
@@ -37,12 +22,8 @@ int myio_printf( void* COMM, const char format[], ... )
   return done;
 }
 
-/************************************************************/
-
-int myio_get_string_array_command_line(int argc, const char **argv, const char *option_name, int n_str_expect, char ***strings, bool *flag_found, int *n_str_found)
+int myio_get_string_array_command_line(int argc, char **argv, const char *option_name, int n_str_expect, char ***strings, bool *flag_found, int *n_str_found)
 {
-
-  char *str_token;
 
   *flag_found = false;
 
@@ -56,31 +37,30 @@ int myio_get_string_array_command_line(int argc, const char **argv, const char *
 
   *strings = malloc(n_str_expect*sizeof(char**));
 
-  char  *argv_elem_dup;
-  int    i=0;
-  while(i<argc){
-    argv_elem_dup  = strdup(argv[i]);
-    str_token = strtok(argv_elem_dup," \"\n");
+  char *str_token, *argv_dup;
+  int i = 0;
+
+  while(i < argc){
+    argv_dup = strdup(argv[i]);
+    str_token = strtok(argv_dup," \"\n");
     if(!strcmp(str_token, option_name)){
       *flag_found = true;
-      free(argv_elem_dup);
       break;
     }
-    free(argv_elem_dup);
-    i++;
+    i++ ;
   }
 
   int n_str_found_aux = 0;
-  if(i<(argc-1)){
+
+  if(i < (argc-1)){
     i = i + 1;
-    argv_elem_dup  = strdup(argv[i]);
-    str_token = strtok(argv_elem_dup,",\"\n");
+    argv_dup = strdup(argv[i]);
+    str_token = strtok(argv_dup,",\"\n");
     n_str_found_aux = 0;
     while(str_token){
       (*strings)[n_str_found_aux++] = strdup(str_token);
       str_token = strtok(NULL,",\"\n");
     }
-    free(argv_elem_dup);
   }
   else
     return 1;
@@ -90,25 +70,61 @@ int myio_get_string_array_command_line(int argc, const char **argv, const char *
   return 0;
 }
 
-/************************************************************/
-
-/* Duplicate argv but change type from (char*) to (const char*) */
-
-int myio_duplicate_argv_char_to_const_char(int argc, char **argv, const char ***argv_dup)
+int myio_search_option_in_command_line(int argc, char **argv, const char *option_name, bool *flag_found)
 {
 
-  if(!argc){
-    *argv_dup = NULL;
-    return 0;
-  }
+  *flag_found = false;
 
-  if(!argv)
+  if(!argv || !option_name)
     return 1;
 
-  *argv_dup = malloc(argc*sizeof(char**));
-  int i=0;
-  for( i=0 ; i<argc ; i++ )
-    (*argv_dup)[i] = strdup(argv[i]);
+  if(!argc)
+    return 0;
+
+  char *str_token, *argv_dup;
+  int i = 0;
+
+  while(i < argc){
+    argv_dup = strdup(argv[i]);
+    str_token = strtok(argv_dup," \n");
+    if(!strcmp(str_token,option_name)){
+      *flag_found = true;
+      break;
+    }
+    i++;
+  }
+
+  return 0;
+}
+
+int myio_get_string_command_line(int argc, char **argv, const char *option_name, char **string, bool *flag_found)
+{
+
+  *flag_found = false;
+
+  if(!argv || !option_name)
+    return 1;
+
+  if(!argc)
+    return 0;
+
+  char *str_token, *argv_dup;
+  int i = 0;
+
+  while(i < argc){
+    argv_dup = strdup(argv[i]);
+    str_token = strtok(argv_dup," \n");
+    if(!strcmp(str_token,option_name)){
+      *flag_found = true;
+      break;
+    }
+    i++;
+  }
+
+  if(i < (argc-1)){
+    i = i + 1;
+    *string = strdup(argv[i]);
+  }
 
   return 0;
 }
