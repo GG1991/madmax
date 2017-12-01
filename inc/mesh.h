@@ -73,6 +73,6 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
     int *npe_swi, int *eind_swi, int *elm_id_swi,
     int *cuts_npe, int *cuts_eind );
 
-int mesh_fill_boundary_list_from_command_line(int argc, const char **argv, list_t *boundary_list);
+int mesh_fill_boundary_list_from_command_line(int argc, char **argv, list_t *boundary_list);
 
 #endif

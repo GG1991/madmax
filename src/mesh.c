@@ -13,7 +13,7 @@
 
 /**************************************************/
 
-int mesh_fill_boundary_list_from_command_line(int argc, const char **argv, list_t *boundary_list)
+int mesh_fill_boundary_list_from_command_line(int argc, char **argv, list_t *boundary_list)
 {
 
   list_init(boundary_list, sizeof(mesh_boundary_t), NULL);

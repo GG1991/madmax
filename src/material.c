@@ -78,7 +78,7 @@ int material_get_rho( material_t *mat_p, int dim , double * rho )
 
 /****************************************************************************************************/
 
-int material_fill_list_from_command_line(int argc, const char **argv, list_t *material_list)
+int material_fill_list_from_command_line(int argc, char **argv, list_t *material_list)
 {
 
   list_init(material_list, sizeof(material_t), NULL);

@@ -26,7 +26,7 @@ int function_init(double *x, double *y, int n, int inter, function_t * f1d);
 int function_eval(double x, function_t *f1d, double * y);
 int function_comp(void *a, void *b);
 int function_get_from_list(int fn , list_t *function_list, function_t **f1d);
-int function_fill_list_from_command_line(int argc, const char **argv, list_t *function_list);
+int function_fill_list_from_command_line(int argc, char **argv, list_t *function_list);
 
 list_t function_list;
 
