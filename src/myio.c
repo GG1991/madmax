@@ -22,6 +22,23 @@ int myio_printf(void* COMM, const char format[], ...)
   return done;
 }
 
+int myio_init_command_line(int argc, char **argv, command_line_t *command_line){
+
+  if(!command_line){
+    return 1;
+  }
+  else{
+    command_line->argc = argc;
+    command_line->argv = malloc(argc*sizeof(char*));
+    int i;
+    for( i=0 ; i<argc ; i++ ){
+      command_line->argv[i] = strdup(argv[i]);
+    }
+  }
+
+  return 0;
+}
+
 int myio_get_string_array_command_line(int argc, char **argv, const char *option_name, int n_str_expect, char ***strings, bool *flag_found, int *n_str_found)
 {
 
