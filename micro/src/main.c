@@ -30,9 +30,10 @@ static char help[] =
 int main(int argc, char **argv)
 {
 
-  int        i, j, ierr, ierr_1 = 0;
+  int        i, j, ierr;
   int        nval;
   PetscBool  set;
+  bool       flag_found;
 
   myname            = strdup("micro");
   flag_linear_micro = 0;
@@ -45,82 +46,50 @@ int main(int argc, char **argv)
   MPI_Comm_size(WORLD_COMM, &nproc_wor);
   MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
-  /* 
-     We start PETSc before coloring here for using command line reading tools only
-     Then we finalize it
-  */
-  PETSC_COMM_WORLD = WORLD_COMM;
-  ierr = PetscInitialize(&argc,&argv,(char*)0,help);
-
-  /* Coupling Options */
   flag_coupling = PETSC_FALSE;
-  PetscOptionsHasName(NULL,NULL,"-coupl",&set);
+  myio_search_option_in_command_line(argc, argv, "-coupl", &flag_found);
   macmic.type = 0;
-  if(set == PETSC_TRUE){
+  if(flag_found){
     flag_coupling = PETSC_TRUE;
     macmic.type = COUP_1;
   }
 
-  /* Stablish a new local communicator */
-  color = MICRO;
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM); /* color can change */
+  color = MICRO; /* color can change */
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM);
   if(ierr){
-    ierr_1 = 1;
     myio_printf(&MICRO_COMM,"micro: problem during coloring\n");
-    goto end_mic_0;
+    goto end;
   }
 
   MPI_Comm_size(MICRO_COMM, &nproc_mic);
   MPI_Comm_rank(MICRO_COMM, &rank_mic);
   
-end_mic_0:
-  ierr = PetscFinalize();
-  if(ierr_1) goto end_mic_2;
-
-  /* Set PETSc communicator to MICRO_COMM and start */
-
   PETSC_COMM_WORLD = MICRO_COMM;
   ierr = PetscInitialize(&argc,&argv,(char*)0,help);
-
-  /**************************************************/
 
   nx = ny = nz = -1;
   hx = hy = hz = -1;
   lx = ly = lz = -1;
 
-  /**************************************************/
-
-  /* dimension */
-
   PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
   if( set == PETSC_FALSE ){
     myio_printf( &MICRO_COMM, "dimension (-dim <dim>) not given\n" );
-    ierr_1 = 1;
-    goto end_mic_1;
+    goto end;
   }
   nvoi = (dim == 2) ? 3 : 6;
 
-  /**************************************************/
+  char *format;
 
-  /* micro_struct */
-
-  char format[256];
-
-  PetscOptionsGetString( NULL, NULL, "-micro_struct", format, 256, &set );
-  if( set == PETSC_FALSE ){
+  myio_get_string_command_line(argc, argv, "-micro_struct", &format, &flag_found);
+  if(!flag_found){
     myio_printf(&MICRO_COMM,"micro structure ( -micro_struct <format> ) not given\n");
-    ierr_1 = 1;
-    goto end_mic_1;
+    goto end;
   }
-  micro_struct_init( dim, format, &micro_struct );
+  micro_struct_init(dim, format, &micro_struct);
 
   lx = micro_struct.size[0];
   ly = micro_struct.size[1];
   lz = ( dim == 3 ) ? micro_struct.size[2] : -1;
-
-  /**************************************************/
-
-  /* struct mesh */
 
   int    nval_expect;
   int    struct_mesh_n[3];
@@ -133,8 +102,7 @@ end_mic_0:
 
     if( nval != nval_expect ){
       myio_printf(&MICRO_COMM,"-struct_n should include %d arguments\n", nval_expect);
-      ierr_1 = 1;
-      goto end_mic_0;
+      goto end;
     }
     nx   = struct_mesh_n[0];
     ny   = struct_mesh_n[1];
@@ -167,19 +135,15 @@ end_mic_0:
     ngp  = ( dim == 2 ) ? 4 : 8;
     if( !( ny > nproc_mic ) ){
       myio_printf( &MICRO_COMM, "ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
-      ierr_1 = 1;
-      goto end_mic_0;
+      goto end;
     }
 
   }
   else{
     myio_printf(&MICRO_COMM,"-struct_n is request\n");
-    ierr_1 = 1;
-    goto end_mic_0;
+    goto end;
   }
 
-
-  /* set volumes and center*/
   center_coor = malloc ( dim * sizeof(double));
   if ( dim == 2 ){
     center_coor[0] = lx / 2;
@@ -197,18 +161,7 @@ end_mic_0:
     vol_loc  = lx * (hy*ney) * lz;
   }
 
-  /**************************************************/
-
-  const char **argv_dup;
-  myio_duplicate_argv_char_to_const_char(argc, argv, &argv_dup);
-
-  /* Read materials  */
-
-  material_fill_list_from_command_line(argc, argv_dup, &material_list);
-
-  /**************************************************/
-
-  /* homogenization options */
+  material_fill_list_from_command_line(argc, argv, &material_list);
 
   homo_type=0;
   PetscOptionsHasName(NULL,NULL,"-homo_tp",&set);
@@ -221,30 +174,21 @@ end_mic_0:
   if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
   if(homo_type==0){
     myio_printf(&MICRO_COMM,"no homogenization option specified\n");
-    ierr_1 = 1;
-    goto end_mic_0;
+    goto end;
   }
-
-  /**************************************************/
-
-  /* solver options */
 
   PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
   if(set==PETSC_FALSE) nr_max_its = 5;
+
   PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if(set==PETSC_FALSE) nr_norm_tol = 1.0e-5;
-
-  /**************************************************/
-
-  /* printing options */
 
   flag_print = 0;
   PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
+
   PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
-
-  /**************************************************/
 
   if(!flag_coupling){
     myio_printf(&MICRO_COMM,
@@ -363,7 +307,7 @@ end_mic_0:
 
 	default:
 	  myio_printf(&MICRO_COMM,"MICRO:signal %d not identified\n",signal);
-	  goto end_mic_1;
+	  goto end;
 
       }
     }
@@ -379,7 +323,7 @@ end_mic_0:
     {
       memset(strain_mac,0.0,nvoi*sizeof(double)); strain_mac[i]=0.005;
       ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-      if(ierr) goto end_mic_1;
+      if(ierr) goto end;
 
       myio_printf(&MICRO_COMM,"\nstrain_ave = ");
       for( j = 0 ; j < nvoi ; j++ )
@@ -400,7 +344,7 @@ end_mic_0:
 	ierr = micro_pvtu( filename );
 	if(ierr){
 	  myio_printf(&MICRO_COMM,"Problem writing vtu file\n");
-	  goto end_mic_1;
+	  goto end;
 	}
       }
 
@@ -466,8 +410,6 @@ end_mic_0:
   end_trace( MICRO_COMM );
   /**************************************************/
 
-end_mic_1:
-
   if(!flag_coupling){
     myio_printf(&MICRO_COMM,
 	"--------------------------------------------------\n"
@@ -477,7 +419,7 @@ end_mic_1:
 
   ierr = PetscFinalize();
 
-end_mic_2:
+end:
   ierr = MPI_Finalize();
 
 

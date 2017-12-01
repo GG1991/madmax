@@ -1,17 +1,3 @@
-/*
-   "macro"
-
-   program for solving the displacement field inside a solid 
-   structure representing the macrostructure
-
-   Guido Giuntoli 28-07-2017
-
-   compilations options:
-
-   -DZERO : makes 0 component less than a tolerance (can be expensive)
-
- */
-
 #include "macro.h"
 
 static char help[] = 
@@ -59,19 +45,15 @@ int main(int argc, char **argv)
   MPI_Comm_size( WORLD_COMM, &nproc_wor );
   MPI_Comm_rank( WORLD_COMM, &rank_wor );
 
-  PETSC_COMM_WORLD = WORLD_COMM;
-  PetscInitialize( &argc, &argv, (char*)0, help );
-
-  /* coupling Options */
   flag_coupling = PETSC_FALSE;
-  PetscOptionsHasName( NULL, NULL, "-coupl", &set );
+  bool flag_found;
+  myio_search_option_in_command_line(argc, argv, "-coupl", &flag_found);
   macmic.type = 0;
-  if( set == PETSC_TRUE ){
+  if(flag_found){
     flag_coupling = PETSC_TRUE;
     macmic.type = COUP_1;
   }
 
-  /* stablish a new local communicator */
   color = MACRO;
   ierr = macmic_coloring( WORLD_COMM, &color, &macmic, &MACRO_COMM );
   if( ierr ){
@@ -81,7 +63,6 @@ int main(int argc, char **argv)
   }
 
 end_mac_0:
-  PetscFinalize();
   if(ierr_1) goto end_mac_2;
 
   MPI_Comm_size(MACRO_COMM, &nproc_mac);
@@ -100,9 +81,6 @@ end_mac_0:
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
       "--------------------------------------------------\n");
 
-  /**************************************************/
-
-  /* execution mode */
   macro_mode  = NORMAL;
   PetscOptionsHasName( NULL, NULL, "-normal", &set );
   if( set == PETSC_TRUE ){
@@ -139,10 +117,6 @@ end_mac_0:
 #endif
   }
 
-  /**************************************************/
-
-  /* mesh */
-
   mesh_f = FORMAT_GMSH;
 
   PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set);
@@ -164,53 +138,31 @@ end_mac_0:
   npe_max = (dim == 2) ? 4 : 8;
   ngp_max = npe_max;
 
-  /**************************************************/
+  flag_print = 0;
+  PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
+  if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_PETSC);
 
-  {
-    /* printing */
+  PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
+  if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_VTU);
 
-    flag_print = 0;
-    PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
-    if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_PETSC);
-    PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
-    if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_VTU);
-  }
-  
-  /**************************************************/
+  PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
+  if( set == PETSC_FALSE ) nr_max_its=5;
+  PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
+  if( set == PETSC_FALSE ) nr_norm_tol=1.0e-7;
 
-  {
-    /* Newton-Raphson options */
-
-    PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
-    if( set == PETSC_FALSE ) nr_max_its=5;
-    PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
-    if( set == PETSC_FALSE ) nr_norm_tol=1.0e-7;
+  ierr = function_fill_list_from_command_line(argc, argv, &function_list);
+  if(ierr){
+    myio_printf(&MACRO_COMM,"error reading functions from command line.\n");
+    goto end_mac_1;
   }
 
-  /**************************************************/
-
-  /* read function */
-  
-  const char **argv_dup;
-  myio_duplicate_argv_char_to_const_char(argc, argv, &argv_dup);
-
-  function_fill_list_from_command_line(argc, argv_dup, &function_list);
-
-  /**************************************************/
-
-  /* read boundary elements */
-
-  ierr = mesh_fill_boundary_list_from_command_line(argc, argv_dup, &boundary_list);
+  ierr = mesh_fill_boundary_list_from_command_line(argc, argv, &boundary_list);
   if(ierr){
     myio_printf(&MACRO_COMM,"error reading boundary from command line.\n");
     goto end_mac_1;
   }
 
-  /**************************************************/
-
-  /* Read materials  */
-
-  ierr = material_fill_list_from_command_line(argc, argv_dup, &material_list);
+  ierr = material_fill_list_from_command_line(argc, argv, &material_list);
   if(ierr){
     myio_printf(&MACRO_COMM,"error reading material from command line.\n");
     goto end_mac_1;
