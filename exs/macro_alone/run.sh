@@ -23,7 +23,6 @@ $MPIEXEC -np $NP ../../macro/macro \
     -part_geom        \
     -nr_max_its  2    \
     -eps_nev     2    \
-    -eps_type    power  \
     -print_vtu        \
     -print_petsc      \
     -options_left 0
