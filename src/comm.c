@@ -1,37 +1,7 @@
-/*
-   Common functions for <macro> & <micro> programs
-
-   Author: Guido Giuntoli
-   Date : 31-07-2017
-
- */
-
 #include "comm.h"
 
 int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM)
 {
-  /* 
-     Creates the new communicators "MACRO_COMM" & "MICRO_COMM" 
-
-     Are defined:
-
-     id_vec        > vector of size nproc_tot that 
-     id_vec[rank_wor] = MACRO|MICRO
-
-     <--------nproc_wor-------------->
-
-     [ 1 1 2 1 2 2 2 1 2 1 2 2 ... 2 ]
-
-     macro_world (=1) > this communicator holds all those processes
-     that belong to the same macro program are going
-     to solve the micro structure in a distributed way
-
-     micro_world (=2) > this communicator holds all those processes
-     that belong to the same micro program and are going
-     to solve the micro structure in a distributed way. They are joined
-     in groups that are going to be coubled with macro program.
-
-   */
 
   int  i, ierr, c;
   int  nproc_wor, rank_wor;
@@ -42,8 +12,9 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
 
   int  *id_vec = malloc(nproc_wor * sizeof(int));
 
-  // Allgather of the id_vec array 
-  ierr = MPI_Allgather(color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM); if(ierr) return 1;
+  ierr = MPI_Allgather(color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);
+  if(ierr)
+    return 1;
 
   nproc_mic_tot = nproc_mac_tot = 0;
   for(i=0;i<nproc_wor;i++){
@@ -59,21 +30,18 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
   }
 
   if(flag_coupling == true && (nproc_mic_tot==0 || nproc_mac_tot==0)){
-    //PetscPrintf(PETSC_COMM_WORLD,"-coupl activated but there is only one code in execution\n");
     return 1;
   }
 
 
   if(flag_coupling == false){
 
-    // LOCAL_COMM creation
     ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM); if(ierr) return 1;
 
   }
   else if(macmic->type == COUP_1){
 
     if(nproc_mic_tot % nproc_mac_tot != 0){
-      //PetscPrintf(PETSC_COMM_WORLD,"mod(nproc_mic_tot,nproc_mac_tot) = %d\n",nproc_mic_tot % nproc_mac_tot);
       return 1;
     }
     mic_nproc_group = nproc_mic_tot / nproc_mac_tot;
@@ -120,11 +88,6 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
     } // in MICRO
     else{
 
-      /*
-	 The color is only one here (MACRO)
-      */
-
-      // determine MICRO leaders
       int mac_pos = 0;
       i = 0;
       while( i<rank_wor ){
@@ -154,7 +117,6 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
 
     }
 
-    // LOCAL_COMM creation
     ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM); if(ierr) return 1;
 
   }
@@ -166,7 +128,7 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
 
   return 0;
 }
-/****************************************************************************************************/
+
 int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal)
 {
   /* The processes will wait here until they receive the signal */
@@ -189,12 +151,10 @@ int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal)
   }
   return 0;
 }
-/****************************************************************************************************/
+
 int mac_send_signal(MPI_Comm WORLD_COMM, int signal)
 {
-  /*
-     The processes will wait here until they receive the signal
-  */
+
   int ierr, remote_rank;
   if(macmic.type == COUP_1){
     remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
@@ -205,10 +165,9 @@ int mac_send_signal(MPI_Comm WORLD_COMM, int signal)
   }
   return 0;
 }
-/****************************************************************************************************/
+
 int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6])
 {
-  /* The processes will wait here until they receive a signal */
 
   int ierr, remote_rank;
   MPI_Status status;
@@ -227,10 +186,9 @@ int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6])
   }
   return 0;
 }
-/****************************************************************************************************/
+
 int mic_recv_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp)
 {
-  /* The processes will wait here until they receive the macro_gp number */
 
   int ierr, remote_rank;
   MPI_Status status;
@@ -249,7 +207,7 @@ int mic_recv_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp)
   }
   return 0;
 }
-/***************************************************************************************************/
+
 int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6])
 {
   /* The processes will wait here until they receive the signal */
@@ -266,7 +224,7 @@ int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6])
   }
   return 0;
 }
-/***************************************************************************************************/
+
 int mac_send_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp)
 {
   /* 
