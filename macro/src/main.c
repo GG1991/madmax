@@ -40,6 +40,8 @@ int main(int argc, char **argv)
 
   myname = strdup("macro");
 
+  myio_init_command_line(argc, argv, &command_line);
+
   WORLD_COMM = MPI_COMM_WORLD;
   MPI_Init( &argc, &argv );
   MPI_Comm_size( WORLD_COMM, &nproc_wor );
