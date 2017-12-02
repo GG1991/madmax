@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 
   myname            = strdup("micro");
 
-  myio_init_command_line(argc, argv, &command_line);
+  myio_comm_line_init(argc, argv, &command_line);
 
   flag_linear_micro = 0;
   first_time_homo   = 1;
@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 
   flag_coupling = PETSC_FALSE;
 
-  myio_search_option_in_command_line(&command_line, "-coupl");
+  myio_comm_line_search_option(&command_line, "-coupl");
   if(command_line.found){
     flag_coupling = PETSC_TRUE;
   }
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
   }
   nvoi = (dim == 2) ? 3 : 6;
 
-  myio_get_string_command_line(&command_line, "-micro_struct");
+  myio_comm_line_get_string(&command_line, "-micro_struct");
   if(! command_line.found){
     myio_printf(&MICRO_COMM,"micro structure ( -micro_struct <format> ) not given\n");
     goto end;

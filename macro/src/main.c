@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 
   myname = strdup("macro");
 
-  myio_init_command_line(argc, argv, &command_line);
+  myio_comm_line_init(argc, argv, &command_line);
 
   WORLD_COMM = MPI_COMM_WORLD;
   MPI_Init( &argc, &argv );
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
   flag_coupling = PETSC_FALSE;
 
-  myio_search_option_in_command_line(&command_line, "-coupl");
+  myio_comm_line_search_option(&command_line, "-coupl");
   if(command_line.found){
     flag_coupling = PETSC_TRUE;
   }
@@ -83,7 +83,7 @@ end_mac_0:
       "--------------------------------------------------\n");
 
   macro_mode  = NORMAL;
-  myio_search_option_in_command_line(&command_line, "-normal");
+  myio_comm_line_search_option(&command_line, "-normal");
   if(command_line.found){
     macro_mode = NORMAL;
     myio_printf(&MACRO_COMM, "MACRO MODE : NORMAL\n" );
@@ -99,13 +99,13 @@ end_mac_0:
     }
   }
 
-  myio_search_option_in_command_line(&command_line, "-testcomm");
+  myio_comm_line_search_option(&command_line, "-testcomm");
   if(command_line.found){
     macro_mode = TEST_COMM;
     myio_printf(&MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
   }
 
-  myio_search_option_in_command_line(&command_line, "-eigen");
+  myio_comm_line_search_option(&command_line, "-eigen");
   if(command_line.found){
     macro_mode = EIGENSYSTEM;
 #ifndef SLEPC
@@ -121,7 +121,7 @@ end_mac_0:
 
   mesh_f = FORMAT_GMSH;
 
-  myio_get_string_command_line(&command_line, "-mesh");
+  myio_comm_line_get_string(&command_line, "-mesh");
   if(command_line.found){
     mesh_n = strdup(command_line.str);
   }
@@ -145,10 +145,10 @@ end_mac_0:
   ngp_max = npe_max;
 
   flag_print = 0;
-  myio_search_option_in_command_line(&command_line, "-print_petsc");
+  myio_comm_line_search_option(&command_line, "-print_petsc");
   if(command_line.found) flag_print = flag_print | (1<<PRINT_PETSC);
 
-  myio_search_option_in_command_line(&command_line, "-print_vtu");
+  myio_comm_line_search_option(&command_line, "-print_vtu");
   if(command_line.found) flag_print = flag_print | (1<<PRINT_VTU);
 
   PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
