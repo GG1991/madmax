@@ -181,16 +181,10 @@ int main(int argc, char **argv)
 	"--------------------------------------------------\n");
   }
 
-  /**************************************************/
-
-  /* initialize global variables*/
-
   A   = NULL;
   b   = NULL;
   x   = NULL;
   dx  = NULL;
-
-  /* alloc variables*/
 
   loc_elem_index = malloc( dim*npe * sizeof(int));
   glo_elem_index = malloc( dim*npe * sizeof(int));
@@ -205,11 +199,8 @@ int main(int argc, char **argv)
   elem_type   = malloc( nelm      * sizeof(int));
   micro_struct_init_elem_type( &micro_struct, dim, nelm, &get_elem_centroid, elem_type );
 
-  /* Initilize shape functions, derivatives, jacobian, b_matrix */
-
   init_shapes( &struct_sh, &struct_dsh, &struct_wp );
 
-  /* alloc the B matrix */
   struct_bmat = malloc( nvoi * sizeof(double**));
   for( i = 0 ; i < nvoi  ; i++ ){
     struct_bmat[i] = malloc( npe*dim * sizeof(double*));
@@ -217,7 +208,6 @@ int main(int argc, char **argv)
       struct_bmat[i][j] = malloc( ngp * sizeof(double));
   }
 
-  /* calc B matrix */
   int is, gp;
   for( gp = 0; gp < ngp ; gp++ ){
     for( is = 0; is < npe ; is++ ){
@@ -234,10 +224,6 @@ int main(int argc, char **argv)
 
   init_trace( MICRO_COMM, "micro_trace.dat" );
 
-  /**************************************************/
-
-  /* Setting solver options */
-
   ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
 
@@ -245,13 +231,7 @@ int main(int argc, char **argv)
 
   if(flag_coupling){
 
-    /*
-       COUPLING EXECUTION
-
-       1) waits instruction 
-       2) execute instruction
-       3) finish if instruction = SIGNAL_MICRO_END  
-     */
+    /* COUPLING EXECUTION */
     int signal=-1;
 
     while(signal!=MIC_END){
@@ -369,8 +349,6 @@ int main(int argc, char **argv)
 
   micro_print_info();
 
-  /**************************************************/
-  /* free variables*/
   free(loc_elem_index); 
   free(glo_elem_index); 
   free(elem_disp     ); 
@@ -383,7 +361,6 @@ int main(int argc, char **argv)
     free(elem_type); 
   }
 
-  /* free the B matrix */
   for( i = 0 ; i < nvoi  ; i++ ){
     for( j = 0 ; j < npe*dim ; j++ )
       free(struct_bmat[i][j]);
@@ -392,7 +369,6 @@ int main(int argc, char **argv)
   free(struct_bmat);
 
   end_trace( MICRO_COMM );
-  /**************************************************/
 
   if(!flag_coupling){
     myio_printf(&MICRO_COMM,
@@ -410,7 +386,6 @@ end:
   return 0;
 }
 
-/****************************************************************************************************/
 
 int micro_print_info( void )
 {
@@ -520,8 +495,6 @@ int micro_print_info( void )
   fclose(fm);
   return 0;
 }
-
-/****************************************************************************************************/
 
 int micro_pvtu( char *name )
 {
