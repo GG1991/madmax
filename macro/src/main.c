@@ -48,14 +48,13 @@ int main(int argc, char **argv)
   MPI_Comm_rank( WORLD_COMM, &rank_wor );
 
   flag_coupling = PETSC_FALSE;
-  bool flag_found;
-  myio_search_option_in_command_line(argc, argv, "-coupl", &flag_found);
-  macmic.type = 0;
-  if(flag_found){
+
+  myio_search_option_in_command_line(&command_line, "-coupl");
+  if(command_line.found){
     flag_coupling = PETSC_TRUE;
-    macmic.type = COUP_1;
   }
 
+  macmic.type = COUP_1;
   color = MACRO;
   ierr = macmic_coloring( WORLD_COMM, &color, &macmic, &MACRO_COMM );
   if( ierr ){
@@ -152,47 +151,39 @@ end_mac_0:
   PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
   if( set == PETSC_FALSE ) nr_norm_tol=1.0e-7;
 
-  ierr = function_fill_list_from_command_line(argc, argv, &function_list);
+  ierr = function_fill_list_from_command_line(&command_line, &function_list);
   if(ierr){
     myio_printf(&MACRO_COMM,"error reading functions from command line.\n");
     goto end_mac_1;
   }
 
-  ierr = mesh_fill_boundary_list_from_command_line(argc, argv, &boundary_list);
+  ierr = mesh_fill_boundary_list_from_command_line(&command_line, &boundary_list);
   if(ierr){
     myio_printf(&MACRO_COMM,"error reading boundary from command line.\n");
     goto end_mac_1;
   }
 
-  ierr = material_fill_list_from_command_line(argc, argv, &material_list);
+  ierr = material_fill_list_from_command_line(&command_line, &material_list);
   if(ierr){
     myio_printf(&MACRO_COMM,"error reading material from command line.\n");
     goto end_mac_1;
   }
 
-  /**************************************************/
-
-  /* mesh partition options */
   partition_algorithm = PARMETIS_GEOM;
   PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
   if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_MESHKWAY;
+
   PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
   if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_GEOM;
 
-  /**************************************************/
-
-  /* non zeros factor */
   PetscOptionsGetInt( NULL, NULL, "-nnz_factor", &nnz_factor, &set );
   if( set == PETSC_FALSE ) nnz_factor = 1;
-
-  /**************************************************/
 
   if(flag_coupling)
     myio_printf(&MACRO_COMM, "MACRO: COUPLING\n" );
   else
     myio_printf(&MACRO_COMM, "MACRO: STANDALONE\n" );
 
-  /* read mesh */    
   myio_printf(&MACRO_COMM, "reading mesh elements" );
   ierr = read_mesh_elmv( MACRO_COMM, myname, mesh_n, mesh_f);
   if( ierr ){
@@ -201,10 +192,6 @@ end_mac_0:
   }
   myio_printf(&MACRO_COMM, " ok\n");
 
-  /*
-     partition the mesh
-     fills "nallnodes" and "allnodes"
-   */
   myio_printf(&MACRO_COMM, "partitioning and distributing mesh");
   ierr = part_mesh( MACRO_COMM, myname, NULL);
   if( ierr ){
@@ -213,7 +200,6 @@ end_mac_0:
   }
   myio_printf(&MACRO_COMM, " ok\n");
 
-  /* calculate "ntotnod", "nmynods", "mynods", "nghost", "ghost" */
   myio_printf(&MACRO_COMM, "calculating ghost nodes");
   ierr = calc_local_and_ghost( MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost );
   if( ierr ){

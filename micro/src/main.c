@@ -33,9 +33,11 @@ int main(int argc, char **argv)
   int        i, j, ierr;
   int        nval;
   PetscBool  set;
-  bool       flag_found;
 
   myname            = strdup("micro");
+
+  myio_init_command_line(argc, argv, &command_line);
+
   flag_linear_micro = 0;
   first_time_homo   = 1;
   flag_struct_mesh  = false;
@@ -47,13 +49,13 @@ int main(int argc, char **argv)
   MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
   flag_coupling = PETSC_FALSE;
-  myio_search_option_in_command_line(argc, argv, "-coupl", &flag_found);
-  macmic.type = 0;
-  if(flag_found){
+
+  myio_search_option_in_command_line(&command_line, "-coupl");
+  if(command_line.found){
     flag_coupling = PETSC_TRUE;
-    macmic.type = COUP_1;
   }
 
+  macmic.type = COUP_1;
   color = MICRO; /* color can change */
   ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM);
   if(ierr){
@@ -78,14 +80,12 @@ int main(int argc, char **argv)
   }
   nvoi = (dim == 2) ? 3 : 6;
 
-  char *format;
-
-  myio_get_string_command_line(argc, argv, "-micro_struct", &format, &flag_found);
-  if(!flag_found){
+  myio_get_string_command_line(&command_line, "-micro_struct");
+  if(! command_line.found){
     myio_printf(&MICRO_COMM,"micro structure ( -micro_struct <format> ) not given\n");
     goto end;
   }
-  micro_struct_init(dim, format, &micro_struct);
+  micro_struct_init(dim, command_line.str, &micro_struct);
 
   lx = micro_struct.size[0];
   ly = micro_struct.size[1];
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
     vol_loc  = lx * (hy*ney) * lz;
   }
 
-  material_fill_list_from_command_line(argc, argv, &material_list);
+  material_fill_list_from_command_line(&command_line, &material_list);
 
   homo_type=0;
   PetscOptionsHasName(NULL,NULL,"-homo_tp",&set);
