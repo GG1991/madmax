@@ -83,8 +83,8 @@ end_mac_0:
       "--------------------------------------------------\n");
 
   macro_mode  = NORMAL;
-  PetscOptionsHasName( NULL, NULL, "-normal", &set );
-  if( set == PETSC_TRUE ){
+  myio_search_option_in_command_line(&command_line, "-normal");
+  if(command_line.found){
     macro_mode = NORMAL;
     myio_printf(&MACRO_COMM, "MACRO MODE : NORMAL\n" );
     PetscOptionsGetReal(NULL,NULL,"-tf",&normal_mode.tf,&set);
@@ -99,13 +99,14 @@ end_mac_0:
     }
   }
 
-  PetscOptionsHasName( NULL, NULL, "-testcomm", &set );
-  if( set == PETSC_TRUE ){
+  myio_search_option_in_command_line(&command_line, "-testcomm");
+  if(command_line.found){
     macro_mode = TEST_COMM;
     myio_printf(&MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
   }
-  PetscOptionsHasName( NULL,NULL,"-eigen",&set);
-  if( set == PETSC_TRUE ){
+
+  myio_search_option_in_command_line(&command_line, "-eigen");
+  if(command_line.found){
     macro_mode = EIGENSYSTEM;
 #ifndef SLEPC
     myio_printf(&MACRO_COMM,"for using -eigensys you should compile with SLEPC.\n");
@@ -120,11 +121,15 @@ end_mac_0:
 
   mesh_f = FORMAT_GMSH;
 
-  PetscOptionsGetString(NULL, NULL, "-mesh", mesh_n, 128, &set);
-  if( set == PETSC_FALSE ){
+  myio_get_string_command_line(&command_line, "-mesh");
+  if(command_line.found){
+    mesh_n = strdup(command_line.str);
+  }
+  else{
     myio_printf(&MACRO_COMM,"mesh file not given on command line.\n");
     goto end_mac_1;
   }
+
   FILE *fm = fopen( mesh_n, "r");
   if( fm == NULL ){
     myio_printf(&MACRO_COMM,"mesh file not found.\n");
@@ -140,11 +145,11 @@ end_mac_0:
   ngp_max = npe_max;
 
   flag_print = 0;
-  PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
-  if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_PETSC);
+  myio_search_option_in_command_line(&command_line, "-print_petsc");
+  if(command_line.found) flag_print = flag_print | (1<<PRINT_PETSC);
 
-  PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
-  if( set == PETSC_TRUE ) flag_print = flag_print | (1<<PRINT_VTU);
+  myio_search_option_in_command_line(&command_line, "-print_vtu");
+  if(command_line.found) flag_print = flag_print | (1<<PRINT_VTU);
 
   PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
   if( set == PETSC_FALSE ) nr_max_its=5;
@@ -166,8 +171,10 @@ end_mac_0:
   ierr = material_fill_list_from_command_line(&command_line, &material_list);
   if(ierr){
     myio_printf(&MACRO_COMM,"error reading material from command line.\n");
+
     goto end_mac_1;
   }
+
 
   partition_algorithm = PARMETIS_GEOM;
   PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);

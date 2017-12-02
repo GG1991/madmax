@@ -56,7 +56,7 @@ int         rank_mac;            // rank on macro comm
 int         nproc_mac;           // # of macro processes (WORLD_COMM)  
 
 char        filename[NBUF];      // string for different purposes
-char        mesh_n[NBUF];        // mesh path
+char       *mesh_n;        // mesh path;
 int         mesh_f;              // mesh format
 
 Mat         A;                   // steffiness matrix          
