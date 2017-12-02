@@ -24,7 +24,7 @@ int myio_printf(void* COMM, const char format[], ...){
 }
 
 
-int myio_init_command_line(int argc, char **argv, command_line_t *command_line){
+int myio_comm_line_init(int argc, char **argv, command_line_t *command_line){
 
   if(!command_line){
     return 1;
@@ -42,7 +42,7 @@ int myio_init_command_line(int argc, char **argv, command_line_t *command_line){
 }
 
 
-int myio_search_option_in_command_line(command_line_t *command_line, const char *option_name){
+int myio_comm_line_search_option(command_line_t *command_line, const char *option_name){
 
   command_line->found = false;
 
@@ -66,7 +66,37 @@ int myio_search_option_in_command_line(command_line_t *command_line, const char 
 }
 
 
-int myio_get_string_array_command_line(command_line_t *command_line, int n_str_expec, const char *option_name){
+int myio_comm_line_get_int(command_line_t *command_line, const char *option_name){
+
+  command_line->found = false;
+
+  if(! command_line->argv || ! option_name)
+    return 1;
+
+  if(! command_line->argc)
+    return 0;
+
+  int i = 0;
+
+  while(i < command_line->argc){
+    if(! strcmp(command_line->argv[i], option_name)) break;
+    i++;
+  }
+
+  if(i < command_line->argc - 1){
+    i = i + 1;
+    command_line->int_val = atoi(command_line->argv[i]);
+    command_line->found = true;
+  }
+  else{
+    command_line->str = NULL;
+  }
+
+  return 0;
+}
+
+
+int myio_comm_line_get_string_array(command_line_t *command_line, int n_str_expec, const char *option_name){
 
   command_line->found = false;
 
@@ -112,7 +142,7 @@ int myio_get_string_array_command_line(command_line_t *command_line, int n_str_e
 }
 
 
-int myio_get_string_command_line(command_line_t *command_line, const char *option_name){
+int myio_comm_line_get_string(command_line_t *command_line, const char *option_name){
 
   command_line->found = false;
 
