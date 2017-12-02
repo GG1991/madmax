@@ -131,7 +131,7 @@ int myio_get_string_command_line(command_line_t *command_line, const char *optio
     i = i + 1;
     char *str_token, *argv_dup;
     argv_dup = strdup(command_line->argv[i]);
-    str_token = strtok(argv_dup, " \n");
+    str_token = strtok(argv_dup, "\n");
     command_line->str = strdup(str_token);
     command_line->found = true;
   }
