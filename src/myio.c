@@ -1,7 +1,8 @@
 #include "myio.h"
 
-int myio_printf(void* COMM, const char format[], ...)
-{
+
+int myio_printf(void* COMM, const char format[], ...){
+
   va_list arg;
   int     done;
 
@@ -22,6 +23,7 @@ int myio_printf(void* COMM, const char format[], ...)
   return done;
 }
 
+
 int myio_init_command_line(int argc, char **argv, command_line_t *command_line){
 
   if(!command_line){
@@ -39,8 +41,8 @@ int myio_init_command_line(int argc, char **argv, command_line_t *command_line){
   return 0;
 }
 
-int myio_search_option_in_command_line(command_line_t *command_line, const char *option_name)
-{
+
+int myio_search_option_in_command_line(command_line_t *command_line, const char *option_name){
 
   command_line->found = false;
 
@@ -64,8 +66,7 @@ int myio_search_option_in_command_line(command_line_t *command_line, const char 
 }
 
 
-int myio_get_string_array_command_line(command_line_t *command_line, int n_str_expec, const char *option_name)
-{
+int myio_get_string_array_command_line(command_line_t *command_line, int n_str_expec, const char *option_name){
 
   command_line->found = false;
 
@@ -103,12 +104,15 @@ int myio_get_string_array_command_line(command_line_t *command_line, int n_str_e
     }
     command_line->found = true;
   }
+  else{
+    command_line->str_arr = NULL;
+  }
 
   return 0;
 }
 
-int myio_get_string_command_line(command_line_t *command_line, const char *option_name)
-{
+
+int myio_get_string_command_line(command_line_t *command_line, const char *option_name){
 
   command_line->found = false;
 
