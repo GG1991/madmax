@@ -1,35 +1,23 @@
-/*
-   mesh treatment functions
-
-   Author> Guido Giuntoli
-   Date>   08-08-2017
- */
-
 #include "sputnik.h"
 #include "parmetis.h"
 #include "mesh.h"
 
 #define NBUF 256
 
-/**************************************************/
+int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list_t *boundary_list){
 
-int mesh_fill_boundary_list_from_command_line(int argc, char **argv, list_t *boundary_list)
-{
+  myio_get_string_array_command_line(command_line, MAX_NUM_OF_BOUNDARIES, "-boundary");
 
-  list_init(boundary_list, sizeof(mesh_boundary_t), NULL);
-
-  char **string_array, *str_token;
-  bool flag_found; int n_str_found;
-  myio_get_string_array_command_line(argc, argv, "-boundary", MAX_NUM_OF_BOUNDARIES, &string_array, &flag_found, &n_str_found);
-
-  if(!flag_found || !n_str_found)
+  if(! command_line->found || ! command_line->n_str_found)
     return 1;
 
+  list_init(boundary_list, sizeof(mesh_boundary_t), NULL);
   mesh_boundary_t  bou;
 
+  char *str_token;
   int i;
-  for( i=0 ; i<n_str_found ; i++ ){
-    str_token     = strtok(string_array[i]," \n");
+  for( i=0 ; i<command_line->n_str_found ; i++ ){
+    str_token = strtok(command_line->str_arr[i]," \n");
     bou.name  = strdup(str_token);
     str_token = strtok(NULL," \n");
     bou.kind  = strbin2dec(str_token);
@@ -53,7 +41,6 @@ int mesh_fill_boundary_list_from_command_line(int argc, char **argv, list_t *bou
   return 0;
 }
 
-/**************************************************/
 
 int part_mesh( MPI_Comm COMM, char *myname, double *centroid )
 {

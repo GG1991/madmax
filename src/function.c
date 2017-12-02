@@ -109,25 +109,20 @@ int function_get_from_list(int fn, list_t *function_list, function_t **function)
 
 /****************************************************************************************************/
 
-int function_fill_list_from_command_line(int argc, char **argv, list_t *function_list)
-{
+int function_fill_list_from_command_line(command_line_t *command_line, list_t *function_list){
 
-  list_init(function_list, sizeof(function_t), NULL);
+  myio_get_string_array_command_line(command_line, MAX_NUM_OF_FUNCTIONS, "-function");
 
-  char **string_array, *data; bool flag_found; int n_str_found;
-
-  myio_get_string_array_command_line(\
-      argc, argv, "-function", MAX_NUM_OF_FUNCTIONS, &string_array, &flag_found, &n_str_found);
-
-  if(!flag_found || !n_str_found)
+  if(!command_line->found || !command_line->n_str_found)
     return 1;
 
-  function_t  fun;
+  list_init(function_list, sizeof(function_t), NULL);
+  char *data;
 
   int i, j;
-
-  for( i=0 ; i<n_str_found ; i++ ){
-    data     = strtok(string_array[i]," \n");
+  function_t fun;
+  for( i=0 ; i<command_line->n_str_found ; i++ ){
+    data     = strtok(command_line->str_arr[i]," \n");
     fun.fnum = atoi(data);
     data     = strtok(NULL, " \n");
     fun.n    = atoi(data);

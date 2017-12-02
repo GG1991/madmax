@@ -78,24 +78,21 @@ int material_get_rho( material_t *mat_p, int dim , double * rho )
 
 /****************************************************************************************************/
 
-int material_fill_list_from_command_line(int argc, char **argv, list_t *material_list)
-{
+int material_fill_list_from_command_line(command_line_t *command_line, list_t *material_list){
+
+  myio_get_string_array_command_line(command_line, MAX_NUM_OF_MATERIALS, "-material");
+
+  if(! command_line->found || ! command_line->n_str_found)
+    return 1;
 
   list_init(material_list, sizeof(material_t), NULL);
 
-  char **string_array; bool flag_found; int n_str_found;
-  myio_get_string_array_command_line(\
-      argc, argv, "-material", MAX_NUM_OF_MATERIALS, &string_array, &flag_found, &n_str_found);
-
-  if(!flag_found || !n_str_found)
-    return 1;
-
   int i;
-  for( i = 0 ; i < n_str_found ; i++ )
+  for( i=0 ; i<command_line->n_str_found ; i++ )
   {
     char       *data;
     material_t  mat;
-    data = strtok(string_array[i]," \n");
+    data = strtok(command_line->str_arr[i]," \n");
     mat.name = strdup( data );
     data = strtok(NULL," \n");
     if(!strcmp(data,"MAT_ELASTIC"))
