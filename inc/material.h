@@ -1,7 +1,3 @@
-/* Materials for solid structures calculation
- * 
- */
-
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
@@ -15,15 +11,14 @@
 
 typedef struct material_t_{
 
-  char  *name;
-  int   type_id;
-  int   id;
-  void  *type;
+  char *name;
+  int type_id;
+  int id;
+  void *type;
 
 }material_t;
 
-/* Linear Elastic Material */
-typedef struct _type_0{
+typedef struct _type_0{ /* Linear Elastic Material */
 
   double young;
   double poisson;

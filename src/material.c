@@ -65,7 +65,6 @@ int material_get_c_tang( material_t *mat_p, int dim , double * strain_gp, double
   return 0;
 }
 
-/****************************************************************************************************/
 
 int material_get_rho( material_t *mat_p, int dim , double * rho )
 {
@@ -76,7 +75,6 @@ int material_get_rho( material_t *mat_p, int dim , double * rho )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int material_fill_list_from_command_line(command_line_t *command_line, list_t *material_list){
 
@@ -123,5 +121,3 @@ int material_fill_list_from_command_line(command_line_t *command_line, list_t *m
 
   return 0;
 }
-
-/****************************************************************************************************/
