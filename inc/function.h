@@ -1,7 +1,3 @@
-/* Function declarations and prototypes
- *  
- */
- 
 #ifndef FUN_H
 #define FUN_H
 
@@ -12,7 +8,7 @@
 #define MAX_NUM_OF_FUNCTIONS 4
 
 typedef struct _function_t{
-    
+
     int n;
     int inter;
     int fnum;    

@@ -1,21 +1,7 @@
-/*
-
-   MICRO main function
-
-   Program for solving the microscopic problem 
-   for multi-scale approach.
-
-   Author> Guido Giuntoli
-   Date> 28-07-2017
-
- */
-
 #include "micro.h"
 
 static char help[] = 
 "MICRO MULTISCALE CODE\n"
-"Solves the RVE problem inside a solid structure.                                             \n"
-"It has the capability of being couple with MACRO.                                            \n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]                                       \n"
 "-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
 "-homo_ts     : c =  vi ci + vm cm            (serial)                                        \n"
@@ -23,9 +9,7 @@ static char help[] =
 "-homo_us     : homogenization using uniform strains approach                                 \n"
 "-struct_n [<nx,ny>] if dim = 2                                                               \n"
 "-print_petsc                                                                                 \n"
-"-print_vtk                                                                                   \n"
-"-print_vtu                                                                                   \n"
-"-print_all                                                                                   \n";
+"-print_vtu                                                                                   \n";
 
 int main(int argc, char **argv)
 {

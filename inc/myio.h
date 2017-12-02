@@ -13,8 +13,8 @@
 
 #endif
 
-typedef struct command_line_t_
-{
+typedef struct command_line_t_{
+
   int argc;
   char **argv;
 
