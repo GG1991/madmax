@@ -96,6 +96,36 @@ int myio_comm_line_get_int(command_line_t *command_line, const char *option_name
 }
 
 
+int myio_comm_line_get_double(command_line_t *command_line, const char *option_name){
+
+  command_line->found = false;
+
+  if(! command_line->argv || ! option_name)
+    return 1;
+
+  if(! command_line->argc)
+    return 0;
+
+  int i = 0;
+
+  while(i < command_line->argc){
+    if(! strcmp(command_line->argv[i], option_name)) break;
+    i++;
+  }
+
+  if(i < command_line->argc - 1){
+    i = i + 1;
+    command_line->double_val = atof(command_line->argv[i]);
+    command_line->found = true;
+  }
+  else{
+    command_line->str = NULL;
+  }
+
+  return 0;
+}
+
+
 int myio_comm_line_get_string_array(command_line_t *command_line, int n_str_expec, const char *option_name){
 
   command_line->found = false;
@@ -126,7 +156,6 @@ int myio_comm_line_get_string_array(command_line_t *command_line, int n_str_expe
     char *str_token, *argv_dup;
     argv_dup = strdup(command_line->argv[i]);
     str_token = strtok(argv_dup, ",\n");
-    command_line->n_str_found = 0;
     while(str_token){
       command_line->str_arr[command_line->n_str_found] = strdup(str_token);
       str_token = strtok(NULL, ",\n");
