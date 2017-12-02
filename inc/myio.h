@@ -18,27 +18,32 @@ typedef struct command_line_t_
   int argc;
   char **argv;
 
+  char **str_arr;
   int n_str_found;
-  char **string_array;
+  int n_str_expec;
 
-  char *string;
+  char *str;
 
-  bool found_flag;
+  bool found;
 
 }command_line_t;
 
 command_line_t command_line;
 
 
+int myio_printf(void *COMM, const char format[], ...);
+
+int myio_free_string_array(char **string_arr, int n_str);
+
+int myio_free_string(char *str);
+
 int myio_init_command_line(int argc, char **argv, command_line_t *command_line);
 
-int myio_printf( void *COMM, const char format[], ... );
+int myio_get_string_command_line(command_line_t *command_line, const char *option_name);
 
-int myio_get_string_command_line(int argc, char **argv, const char *option_name, char **string, bool *flag_found);
+int myio_get_string_array_command_line(command_line_t *command_line, int n_str_expec, const char *option_name);
 
-int myio_get_string_array_command_line(int argc, char **argv, const char *option_name, int n_str_expect, char ***strings, bool *flag_found, int *n_str_found);
-
-int myio_search_option_in_command_line(int argc, char **argv, const char *option_name, bool *flag_found);
+int myio_search_option_in_command_line(command_line_t *command_line, const char *option_name);
 
 
 #endif

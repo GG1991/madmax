@@ -39,109 +39,128 @@ int myio_init_command_line(int argc, char **argv, command_line_t *command_line){
   return 0;
 }
 
-int myio_get_string_array_command_line(int argc, char **argv, const char *option_name, int n_str_expect, char ***strings, bool *flag_found, int *n_str_found)
+int myio_search_option_in_command_line(command_line_t *command_line, const char *option_name)
 {
 
-  *flag_found = false;
+  command_line->found = false;
 
-  if(!argc || !n_str_expect){
-    strings = NULL;
-    return 0;
-  }
-
-  if(!argv || !option_name)
+  if(! command_line->argv || ! option_name)
     return 1;
 
-  *strings = malloc(n_str_expect*sizeof(char**));
+  if(! command_line->argc)
+    return 0;
 
-  char *str_token, *argv_dup;
   int i = 0;
 
-  while(i < argc){
-    argv_dup = strdup(argv[i]);
-    str_token = strtok(argv_dup," \"\n");
-    if(!strcmp(str_token, option_name)){
-      *flag_found = true;
+  while(i < command_line->argc){
+    if(! strcmp(command_line->argv[i], option_name)){
+      command_line->found = true;
       break;
     }
+    i++;
+  }
+
+  return 0;
+}
+
+
+int myio_get_string_array_command_line(command_line_t *command_line, int n_str_expec, const char *option_name)
+{
+
+  command_line->found = false;
+
+  if(! command_line->argv || ! option_name)
+    return 1;
+
+  if(! command_line->argc)
+    return 0;
+
+  myio_free_string_array(command_line->str_arr, command_line->n_str_found);
+
+  command_line->n_str_expec = n_str_expec;
+  command_line->str_arr = malloc(command_line->n_str_expec*sizeof(char**));
+
+  int i = 0;
+
+  while(i < command_line->argc){
+    if(! strcmp(command_line->argv[i], option_name))
+      break;
     i++ ;
   }
 
-  int n_str_found_aux = 0;
+  command_line->n_str_found = 0;
 
-  if(i < (argc-1)){
+  if(i < command_line->argc - 1){
     i = i + 1;
-    argv_dup = strdup(argv[i]);
-    str_token = strtok(argv_dup,",\"\n");
-    n_str_found_aux = 0;
+    char *str_token, *argv_dup;
+    argv_dup = strdup(command_line->argv[i]);
+    str_token = strtok(argv_dup, ",\n");
+    command_line->n_str_found = 0;
     while(str_token){
-      (*strings)[n_str_found_aux++] = strdup(str_token);
-      str_token = strtok(NULL,",\"\n");
+      command_line->str_arr[command_line->n_str_found] = strdup(str_token);
+      str_token = strtok(NULL, ",\n");
+      command_line->n_str_found++;
     }
-  }
-  else
-    return 1;
-
-  *n_str_found = n_str_found_aux;
-
-  return 0;
-}
-
-int myio_search_option_in_command_line(int argc, char **argv, const char *option_name, bool *flag_found)
-{
-
-  *flag_found = false;
-
-  if(!argv || !option_name)
-    return 1;
-
-  if(!argc)
-    return 0;
-
-  char *str_token, *argv_dup;
-  int i = 0;
-
-  while(i < argc){
-    argv_dup = strdup(argv[i]);
-    str_token = strtok(argv_dup," \n");
-    if(!strcmp(str_token,option_name)){
-      *flag_found = true;
-      break;
-    }
-    i++;
+    command_line->found = true;
   }
 
   return 0;
 }
 
-int myio_get_string_command_line(int argc, char **argv, const char *option_name, char **string, bool *flag_found)
+int myio_get_string_command_line(command_line_t *command_line, const char *option_name)
 {
 
-  *flag_found = false;
+  command_line->found = false;
 
-  if(!argv || !option_name)
+  if(! command_line->argv || ! option_name)
     return 1;
 
-  if(!argc)
+  if(! command_line->argc)
     return 0;
 
-  char *str_token, *argv_dup;
+  myio_free_string(command_line->str);
+
   int i = 0;
 
-  while(i < argc){
-    argv_dup = strdup(argv[i]);
-    str_token = strtok(argv_dup," \n");
-    if(!strcmp(str_token,option_name)){
-      *flag_found = true;
-      break;
-    }
+  while(i < command_line->argc){
+    if(! strcmp(command_line->argv[i], option_name)) break;
     i++;
   }
 
-  if(i < (argc-1)){
+  if(i < command_line->argc - 1){
     i = i + 1;
-    *string = strdup(argv[i]);
+    char *str_token, *argv_dup;
+    argv_dup = strdup(command_line->argv[i]);
+    str_token = strtok(argv_dup, " \n");
+    command_line->str = strdup(str_token);
+    command_line->found = true;
   }
+  else{
+    command_line->str = NULL;
+  }
+
+  return 0;
+}
+
+
+int myio_free_string_array(char **str_arr, int n_str_found){
+
+  int i;
+  if(! str_arr) return 0;
+
+  for( i=0 ; i<n_str_found ; i++ ){
+    if(str_arr[i]) free(str_arr[i]);
+  }
+  free(str_arr);
+
+  return 0;
+}
+
+
+int myio_free_string(char *str){
+
+  if(str)
+    free(str);
 
   return 0;
 }
