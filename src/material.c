@@ -78,7 +78,7 @@ int material_get_rho( material_t *mat_p, int dim , double * rho )
 
 int material_fill_list_from_command_line(command_line_t *command_line, list_t *material_list){
 
-  myio_get_string_array_command_line(command_line, MAX_NUM_OF_MATERIALS, "-material");
+  myio_comm_line_get_string_array(command_line, MAX_NUM_OF_MATERIALS, "-material");
 
   if(! command_line->found || ! command_line->n_str_found)
     return 1;

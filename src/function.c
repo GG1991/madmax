@@ -106,7 +106,7 @@ int function_get_from_list(int fn, list_t *function_list, function_t **function)
 
 int function_fill_list_from_command_line(command_line_t *command_line, list_t *function_list){
 
-  myio_get_string_array_command_line(command_line, MAX_NUM_OF_FUNCTIONS, "-function");
+  myio_comm_line_get_string_array(command_line, MAX_NUM_OF_FUNCTIONS, "-function");
 
   if(!command_line->found || !command_line->n_str_found)
     return 1;

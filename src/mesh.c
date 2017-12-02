@@ -6,7 +6,7 @@
 
 int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list_t *boundary_list){
 
-  myio_get_string_array_command_line(command_line, MAX_NUM_OF_BOUNDARIES, "-boundary");
+  myio_comm_line_get_string_array(command_line, MAX_NUM_OF_BOUNDARIES, "-boundary");
 
   if(! command_line->found || ! command_line->n_str_found)
     return 1;
