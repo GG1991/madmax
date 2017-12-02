@@ -1,6 +1,5 @@
 #include "function.h"
 
-/****************************************************************************************************/
 
 int function_init(double *x, double *y, int n, int inter, function_t *function){
 
@@ -22,7 +21,6 @@ int function_init(double *x, double *y, int n, int inter, function_t *function){
   return 0;
 }
 
-/****************************************************************************************************/
 
 int function_eval(double x, function_t *function, double *y)
 {
@@ -61,7 +59,6 @@ int function_eval(double x, function_t *function, double *y)
   return 0;
 }
 
-/****************************************************************************************************/
 
 int function_comp(void *a, void *b)
 {
@@ -74,7 +71,6 @@ int function_comp(void *a, void *b)
   return 1;
 }
 
-/****************************************************************************************************/
 
 int function_get_from_list(int fn, list_t *function_list, function_t **function)
 {
@@ -107,7 +103,6 @@ int function_get_from_list(int fn, list_t *function_list, function_t **function)
    return 0;
 }
 
-/****************************************************************************************************/
 
 int function_fill_list_from_command_line(command_line_t *command_line, list_t *function_list){
 
@@ -137,5 +132,3 @@ int function_fill_list_from_command_line(command_line_t *command_line, list_t *f
 
   return 0;
 }
-
-/****************************************************************************************************/
