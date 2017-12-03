@@ -72,10 +72,7 @@ int function_comp(void *a, void *b)
 }
 
 
-int function_get_from_list(int fn, list_t *function_list, function_t **function)
-{
-
-  /* returns 0 if was found and 1 if not or error */
+int function_get_from_list(int fn, list_t *function_list, function_t **function){
 
    if( function_list == NULL ){
      function = NULL;
@@ -108,21 +105,20 @@ int function_fill_list_from_command_line(command_line_t *command_line, list_t *f
 
   myio_comm_line_get_string_array(command_line, MAX_NUM_OF_FUNCTIONS, "-function");
 
-  if(!command_line->found || !command_line->n_str_found)
+  if(! command_line->found || ! command_line->n_str_found)
     return 1;
 
   list_init(function_list, sizeof(function_t), NULL);
-  char *data;
 
   int i, j;
   function_t fun;
   for( i=0 ; i<command_line->n_str_found ; i++ ){
-    data     = strtok(command_line->str_arr[i]," \n");
+    char *data = strtok(command_line->str_arr[i]," \n");
     fun.fnum = atoi(data);
-    data     = strtok(NULL, " \n");
-    fun.n    = atoi(data);
-    fun.x    = malloc(fun.n*sizeof(double));
-    fun.y    = malloc(fun.n*sizeof(double));
+    data = strtok(NULL, " \n");
+    fun.n = atoi(data);
+    fun.x = malloc(fun.n*sizeof(double));
+    fun.y = malloc(fun.n*sizeof(double));
     for( j = 0 ; j < fun.n ; j++ ){
       data = strtok(NULL," \n"); fun.x[j] = atof(data);
       data = strtok(NULL," \n"); fun.y[j] = atof(data);
