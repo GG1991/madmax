@@ -15,9 +15,9 @@ $MPIEXEC -np $NP ../../macro/macro \
     -function "0 2 0.0 0.0 1.0 0.0","1 2 0.0 0.0 1.0 0.001" \
     -mesh cube_2d.msh \
     -dim 2            \
-    -eigen            \
+    -normal           \
     -tf 1.0           \
-    -dt 1.0           \
+    -dt 0.2           \
     -ksp_type cg      \
     -pc_type jacobi   \
     -part_geom        \
