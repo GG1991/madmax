@@ -35,7 +35,7 @@ OPT = 0
 ifeq ($(OPT),1)
 CFLAGS=-O3 -DWITH_MPI
 else
-CFLAGS=-g -O0 -DWITH_MPI -lm
+CFLAGS=-g -O0 -DWITH_MPI -lm -std=gnu11
 endif
 
 DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h      \
