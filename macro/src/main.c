@@ -34,7 +34,10 @@ int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost,
 int main(int argc, char **argv)
 {
 
-  int        ierr, ierr_1 = 0;
+#define CHECK_AND_GOTO(error){if(error){myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
+#define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
+
+  int        ierr;
   int        i, j;
   PetscBool  set;
 
@@ -59,12 +62,8 @@ int main(int argc, char **argv)
   ierr = macmic_coloring( WORLD_COMM, &color, &macmic, &MACRO_COMM );
   if( ierr ){
     myio_printf(&PETSC_COMM_WORLD, "problem in coloring\n" );
-    ierr_1 = 1;
-    goto end_mac_0;
+    goto end;
   }
-
-end_mac_0:
-  if(ierr_1) goto end_mac_2;
 
   MPI_Comm_size(MACRO_COMM, &nproc_mac);
   MPI_Comm_rank(MACRO_COMM, &rank_mac);
@@ -84,19 +83,16 @@ end_mac_0:
 
   macro_mode  = NORMAL;
   myio_comm_line_search_option(&command_line, "-normal");
+
   if(command_line.found){
+
     macro_mode = NORMAL;
-    myio_printf(&MACRO_COMM, "MACRO MODE : NORMAL\n" );
-    PetscOptionsGetReal(NULL,NULL,"-tf",&normal_mode.tf,&set);
-    if(set == PETSC_FALSE){
-      myio_printf(&MACRO_COMM,"-tf not given.\n");
-      goto end_mac_1;
-    }
-    PetscOptionsGetReal(NULL,NULL,"-dt",&normal_mode.dt,&set);
-    if(set == PETSC_FALSE){
-      myio_printf(&MACRO_COMM,"-dt not given.\n");
-      goto end_mac_1;
-    }
+
+    myio_comm_line_get_double(&command_line, "-tf");
+    CHECK_INST_ELSE_GOTO(command_line.found, normal_mode.tf = command_line.double_val;)
+
+    myio_comm_line_get_double(&command_line, "-dt");
+    CHECK_INST_ELSE_GOTO(command_line.found, normal_mode.dt = command_line.double_val;)
   }
 
   myio_comm_line_search_option(&command_line, "-testcomm");
@@ -127,18 +123,18 @@ end_mac_0:
   }
   else{
     myio_printf(&MACRO_COMM,"mesh file not given on command line.\n");
-    goto end_mac_1;
+    goto end;
   }
 
   FILE *fm = fopen( mesh_n, "r");
   if( fm == NULL ){
     myio_printf(&MACRO_COMM,"mesh file not found.\n");
-    goto end_mac_1;
+    goto end;
   }
   PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
   if( set == PETSC_FALSE ){
     myio_printf(&MACRO_COMM,"dimension (-dim <dim>) not given\n");
-    goto end_mac_1;
+    goto end;
   }
   nvoi    = (dim == 2) ? 3 : 6;
   npe_max = (dim == 2) ? 4 : 8;
@@ -157,24 +153,13 @@ end_mac_0:
   if( set == PETSC_FALSE ) nr_norm_tol=1.0e-7;
 
   ierr = function_fill_list_from_command_line(&command_line, &function_list);
-  if(ierr){
-    myio_printf(&MACRO_COMM,"error reading functions from command line.\n");
-    goto end_mac_1;
-  }
+  CHECK_AND_GOTO(ierr);
 
   ierr = mesh_fill_boundary_list_from_command_line(&command_line, &boundary_list);
-  if(ierr){
-    myio_printf(&MACRO_COMM,"error reading boundary from command line.\n");
-    goto end_mac_1;
-  }
+  CHECK_AND_GOTO(ierr);
 
   ierr = material_fill_list_from_command_line(&command_line, &material_list);
-  if(ierr){
-    myio_printf(&MACRO_COMM,"error reading material from command line.\n");
-
-    goto end_mac_1;
-  }
-
+  CHECK_AND_GOTO(ierr);
 
   partition_algorithm = PARMETIS_GEOM;
   PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
@@ -195,57 +180,33 @@ end_mac_0:
   ierr = read_mesh_elmv( MACRO_COMM, myname, mesh_n, mesh_f);
   if( ierr ){
     myio_printf(&MACRO_COMM, "problem reading mesh elements\n" );
-    goto end_mac_1;
+    goto end;
   }
   myio_printf(&MACRO_COMM, " ok\n");
 
   myio_printf(&MACRO_COMM, "partitioning and distributing mesh");
   ierr = part_mesh( MACRO_COMM, myname, NULL);
-  if( ierr ){
-    myio_printf(&MACRO_COMM, "problem partitioning mesh\n" );
-    goto end_mac_1;
-  }
-  myio_printf(&MACRO_COMM, " ok\n");
+  CHECK_AND_GOTO(ierr);
 
   myio_printf(&MACRO_COMM, "calculating ghost nodes");
   ierr = calc_local_and_ghost( MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost );
-  if( ierr ){
-    myio_printf(&MACRO_COMM, "problem calculating mynods and ghosts\n" );
-    goto end_mac_1;
-  }
-  myio_printf(&MACRO_COMM, " ok\n");
+  CHECK_AND_GOTO(ierr);
 
-  /* re-number nodes */
   myio_printf(&MACRO_COMM, "reenumering nodes");
   ierr = reenumerate_PETSc( MACRO_COMM );
-  if( ierr ){
-    myio_printf(&MACRO_COMM, "problem reenumbering nodes\n" );
-    goto end_mac_1;
-  }
-  myio_printf(&MACRO_COMM, " ok\n");
+  CHECK_AND_GOTO(ierr);
 
-  /* read nodes' coordinates */
   myio_printf(&MACRO_COMM, "reading Coordinates");
   ierr = read_coord( mesh_n, nmynods, mynods, nghost , ghost, &coord );
-  if( ierr ){
-    myio_printf(&MACRO_COMM, "problem reading mesh coordinates\n" );
-    goto end_mac_1;
-  }
-  myio_printf(&MACRO_COMM, " ok\n");
+  CHECK_AND_GOTO(ierr);
 
-  /* read boundaries */
   ierr = read_bc();
-  if( ierr ){
-    myio_printf(&MACRO_COMM, "problem reading boundary nodes\n" );
-    goto end_mac_1;
-  }
+  CHECK_AND_GOTO(ierr);
 
   list_init( &physical_list, sizeof(physical_t), NULL );
   gmsh_get_physical_list( mesh_n, &physical_list );
   
 
-  /**************************************************/
-  /* alloc and init variables */
   myio_printf(&MACRO_COMM, "allocating ");
 
   A   = NULL;
@@ -381,7 +342,7 @@ end_mac_0:
     ierr = assembly_AM();
     if( ierr ){
       myio_printf(&MACRO_COMM,"problem during matrix assembly\n");
-      goto end_mac_1;
+      goto end;
     }
 
     /* set dirichlet bc */
@@ -624,7 +585,7 @@ end_mac_0:
   free(dsh);
   /**************************************************/
 
-end_mac_1:
+end:
 
   /* Stop signal to micro if it is coupled */
   if(flag_coupling){
@@ -654,7 +615,6 @@ end_mac_1:
   PetscFinalize();
 #endif
 
-end_mac_2:
   ierr = MPI_Finalize();
 
   return 0;
