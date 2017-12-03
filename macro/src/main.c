@@ -131,11 +131,9 @@ int main(int argc, char **argv)
     myio_printf(&MACRO_COMM,"mesh file not found.\n");
     goto end;
   }
-  PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
-  if( set == PETSC_FALSE ){
-    myio_printf(&MACRO_COMM,"dimension (-dim <dim>) not given\n");
-    goto end;
-  }
+  myio_comm_line_get_int(&command_line, "-dim");
+  CHECK_INST_ELSE_GOTO(command_line.found, dim = command_line.int_val;)
+
   nvoi    = (dim == 2) ? 3 : 6;
   npe_max = (dim == 2) ? 4 : 8;
   ngp_max = npe_max;
@@ -176,27 +174,23 @@ int main(int argc, char **argv)
   else
     myio_printf(&MACRO_COMM, "MACRO: STANDALONE\n" );
 
-  myio_printf(&MACRO_COMM, "reading mesh elements" );
+  myio_printf(&MACRO_COMM, "reading mesh elements\n" );
   ierr = read_mesh_elmv( MACRO_COMM, myname, mesh_n, mesh_f);
-  if( ierr ){
-    myio_printf(&MACRO_COMM, "problem reading mesh elements\n" );
-    goto end;
-  }
-  myio_printf(&MACRO_COMM, " ok\n");
+  CHECK_AND_GOTO(ierr);
 
-  myio_printf(&MACRO_COMM, "partitioning and distributing mesh");
+  myio_printf(&MACRO_COMM, "partitioning and distributing mesh\n");
   ierr = part_mesh( MACRO_COMM, myname, NULL);
   CHECK_AND_GOTO(ierr);
 
-  myio_printf(&MACRO_COMM, "calculating ghost nodes");
+  myio_printf(&MACRO_COMM, "calculating ghost nodes\n");
   ierr = calc_local_and_ghost( MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost );
   CHECK_AND_GOTO(ierr);
 
-  myio_printf(&MACRO_COMM, "reenumering nodes");
+  myio_printf(&MACRO_COMM, "reenumering nodes\n");
   ierr = reenumerate_PETSc( MACRO_COMM );
   CHECK_AND_GOTO(ierr);
 
-  myio_printf(&MACRO_COMM, "reading Coordinates");
+  myio_printf(&MACRO_COMM, "reading Coordinates\n");
   ierr = read_coord( mesh_n, nmynods, mynods, nghost , ghost, &coord );
   CHECK_AND_GOTO(ierr);
 
@@ -214,8 +208,7 @@ int main(int argc, char **argv)
   x   = NULL;
   dx  = NULL;
 
-  /* alloc variables*/
-  int ixpe = npe_max * dim;  // number of indeces per element
+  int ixpe = npe_max * dim;
   loc_elem_index = malloc( ixpe * sizeof(int));
   glo_elem_index = malloc( ixpe * sizeof(int));
   elem_disp      = malloc( ixpe * sizeof(double));
@@ -234,7 +227,6 @@ int main(int argc, char **argv)
   }
   flag_neg_detj  = 0;
 
-  /* alloc B matrix */
   bmat = malloc( nvoi * sizeof(double**));
   for( i = 0 ; i < nvoi  ; i++ ){
     bmat[i] = malloc( ixpe * sizeof(double*));
@@ -242,7 +234,6 @@ int main(int argc, char **argv)
       bmat[i][j] = malloc( ngp_max * sizeof(double));
   }
 
-  /* alloc dsh_gp */
   dsh  = malloc( npe_max * sizeof(double**));
   for( i = 0 ; i < npe_max ; i++ ){
     dsh[i] = malloc( dim * sizeof(double*));
@@ -250,12 +241,10 @@ int main(int argc, char **argv)
       dsh[i][j] = malloc( ngp_max * sizeof(double));
   }
 
-  /* alloc jac */
   jac = malloc( dim * sizeof(double*));
   for( i = 0 ; i < dim ; i++ )
     jac[i] = malloc( dim * sizeof(double));
 
-  /* alloc jac_inv */
   jac_inv = malloc( dim * sizeof(double*));
   for( i = 0 ; i < dim ; i++ )
     jac_inv[i] = malloc( dim * sizeof(double));
@@ -264,9 +253,6 @@ int main(int argc, char **argv)
 
   myio_printf(&MACRO_COMM, "ok\n");
 
-  /**************************************************/
-
-  /* Init Gauss point shapes functions and derivatives */
   ierr = fem_inigau();
 
   int      nr_its = -1;
@@ -284,7 +270,6 @@ int main(int argc, char **argv)
     double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
     double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
-    /* TEST> Sends a calculating strain to micro and obtain the stress */
     for( i = 0 ; i < nvoi ; i++ ){
       for( j = 0 ; j < nvoi ; j++ )
 	strain_mac[j] = 0.0;
@@ -335,7 +320,6 @@ int main(int argc, char **argv)
     VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
     VecZeroEntries( x );
 
-    /* from the owning processes to the ghosts in the others processes */
     VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD );
     VecGhostUpdateEnd  ( x , INSERT_VALUES , SCATTER_FORWARD );
 
@@ -345,7 +329,6 @@ int main(int argc, char **argv)
       goto end;
     }
 
-    /* set dirichlet bc */
     node_list_t *pn = boundary_list.head;
     while( pn )
     {
@@ -365,7 +348,7 @@ int main(int argc, char **argv)
       PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
     }
 
-    int    nconv; // number of converged eigenpairs
+    int    nconv;
     double error;
 
     EPSCreate( MACRO_COMM, &eps );
@@ -400,8 +383,6 @@ int main(int argc, char **argv)
   }
   else if( macro_mode == NORMAL ){
 
-    /* allocate A, x, dx, b */
-
     int     nnz = ( dim == 2 ) ? dim*9 : dim*27; nnz *= nnz_factor;
     KSP     ksp;
 
@@ -427,16 +408,12 @@ int main(int argc, char **argv)
     VecDuplicate( x, &dx );
     VecDuplicate( x, &b );
 
-    /* Setting solver options */
     KSPCreate( MACRO_COMM, &ksp );
     KSPSetFromOptions( ksp );
 
-
-    /* time dependent loop */
     double   t = 0.0;
     int      time_step = 0;
 
-    /* x = 0 */
     VecZeroEntries( x );
     VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
     VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
@@ -445,7 +422,6 @@ int main(int argc, char **argv)
 
       myio_printf(&MACRO_COMM,"\ntime step %-3d %-e seg\n", time_step, t);
 
-      /* setting displacements on dirichlet indeces */
       update_boundary( t , &function_list, &boundary_list );
 
       Vec      x_loc,  b_loc;
@@ -469,12 +445,10 @@ int main(int argc, char **argv)
       VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
       VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
 
-      /* non-linear iterations */
       nr_its = 0; norm = 2 * nr_norm_tol;
       while( nr_its < nr_max_its && norm > nr_norm_tol )
       {
 
-	/* assembly residual */
 	myio_printf(&MACRO_COMM, "MACRO: assembling residual\n" );
 	assembly_b();
 
@@ -503,11 +477,9 @@ int main(int argc, char **argv)
 
 	if( norm < nr_norm_tol ) break;
 
-	/* assembly jacobian */
 	myio_printf(&MACRO_COMM, "MACRO: assembling jacobian\n");
 	assembly_A();
 
-	/* set dirichlet bc */
 	node_list_t *pn = boundary_list.head;
 	while( pn )
 	{
@@ -518,14 +490,12 @@ int main(int argc, char **argv)
 	MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
 	MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
 
-	/* solving problem */
 	myio_printf(&MACRO_COMM, "MACRO: solving system\n" );
 	KSPSetOperators( ksp, A, A );
 	KSPSolve( ksp, b, dx );
 	print_ksp_info( MACRO_COMM, ksp);
 	myio_printf(&MACRO_COMM, "\n");
 
-        /* x = x + dx */
 	VecAXPY( x, 1.0, dx );
 	VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
 	VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
@@ -554,8 +524,6 @@ int main(int argc, char **argv)
     KSPDestroy(&ksp);
   }
 
-  /**************************************************/
-  /* free variables*/
   free(loc_elem_index); 
   free(glo_elem_index); 
   free(elem_disp     ); 
@@ -568,7 +536,6 @@ int main(int argc, char **argv)
     free(elem_type); 
   }
 
-  /* free the B matrix */
   for( i = 0 ; i < nvoi  ; i++ ){
     for( j = 0 ; j < ixpe ; j++ )
       free(bmat[i][j]);
@@ -576,18 +543,15 @@ int main(int argc, char **argv)
   }
   free(bmat);
 
-  /* free dsh */
   for( i = 0 ; i < npe_max ; i++ ){
     for( j = 0 ; j < dim ; j++ )
       free(dsh[i][j]);
     free(dsh[i]);
   }
   free(dsh);
-  /**************************************************/
 
 end:
 
-  /* Stop signal to micro if it is coupled */
   if(flag_coupling){
     ierr = mac_send_signal(WORLD_COMM, MIC_END);
     if(ierr){
@@ -620,7 +584,6 @@ end:
   return 0;
 }
 
-/****************************************************************************************************/
 
 int read_bc()
 {
