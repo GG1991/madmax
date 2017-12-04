@@ -10,27 +10,6 @@ static char help[] =
 "-print_petsc : prints petsc structures on files such as Mat and Vec objects                       \n"
 "-print_vtu   : prints solutions on .vtu and .pvtu files                                           \n";
 
-int read_bc( void );
-int assembly_A( void );
-int assembly_b( void );
-int assembly_AM( void );
-int update_bound( double t );
-int get_global_elem_index( int e, int * glo_elem_index );
-int get_local_elem_index ( int e, int * loc_elem_index );
-int get_elem_properties( void );
-int get_strain( int e , int gp, int * loc_elem_index, double ***dsh, double ***bmat, double *strain_gp );
-int get_stress( int e , int gp, double * strain_gp , double *stress_gp );
-int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
-int get_rho( const char * name, int e , double * rho );
-int get_sh( int dim, int npe, double ***sh );
-int get_dsh( int e, int * loc_elem_index, double *** dsh, double * detj );
-int get_wp( int dim, int npe, double **wp );
-int get_bmat( int e, double ***dsh, double ***bmat );
-int get_mat_name( int id, char * name_s );
-int macro_pvtu( char *name );
-int update_boundary( double t , list_t * function_list, list_t * boundary_list );
-int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord );
-
 params_t params;
 
 int main(int argc, char **argv)
@@ -82,7 +61,7 @@ int main(int argc, char **argv)
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
       "--------------------------------------------------\n");
 
-  params.calc_mode = CALC_MODE_NORMAL;
+  init_variables(&params);
   myio_comm_line_search_option(&command_line, "-normal");
 
   if(command_line.found){
@@ -105,7 +84,7 @@ int main(int argc, char **argv)
   if(command_line.found){
     params.calc_mode = CALC_MODE_EIGEN;
     myio_comm_line_get_double(&command_line, "-energy_stored");
-    if(command_line.found) params.energy_stored = 1.0;
+    if(command_line.found) params.energy_stored = command_line.double_val;
   }
 
   mesh_f = FORMAT_GMSH;
@@ -138,13 +117,10 @@ int main(int argc, char **argv)
   myio_comm_line_search_option(&command_line, "-print_vtu");
   if(command_line.found) flag_print = flag_print | (1<<PRINT_VTU);
 
-  params.non_linear_max_its = 5;
-  params.non_linear_min_norm_tol = 1.0e-7;
-
-  myio_comm_line_get_int(&command_line, "-params.non_linear_max_its");
+  myio_comm_line_get_int(&command_line, "-nl_max_its");
   if(command_line.found) params.non_linear_max_its = command_line.int_val;
 
-  myio_comm_line_get_int(&command_line, "-params.non_linear_min_norm_tol");
+  myio_comm_line_get_int(&command_line, "-nl_min_norm_tol");
   if(command_line.found) params.non_linear_min_norm_tol = command_line.double_val;
 
   ierr = function_fill_list_from_command_line(&command_line, &function_list);

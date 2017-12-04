@@ -11,13 +11,12 @@
 #include "mesh.h"
 #include <string.h>
 
+#define CALC_MODE_NULL   0
 #define CALC_MODE_NORMAL 1
 #define CALC_MODE_EIGEN  2
 #define CALC_MODE_TEST   3
 
 #define NBUF 256
-
-int         macro_mode;
 
 double    **struct_sh;           // Shape functions
 double   ***struct_dsh;          // Derivative shapes functions
@@ -84,5 +83,28 @@ extern params_t params;
 
 list_t boundary_list;
 list_t physical_list;
+
+int read_bc( void );
+int assembly_A( void );
+int assembly_b( void );
+int assembly_AM( void );
+int update_bound( double t );
+int get_global_elem_index( int e, int * glo_elem_index );
+int get_local_elem_index ( int e, int * loc_elem_index );
+int get_elem_properties( void );
+int get_strain( int e , int gp, int * loc_elem_index, double ***dsh, double ***bmat, double *strain_gp );
+int get_stress( int e , int gp, double * strain_gp , double *stress_gp );
+int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan );
+int get_rho( const char * name, int e , double * rho );
+int get_sh( int dim, int npe, double ***sh );
+int get_dsh( int e, int * loc_elem_index, double *** dsh, double * detj );
+int get_wp( int dim, int npe, double **wp );
+int get_bmat( int e, double ***dsh, double ***bmat );
+int get_mat_name( int id, char * name_s );
+int macro_pvtu( char *name );
+int update_boundary( double t , list_t * function_list, list_t * boundary_list );
+int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord );
+void init_variables(params_t *params);
+
 
 #endif
