@@ -21,7 +21,7 @@ $MPIEXEC -np $NP ../../macro/macro \
     -ksp_type cg      \
     -pc_type jacobi   \
     -part_geom        \
-    -nr_max_its  2    \
+    -nl_max_its  2    \
     -eps_nev     2    \
     -print_vtu        \
     -print_petsc      \

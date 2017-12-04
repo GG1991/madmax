@@ -595,7 +595,6 @@ int read_bc()
   return 0;
 }
 
-/****************************************************************************************************/
 
 int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord )
 {
@@ -607,7 +606,6 @@ int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost,
   return ierr;
 }
 
-/****************************************************************************************************/
 
 int assembly_b( void )
 {
@@ -666,7 +664,6 @@ int assembly_b( void )
   VecRestoreArray         ( b_loc , &b_arr );
   VecGhostRestoreLocalForm( b     , &b_loc );
 
-  /* from the local and ghost part with add to all processes */
   VecGhostUpdateBegin( b, ADD_VALUES   , SCATTER_REVERSE );
   VecGhostUpdateEnd  ( b, ADD_VALUES   , SCATTER_REVERSE );
   VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
@@ -675,7 +672,6 @@ int assembly_b( void )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int assembly_AM( void )
 {
@@ -700,7 +696,6 @@ int assembly_AM( void )
       k_elem[i] = 0.0;
     }
 
-    /* get local and global index of nodes in vertex */
     get_local_elem_index ( e, loc_elem_index );
     get_global_elem_index( e, glo_elem_index );
 
@@ -713,10 +708,8 @@ int assembly_AM( void )
 
       detj[gp] = fabs( detj[gp] );
 
-      /* calc strain gp */
       get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
 
-      /* we get stress = f(strain) */
       ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
       ierr = get_rho  ( NULL , e , &rho_gp );            if( ierr ) return 1;
 
@@ -744,7 +737,6 @@ int assembly_AM( void )
 
   }
 
-  /* communication between processes */
   MatAssemblyBegin( A , MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd  ( A , MAT_FINAL_ASSEMBLY );
   MatAssemblyBegin( M , MAT_FINAL_ASSEMBLY );
@@ -753,8 +745,6 @@ int assembly_AM( void )
   return 0;
 }
 
-
-/****************************************************************************************************/
 
 int assembly_A( void )
 {
@@ -774,7 +764,6 @@ int assembly_A( void )
     for( i = 0 ; i < npe*dim*npe*dim ; i++ )
       k_elem[i] = 0.0;
     
-    /* get local and global index of nodes in vertex */
     get_local_elem_index (e, loc_elem_index);
     get_global_elem_index(e, glo_elem_index);
 
@@ -786,10 +775,8 @@ int assembly_A( void )
 
       detj[gp] = fabs( detj[gp] );
 
-      /* calc strain gp */
       get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
 
-      /* we get stress = f(strain) */
       ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if( ierr ) return 1;
 
       for( i = 0 ; i < npe*dim ; i++ ){
@@ -807,14 +794,12 @@ int assembly_A( void )
 
   }
 
-  /* communication between processes */
   MatAssemblyBegin( A , MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd  ( A , MAT_FINAL_ASSEMBLY );
 
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat, double *strain_gp )
 {
@@ -832,7 +817,6 @@ int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp,  double *
   VecRestoreArray         ( x_loc , &x_arr);
   VecGhostRestoreLocalForm( x     , &x_loc);
 
-  /* calc strain gp */
   for( v = 0; v < nvoi ; v++ ){
     strain_gp[v] = 0.0;
     for( i = 0 ; i < npe*dim ; i++ )
@@ -843,7 +827,6 @@ int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp,  double *
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 {
@@ -865,10 +848,8 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
     return 1;
   }
 
-  /* now that we know the material (mat_p) we calculate stress = f(strain) */
   if( mat_p->type_id == MAT_MICRO )
   {
-    /* we have a micro material */
     ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN); if(ierr) return 1;
     ierr = mac_send_strain(WORLD_COMM, strain_gp);
     ierr = mac_send_macro_gp(WORLD_COMM, &macro_gp);
@@ -907,7 +888,6 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
     return 1;
   }
 
-  /* now that we now the material (mat_p) we calculate stress = f(strain) */
   if( mat_p->type_id == MAT_MICRO )
   {
     ierr = mac_send_signal(WORLD_COMM, C_HOMO); if(ierr) return 1;
@@ -921,7 +901,6 @@ int get_c_tan( const char * name, int e , int gp , double * strain_gp , double *
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_rho( const char * name, int e , double * rho )
 {
@@ -943,7 +922,6 @@ int get_rho( const char * name, int e , double * rho )
     return 1;
   }
 
-  /* now that we now the material (mat_p) we calculate the density */
   if( mat_p->type_id == MAT_MICRO )
   {
     ierr = mac_send_signal(WORLD_COMM, RHO); if(ierr) return 1;
@@ -955,7 +933,6 @@ int get_rho( const char * name, int e , double * rho )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_mat_name( int id , char * name_s )
 {
@@ -976,7 +953,6 @@ int get_mat_name( int id , char * name_s )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_global_elem_index( int e, int * glo_elem_index )
 {
@@ -991,7 +967,6 @@ int get_global_elem_index( int e, int * glo_elem_index )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_local_elem_index( int e, int * loc_elem_index )
 {
@@ -1006,19 +981,15 @@ int get_local_elem_index( int e, int * loc_elem_index )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_dsh( int e, int *loc_elem_index, double ***dsh, double *detj )
 {
-
-  /* we update "dsh" using "loc_elem_index" */
 
   double ***dsh_master;
   int       i, gp;
   int       npe = eptr[e+1] - eptr[e];
   int       ngp = npe;
 
-  /* get "elem_coor" */
   for( i = 0 ; i < npe*dim ; i++ )
     elem_coor[i] = coord[loc_elem_index[i]];
 
@@ -1035,12 +1006,10 @@ int get_dsh( int e, int *loc_elem_index, double ***dsh, double *detj )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_bmat( int e, double ***dsh, double ***bmat )
 {
 
-  /* takes "dsh" and assemblies "bmat" */
 
   int       i, gp;
   int       npe = eptr[e+1] - eptr[e];
@@ -1062,7 +1031,6 @@ int get_bmat( int e, double ***dsh, double ***bmat )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_sh( int dim, int npe, double ***sh )
 {
@@ -1072,7 +1040,6 @@ int get_sh( int dim, int npe, double ***sh )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_wp( int dim, int npe, double **wp )
 {
@@ -1082,12 +1049,9 @@ int get_wp( int dim, int npe, double **wp )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_elem_properties( void )
 {
-
-  /* fills *elem_strain, *elem_stress, *elem_type, *elem_energy */
 
   int      e, v, gp;
   double  *strain_aux = malloc( nvoi * sizeof(double) );
@@ -1126,10 +1090,6 @@ int get_elem_properties( void )
       elem_stress[ e*nvoi + v ] = stress_aux[v] / vol_elem;
     }
 
-    /* fill *elem_type 
-       we give the type according to the position 
-       we defined by comman line in the material_list
-     */
     physical_t * phy;
     node_list_t * pn = physical_list.head;
     while ( pn )
@@ -1157,7 +1117,6 @@ int get_elem_properties( void )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int update_boundary( double t , list_t * function_list, list_t * boundary_list )
 {
@@ -1181,7 +1140,6 @@ int update_boundary( double t , list_t * function_list, list_t * boundary_list )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int macro_pvtu( char *name )
 {
@@ -1193,7 +1151,6 @@ int macro_pvtu( char *name )
 
   if( rank_mac == 0 ){
 
-    /* rank 0 writes the .pvtu file first */
     strcpy(file_name,name);
     strcat(file_name,".pvtu");
     fm = fopen(file_name,"w");
@@ -1294,7 +1251,6 @@ int macro_pvtu( char *name )
 
   fprintf(fm,"<PointData Vectors=\"displ\">\n"); // Vectors inside is a filter we should not use this here
 
-  /* <displ> */
   if( x != NULL ){
     VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD);
     VecGhostUpdateEnd(   x , INSERT_VALUES , SCATTER_FORWARD);
@@ -1313,7 +1269,6 @@ int macro_pvtu( char *name )
     fprintf(fm,"</DataArray>\n");
   }
 
-  /* <residual> */
   if( b != NULL ){
     VecGhostUpdateBegin( b , INSERT_VALUES,SCATTER_FORWARD);
     VecGhostUpdateEnd  ( b , INSERT_VALUES,SCATTER_FORWARD);
@@ -1335,7 +1290,6 @@ int macro_pvtu( char *name )
   fprintf(fm,"</PointData>\n");
   fprintf(fm,"<CellData>\n");
 
-  /* <part> */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for( e = 0; e < nelm ; e++ )
     fprintf( fm, "%d ", rank_mac );  
@@ -1344,7 +1298,6 @@ int macro_pvtu( char *name )
 
   int v;
 
-  /* <strain> */
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
   for( e = 0 ; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
@@ -1353,7 +1306,6 @@ int macro_pvtu( char *name )
   }
   fprintf(fm,"</DataArray>\n");
 
-  /* <stress> */
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
   for( e = 0; e < nelm ; e++ ){
     for( v = 0 ; v < nvoi ; v++ )
@@ -1362,20 +1314,11 @@ int macro_pvtu( char *name )
   }
   fprintf(fm,"</DataArray>\n");
 
-  /* <elem_type> */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"elem_type\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for( e = 0; e < nelm ; e++ )
     fprintf( fm, "%d ", elem_type[e] );
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
-
-  /* <energy> */
-//  fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-//  for (i=0;i<nelm;i++){
-//    fprintf(fm, "%lf ", energy[i]);
-//  }
-//  fprintf(fm,"\n");
-//  fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,
       "</CellData>\n"
@@ -1386,5 +1329,3 @@ int macro_pvtu( char *name )
   fclose(fm);
   return 0;
 }
-
-/****************************************************************************************************/
