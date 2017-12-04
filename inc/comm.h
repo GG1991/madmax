@@ -5,8 +5,8 @@
 #ifndef _COMM_H_
 #define _COMM_H_
 
-#define  MACRO              1     // MACRO IDs and colors
-#define  MICRO              2     // MICRO IDs and colors
+#define  COLOR_MACRO        1
+#define  COLOR_MICRO        2
 #define  COUP_NULL          0
 #define  COUP_1             1
 
@@ -17,20 +17,6 @@
 
 int       coup_type;
 
-/*
-   COUP_1 > linear analisis only one kind of micro structure with homogeneum material
-   ____________________                      __________
-   |microstructure     | -> macro-structure  |         | -> micro-structure
-   |      _____________|                     | ||||||| |
-   |      |homogeneous |                     |         |
-   |______|____________|                     |_________|
-
-   We store the constitutive tensor on the <macro> processes, they 
-   are calculated only once by their respectively <micro> workers.
-   All the calculations should give the same values of <homo_cij>.
-
-*/
-
 MPI_Comm   WORLD_COMM;
 MPI_Comm   MICRO_COMM;
 MPI_Comm   MACRO_COMM;
@@ -38,7 +24,6 @@ MPI_Comm   MACRO_COMM;
 int        color;
 int        rank_wor;
 int        nproc_wor;
-bool       flag_coupling;
 
 typedef struct mac_coup_1_t_{
 
@@ -63,7 +48,7 @@ typedef struct coupling_t_{
 
 coupling_t macmic;
 
-int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM);
+int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM, bool flag_coupling);
 
 int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal);
 int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6]);

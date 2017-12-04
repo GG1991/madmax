@@ -1,6 +1,6 @@
 #include "comm.h"
 
-int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM)
+int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM, bool flag_coupling)
 {
 
   int  i, ierr, c;
@@ -18,10 +18,10 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
 
   nproc_mic_tot = nproc_mac_tot = 0;
   for(i=0;i<nproc_wor;i++){
-    if(id_vec[i] == MACRO){
+    if(id_vec[i] == COLOR_MACRO){
       nproc_mac_tot++;
     }
-    else if(id_vec[i] == MICRO){
+    else if(id_vec[i] == COLOR_MICRO){
       nproc_mic_tot++;
     }
     else{
@@ -49,12 +49,12 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
     int im_leader;
     int mic_pos = -1;
 
-    if(*color == MICRO){
+    if(*color == COLOR_MICRO){
 
       // determine MICRO color 
       c = -1;
       for(i=0;i<=rank_wor;i++){
-	if(id_vec[i] == MICRO){
+	if(id_vec[i] == COLOR_MICRO){
 	  mic_pos++;
 	  if( mic_pos % mic_nproc_group == 0){
 	    c ++; 
@@ -70,7 +70,7 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
       i = 0;
       c = -1;
       while( i<nproc_wor ){
-	if(id_vec[i] == MACRO){
+	if(id_vec[i] == COLOR_MACRO){
 	  c++;
 	}
 	if(c == mic_pos/mic_nproc_group){
@@ -91,7 +91,7 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
       int mac_pos = 0;
       i = 0;
       while( i<rank_wor ){
-	if(id_vec[i] == MACRO){
+	if(id_vec[i] == COLOR_MACRO){
 	  mac_pos ++;
 	}
 	i++;
@@ -100,7 +100,7 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
       int mic_rank = -1;
       i = 0; c = 0; mic_pos = 0;
       while( i<nproc_wor ){
-	if(id_vec[i] == MICRO){
+	if(id_vec[i] == COLOR_MICRO){
 	  if(c == mac_pos){
 	    mic_rank = i;
 	    break;
