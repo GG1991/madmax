@@ -552,14 +552,6 @@ end:
 int read_bc()
 {
 
-  /* 
-     completes the field of each "mesh_boundary_t" in boundary list 
-     int      nix;
-     int     *disp_loc_ixs;
-     int     *disp_glo_ixs;
-     double  *disp_val;
-   */
-
   int        *ix, i, d, da, n;
   int         ierr;
   mesh_boundary_t    *bou;
@@ -866,7 +858,7 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
 
   return 0;
 }
-/****************************************************************************************************/
+
 
 int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan )
 {
