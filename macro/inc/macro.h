@@ -9,17 +9,15 @@
 #include "vtk.h"
 #include "myio.h"
 #include "mesh.h"
+#include <string.h>
 
-#define NORMAL      1
-#define EIGENSYSTEM 2
-#define TEST_COMM   3
+#define CALC_MODE_NORMAL 1
+#define CALC_MODE_EIGEN  2
+#define CALC_MODE_TEST   3
 
-#define NBUF        256          // buffer length
+#define NBUF 256
 
 int         macro_mode;
-
-int         nr_max_its;          // newton raphson maximum number of iterations
-double      nr_norm_tol;         // newton raphson minimum tolerance
 
 double    **struct_sh;           // Shape functions
 double   ***struct_dsh;          // Derivative shapes functions
@@ -50,38 +48,41 @@ int         nvoi;                // voigt number
 
 int         mymicro_rank_worker;
 int         flag_neg_detj;       // negative jacobian flag
-int         nnz_factor;          // non zeros factor to multiply the default
 
-int         rank_mac;            // rank on macro comm
-int         nproc_mac;           // # of macro processes (WORLD_COMM)  
+int         rank_mac;
+int         nproc_mac;
 
 char        filename[NBUF];      // string for different purposes
-char       *mesh_n;        // mesh path;
+char       *mesh_n;              // mesh path;
 int         mesh_f;              // mesh format
 
-Mat         A;                   // steffiness matrix          
-Mat         M;                   // mass matrix
-Vec         x, dx, b;            // vectors unknowns and RHS 
+Mat         A;
+Mat         M;
+Vec         x, dx, b;
 
-typedef struct eigen_mode_t_
-{
-  int       nev;
-  double   *eigen_vals;          // eigenvalues
-  double    energy;              // elastic energy to perform normalization
+typedef struct{
 
-}eigen_mode_t;
+  int calc_mode;
 
-typedef struct normal_mode_t_
-{
-  double    tf;                  // final time
-  double    dt;                  // time step
+  int non_linear_max_its;
+  double non_linear_min_norm_tol;
 
-}normal_mode_t;
+  int num_eigen_vals;
+  double *eigen_vals;
 
-normal_mode_t normal_mode;
-eigen_mode_t  eigen_mode;
+  double final_time;
+  double delta_time;
+  double time;
 
-list_t      boundary_list;
-list_t      physical_list;
+  int time_step;
+
+  double energy_stored;
+
+}params_t;
+
+extern params_t params;
+
+list_t boundary_list;
+list_t physical_list;
 
 #endif

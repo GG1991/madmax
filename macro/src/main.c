@@ -31,6 +31,8 @@ int macro_pvtu( char *name );
 int update_boundary( double t , list_t * function_list, list_t * boundary_list );
 int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord );
 
+params_t params;
+
 int main(int argc, char **argv)
 {
 
@@ -39,7 +41,6 @@ int main(int argc, char **argv)
 
   int        ierr;
   int        i, j;
-  PetscBool  set;
 
   myname = strdup("macro");
 
@@ -81,38 +82,30 @@ int main(int argc, char **argv)
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
       "--------------------------------------------------\n");
 
-  macro_mode  = NORMAL;
+  params.calc_mode = CALC_MODE_NORMAL;
   myio_comm_line_search_option(&command_line, "-normal");
 
   if(command_line.found){
 
-    macro_mode = NORMAL;
+    params.calc_mode = CALC_MODE_NORMAL;
 
     myio_comm_line_get_double(&command_line, "-tf");
-    CHECK_INST_ELSE_GOTO(command_line.found, normal_mode.tf = command_line.double_val;)
+    CHECK_INST_ELSE_GOTO(command_line.found, params.final_time = command_line.double_val;)
 
     myio_comm_line_get_double(&command_line, "-dt");
-    CHECK_INST_ELSE_GOTO(command_line.found, normal_mode.dt = command_line.double_val;)
+    CHECK_INST_ELSE_GOTO(command_line.found, params.delta_time = command_line.double_val;)
   }
 
   myio_comm_line_search_option(&command_line, "-testcomm");
   if(command_line.found){
-    macro_mode = TEST_COMM;
-    myio_printf(&MACRO_COMM, "MACRO MODE : TEST_COMM\n" );
+    params.calc_mode = CALC_MODE_TEST;
   }
 
   myio_comm_line_search_option(&command_line, "-eigen");
   if(command_line.found){
-    macro_mode = EIGENSYSTEM;
-#ifndef SLEPC
-    myio_printf(&MACRO_COMM,"for using -eigensys you should compile with SLEPC.\n");
-    goto end_mac_2;
-#else
-    myio_printf(&MACRO_COMM,"MACRO MODE : EIGENSYSTEM\n");
-    PetscOptionsGetReal(NULL,NULL,"-eigen_energy",&eigen_mode.energy,&set);
-    if(set == PETSC_FALSE)
-      eigen_mode.energy = 1.0;
-#endif
+    params.calc_mode = CALC_MODE_EIGEN;
+    myio_comm_line_get_double(&command_line, "-energy_stored");
+    if(command_line.found) params.energy_stored = 1.0;
   }
 
   mesh_f = FORMAT_GMSH;
@@ -145,10 +138,14 @@ int main(int argc, char **argv)
   myio_comm_line_search_option(&command_line, "-print_vtu");
   if(command_line.found) flag_print = flag_print | (1<<PRINT_VTU);
 
-  PetscOptionsGetInt(NULL, NULL,  "-nr_max_its", &nr_max_its, &set);
-  if( set == PETSC_FALSE ) nr_max_its=5;
-  PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
-  if( set == PETSC_FALSE ) nr_norm_tol=1.0e-7;
+  params.non_linear_max_its = 5;
+  params.non_linear_min_norm_tol = 1.0e-7;
+
+  myio_comm_line_get_int(&command_line, "-params.non_linear_max_its");
+  if(command_line.found) params.non_linear_max_its = command_line.int_val;
+
+  myio_comm_line_get_int(&command_line, "-params.non_linear_min_norm_tol");
+  if(command_line.found) params.non_linear_min_norm_tol = command_line.double_val;
 
   ierr = function_fill_list_from_command_line(&command_line, &function_list);
   CHECK_AND_GOTO(ierr);
@@ -160,30 +157,22 @@ int main(int argc, char **argv)
   CHECK_AND_GOTO(ierr);
 
   partition_algorithm = PARMETIS_GEOM;
-  PetscOptionsHasName(NULL,NULL,"-part_meshkway",&set);
-  if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_MESHKWAY;
+  myio_comm_line_search_option(&command_line, "-part_kway");
+  if(command_line.found) partition_algorithm = PARMETIS_MESHKWAY;
 
-  PetscOptionsHasName(NULL,NULL,"-part_geom",&set);
-  if( set == PETSC_TRUE ) partition_algorithm = PARMETIS_GEOM;
-
-  PetscOptionsGetInt( NULL, NULL, "-nnz_factor", &nnz_factor, &set );
-  if( set == PETSC_FALSE ) nnz_factor = 1;
-
-  if(flag_coupling)
-    myio_printf(&MACRO_COMM, "MACRO: COUPLING\n" );
-  else
-    myio_printf(&MACRO_COMM, "MACRO: STANDALONE\n" );
+  myio_comm_line_search_option(&command_line, "-part_geom");
+  if(command_line.found) partition_algorithm = PARMETIS_GEOM;
 
   myio_printf(&MACRO_COMM, "reading mesh elements\n" );
-  ierr = read_mesh_elmv( MACRO_COMM, myname, mesh_n, mesh_f);
+  ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
   CHECK_AND_GOTO(ierr);
 
   myio_printf(&MACRO_COMM, "partitioning and distributing mesh\n");
-  ierr = part_mesh( MACRO_COMM, myname, NULL);
+  ierr = part_mesh(MACRO_COMM, myname, NULL);
   CHECK_AND_GOTO(ierr);
 
   myio_printf(&MACRO_COMM, "calculating ghost nodes\n");
-  ierr = calc_local_and_ghost( MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost );
+  ierr = calc_local_and_ghost(MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost );
   CHECK_AND_GOTO(ierr);
 
   myio_printf(&MACRO_COMM, "reenumering nodes\n");
@@ -191,15 +180,14 @@ int main(int argc, char **argv)
   CHECK_AND_GOTO(ierr);
 
   myio_printf(&MACRO_COMM, "reading Coordinates\n");
-  ierr = read_coord( mesh_n, nmynods, mynods, nghost , ghost, &coord );
+  ierr = read_coord(mesh_n, nmynods, mynods, nghost , ghost, &coord );
   CHECK_AND_GOTO(ierr);
 
   ierr = read_bc();
   CHECK_AND_GOTO(ierr);
 
-  list_init( &physical_list, sizeof(physical_t), NULL );
-  gmsh_get_physical_list( mesh_n, &physical_list );
-  
+  list_init(&physical_list, sizeof(physical_t), NULL );
+  gmsh_get_physical_list(mesh_n, &physical_list);
 
   myio_printf(&MACRO_COMM, "allocating ");
 
@@ -242,8 +230,8 @@ int main(int argc, char **argv)
   }
 
   jac = malloc( dim * sizeof(double*));
-  for( i = 0 ; i < dim ; i++ )
-    jac[i] = malloc( dim * sizeof(double));
+  for( int k = 0 ; k < dim ; k++ )
+    jac[k] = malloc( dim * sizeof(double));
 
   jac_inv = malloc( dim * sizeof(double*));
   for( i = 0 ; i < dim ; i++ )
@@ -262,29 +250,10 @@ int main(int argc, char **argv)
   ierr = get_bbox_local_limits(coord, nallnods, &limit[0], &limit[2], &limit[4]);
   myio_printf(&MACRO_COMM,"Limit = ");
   for( i = 0 ; i < nvoi ; i++ )
-    myio_printf(&MACRO_COMM,"%lf ",limit[i]);
+    myio_printf(&MACRO_COMM,"%lf ", limit[i]);
   myio_printf(&MACRO_COMM,"\n");
 
-  if(macro_mode == TEST_COMM){
-
-    double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
-    double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
-    for( i = 0 ; i < nvoi ; i++ ){
-      for( j = 0 ; j < nvoi ; j++ )
-	strain_mac[j] = 0.0;
-      strain_mac[i] = 0.005;
-      ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);
-      ierr = mac_send_strain(WORLD_COMM, strain_mac    );
-      ierr = mac_recv_stress(WORLD_COMM, stress_mac    );
-      myio_printf(&MACRO_COMM,"\nstress_ave = ");
-      for( j = 0 ; j < nvoi ; j++ )
-	myio_printf(&MACRO_COMM,"%e ",stress_mac[j]);
-      myio_printf(&MACRO_COMM,"\n");
-    }
-
-  }
-  else if( macro_mode == EIGENSYSTEM ){
+  if(params.calc_mode == CALC_MODE_EIGEN){
 
     EPS     eps;
     int     nnz = ( dim == 2 ) ? dim*9 : dim*27;
@@ -351,23 +320,23 @@ int main(int argc, char **argv)
     int    nconv;
     double error;
 
-    EPSCreate( MACRO_COMM, &eps );
-    EPSSetOperators( eps, M, A );
-    EPSSetProblemType( eps, EPS_GHEP );
-    EPSSetFromOptions( eps );
-    EPSGetDimensions( eps, &eigen_mode.nev, NULL, NULL );
-    eigen_mode.eigen_vals = malloc( eigen_mode.nev * sizeof(double) );
-    myio_printf(&MACRO_COMM,"Number of requested eigenvalues: %d\n", eigen_mode.nev );
+    EPSCreate(MACRO_COMM, &eps);
+    EPSSetOperators(eps, M, A);
+    EPSSetProblemType(eps, EPS_GHEP);
+    EPSSetFromOptions(eps);
+    EPSGetDimensions(eps, &params.num_eigen_vals, NULL, NULL);
+    params.eigen_vals = malloc( params.num_eigen_vals*sizeof(double));
+    myio_printf(&MACRO_COMM,"Number of requested eigenvalues: %d\n", params.num_eigen_vals);
 
-    EPSSolve( eps );
-    EPSGetConverged( eps, &nconv );
+    EPSSolve(eps);
+    EPSGetConverged(eps, &nconv);
     myio_printf(&MACRO_COMM,"Number of converged eigenpairs: %d\n",nconv);
 
-    for( i = 0 ; i < eigen_mode.nev ; i++ ){
+    for( i=0 ; i<params.num_eigen_vals ; i++ ){
 
-      EPSGetEigenpair( eps, i, &eigen_mode.eigen_vals[i], NULL, x, NULL );
+      EPSGetEigenpair( eps, i, &params.eigen_vals[i], NULL, x, NULL );
       EPSComputeError( eps, i, EPS_ERROR_RELATIVE, &error );
-      myio_printf(&MACRO_COMM, "omega %d = %e   error = %e\n", i, eigen_mode.eigen_vals[i], error);
+      myio_printf(&MACRO_COMM, "omega %d = %e   error = %e\n", i, params.eigen_vals[i], error);
 
       if(flag_print & (1<<PRINT_VTU))
       { 
@@ -381,9 +350,9 @@ int main(int argc, char **argv)
     EPSDestroy(&eps);
 
   }
-  else if( macro_mode == NORMAL ){
+  else if(params.calc_mode == CALC_MODE_NORMAL){
 
-    int     nnz = ( dim == 2 ) ? dim*9 : dim*27; nnz *= nnz_factor;
+    int     nnz = ( dim == 2 ) ? dim*9 : dim*27;
     KSP     ksp;
 
     MatCreate( MACRO_COMM, &A );
@@ -411,18 +380,18 @@ int main(int argc, char **argv)
     KSPCreate( MACRO_COMM, &ksp );
     KSPSetFromOptions( ksp );
 
-    double   t = 0.0;
-    int      time_step = 0;
+    params.time = 0.0;
+    params.time_step = 0;
 
     VecZeroEntries( x );
     VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
     VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
 
-    while( t < (normal_mode.tf + 1.0e-10) ){
+    while( params.time < (params.final_time + 1.0e-10) ){
 
-      myio_printf(&MACRO_COMM,"\ntime step %-3d %-e seg\n", time_step, t);
+      myio_printf(&MACRO_COMM,"\ntime step %-3d %-e seg\n", params.time_step, params.time);
 
-      update_boundary( t , &function_list, &boundary_list );
+      update_boundary( params.time , &function_list, &boundary_list );
 
       Vec      x_loc,  b_loc;
       double  *x_arr, *b_arr;
@@ -445,8 +414,8 @@ int main(int argc, char **argv)
       VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
       VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
 
-      nr_its = 0; norm = 2 * nr_norm_tol;
-      while( nr_its < nr_max_its && norm > nr_norm_tol )
+      nr_its = 0; norm = 2 * params.non_linear_min_norm_tol;
+      while( nr_its < params.non_linear_max_its && norm > params.non_linear_min_norm_tol )
       {
 
 	myio_printf(&MACRO_COMM, "MACRO: assembling residual\n" );
@@ -475,7 +444,7 @@ int main(int argc, char **argv)
 
 	myio_printf(&MACRO_COMM,"MACRO: |b| = %e\n", norm );
 
-	if( norm < nr_norm_tol ) break;
+	if( norm < params.non_linear_min_norm_tol ) break;
 
 	myio_printf(&MACRO_COMM, "MACRO: assembling jacobian\n");
 	assembly_A();
@@ -514,14 +483,33 @@ int main(int argc, char **argv)
       if( flag_print & (1<<PRINT_VTU) )
       { 
 	get_elem_properties();
-	sprintf( filename, "macro_t_%d", time_step );
+	sprintf( filename, "macro_t_%d", params.time_step );
 	macro_pvtu( filename );
       }
 
-      t += normal_mode.dt;
-      time_step ++;
+      params.time += params.delta_time;
+      params.time_step ++;
     }
     KSPDestroy(&ksp);
+  }
+  else if(params.calc_mode == CALC_MODE_TEST){
+
+    double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
+    double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+    for( i = 0 ; i < nvoi ; i++ ){
+      for( j = 0 ; j < nvoi ; j++ )
+	strain_mac[j] = 0.0;
+      strain_mac[i] = 0.005;
+      ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);
+      ierr = mac_send_strain(WORLD_COMM, strain_mac    );
+      ierr = mac_recv_stress(WORLD_COMM, stress_mac    );
+      myio_printf(&MACRO_COMM,"\nstress_ave = ");
+      for( j = 0 ; j < nvoi ; j++ )
+	myio_printf(&MACRO_COMM,"%e ",stress_mac[j]);
+      myio_printf(&MACRO_COMM,"\n");
+    }
+
   }
 
   free(loc_elem_index); 
