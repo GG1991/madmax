@@ -11,8 +11,13 @@ static char help[] =
 "-print_petsc                                                                                 \n"
 "-print_vtu                                                                                   \n";
 
+params_t params;
+
 int main(int argc, char **argv)
 {
+
+#define CHECK_AND_GOTO(error){if(error){myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
+#define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
 
   int        i, j, ierr;
   int        nval;
@@ -57,20 +62,14 @@ int main(int argc, char **argv)
   hx = hy = hz = -1;
   lx = ly = lz = -1;
 
-  PetscOptionsGetInt(NULL, NULL, "-dim", &dim, &set);
-  if( set == PETSC_FALSE ){
-    myio_printf( &MICRO_COMM, "dimension (-dim <dim>) not given\n" );
-    goto end;
-  }
+  myio_comm_line_get_int(&command_line, "-dim");
+  CHECK_INST_ELSE_GOTO(command_line.found, dim = command_line.int_val;)
+
   nvoi = (dim == 2) ? 3 : 6;
 
   myio_comm_line_get_string(&command_line, "-micro_struct");
-  if(! command_line.found){
-    myio_printf(&MICRO_COMM,"micro structure ( -micro_struct <format> ) not given\n");
-    goto end;
-  }
-  micro_struct_init(dim, command_line.str, &micro_struct);
-
+  CHECK_INST_ELSE_GOTO(command_line.found, micro_struct_init(dim, command_line.str, &micro_struct);)
+  
   lx = micro_struct.size[0];
   ly = micro_struct.size[1];
   lz = ( dim == 3 ) ? micro_struct.size[2] : -1;
@@ -156,16 +155,12 @@ int main(int argc, char **argv)
 
   PetscOptionsHasName(NULL,NULL,"-homo_us",&set);
   if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
-  if(homo_type==0){
-    myio_printf(&MICRO_COMM,"no homogenization option specified\n");
-    goto end;
-  }
 
-  PetscOptionsGetInt(NULL, NULL, "-nr_max_its", &nr_max_its, &set);
-  if(set==PETSC_FALSE) nr_max_its = 5;
+  myio_comm_line_get_int(&command_line, "-nl_max_its");
+  if(command_line.found) params.non_linear_max_its = command_line.int_val;
 
-  PetscOptionsGetReal(NULL, NULL, "-nr_norm_tol", &nr_norm_tol, &set);
-  if(set==PETSC_FALSE) nr_norm_tol = 1.0e-5;
+  myio_comm_line_get_int(&command_line, "-nl_min_norm_tol");
+  if(command_line.found) params.non_linear_min_norm_tol = command_line.double_val;
 
   flag_print = 0;
   PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);

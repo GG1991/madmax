@@ -322,13 +322,13 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   int     i;
   int     nr_its = 0; 
   double  *b_arr;
-  double  norm = nr_norm_tol*10;
+  double  norm = params.non_linear_min_norm_tol*10;
 
   VecNorm( x , NORM_2 , &norm );
   if(!flag_coupling)
     myio_printf(&MICRO_COMM,"|x| = %lf \n",norm);
 
-  while( nr_its < nr_max_its && norm > nr_norm_tol )
+  while( nr_its<params.non_linear_max_its  && norm>params.non_linear_min_norm_tol )
   {
     save_event( MICRO_COMM, "ass_0" );
 
@@ -347,7 +347,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     if(!flag_coupling)
       myio_printf(&MICRO_COMM,"|b| = %lf \n",norm);
 
-    if( !(norm > nr_norm_tol) ) break;
+    if( !(norm>params.non_linear_min_norm_tol) ) break;
 
     VecScale( b, -1.0 );
 

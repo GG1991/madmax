@@ -22,9 +22,7 @@
 
 #define NBUF         256
 
-char        filename[NBUF];    //  string for different purposes
-
-/* variables send by <macro> */
+char        filename[NBUF];
 
 int         rank_mic;          //  rank on macro comm
 int         nproc_mic;         //  # of micro processes (MICRO_COMM)
@@ -32,13 +30,9 @@ int         dim;               //  problem dimensions
 int         nvoi;              //  number of voigt components (3 if dim=2, 6 if dim=3)
 
 char        *myname;
-int         nr_max_its;
-double      nr_norm_tol;
 
 int         micro_type;
 FILE        *fm_info;
-
-/* structured mesh */
 
 bool        flag_struct_mesh;
 int         nx, ny, nz, nn;       // number of nodes 
@@ -76,8 +70,6 @@ double      *elem_stress;         // stress at each element
 double      *elem_energy;         // energy at each element
 double      *center_coor;         // coordinates of the center
 
-/* Taylor homogenization variables */
-
 double       vi;                  // volumetric fraction of inclusions
 double       vm;                  // volumetric fraction of matrix
 
@@ -93,13 +85,25 @@ Vec          x, b;                // petsc vectors
 Vec          dx;
 KSP          ksp;                 // linear solver context
 
+#define HOMOG_METHOD_TAYLOR_S     1
+#define HOMOG_METHOD_TAYLOR_P     2
+#define HOMOG_METHOD_UNIF_STRAINS 3
+
+typedef struct{
+
+  int homog_method;
+  int non_linear_max_its;
+  double non_linear_min_norm_tol;
+
+}params_t;
+
+extern params_t params;
+
 #define PRINT_PETSC        0
 #define PRINT_VTU          1
 
 int         flag_print;
 bool        flag_first_alloc;
-
-/* micro figure type */
 
 double      center_domain[3];
 
