@@ -107,21 +107,6 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
 int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
-  /* 
-     homogenization routine with uniform strain BC
-     for structured mesh 
-
-     a) alloc matrix/vector if it is first time
-     b) assembly residue -> evaluate norm
-     c) assembly jacobian
-     d) solve system 
-     e) iterate to b) with NR method
-     f) get average properties
-
-     partimos el dominio en tandas por el eje y
-
-   */
-
   if( flag_first_alloc == true ){
 
     flag_first_alloc = false;
@@ -307,7 +292,6 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
     for( n = 0 ; n < ndir_ix/dim ; n++ )
     {
-      /* calc displ on the node */
       strain_x_coord( strain_mac , &coor_dir[n*dim] , displ );
       for( d = 0 ; d < dim ; d++ )
 	x_arr[dir_ix_loc[n*dim + d]] = displ[d];
@@ -331,7 +315,6 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   {
     save_event( MICRO_COMM, "ass_0" );
 
-    /* assembly "b" (residue) using "x" (displacement) */
     assembly_b();
     
     VecGetArray( b, &b_arr );
@@ -379,7 +362,6 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   return 0;
 }
 
-/****************************************************************************************************/
 
 int strain_x_coord( double * strain , double * coord , double * u )
 {
@@ -392,7 +374,6 @@ int strain_x_coord( double * strain , double * coord , double * u )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int assembly_b(void)
 {
@@ -467,10 +448,7 @@ int assembly_A( void )
 
     for( gp = 0; gp < ngp ; gp++ ){
 
-      /* calc strain gp */
       get_strain( e , gp, strain_gp );
-
-      /* we get stress = f(strain) */
       get_c_tan( NULL , e , gp , strain_gp , c );
 
       for( i = 0 ; i < npe*dim ; i++ ){
@@ -488,19 +466,15 @@ int assembly_A( void )
 
   }
 
-  /* communication between processes */
   MatAssemblyBegin( A , MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd(   A , MAT_FINAL_ASSEMBLY );
 
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_averages( double * strain_ave, double * stress_ave )
 {
-  /* Calculate averange strain and stress tensors on the hole domain
-     the operation is an All_Reduce on all processes */
 
   int    i, e, gp;
   int    ierr;
