@@ -1,6 +1,7 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
+#include <stdbool.h>
 #include "list.h"
 #include "myio.h"
 
@@ -9,12 +10,13 @@
 
 #define MAX_NUM_OF_MATERIALS 4
 
-typedef struct material_t_{
+typedef struct{
 
   char *name;
   int type_id;
   int id;
   void *type;
+  bool is_linear;
 
 }material_t;
 
@@ -33,7 +35,7 @@ list_t material_list;
 int material_get_stress(material_t *mat, int dim, double *strain, double *stress);
 int material_get_c_tang(material_t *mat, int dim, double *strain, double *c_tang);
 int material_get_rho(material_t *mat, int dim, double *rho);
-int material_are_linear(list_t * material_list);
+bool material_are_all_linear(list_t * material_list);
 int material_fill_list_from_command_line(command_line_t *command_line, list_t *material_list);
 
 #endif

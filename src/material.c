@@ -35,7 +35,6 @@ int material_get_stress( material_t *mat_p, int dim , double * strain_gp, double
   return 0;
 }
 
-/****************************************************************************************************/
 
 int material_get_c_tang( material_t *mat_p, int dim , double * strain_gp, double * c_tan )
 {
@@ -73,6 +72,19 @@ int material_get_rho( material_t *mat_p, int dim , double * rho )
     *rho   = ((type_0*)mat_p->type)->rho;
 
   return 0;
+}
+
+
+bool material_are_all_linear(list_t *material_list){
+
+  node_list_t *node_ptr = material_list->head;
+  while(node_ptr != NULL){
+    material_t *mat = node_ptr->data;
+    if(mat->is_linear == false) break;
+    node_ptr = node_ptr->next;
+  }
+  return (node_ptr == NULL) ? true : false;
+
 }
 
 
