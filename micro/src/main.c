@@ -1,9 +1,8 @@
 #include "micro.h"
 
 static char help[] = 
-"MICRO MULTISCALE CODE\n"
+"micro multiscale code\n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)]                                       \n"
-"-testcomm [0 (no test) | 1 (sends a strain value and receive a stress calculated from micro)]\n"
 "-homo_ts     : c =  vi ci + vm cm            (serial)                                        \n"
 "-homo_tp     : c = (vi ci^-1 + vm cm^-1)^-1  (parallel)                                      \n"
 "-homo_us     : homogenization using uniform strains approach                                 \n"
@@ -39,20 +38,12 @@ int main(int argc, char **argv)
   MPI_Comm_size(WORLD_COMM, &nproc_wor);
   MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
-  flag_coupling = PETSC_FALSE;
-
   myio_comm_line_search_option(&command_line, "-coupl");
-  if(command_line.found){
-    flag_coupling = PETSC_TRUE;
-  }
+  if(command_line.found) params.flag_coupling = true;
 
   macmic.type = COUP_1;
-  color = MICRO; /* color can change */
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM);
-  if(ierr){
-    myio_printf(&MICRO_COMM,"micro: problem during coloring\n");
-    goto end;
-  }
+  color = COLOR_MICRO; /* color can change */
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM, params.flag_coupling); CHECK_AND_GOTO(ierr);
 
   MPI_Comm_size(MICRO_COMM, &nproc_mic);
   MPI_Comm_rank(MICRO_COMM, &rank_mic);
@@ -171,7 +162,7 @@ int main(int argc, char **argv)
   PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
   if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
 
-  if(!flag_coupling){
+  if(params.flag_coupling == false){
     myio_printf(&MICRO_COMM,
 	"--------------------------------------------------\n"
 	"  MICRO: STANDALONE \n"
@@ -226,40 +217,30 @@ int main(int argc, char **argv)
 
   double strain_mac[6], strain_ave[6], stress_ave[6], c_homo[36];
 
-  if(flag_coupling){
+  if(params.flag_coupling == true){
 
-    /* COUPLING EXECUTION */
     int signal=-1;
 
     while(signal!=MIC_END){
 
-      /* Receive instruction */
       ierr = mic_recv_signal(WORLD_COMM, &signal);
 
       switch(signal){
 
 	case MAC2MIC_STRAIN:
-	  /* Wait for strain */
 	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);
-	  /* Performs the micro localization + homogenization */
 	  ierr = mic_calc_stress_ave(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-	  /* Send Stress */
 	  ierr = mic_send_stress(WORLD_COMM, stress_ave);
 	  break;
 
 	case C_HOMO:
-	  /* Wait for strain */
 	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);
-	  /* Wait for macro_gp number */
 	  ierr = mic_recv_macro_gp(WORLD_COMM, &macro_gp);
-	  /* Calculates C homogenized */
 	  ierr = mic_calc_c_homo(MICRO_COMM, strain_mac, c_homo);
-	  /* Send C homogenized */
 	  ierr = mic_send_c_homo(WORLD_COMM, nvoi, c_homo);
 	  break;
 
 	case RHO:
-	  /* Send rho homogenized */
 	  ierr = mic_send_rho(WORLD_COMM, &rho);
 	  break;
 
@@ -367,12 +348,9 @@ int main(int argc, char **argv)
 
   end_trace( MICRO_COMM );
 
-  if(!flag_coupling){
-    myio_printf(&MICRO_COMM,
-	"--------------------------------------------------\n"
-	"  MICRO: FINISH COMPLETE\n"
-	"--------------------------------------------------\n");
-  }
+  PRINTF1("--------------------------------------------------\n"
+      "  MICRO: FINISH COMPLETE\n"
+      "--------------------------------------------------\n");
 
   ierr = PetscFinalize();
 

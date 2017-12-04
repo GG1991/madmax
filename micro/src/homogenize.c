@@ -325,8 +325,7 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   double  norm = params.non_linear_min_norm_tol*10;
 
   VecNorm( x , NORM_2 , &norm );
-  if(!flag_coupling)
-    myio_printf(&MICRO_COMM,"|x| = %lf \n",norm);
+  PRINTF2("|x| = %lf\n",norm);
 
   while( nr_its<params.non_linear_max_its  && norm>params.non_linear_min_norm_tol )
   {
@@ -343,15 +342,12 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
     VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
 
     VecNorm( b , NORM_2 , &norm );
+    PRINTF2("|b| = %lf \n",norm);
 
-    if(!flag_coupling)
-      myio_printf(&MICRO_COMM,"|b| = %lf \n",norm);
-
-    if( !(norm>params.non_linear_min_norm_tol) ) break;
+    if(norm < params.non_linear_min_norm_tol) break;
 
     VecScale( b, -1.0 );
 
-    /* assembly "A" (jacobian) using "x" (displacement) */
     assembly_A();
 
     MatZeroRowsColumns( A, ndir_ix, dir_ix_glo, 1.0, NULL, NULL );
@@ -370,7 +366,6 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
   }
   save_event( MICRO_COMM, "ass_1" );
 
-  /* get the integrals */
   get_averages( strain_ave, stress_ave );
 
   if( flag_print & (1<<PRINT_PETSC) ){
@@ -388,7 +383,6 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 
 int strain_x_coord( double * strain , double * coord , double * u )
 {
-  /* b = mat . a */
 
   if( dim == 2 ){
     u[0] = strain[0]   * coord[0] + strain[2]/2 * coord[1] ;
@@ -419,19 +413,14 @@ int assembly_b(void)
 
   for( e = 0 ; e < nelm ; e++ ){
 
-    /* set to 0 res_elem */
     for( i = 0 ; i < npe*dim ; i++ )
       res_elem[i] = 0.0;
 
-    /* get the local indeces of the element vertex nodes */
     get_local_elem_index(e, loc_elem_index);
 
     for( gp = 0; gp < ngp ; gp++ ){
 
-      /* calc strain gp */
       get_strain( e , gp, strain_gp );
-
-      /* we get stress = f(strain) */
       get_stress( e , gp , strain_gp , stress_gp );
 
       for( i = 0 ; i < npe*dim ; i++ ){
@@ -449,7 +438,6 @@ int assembly_b(void)
   VecRestoreArray         ( b_loc, &b_arr );
   VecGhostRestoreLocalForm( b    , &b_loc );
 
-  /* from the local and ghost part with add to all processes */
   VecGhostUpdateBegin( b, ADD_VALUES   , SCATTER_REVERSE );
   VecGhostUpdateEnd  ( b, ADD_VALUES   , SCATTER_REVERSE );
   VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
@@ -458,7 +446,6 @@ int assembly_b(void)
   return 0;
 }
 
-/****************************************************************************************************/
 
 int assembly_A( void )
 {

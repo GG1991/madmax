@@ -17,6 +17,9 @@
 #include "micro_struct.h"
 #include <gsl/gsl_linalg.h>
 
+#define PRINTF1(message){if(params.flag_coupling == false) myio_printf(&MICRO_COMM,message);}
+#define PRINTF2(message,arg_1){if(params.flag_coupling == false) myio_printf(&MICRO_COMM,message,arg_1);}
+
 #define TAYLOR_S     1
 #define TAYLOR_P     2
 #define UNIF_STRAINS 3
@@ -96,6 +99,8 @@ typedef struct{
   int homog_method;
   int non_linear_max_its;
   double non_linear_min_norm_tol;
+
+  bool flag_coupling;
 
 }params_t;
 
