@@ -3,12 +3,6 @@
 # make --quite : prints only "echos" instruction
 #
 #
-# options:
-# 
-# -DZERO : in macro makes 0 component less than a tolerance
-# 
-# 
-# 
 
 PWD:= $(shell pwd)
 
@@ -83,6 +77,7 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/main.o         \
 MIC_OBJ  = ${MIC_OBJ_DIR}/main.o         \
            ${MIC_OBJ_DIR}/homogenize.o   \
            ${MIC_OBJ_DIR}/micro_struct.o \
+           ${MIC_OBJ_DIR}/init.o \
            $(SPU_OBJ_DIR)/comm.o         \
            $(SPU_OBJ_DIR)/trace.o        \
            $(SPU_OBJ_DIR)/material.o     \

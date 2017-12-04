@@ -1,4 +1,5 @@
-/* MICRO external libraries */
+#ifndef MICRO_H
+#define MICRO_H
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -85,6 +86,7 @@ Vec          x, b;                // petsc vectors
 Vec          dx;
 KSP          ksp;                 // linear solver context
 
+#define HOMOG_METHOD_NULL         0
 #define HOMOG_METHOD_TAYLOR_S     1
 #define HOMOG_METHOD_TAYLOR_P     2
 #define HOMOG_METHOD_UNIF_STRAINS 3
@@ -137,3 +139,7 @@ int get_averages( double * strain_ave, double * stress_ave );
 int get_elem_type( int e , int *type );
 int get_elem_properties( void );
 int init_shapes( double ***sh, double ****dsh, double **wp );
+void init_variables(params_t *params);
+
+
+#endif

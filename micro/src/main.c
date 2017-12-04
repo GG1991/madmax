@@ -25,6 +25,8 @@ int main(int argc, char **argv)
 
   myname            = strdup("micro");
 
+  init_variables(&params);
+
   myio_comm_line_init(argc, argv, &command_line);
 
   flag_linear_micro = 0;
