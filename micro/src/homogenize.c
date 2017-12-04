@@ -19,7 +19,7 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
   double       vol_i = 0.0, vol_ia = 0.0;  // inclusion volume
   double       vol_m = 0.0, vol_ma = 0.0;  // matrix volume
 
-  if(first_time_homo){
+  if(params.flag_first_homogenization){
 
     for( e = 0 ; e < nelm ; e++ ){
 
@@ -102,16 +102,15 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
   return 0;
 }
 
-/****************************************************************************************************/
 
 int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
-  if( flag_first_alloc == true ){
+  if(params.flag_have_allocated == false){
 
-    flag_first_alloc = false;
+    params.flag_have_allocated = true;
 
-    int nnz = (dim==2)? 18:81;                        // nonzeros per row
+    int nnz = (dim==2)? 18:81;
 
     MatCreate(MICRO_COMM,&A);
     MatSetSizes(A, nl*dim, nl*dim, nn*dim, nn*dim);
@@ -797,7 +796,6 @@ int get_global_elem_index( int e, int *glo_elem_index )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int local_to_global_index( int local )
 {
@@ -813,18 +811,9 @@ int local_to_global_index( int local )
   return 0;
 }
 
-/****************************************************************************************************/
 
-int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
-{
+int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]){
 
-  /*
-     Performs linear homogenization of the RVE 
-
-     UNIF_STRAINS            > u = E . x
-
-     HOMO_TAYLOR_S
-   */
   int ierr;
 
   if(homo_type==TAYLOR_P || homo_type==TAYLOR_S){
@@ -840,35 +829,21 @@ int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[
     if(ierr) return 1;
 
   }
-  if(first_time_homo) first_time_homo = 0;
 
   return 0;
 }
 
-/****************************************************************************************************/
 
-int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36])
-{
+int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]){
 
-  /* 
-     Si la micro estructura está integramente conformada por materiales
-     lineales entonces este tensor será siempre el mismo para cada punto 
-     de gauss en la macro escala entonces es eficiente almacenar c_homo_linear
-  */
+  if(params.flag_have_linear_materials){
 
-  int i, ierr;
-
-  if(flag_linear_micro){
-
-    if(first_time_homo){
-      ierr = mic_calc_c_homo_lineal(MICRO_COMM, c_homo_lineal);
-      if(ierr){
-	return 1;
-      }
+    if(params.flag_first_homogenization == true){
+      int ierr = mic_calc_c_homo_lineal(MICRO_COMM, c_homo_lineal);
+      if(ierr) return 1;
     }
-    for(i=0;i<nvoi*nvoi;i++){
+    for(int i = 0 ; i < nvoi*nvoi ; i++)
       c_homo[i] = c_homo_lineal[i];
-    }
 
   }
   else{
@@ -877,56 +852,41 @@ int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]
   return 0;
 }
 
-/****************************************************************************************************/
 
-int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36])
-{
+int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36]){
 
-  int       i, j;
   int       ierr;
   double    strain[6];
   double    strain_ave[6];
   double    stress_ave[6];
 
-  for(i=0;i<nvoi*nvoi;i++){
-    c_homo_lineal[i]=0.0;
-  }
+  for(int i = 0 ; i < nvoi*nvoi ; i++)
+    c_homo_lineal[i] = 0.0;
 
-  for(i=0;i<nvoi;i++){
+  for(int i = 0 ; i < nvoi ; i++){
 
-    for(j=0;j<nvoi;j++){
+    for(int j = 0 ; j < nvoi ; j++ )
       strain[j]=0.0;
-    }
     strain[i]=0.005;
 
     ierr = mic_homogenize(MICRO_COMM, strain, strain_ave, stress_ave);
-    if(ierr){
-      return 1;
-    }
+    if(ierr) return 1;
 
-    for(j=0;j<nvoi;j++){
+    for(int j = 0 ; j < nvoi ; j++ )
       c_homo_lineal[j*nvoi+i] = stress_ave[j] / strain_ave[i];
-    }
 
   }
 
   return 0;
 }
 
-/****************************************************************************************************/
 
 int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
 {
 
-  /* 
-     Si la micro estructura está integramente conformada por materiales
-     lineales entonces este tensor será siempre el mismo para cada punto 
-     de gauss en la macro escala entonces es eficiente almacenar c_homo_linear
-  */
-
   int i, j, ierr;
 
-  if(flag_linear_micro){
+  if(params.flag_have_linear_materials == true){
 
     for(i=0;i<nvoi;i++){
       strain_ave[i] = strain_mac[i];
@@ -949,17 +909,13 @@ int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain
   return 0;
 }
 
-/****************************************************************************************************/
 
-int mic_check_linear_material(void)
-{
+void mic_check_linear_material(void){
 
-  flag_linear_micro = 1;
+  params.flag_have_linear_materials = (material_are_all_linear(&material_list) == true) ? true : false;
 
-  return 0;
 }
 
-/****************************************************************************************************/
 
 int get_node_local_coor( int n , double * coord )
 {
@@ -976,7 +932,6 @@ int get_node_local_coor( int n , double * coord )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_node_ghost_coor( int n , double * coord )
 {
@@ -987,7 +942,6 @@ int get_node_ghost_coor( int n , double * coord )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int init_shapes( double ***sh, double ****dsh, double **wp )
 {
@@ -1050,5 +1004,3 @@ int init_shapes( double ***sh, double ****dsh, double **wp )
 
   return 0;
 }
-
-/****************************************************************************************************/

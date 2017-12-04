@@ -7,6 +7,9 @@ void init_variables(params_t *params){
   params->non_linear_min_norm_tol = 1.0e-4;
 
   params->flag_coupling = false;
+  params->flag_first_homogenization = true;
+  params->flag_have_linear_materials = false;
+  params->flag_have_allocated = false;
 
   return;
 }

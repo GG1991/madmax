@@ -28,11 +28,6 @@ int main(int argc, char **argv)
 
   myio_comm_line_init(argc, argv, &command_line);
 
-  flag_linear_micro = 0;
-  first_time_homo   = 1;
-  flag_struct_mesh  = false;
-  flag_first_alloc  = true;
-
   WORLD_COMM = MPI_COMM_WORLD;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(WORLD_COMM, &nproc_wor);

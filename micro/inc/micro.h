@@ -78,9 +78,7 @@ double       vi;                  // volumetric fraction of inclusions
 double       vm;                  // volumetric fraction of matrix
 
 int          homo_type;
-int          flag_linear_micro;   // 1 if all materials in micro are linear 0 otherwise
 int          macro_gp;
-int          first_time_homo;
 double       c_homo_lineal[36];
 double       rho;
 
@@ -101,6 +99,9 @@ typedef struct{
   double non_linear_min_norm_tol;
 
   bool flag_coupling;
+  bool flag_first_homogenization;
+  bool flag_have_linear_materials;
+  bool flag_have_allocated;
 
 }params_t;
 
@@ -110,7 +111,6 @@ extern params_t params;
 #define PRINT_VTU          1
 
 int         flag_print;
-bool        flag_first_alloc;
 
 double      center_domain[3];
 
@@ -145,6 +145,7 @@ int get_elem_type( int e , int *type );
 int get_elem_properties( void );
 int init_shapes( double ***sh, double ****dsh, double **wp );
 void init_variables(params_t *params);
+void mic_check_linear_material(void);
 
 
 #endif
