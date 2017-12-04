@@ -210,13 +210,13 @@ int main(int argc, char **argv)
   ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
 
-  double strain_mac[6], strain_ave[6], stress_ave[6], c_homo[36];
+  double strain_mac[6], strain_ave[6], stress_ave[6], *c_tangent_ptr;
 
   if(params.flag_coupling == true){
 
     int signal=-1;
 
-    while(signal!=MIC_END){
+    while(signal != MIC_END){
 
       ierr = mic_recv_signal(WORLD_COMM, &signal);
 
@@ -224,15 +224,15 @@ int main(int argc, char **argv)
 
 	case MAC2MIC_STRAIN:
 	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);
-	  ierr = mic_calc_stress_ave(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+	  ierr = homogenize_get_average_strain_stress(strain_mac, strain_ave, stress_ave);
 	  ierr = mic_send_stress(WORLD_COMM, stress_ave);
 	  break;
 
 	case C_HOMO:
 	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);
 	  ierr = mic_recv_macro_gp(WORLD_COMM, &macro_gp);
-	  ierr = mic_calc_c_homo(MICRO_COMM, strain_mac, c_homo);
-	  ierr = mic_send_c_homo(WORLD_COMM, nvoi, c_homo);
+	  ierr = homogenize_get_average_c_tangent(strain_mac, &c_tangent_ptr);
+	  ierr = mic_send_c_homo(WORLD_COMM, nvoi, c_tangent_ptr);
 	  break;
 
 	case RHO:
@@ -253,13 +253,13 @@ int main(int argc, char **argv)
 
     /* STANDALONE EXECUTION */
 
-    double strain_mac[6];
+    double strain_mac[6], c_homo[36];
 
     memset(c_homo,0.0,36*sizeof(double));
     for( i = 0 ; i < nvoi ; i++ )
     {
       memset(strain_mac,0.0,nvoi*sizeof(double)); strain_mac[i]=0.005;
-      ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+      ierr = homogenize_get_average_strain_stress(strain_mac, strain_ave, stress_ave);
       if(ierr) goto end;
 
       myio_printf(&MICRO_COMM,"\nstrain_ave = ");
@@ -294,14 +294,10 @@ int main(int argc, char **argv)
     }
     myio_printf(&MICRO_COMM,"\n");
 
-    /*
-       Experiment to test if the homogenization with <strain_mac>
-       gives the same <stress_ave> than doing <c_homo>*<strain_mac>
-     */
-
     strain_mac[0] = 0.01; strain_mac[1] = -0.02; strain_mac[2] = +0.03;
     strain_mac[3] = 0.01; strain_mac[4] = -0.02; strain_mac[5] = +0.03;
-    ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
+    ierr = homogenize_get_average_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
+
     myio_printf(&MICRO_COMM,"\nstrain_ave = ");
     for( j = 0 ; j < nvoi ; j++ )
       myio_printf(&MICRO_COMM,"%e ",strain_ave[j]);
