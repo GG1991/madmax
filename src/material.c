@@ -1,32 +1,29 @@
 #include "material.h"
 
-int material_get_stress( material_t *mat_p, int dim , double * strain_gp, double * stress_gp )
-{
 
-  if( mat_p->type_id == MAT_ELASTIC ){
+int material_get_stress( material_t *mat_p, int dim , double * strain_gp, double * stress_gp ){
 
-    /* is a linear material stress = C * strain */
+  if(mat_p->type_id == MAT_ELASTIC){
 
     double  young   = ((type_0*)mat_p->type)->young;
     double  poisson = ((type_0*)mat_p->type)->poisson;
-    int     i , j;
 
-    if( dim == 2 ){
+    if(dim == 2){
 
-      /* Plane strain ( long fibers case ) */
+      /* plane strain ( long fibers case ) */
       int     nvoi = 3;
       double  c[3][3];
       c[0][0]=1.0-poisson; c[0][1]=poisson    ; c[0][2]=0.0            ;
       c[1][0]=poisson    ; c[1][1]=1.0-poisson; c[1][2]=0.0            ;
       c[2][0]=0.0        ; c[2][1]=0.0        ; c[2][2]=(1-2*poisson)/2;
 
-      for( i = 0; i < nvoi ; i++ ){
-	for( j = 0 ; j < nvoi ; j++ )
+      for(int i = 0; i < nvoi ; i++){
+	for(int j = 0 ; j < nvoi ; j++)
 	  c[i][j] *= young/((1+poisson)*(1-2*poisson));
       }
-      for( i = 0; i < nvoi ; i++ ){
+      for(int i = 0; i < nvoi ; i++){
 	stress_gp[i] = 0.0;
-	for( j = 0 ; j < nvoi ; j++ )
+	for(int j = 0 ; j < nvoi ; j++)
 	  stress_gp[i] += c[i][j] * strain_gp[j];
       }
 
@@ -36,26 +33,23 @@ int material_get_stress( material_t *mat_p, int dim , double * strain_gp, double
 }
 
 
-int material_get_c_tang( material_t *mat_p, int dim , double * strain_gp, double * c_tan )
-{
+int material_get_c_tang(material_t *mat_p, int dim, double *strain_gp, double *c_tan){
 
-  if( mat_p->type_id == MAT_ELASTIC ){
+  if(mat_p->type_id == MAT_ELASTIC){
 
-    /* is a linear material stress = C * strain */
     double  young   = ((type_0*)mat_p->type)->young;
     double  poisson = ((type_0*)mat_p->type)->poisson;
-    int     i , j;
     int     nvoi = 3;
 
-    if(dim==2){
+    if(dim == 2){
 
-      /* Plane strain ( long fibers case ) */
+      /* plane strain ( long fibers case ) */
       c_tan[0*nvoi+0]=1.0-poisson; c_tan[0*nvoi+1]=poisson    ; c_tan[0*nvoi+2]=0.0            ;
       c_tan[1*nvoi+0]=poisson    ; c_tan[1*nvoi+1]=1.0-poisson; c_tan[1*nvoi+2]=0.0            ;
       c_tan[2*nvoi+0]=0.0        ; c_tan[2*nvoi+1]=0.0        ; c_tan[2*nvoi+2]=(1-2*poisson)/2;
 
-      for( i = 0; i < nvoi ; i++ ){
-	for( j = 0 ; j < nvoi ; j++ )
+      for(int i = 0; i < nvoi ; i++){
+	for(int j = 0 ; j < nvoi ; j++)
 	  c_tan[i*nvoi + j] *= young/((1+poisson)*(1-2*poisson));
       }
 
@@ -65,11 +59,10 @@ int material_get_c_tang( material_t *mat_p, int dim , double * strain_gp, double
 }
 
 
-int material_get_rho( material_t *mat_p, int dim , double * rho )
-{
+int material_get_rho(material_t *mat_p, int dim, double *rho){
 
-  if( mat_p->type_id == MAT_ELASTIC )
-    *rho   = ((type_0*)mat_p->type)->rho;
+  if(mat_p->type_id == MAT_ELASTIC)
+    *rho = ((type_0*)mat_p->type)->rho;
 
   return 0;
 }
@@ -92,45 +85,44 @@ int material_fill_list_from_command_line(command_line_t *command_line, list_t *m
 
   myio_comm_line_get_string_array(command_line, MAX_NUM_OF_MATERIALS, "-material");
 
-  if(! command_line->found || ! command_line->n_str_found)
+  if(command_line->found == false)
     return 1;
 
   list_init(material_list, sizeof(material_t), NULL);
 
-  int i;
-  for( i=0 ; i<command_line->n_str_found ; i++ )
-  {
-    char       *data;
-    material_t  mat;
-    data = strtok(command_line->str_arr[i]," \n");
+  material_t  mat;
+
+  for(int i=0 ; i<command_line->n_str_found ; i++){
+
+    char *data = strtok(command_line->str_arr[i], " \n");
+
     mat.name = strdup( data );
-    data = strtok(NULL," \n");
-    if(!strcmp(data, "MAT_ELASTIC"))
-    {
+
+    data = strtok(NULL, " \n");
+    if(strcmp(data, "MAT_ELASTIC") == 0){
+
       mat.type_id = MAT_ELASTIC;
       mat.type    = malloc(sizeof(type_0));
       mat.is_linear = true;
 
-      data = strtok( NULL , " \n" );
+      data = strtok( NULL , " \n");
       ((type_0*)mat.type)->rho         = atof(data);
 
-      data = strtok( NULL , " \n" );
+      data = strtok( NULL , " \n");
       double E = ((type_0*)mat.type)->young   = atof(data);
 
-      data = strtok( NULL , " \n" );
+      data = strtok( NULL , " \n");
       double v = ((type_0*)mat.type)->poisson = atof(data);
 
       ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
       ((type_0*)mat.type)->mu          = E/(2*(1+v));
+
     }
-    else if (!strcmp(data,"MAT_MICRO")){
+    else if (strcmp(data,"MAT_MICRO") == 0){
       mat.type_id = MAT_MICRO;
     }
     else
-    {
-      printf("type %s not known.\n",data);
       return 1;
-    }
 
     list_insertlast(material_list, &mat);
   }
