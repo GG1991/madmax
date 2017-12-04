@@ -24,6 +24,8 @@
 #define TAYLOR_P     2
 #define UNIF_STRAINS 3
 
+#define MAX_NVOIGT   6
+
 #define NBUF         256
 
 char        filename[NBUF];
@@ -97,11 +99,14 @@ typedef struct{
   int homog_method;
   int non_linear_max_its;
   double non_linear_min_norm_tol;
+  double c_tangent_linear[MAX_NVOIGT*MAX_NVOIGT];
+  double c_tangent[MAX_NVOIGT*MAX_NVOIGT];
 
   bool flag_coupling;
   bool flag_first_homogenization;
   bool flag_have_linear_materials;
   bool flag_have_allocated;
+  bool c_tangent_linear_calculated;
 
 }params_t;
 
@@ -114,10 +119,14 @@ int         flag_print;
 
 double      center_domain[3];
 
-int mic_homogenize(MPI_Comm COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
-int mic_homogenize_taylor(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
-int mic_homog_us(MPI_Comm COMM, double strain_bc[6], double strain_ave[6], double stress_ave[6]);
 int voigt2mat(double voigt[6], double matrix[3][3]);
+
+int homogenize_get_average_c_tangent(double *strain_mac, double **c_tangent);
+int homogenize_get_average_c_tangent_non_linear(double *strain_mac, double *c_tangent);
+int homogenize_get_average_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave);
+int homogenize_get_average_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave);
+int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave);
+int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave);
 
 int micro_print_info( void );
 int micro_pvtu( char *name );
