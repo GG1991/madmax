@@ -1,37 +1,10 @@
-/*
- * micro_struct.c - functions to represent the geometrical micro-structure
- * pattern of a solid. The description of what each micro-structure 
- * represents can be found on micro_struc.h.
- * 
- *
- * author : Guido Giuntoli
- * date   : 26 - 11 - 2017
- *
- */
-
 #include "micro_struct.h"
-
-/**********************************************************************/
 
 int micro_struct_init(
     const int dim,
     const char *string,
     micro_struct_t *micro_struct )
 {
-
-  /*
-   * Initializates the micro_struct parsing "string" the first word
-   * indicates the kind of "micro_struct" type. Then a convention 
-   * is implemented to filled all the structure.
-   *
-   *
-   * string = { "type" , "parameters" }
-   *
-   * return 0 if success
-   * return 1 if non-specific error
-   * return 2 if format error
-   *
-   */
 
   char   *stra = strdup( string );
   char   *data = strtok( stra, " \n" );
@@ -41,13 +14,10 @@ int micro_struct_init(
   if( !strcmp(data, "fiber_cilin") )
   {
 
-    /* Reads the format
-     * "size"[dim] "nx_fib" "ny_fib" "radio" "desv"[2]
-     */
+    /* Reads "size"[dim] "nx_fib" "ny_fib" "radio" "desv"[2]*/
 
     fiber_cilin_t *fiber_cilin = malloc(sizeof(fiber_cilin_t));
 
-    /* read and write */
     fiber_cilin->desv = malloc(dim*sizeof(double));
 
     for( d=0 ; d<dim ; d++ )
@@ -76,7 +46,6 @@ int micro_struct_init(
       fiber_cilin->desv[d] = atof( data );
     }
 
-    /* assign to micro_struct */
     micro_struct->type = FIBER_CILIN;
     micro_struct->data = fiber_cilin;
 
@@ -84,15 +53,12 @@ int micro_struct_init(
   else if( !strcmp(data, "fiber_line") )
   {
 
-    /* Reads the format
-     * "size"[dim] "ntype" "nfib[ntype]" "tetha[ntype]"  "seps[ntype]" "width[ntype]" "desv[ntype]"
-     */
+    /* Reads "size"[dim] "ntype" "nfib[ntype]" "tetha[ntype]"  "seps[ntype]" "width[ntype]" "desv[ntype]"*/
 
     int ntype;
 
     fiber_line_t *fiber_line = malloc(sizeof(fiber_line_t));
 
-    /* read and write */
     for( d=0 ; d<dim ; d++ )
     {
       data = strtok( NULL, " \n" );
@@ -145,7 +111,6 @@ int micro_struct_init(
       fiber_line->desv[d] = atof( data );
     }
 
-    /* assign to micro_struct */
     micro_struct->type = FIBER_LINE;
     micro_struct->data = fiber_line;
 
@@ -160,7 +125,6 @@ int micro_struct_init(
   return 0;
 }
 
-/**********************************************************************/
 
 int micro_struct_get_elem_id(
     const int dim,
@@ -257,7 +221,6 @@ int micro_struct_get_elem_id(
   return 0;
 }
 
-/**********************************************************************/
 
 int micro_struct_init_elem_type(
     micro_struct_t *micro_struct,
@@ -266,12 +229,6 @@ int micro_struct_init_elem_type(
     int (*get_centroid)( int e, int dim, double *elem_centroid ),
     int *elem_type )
 {
-
-  /*
-     fills the elem_type vector according to the micro structure
-     > get_centroid( int e, int dim, double *centroid ) is a function
-     that returns the centroid of an element
-   */
 
   int     e;
   double *elem_centroid = malloc(dim*sizeof(double));
@@ -285,5 +242,3 @@ int micro_struct_init_elem_type(
 
   return 0;
 }
-
-/****************************************************************************************************/
