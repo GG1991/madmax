@@ -353,6 +353,120 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
 }
 
 
+int homogenize_init(void){
+
+  int ierr = 0;
+
+  if(params.have_linear_materials == true){
+
+    double strain_mac[MAX_NVOIGT];
+    for(int i = 0 ; i < nvoi ; i++) strain_mac[i] = 0.0;
+
+    ierr = homogenize_get_average_c_tangent_non_linear(strain_mac, params.c_tangent_linear);
+    params.c_tangent_linear_calculated = true;
+
+  }
+
+  return ierr;
+}
+
+
+int homogenize_get_average_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave){
+
+  if(params.have_linear_materials == true && params.c_tangent_linear_calculated == true){
+
+    for(int i = 0 ; i < nvoi ; i++){
+      strain_ave[i] = strain_mac[i];
+      stress_ave[i] = 0.0;
+      for(int j = 0 ; j < nvoi ; j++)
+	stress_ave[i] += params.c_tangent_linear[i*nvoi + j] * strain_mac[j];
+    }
+
+  }
+  else{
+
+    int ierr = homogenize_get_average_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
+    if(ierr) return 1;
+
+  }
+  return 0;
+}
+
+
+int homogenize_get_average_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave){
+
+  int ierr = 0;
+
+  if(homo_type == HOMOG_METHOD_TAYLOR_P || homo_type == HOMOG_METHOD_TAYLOR_S){
+
+    ierr = mic_homogenize_taylor(strain_mac, strain_ave, stress_ave);
+  }
+  else if(homo_type == UNIF_STRAINS){
+
+    ierr = mic_homog_us(strain_mac, strain_ave, stress_ave);
+  }
+
+  return ierr;
+}
+
+
+int homogenize_get_average_c_tangent(double *strain_mac, double **c_tangent){
+
+  int ierr = 0;
+
+  if(params.have_linear_materials == true && params.have_linear_materials == true){
+
+    (*c_tangent) = params.c_tangent_linear;
+
+  }
+  else if(params.have_linear_materials == false){
+
+    ierr = homogenize_get_average_c_tangent_non_linear(strain_mac, params.c_tangent);
+    (*c_tangent) = params.c_tangent;
+
+  }
+
+  return ierr;
+}
+
+
+#define DELTA_STRAIN 0.005
+int homogenize_get_average_c_tangent_non_linear(double *strain_mac, double *c_tangent){
+
+  int ierr = 0;
+  double strain_1[MAX_NVOIGT], strain_2[MAX_NVOIGT];
+  double stress_1[MAX_NVOIGT], stress_2[MAX_NVOIGT];
+  double strain_aux[MAX_NVOIGT];
+
+  for(int j = 0 ; j < nvoi ; j++)
+    strain_1[j] = strain_mac[j];
+
+  ierr = homogenize_get_average_strain_stress(strain_1, strain_aux, stress_1);
+
+  for(int i = 0 ; i < nvoi ; i++){
+
+    for(int j = 0 ; j < nvoi ; j++)
+      strain_2[j] = strain_mac[j];
+    strain_2[i] = strain_2[i] + DELTA_STRAIN;
+
+    ierr = homogenize_get_average_strain_stress(strain_2, strain_aux, stress_2);
+
+    for(int j = 0 ; j < nvoi ; j++)
+      c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[j] - strain_1[j]);
+
+  }
+
+  return ierr;
+}
+
+
+void homogenize_check_linear_material(void){
+
+  params.have_linear_materials = (material_are_all_linear(&material_list) == true) ? true : false;
+
+}
+
+
 int strain_x_coord( double *strain , double *coord , double *u ){
 
   if(dim == 2){
@@ -743,107 +857,6 @@ int local_to_global_index( int local )
   }
 
   return 0;
-}
-
-
-int homogenize_get_average_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave){
-
-  int ierr = 0;
-
-  if(homo_type == HOMOG_METHOD_TAYLOR_P || homo_type == HOMOG_METHOD_TAYLOR_S){
-
-    ierr = mic_homogenize_taylor(strain_mac, strain_ave, stress_ave);
-  }
-  else if(homo_type == UNIF_STRAINS){
-
-    ierr = mic_homog_us(strain_mac, strain_ave, stress_ave);
-  }
-
-  return ierr;
-}
-
-
-int homogenize_get_average_c_tangent(double *strain_mac, double **c_tangent){
-
-  int ierr = 0;
-
-  if(params.flag_have_linear_materials == true){
-
-    if(params.c_tangent_linear_calculated == false){
-      ierr = homogenize_get_average_c_tangent_non_linear(strain_mac, params.c_tangent_linear);
-      params.c_tangent_linear_calculated = true;
-    }
-
-    (*c_tangent) = params.c_tangent_linear;
-
-  }
-  else{
-
-    ierr = homogenize_get_average_c_tangent_non_linear(strain_mac, params.c_tangent);
-    (*c_tangent) = params.c_tangent;
-
-  }
-
-  return ierr;
-}
-
-
-int homogenize_get_average_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave){
-
-  if(params.flag_have_linear_materials == true){
-
-    for(int i = 0 ; i < nvoi ; i++){
-      strain_ave[i] = strain_mac[i];
-      stress_ave[i] = 0.0;
-      for(int j = 0 ; j < nvoi ; j++)
-	stress_ave[i] += params.c_tangent_linear[i*nvoi + j] * strain_mac[j];
-    }
-
-  }
-  else{
-
-    int ierr = homogenize_get_average_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
-    if(ierr) return 1;
-
-  }
-  return 0;
-}
-
-
-#define DELTA_STRAIN 0.005
-int homogenize_get_average_c_tangent_non_linear(double *strain_mac, double *c_tangent){
-
-  int ierr = 0;
-  double strain_1[MAX_NVOIGT], strain_2[MAX_NVOIGT];
-  double stress_1[MAX_NVOIGT], stress_2[MAX_NVOIGT];
-  double strain_aux[MAX_NVOIGT];
-
-  for(int j = 0 ; j < nvoi ; j++)
-    strain_1[j] = strain_mac[j];
-
-  ierr = homogenize_get_average_strain_stress(strain_1, strain_aux, stress_1);
-
-  for(int i = 0 ; i < nvoi ; i++){
-
-    for(int j = 0 ; j < nvoi ; j++)
-      strain_2[j] = strain_mac[j];
-    strain_2[i] = strain_2[i] + DELTA_STRAIN;
-
-    ierr = homogenize_get_average_strain_stress(strain_2, strain_aux, stress_2);
-
-    for(int j = 0 ; j < nvoi ; j++)
-      c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[j] - strain_1[j]);
-
-  }
-
-  return ierr;
-}
-
-
-void homogenize_check_linear_material(void){
-
-  params.flag_have_linear_materials = (material_are_all_linear(&material_list) == true) ? true : false;
-
 }
 
 

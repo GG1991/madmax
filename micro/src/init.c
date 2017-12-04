@@ -8,7 +8,7 @@ void init_variables(params_t *params){
 
   params->flag_coupling = false;
   params->flag_first_homogenization = true;
-  params->flag_have_linear_materials = false;
+  params->have_linear_materials = false;
   params->flag_have_allocated = false;
   params->c_tangent_linear_calculated = false;
 

@@ -104,7 +104,7 @@ typedef struct{
 
   bool flag_coupling;
   bool flag_first_homogenization;
-  bool flag_have_linear_materials;
+  bool have_linear_materials;
   bool flag_have_allocated;
   bool c_tangent_linear_calculated;
 
@@ -121,6 +121,7 @@ double      center_domain[3];
 
 int voigt2mat(double voigt[6], double matrix[3][3]);
 
+int homogenize_init(void);
 int homogenize_get_average_c_tangent(double *strain_mac, double **c_tangent);
 int homogenize_get_average_c_tangent_non_linear(double *strain_mac, double *c_tangent);
 int homogenize_get_average_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave);

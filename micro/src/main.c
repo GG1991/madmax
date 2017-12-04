@@ -210,6 +210,8 @@ int main(int argc, char **argv)
   ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
 
+  homogenize_init();
+
   double strain_mac[6], strain_ave[6], stress_ave[6], *c_tangent_ptr;
 
   if(params.flag_coupling == true){
