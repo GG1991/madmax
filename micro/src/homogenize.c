@@ -1,15 +1,7 @@
-/*
-   Routines for performing homogenization on RVE
-
-   Author > Guido Giuntoli
-   Date   > 18-08-2017
- */
-
 #include "micro.h"
 
-int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6] )
-{
-  /* mixture theory */
+
+int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave){
     
   int          i, j, e, ierr;
   int          ne_i = 0, ne_m = 0;
@@ -103,8 +95,7 @@ int mic_homogenize_taylor( MPI_Comm MICRO_COMM, double strain_mac[6], double str
 }
 
 
-int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
-{
+int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
 
   if(params.flag_have_allocated == false){
 
@@ -362,10 +353,9 @@ int mic_homog_us(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6]
 }
 
 
-int strain_x_coord( double * strain , double * coord , double * u )
-{
+int strain_x_coord( double *strain , double *coord , double *u ){
 
-  if( dim == 2 ){
+  if(dim == 2){
     u[0] = strain[0]   * coord[0] + strain[2]/2 * coord[1] ;
     u[1] = strain[2]/2 * coord[0] + strain[1]   * coord[1] ;
   }
@@ -427,8 +417,7 @@ int assembly_b(void)
 }
 
 
-int assembly_A( void )
-{
+int assembly_A( void ){
 
   MatZeroEntries(A);
 
@@ -472,8 +461,7 @@ int assembly_A( void )
 }
 
 
-int get_averages( double * strain_ave, double * stress_ave )
-{
+int get_averages(double *strain_ave, double *stress_ave){
 
   int    i, e, gp;
   int    ierr;
@@ -514,33 +502,27 @@ int get_averages( double * strain_ave, double * stress_ave )
   return ierr;
 }
 
-/****************************************************************************************************/
 
-int get_elem_properties( void )
-{
+int get_elem_properties(void){
 
-  /* fills *elem_strain, *elem_stress, *elem_type, *elem_energy */
+  for(int e = 0 ; e < nelm ; e++){
 
-  int      e, v, gp;
-  double  *strain_aux = malloc( nvoi * sizeof(double) );
-  double  *stress_aux = malloc( nvoi * sizeof(double) );
-
-  for ( e = 0 ; e < nelm ; e++ ){
-
-    for ( v = 0 ; v < nvoi ; v++ )
+    double strain_aux[MAX_NVOIGT];
+    double stress_aux[MAX_NVOIGT];
+    for(int v = 0 ; v < nvoi ; v++)
       strain_aux[v] = stress_aux[v] = 0.0;
 
-    for ( gp = 0 ; gp < ngp ; gp++ ){
+    for (int gp = 0 ; gp < ngp ; gp++){
 
       get_strain( e , gp, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );
-      for ( v = 0 ; v < nvoi ; v++ ){
+      for(int v = 0 ; v < nvoi ; v++ ){
 	strain_aux[v] += strain_gp[v] * struct_wp[gp];
 	stress_aux[v] += stress_gp[v] * struct_wp[gp];
       }
 
     }
-    for ( v = 0 ; v < nvoi ; v++ ){
+    for (int v = 0 ; v < nvoi ; v++){
       elem_strain[ e*nvoi + v ] = strain_aux[v] / vol_elem;
       elem_stress[ e*nvoi + v ] = stress_aux[v] / vol_elem;
     }
@@ -550,10 +532,8 @@ int get_elem_properties( void )
   return 0;
 }
 
-/****************************************************************************************************/
 
-int get_strain( int e , int gp, double *strain_gp )
-{
+int get_strain(int e, int gp, double *strain_gp){
 
   Vec     x_loc;
   double  *x_arr;
@@ -563,14 +543,11 @@ int get_strain( int e , int gp, double *strain_gp )
 
   int    i , v;
 
-  /* get the local indeces of the element vertex nodes */
   get_local_elem_index(e, loc_elem_index);
 
-  /* get the elemental displacements */
   for( i = 0 ; i < npe*dim ; i++ )
     elem_disp[i] = x_arr[loc_elem_index[i]];
 
-  /* calc strain gp */
   for( v = 0; v < nvoi ; v++ ){
     strain_gp[v] = 0.0;
     for( i = 0 ; i < npe*dim ; i++ )
@@ -580,12 +557,8 @@ int get_strain( int e , int gp, double *strain_gp )
   return 0;
 }
 
-/****************************************************************************************************/
 
-int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
-{
-
-  /* returns the stress according to the elemet type */
+int get_stress( int e , int gp, double *strain_gp , double *stress_gp ){
 
   char *word_to_search;
 
@@ -609,24 +582,14 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
   }
   if( !pm ) return 1;
 
-  /*
-     now that we now the material (mat_p) we calculate
-     stress = f(strain)
-   */
   material_get_stress( mat_p, dim, strain_gp, stress_gp );
 
   return 0;
 }
 
-/****************************************************************************************************/
 
 int get_c_tan( const char *name, int e , int gp, double *strain_gp , double *c_tan )
 {
-
-  /*
-     returns the c_tan (tangent constitutive tensor)
-     according to the elemet type
-   */
 
   char *word_to_search;
 
@@ -653,53 +616,35 @@ int get_c_tan( const char *name, int e , int gp, double *strain_gp , double *c_t
   }
   if(!pm) return 1;
 
-  /*
-     now that we now the material (mat_p) we calculate
-     stress = f(strain)
-   */
   material_get_c_tang( mat_p, dim, strain_gp, c_tan );
 
   return 0;
 }
 
-/****************************************************************************************************/
 
-int get_elem_centroid( int e, int dim, double *centroid )
-{
+int get_elem_centroid(int e, int dim, double *centroid){
 
-  /* formula only valid for sequencial now */
-
-  if( dim == 2 ){
+  if(dim == 2){
     if( rank_mic == 0 ){
-      centroid[0] = ( e % nex + 0.5 ) * hx;
-      centroid[1] = ( e / nex + 0.5 ) * hy;
+      centroid[0] = ( e%nex + 0.5 )*hx;
+      centroid[1] = ( e/nex + 0.5 )*hy;
     }
     else{
-      centroid[0] = ( e % nex + 0.5              ) * hx;
-      centroid[1] = ( e / nex + 0.5 + ny_inf - 1 ) * hy;
+      centroid[0] = ( e%nex + 0.5              )*hx;
+      centroid[1] = ( e/nex + 0.5 + ny_inf - 1 )*hy;
     }
   }
 
   return 0;
 }
 
-/****************************************************************************************************/
 
-int get_local_elem_index( int e, int *loc_elem_index )
-{
+int get_local_elem_index(int e, int *loc_elem_index){
 
-  /* 
-     Returns the local position in the distributed vector of the 
-     indeces corresponding to an element vertex 
-   */
-  
-  int d ;
-  if( dim == 2 )
-  {
-    int n0;
+  if(dim == 2){
     if(  rank_mic == 0 ){
-      for( d = 0 ; d < dim ; d++ ){
-	n0 = (e%nex) + (e/nex)*nx;
+      for(int d = 0 ; d < dim ; d++){
+	int n0 = (e%nex) + (e/nex)*nx;
 	loc_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
 	loc_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
 	loc_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
@@ -707,17 +652,18 @@ int get_local_elem_index( int e, int *loc_elem_index )
       }
     }
     else if(e >= nex ){
-      for( d = 0 ; d < dim ; d++ ){
-	n0 = (e%nex) + (e/nex-1)*nx;
+      for(int d = 0 ; d < dim ; d++){
+	int n0 = (e%nex) + (e/nex-1)*nx;
 	loc_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
 	loc_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
 	loc_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
 	loc_elem_index[ 3*dim + d ] = ( n0 + nx     ) * dim + d ;
       }
+
     }
     else{
-      for( d = 0 ; d < dim ; d++ ){
-	n0 = (e%nex) + (e/nex)*nx;
+      for(int d = 0 ; d < dim ; d++){
+	int n0 = (e%nex) + (e/nex)*nx;
 	loc_elem_index[ 0*dim + d ] = ( n0 + nl     ) * dim + d ; // is a ghost
 	loc_elem_index[ 1*dim + d ] = ( n0 + nl + 1 ) * dim + d ; // is a ghost
 	loc_elem_index[ 2*dim + d ] = ( n0 + 1      ) * dim + d ;
@@ -728,29 +674,26 @@ int get_local_elem_index( int e, int *loc_elem_index )
   return 0;
 }
 
-/****************************************************************************************************/
 
-int get_local_elem_node( int e , int *n_loc )
-{
-  if( dim == 2 )
-  {
-    int n0;
-    if(  rank_mic == 0 ){
-      n0 = (e%nex) + (e/nex)*nx;
+int get_local_elem_node(int e , int *n_loc){
+
+  if(dim == 2){
+    if(rank_mic == 0){
+      int n0 = (e%nex) + (e/nex)*nx;
       n_loc[0] = n0          ;
       n_loc[1] = n0 + 1      ;
       n_loc[2] = n0 + nx + 1 ;
       n_loc[3] = n0 + nx     ;
     }
     else if(e >= nex ){
-      n0 = (e%nex) + (e/nex-1)*nx;
+      int n0 = (e%nex) + (e/nex-1)*nx;
       n_loc[0] = n0          ;
       n_loc[1] = n0 + 1      ;
       n_loc[2] = n0 + nx + 1 ;
       n_loc[3] = n0 + nx     ;
     }
     else{
-      n0 = (e%nex) + (e/nex)*nx;
+      int n0 = (e%nex) + (e/nex)*nx;
       n_loc[0] = n0 + nl     ; // is a ghost
       n_loc[1] = n0 + nl + 1 ; // is a ghost
       n_loc[2] = n0 + 1      ;
@@ -760,23 +703,13 @@ int get_local_elem_node( int e , int *n_loc )
   return 0;
 }
 
-/****************************************************************************************************/
 
-int get_global_elem_index( int e, int *glo_elem_index )
-{
-
-  /* 
-     returns the local position in the distributed vector of the 
-     indeces corresponding to an element vertex 
-   */
+int get_global_elem_index(int e, int *glo_elem_index){
   
-  int d;
-  if( dim == 2 )
-  {
-    int n0;
-    if(  rank_mic == 0 ){
-      for( d = 0 ; d < dim ; d++ ){
-	n0 = (e%nex) + (e/nex)*nx;
+  if(dim == 2){
+    if(rank_mic == 0){
+      for(int d = 0 ; d < dim ; d++ ){
+	int n0 = (e%nex) + (e/nex)*nx;
 	glo_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
 	glo_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
 	glo_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
@@ -784,8 +717,8 @@ int get_global_elem_index( int e, int *glo_elem_index )
       }
     }
     else{
-      for( d = 0 ; d < dim ; d++ ){
-	n0 = (e%nex) + (e/nex)*nx + (ny_inf-1)*nx;
+      for(int d = 0 ; d < dim ; d++){
+	int n0 = (e%nex) + (e/nex)*nx + (ny_inf-1)*nx;
 	glo_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
 	glo_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
 	glo_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
@@ -793,6 +726,7 @@ int get_global_elem_index( int e, int *glo_elem_index )
       }
     }
   }
+
   return 0;
 }
 
@@ -812,105 +746,101 @@ int local_to_global_index( int local )
 }
 
 
-int mic_homogenize(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]){
+int homogenize_get_average_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave){
 
-  int ierr;
+  int ierr = 0;
 
-  if(homo_type==TAYLOR_P || homo_type==TAYLOR_S){
+  if(homo_type == HOMOG_METHOD_TAYLOR_P || homo_type == HOMOG_METHOD_TAYLOR_S){
 
-    ierr = mic_homogenize_taylor(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-    if(ierr){
-      return 1;
-    }
+    ierr = mic_homogenize_taylor(strain_mac, strain_ave, stress_ave);
   }
-  else if(homo_type==UNIF_STRAINS){
+  else if(homo_type == UNIF_STRAINS){
 
-    ierr = mic_homog_us(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-    if(ierr) return 1;
-
+    ierr = mic_homog_us(strain_mac, strain_ave, stress_ave);
   }
 
-  return 0;
+  return ierr;
 }
 
 
-int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]){
+int homogenize_get_average_c_tangent(double *strain_mac, double **c_tangent){
 
-  if(params.flag_have_linear_materials){
-
-    if(params.flag_first_homogenization == true){
-      int ierr = mic_calc_c_homo_lineal(MICRO_COMM, c_homo_lineal);
-      if(ierr) return 1;
-    }
-    for(int i = 0 ; i < nvoi*nvoi ; i++)
-      c_homo[i] = c_homo_lineal[i];
-
-  }
-  else{
-    return 1;
-  }
-  return 0;
-}
-
-
-int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36]){
-
-  int       ierr;
-  double    strain[6];
-  double    strain_ave[6];
-  double    stress_ave[6];
-
-  for(int i = 0 ; i < nvoi*nvoi ; i++)
-    c_homo_lineal[i] = 0.0;
-
-  for(int i = 0 ; i < nvoi ; i++){
-
-    for(int j = 0 ; j < nvoi ; j++ )
-      strain[j]=0.0;
-    strain[i]=0.005;
-
-    ierr = mic_homogenize(MICRO_COMM, strain, strain_ave, stress_ave);
-    if(ierr) return 1;
-
-    for(int j = 0 ; j < nvoi ; j++ )
-      c_homo_lineal[j*nvoi+i] = stress_ave[j] / strain_ave[i];
-
-  }
-
-  return 0;
-}
-
-
-int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6])
-{
-
-  int i, j, ierr;
+  int ierr = 0;
 
   if(params.flag_have_linear_materials == true){
 
-    for(i=0;i<nvoi;i++){
-      strain_ave[i] = strain_mac[i];
-      stress_ave[i] = 0.0;
-      for( j = 0 ; j < nvoi ; j++ )
-	stress_ave[i] += c_homo_lineal[i*nvoi+j] * strain_mac[j];
+    if(params.c_tangent_linear_calculated == false){
+      ierr = homogenize_get_average_c_tangent_non_linear(strain_mac, params.c_tangent_linear);
+      params.c_tangent_linear_calculated = true;
     }
-    return 0;
+
+    (*c_tangent) = params.c_tangent_linear;
 
   }
   else{
 
-    ierr = mic_homogenize(MICRO_COMM, strain_mac, strain_ave, stress_ave);
-    if(ierr){
-      return 1;
+    ierr = homogenize_get_average_c_tangent_non_linear(strain_mac, params.c_tangent);
+    (*c_tangent) = params.c_tangent;
+
+  }
+
+  return ierr;
+}
+
+
+int homogenize_get_average_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave){
+
+  if(params.flag_have_linear_materials == true){
+
+    for(int i = 0 ; i < nvoi ; i++){
+      strain_ave[i] = strain_mac[i];
+      stress_ave[i] = 0.0;
+      for(int j = 0 ; j < nvoi ; j++)
+	stress_ave[i] += params.c_tangent_linear[i*nvoi + j] * strain_mac[j];
     }
-    return 0;
+
+  }
+  else{
+
+    int ierr = homogenize_get_average_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
+    if(ierr) return 1;
 
   }
   return 0;
 }
 
 
-void mic_check_linear_material(void){
+#define DELTA_STRAIN 0.005
+int homogenize_get_average_c_tangent_non_linear(double *strain_mac, double *c_tangent){
+
+  int ierr = 0;
+  double strain_1[MAX_NVOIGT], strain_2[MAX_NVOIGT];
+  double stress_1[MAX_NVOIGT], stress_2[MAX_NVOIGT];
+  double strain_aux[MAX_NVOIGT];
+
+  for(int j = 0 ; j < nvoi ; j++)
+    strain_1[j] = strain_mac[j];
+
+  ierr = homogenize_get_average_strain_stress(strain_1, strain_aux, stress_1);
+
+  for(int i = 0 ; i < nvoi ; i++){
+
+    for(int j = 0 ; j < nvoi ; j++)
+      strain_2[j] = strain_mac[j];
+    strain_2[i] = strain_2[i] + DELTA_STRAIN;
+
+    ierr = homogenize_get_average_strain_stress(strain_2, strain_aux, stress_2);
+
+    for(int j = 0 ; j < nvoi ; j++)
+      c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[j] - strain_1[j]);
+
+  }
+
+  return ierr;
+}
+
+
+void homogenize_check_linear_material(void){
 
   params.flag_have_linear_materials = (material_are_all_linear(&material_list) == true) ? true : false;
 
@@ -919,7 +849,7 @@ void mic_check_linear_material(void){
 
 int get_node_local_coor( int n , double * coord )
 {
-  if( dim == 2 ){
+  if(dim == 2){
     if( rank_mic == 0 ){
       coord[0] = (n % nx)*hx;
       coord[1] = (n / nx)*hy;
