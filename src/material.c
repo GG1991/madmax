@@ -105,17 +105,21 @@ int material_fill_list_from_command_line(command_line_t *command_line, list_t *m
     data = strtok(command_line->str_arr[i]," \n");
     mat.name = strdup( data );
     data = strtok(NULL," \n");
-    if(!strcmp(data,"MAT_ELASTIC"))
+    if(!strcmp(data, "MAT_ELASTIC"))
     {
-      double E, v;
       mat.type_id = MAT_ELASTIC;
       mat.type    = malloc(sizeof(type_0));
+      mat.is_linear = true;
+
       data = strtok( NULL , " \n" );
       ((type_0*)mat.type)->rho         = atof(data);
+
       data = strtok( NULL , " \n" );
-      E = ((type_0*)mat.type)->young   = atof(data);
+      double E = ((type_0*)mat.type)->young   = atof(data);
+
       data = strtok( NULL , " \n" );
-      v = ((type_0*)mat.type)->poisson = atof(data);
+      double v = ((type_0*)mat.type)->poisson = atof(data);
+
       ((type_0*)mat.type)->lambda      = (E*v)/((1+v)*(1-2*v));
       ((type_0*)mat.type)->mu          = E/(2*(1+v));
     }
