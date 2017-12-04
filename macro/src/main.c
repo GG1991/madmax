@@ -1,8 +1,7 @@
 #include "macro.h"
 
 static char help[] = 
-"MACRO MULTISCALE CODE                                                                             \n"
-"Solves the displacement field inside a solid structure.                                           \n"
+"macro multiscale code                                                                             \n"
 "-coupl       : coupled with \"micro\" code for solving multiscale problem                         \n"
 "-normal      : normal execution, solves a time dependent boundary condition problem               \n"
 "-testcomm    : communication testing with the \"micro\" code                                      \n"
@@ -30,20 +29,13 @@ int main(int argc, char **argv)
   MPI_Comm_size( WORLD_COMM, &nproc_wor );
   MPI_Comm_rank( WORLD_COMM, &rank_wor );
 
-  flag_coupling = PETSC_FALSE;
-
   myio_comm_line_search_option(&command_line, "-coupl");
-  if(command_line.found){
-    flag_coupling = PETSC_TRUE;
-  }
+  if(command_line.found) params.flag_coupling = true;
 
   macmic.type = COUP_1;
-  color = MACRO;
-  ierr = macmic_coloring( WORLD_COMM, &color, &macmic, &MACRO_COMM );
-  if( ierr ){
-    myio_printf(&PETSC_COMM_WORLD, "problem in coloring\n" );
-    goto end;
-  }
+  color = COLOR_MACRO;
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM, params.flag_coupling);
+  CHECK_AND_GOTO(ierr);
 
   MPI_Comm_size(MACRO_COMM, &nproc_mac);
   MPI_Comm_rank(MACRO_COMM, &rank_mac);
@@ -516,7 +508,7 @@ int main(int argc, char **argv)
 
 end:
 
-  if(flag_coupling){
+  if(params.flag_coupling){
     ierr = mac_send_signal(WORLD_COMM, MIC_END);
     if(ierr){
       myio_printf(&PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");

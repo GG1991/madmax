@@ -12,5 +12,7 @@ void init_variables(params_t *params){
   params->time_step = 0.0;
   params->energy_stored = 1.0;
 
+  params->flag_coupling = false;
+
   return;
 }

@@ -77,6 +77,8 @@ typedef struct{
 
   double energy_stored;
 
+  bool flag_coupling;
+
 }params_t;
 
 extern params_t params;
