@@ -212,48 +212,46 @@ int main(int argc, char **argv)
 
   homogenize_init();
 
-  double strain_mac[6], strain_ave[6], stress_ave[6], *c_tangent_ptr;
+
+  double strain_mac[6], strain_ave[6], stress_ave[6], c_tangent_ave[36];
 
   if(params.flag_coupling == true){
 
-    int signal=-1;
+    while(message.action != ACTION_MICRO_END){
 
-    while(signal != MIC_END){
+      ierr = comm_micro_recv(&message);
 
-      ierr = mic_recv_signal(WORLD_COMM, &signal);
+      switch(message.action){
 
-      switch(signal){
+	case ACTION_MICRO_CALC:
 
-	case MAC2MIC_STRAIN:
-	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);
+	  for(int i = 0 ; i < nvoi ; i++)
+	    strain_mac[i] = message.strain_mac[i];
+
 	  ierr = homogenize_get_average_strain_stress(strain_mac, strain_ave, stress_ave);
-	  ierr = mic_send_stress(WORLD_COMM, stress_ave);
+//	  ierr = homogenize_get_average_c_tangent(strain_mac, strain_ave, stress_ave);
+
+	  for(int i = 0 ; i < nvoi ; i++)
+	    message.stress_ave[i] = stress_ave[i];
+
+	  for(int i = 0 ; i < nvoi*nvoi ; i++)
+	    message.c_tangent_ave[i] = c_tangent_ave[i];
+
 	  break;
 
-	case C_HOMO:
-	  ierr = mic_recv_strain(WORLD_COMM, strain_mac);
-	  ierr = mic_recv_macro_gp(WORLD_COMM, &macro_gp);
-	  ierr = homogenize_get_average_c_tangent(strain_mac, &c_tangent_ptr);
-	  ierr = mic_send_c_homo(WORLD_COMM, nvoi, c_tangent_ptr);
-	  break;
-
-	case RHO:
-	  ierr = mic_send_rho(WORLD_COMM, &rho);
-	  break;
-
-	case MIC_END:
+	case ACTION_MICRO_END:
 	  break;
 
 	default:
-	  myio_printf(&MICRO_COMM,"MICRO:signal %d not identified\n",signal);
+	  myio_printf(&MICRO_COMM, "MICRO:signal %d not identified\n", signal);
 	  goto end;
 
       }
+
+      ierr = comm_micro_send(&message);
     }
   }
   else{
-
-    /* STANDALONE EXECUTION */
 
     double strain_mac[6], c_homo[36];
 
