@@ -53,7 +53,7 @@ int main(int argc, char **argv)
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
       "--------------------------------------------------\n");
 
-  init_variables(&params);
+  init_variables(&params, &message);
   myio_comm_line_search_option(&command_line, "-normal");
 
   if(command_line.found){
@@ -535,6 +535,7 @@ end:
   PetscFinalize();
 #endif
 
+  finalize();
   ierr = MPI_Finalize();
 
   return 0;

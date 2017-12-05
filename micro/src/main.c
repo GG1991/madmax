@@ -24,14 +24,14 @@ int main(int argc, char **argv)
 
   myname            = strdup("micro");
 
-  init_variables(&params);
-
   myio_comm_line_init(argc, argv, &command_line);
 
   WORLD_COMM = MPI_COMM_WORLD;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(WORLD_COMM, &nproc_wor);
   MPI_Comm_rank(WORLD_COMM, &rank_wor);
+
+  init_variables(&params, &message);
 
   myio_comm_line_search_option(&command_line, "-coupl");
   if(command_line.found) params.flag_coupling = true;
@@ -346,6 +346,8 @@ int main(int argc, char **argv)
       "--------------------------------------------------\n");
 
   ierr = PetscFinalize();
+
+  finalize();
 
 end:
   ierr = MPI_Finalize();
@@ -671,5 +673,3 @@ int micro_pvtu( char *name )
   fclose(fm);
   return 0;
 }
-
-/****************************************************************************************************/

@@ -1,6 +1,6 @@
 #include "micro.h"
 
-void init_variables(params_t *params){
+void init_variables(params_t *params, message_t *message){
 
   params->homog_method = HOMOG_METHOD_NULL;
   params->non_linear_max_its = 2;
@@ -11,6 +11,8 @@ void init_variables(params_t *params){
   params->have_linear_materials = false;
   params->flag_have_allocated = false;
   params->c_tangent_linear_calculated = false;
+
+  comm_init_message(message);
 
   return;
 }

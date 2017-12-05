@@ -62,15 +62,16 @@ DEPS_MIC = ${MIC_INC_DIR}/micro.h        \
            ${DEP_DIR}/geometry.h         \
            ${DEP_DIR}/trace.h
 
-MAC_OBJ  = ${MAC_OBJ_DIR}/main.o         \
-           $(MAC_OBJ_DIR)/init.o         \
-           $(SPU_OBJ_DIR)/material.o     \
-           $(SPU_OBJ_DIR)/gmsh.o         \
-           $(SPU_OBJ_DIR)/comm.o         \
-           $(SPU_OBJ_DIR)/util.o         \
-           $(SPU_OBJ_DIR)/list.o         \
-           $(SPU_OBJ_DIR)/mesh.o         \
-           $(SPU_OBJ_DIR)/fem.o          \
+MAC_OBJ  = ${MAC_OBJ_DIR}/main.o \
+           $(MAC_OBJ_DIR)/init.o \
+           $(MAC_OBJ_DIR)/finalize.o \
+           $(SPU_OBJ_DIR)/material.o \
+           $(SPU_OBJ_DIR)/gmsh.o \
+           $(SPU_OBJ_DIR)/comm.o \
+           $(SPU_OBJ_DIR)/util.o \
+           $(SPU_OBJ_DIR)/list.o \
+           $(SPU_OBJ_DIR)/mesh.o \
+           $(SPU_OBJ_DIR)/fem.o \
            $(SPU_OBJ_DIR)/function.o     \
            $(SPU_OBJ_DIR)/myio.o         \
            $(SPU_OBJ_DIR)/vtk.o
@@ -79,8 +80,9 @@ MIC_OBJ  = ${MIC_OBJ_DIR}/main.o         \
            ${MIC_OBJ_DIR}/homogenize.o   \
            ${MIC_OBJ_DIR}/micro_struct.o \
            ${MIC_OBJ_DIR}/init.o \
-           $(SPU_OBJ_DIR)/comm.o         \
-           $(SPU_OBJ_DIR)/trace.o        \
+           ${MIC_OBJ_DIR}/finalize.o \
+           $(SPU_OBJ_DIR)/comm.o \
+           $(SPU_OBJ_DIR)/trace.o \
            $(SPU_OBJ_DIR)/material.o     \
            $(SPU_OBJ_DIR)/vtk.o          \
            $(SPU_OBJ_DIR)/myio.o         \

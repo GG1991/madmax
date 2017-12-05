@@ -1,6 +1,6 @@
 #include "macro.h"
 
-void init_variables(params_t *params){
+void init_variables(params_t *params, message_t *message){
 
   params->calc_mode = CALC_MODE_NULL;
   params->non_linear_max_its = 1;
@@ -13,6 +13,8 @@ void init_variables(params_t *params){
   params->energy_stored = 1.0;
 
   params->flag_coupling = false;
+
+  comm_init_message(message);
 
   return;
 }

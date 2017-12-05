@@ -142,7 +142,8 @@ int get_averages( double * strain_ave, double * stress_ave );
 int get_elem_type( int e , int *type );
 int get_elem_properties( void );
 int init_shapes( double ***sh, double ****dsh, double **wp );
-void init_variables(params_t *params);
+void init_variables(params_t *params, message_t *message);
+void finalize(void);
 void mic_check_linear_material(void);
 
 
