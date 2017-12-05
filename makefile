@@ -54,6 +54,7 @@ DEPS_MAC = ${MAC_INC_DIR}/macro.h        \
 
 DEPS_MIC = ${MIC_INC_DIR}/micro.h        \
 	   ${MIC_INC_DIR}/micro_struct.h \
+	   ${MIC_INC_DIR}/homogenize.h \
            ${DEP_DIR}/comm.h             \
            ${DEP_DIR}/material.h         \
            ${DEP_DIR}/myio.h             \

@@ -14,6 +14,7 @@
 #include "trace.h"
 #include "myio.h"
 #include "vtk.h"
+#include "homogenize.h"
 #include "micro_struct.h"
 #include <gsl/gsl_linalg.h>
 
@@ -89,11 +90,6 @@ Vec          x, b;                // petsc vectors
 Vec          dx;
 KSP          ksp;                 // linear solver context
 
-#define HOMOG_METHOD_NULL         0
-#define HOMOG_METHOD_TAYLOR_S     1
-#define HOMOG_METHOD_TAYLOR_P     2
-#define HOMOG_METHOD_UNIF_STRAINS 3
-
 typedef struct{
 
   int homog_method;
@@ -120,14 +116,6 @@ int         flag_print;
 double      center_domain[3];
 
 int voigt2mat(double voigt[6], double matrix[3][3]);
-
-int homogenize_init(void);
-int homogenize_get_average_c_tangent(double *strain_mac, double **c_tangent);
-int homogenize_get_average_c_tangent_non_linear(double *strain_mac, double *c_tangent);
-int homogenize_get_average_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave);
-int homogenize_get_average_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave);
-int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave);
-int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave);
 
 int micro_print_info( void );
 int micro_pvtu( char *name );
