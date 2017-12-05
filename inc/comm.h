@@ -10,9 +10,10 @@
 #define  COLOR_MICRO        2
 #define  MAX_VOIGT 6
 
-#define ACTION_NULL       0
-#define ACTION_MICRO_CALC 1
-#define ACTION_MICRO_END  2
+#define ACTION_NULL                 0
+#define ACTION_MICRO_CALC_STRESS    1
+#define ACTION_MICRO_CALC_C_TANGENT 2
+#define ACTION_MICRO_END            3
 
 typedef struct {
 

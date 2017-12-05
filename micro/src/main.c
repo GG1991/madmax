@@ -213,7 +213,9 @@ int main(int argc, char **argv)
   homogenize_init();
 
 
-  double strain_mac[6], strain_ave[6], stress_ave[6], c_tangent_ave[36];
+  double strain_mac[6], strain_ave[6], stress_ave[6];
+
+  double *c_tangent_ave = malloc(36*sizeof(double));
 
   if(params.flag_coupling == true){
 
@@ -223,16 +225,21 @@ int main(int argc, char **argv)
 
       switch(message.action){
 
-	case ACTION_MICRO_CALC:
+	case ACTION_MICRO_CALC_STRESS:
 
 	  for(int i = 0 ; i < nvoi ; i++)
 	    strain_mac[i] = message.strain_mac[i];
 
 	  ierr = homogenize_get_average_strain_stress(strain_mac, strain_ave, stress_ave);
-//	  ierr = homogenize_get_average_c_tangent(strain_mac, strain_ave, stress_ave);
 
 	  for(int i = 0 ; i < nvoi ; i++)
 	    message.stress_ave[i] = stress_ave[i];
+
+	  break;
+
+	case ACTION_MICRO_CALC_C_TANGENT:
+
+	  ierr = homogenize_get_average_c_tangent(strain_mac, &c_tangent_ave);
 
 	  for(int i = 0 ; i < nvoi*nvoi ; i++)
 	    message.c_tangent_ave[i] = c_tangent_ave[i];

@@ -832,6 +832,8 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
 
   if(mat_p->type_id == MAT_MICRO){
 
+    message.action = ACTION_MICRO_CALC_STRESS;
+
     for(int i = 0 ; i < nvoi ; i++)
       message.strain_mac[i] = strain_gp[i];
 
@@ -868,6 +870,8 @@ int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 
   if(mat_p->type_id == MAT_MICRO){
 
+    message.action = ACTION_MICRO_CALC_C_TANGENT;
+
     for(int i = 0 ; i < nvoi ; i++)
       message.strain_mac[i] = strain_gp[i];
 
@@ -885,8 +889,7 @@ int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 }
 
 
-int get_rho( const char * name, int e , double * rho )
-{
+int get_rho(const char *name, int e, double *rho){
 
   material_t  *mat_p;
   char         name_s[64];
@@ -905,8 +908,7 @@ int get_rho( const char * name, int e , double * rho )
     return 1;
   }
 
-  if( mat_p->type_id == MAT_MICRO )
-  {
+  if(mat_p->type_id == MAT_MICRO){
     ierr = mac_send_signal(WORLD_COMM, RHO); if(ierr) return 1;
     ierr = mac_recv_rho(WORLD_COMM, rho);
   }
