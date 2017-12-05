@@ -3,16 +3,18 @@
 
 int comm_init_message(message_t *message){
 
+  message->action = ACTION_NULL;
+
   const int nitems = 5;
-  int block_lengths[5] = {1, 1, DOUBLE_ARRAY_LENGTH, 1, INT_ARRAY_LENGTH};
-  MPI_Datatype types[5] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_INT, MPI_INT};
+  int block_lengths[5] = {1, 1, MAX_VOIGT, MAX_VOIGT, MAX_VOIGT*MAX_VOIGT};
+  MPI_Datatype types[5] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
   MPI_Aint offsets[5];
 
   offsets[0] = offsetof(message_t, action);
-  offsets[1] = offsetof(message_t, num_double_array);
-  offsets[2] = offsetof(message_t, double_array);
-  offsets[3] = offsetof(message_t, num_int_array);
-  offsets[4] = offsetof(message_t, int_array);
+  offsets[1] = offsetof(message_t, num_voigt);
+  offsets[2] = offsetof(message_t, strain_mac);
+  offsets[3] = offsetof(message_t, stress_ave);
+  offsets[4] = offsetof(message_t, c_tangent_ave);
 
 
   int ierr = 0;
@@ -26,6 +28,54 @@ int comm_init_message(message_t *message){
 int comm_finalize_message(void){
 
   int ierr = MPI_Type_free(&mpi_message_t);
+
+  return ierr;
+}
+
+
+int comm_macro_send(message_t *message){
+
+  int remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
+  int ierr = MPI_Ssend(message, 1, mpi_message_t, remote_rank, 0, WORLD_COMM);
+
+  return ierr;
+}
+
+
+int comm_macro_recv(message_t *message){
+
+  int remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
+  int ierr = MPI_Recv(message, 1, mpi_message_t, remote_rank, 0, WORLD_COMM, MPI_STATUS_IGNORE);
+
+  return ierr;
+}
+
+
+int comm_micro_send(message_t *message){
+
+  int ierr = 0;
+
+  if(((mic_coup_1_t*)macmic.coup)->im_leader){
+    int remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
+    ierr = MPI_Ssend(message, 1, mpi_message_t, remote_rank, 0, WORLD_COMM);
+    if(ierr == 1) return 1;
+  }
+
+  return ierr;
+}
+
+
+int comm_micro_recv(message_t *message){
+
+  int ierr = 0;
+
+  if(((mic_coup_1_t*)macmic.coup)->im_leader){
+    int remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
+    ierr = MPI_Recv(message, 1, mpi_message_t, remote_rank, 0, WORLD_COMM, MPI_STATUS_IGNORE);
+    if(ierr == 1) return 1;
+  }
+
+  ierr = MPI_Bcast(message, 1, mpi_message_t, 0, MICRO_COMM);
 
   return ierr;
 }
@@ -159,9 +209,7 @@ int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Com
   return 0;
 }
 
-int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal)
-{
-  /* The processes will wait here until they receive the signal */
+int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal){
 
   int ierr, remote_rank;
   MPI_Status status;
@@ -181,6 +229,7 @@ int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal)
   }
   return 0;
 }
+
 
 int mac_send_signal(MPI_Comm WORLD_COMM, int signal)
 {
@@ -217,8 +266,7 @@ int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6])
   return 0;
 }
 
-int mic_recv_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp)
-{
+int mic_recv_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp){
 
   int ierr, remote_rank;
   MPI_Status status;
@@ -227,45 +275,37 @@ int mic_recv_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp)
     if(((mic_coup_1_t*)macmic.coup)->im_leader){
       remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
       ierr = MPI_Recv(&macro_gp, 1, MPI_INT, remote_rank, 0, WORLD_COMM, &status);
-      if(ierr)return 1;
+      if(ierr) return 1;
     }
     ierr = MPI_Bcast(&macro_gp, 1, MPI_INT, 0, MICRO_COMM);
-    if(ierr)return 1;
   }
-  else{
-    return 1;
-  }
-  return 0;
+  else
+    ierr = 1;
+
+  return ierr;
 }
 
-int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6])
-{
-  /* The processes will wait here until they receive the signal */
+int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6]){
 
-  int ierr, remote_rank;
+  int ierr;
 
   if(macmic.type == COUP_1){
-    remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
+    int remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
     ierr = MPI_Ssend(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM);
-    if(ierr)return 1;
   }
-  else{
-    return 1;
-  }
-  return 0;
+  else
+    ierr = 1;
+
+  return ierr;
 }
 
-int mac_send_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp)
-{
-  /* 
-     sends macro_gp number to micro.
-     The processes will wait here until they receive the signal 
-   */
 
-  int ierr, remote_rank;
+int mac_send_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp){
+
+  int ierr;
 
   if(macmic.type == COUP_1){
-    remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
+    int remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
     ierr = MPI_Ssend(macro_gp, 1, MPI_INT, remote_rank, 0, WORLD_COMM);
     if(ierr)return 1;
   }
@@ -274,17 +314,15 @@ int mac_send_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp)
   }
   return 0;
 }
-/****************************************************************************************************/
-int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6])
-{
-  /* Sends to macro leader the averange stress tensor calculated here */
 
-  int ierr, remote_rank;
+
+int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6]){
+
+  int ierr;
 
   if(macmic.type == COUP_1){
     if(((mic_coup_1_t*)macmic.coup)->im_leader){
-      // only the micro leader sends the stress
-      remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
+      int remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
       ierr = MPI_Ssend(stress, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM); 
       if(ierr)return 1; 
     }
@@ -294,115 +332,73 @@ int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6])
   }
   return 0;
 }
-/****************************************************************************************************/
-int mic_send_strain(MPI_Comm WORLD_COMM, double strain[6])
-{
-  /* Sends to macro leader the averange strain tensor calculated here */
-  int ierr, remote_rank;
 
-  if(macmic.type == COUP_1){
-    if(((mic_coup_1_t*)macmic.coup)->im_leader){
-      // only the micro leader sends the stress
-      remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
-      ierr = MPI_Ssend(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM); 
-      if(ierr)return 1;
-    }
+
+int mic_send_strain(MPI_Comm WORLD_COMM, double *strain){
+
+  int ierr;
+
+  if(((mic_coup_1_t*)macmic.coup)->im_leader){
+    int remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
+    ierr = MPI_Ssend(strain, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM); 
   }
-  else{
-    return 1;
-  }
-  return 0;
+
+  return ierr;
 }
-/****************************************************************************************************/
-int mic_send_rho(MPI_Comm WORLD_COMM, double *rho)
-{
-  /* Sends to macro leader the averange rho */
-  int ierr, remote_rank;
+
+
+int mic_send_rho(MPI_Comm WORLD_COMM, double *rho){
+
+  int ierr;
 
   if(macmic.type == COUP_1){
     if(((mic_coup_1_t*)macmic.coup)->im_leader){
-      // only the micro leader sends the stress
-      remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
+      int remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
       ierr = MPI_Ssend(rho, 1, MPI_DOUBLE, remote_rank, 0, WORLD_COMM); 
       if(ierr)return 1;
     }
   }
-  else{
-    return 1;
-  }
-  return 0;
-}
-/****************************************************************************************************/
-int mac_recv_stress(MPI_Comm WORLD_COMM, double stress[6])
-{
-  /* The processes will wait here until they receive the stress */
-  int ierr, remote_rank;
-  MPI_Status status;
 
-  if(macmic.type==COUP_1){
-    remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
-    ierr = MPI_Recv(stress, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, &status); 
+  return ierr;
+}
+
+
+int mac_recv_stress(MPI_Comm WORLD_COMM, double *stress){
+
+  int remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
+  int ierr = MPI_Recv(stress, 6, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, MPI_STATUS_IGNORE); 
+
+  return ierr;
+}
+
+
+int mac_recv_rho(MPI_Comm WORLD_COMM, double *rho){
+
+  int remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
+  int ierr = MPI_Recv(rho, 1, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, MPI_STATUS_IGNORE); 
+
+  return ierr;
+}
+
+
+int mac_recv_c_homo(MPI_Comm WORLD_COMM, int nvoi, double *c_homo){
+
+  int remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
+  int ierr = MPI_Recv(c_homo, nvoi*nvoi, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, MPI_STATUS_IGNORE);
+
+  return ierr;
+}
+
+
+int mic_send_c_homo(MPI_Comm WORLD_COMM, int nvoi, double *c_homo){
+
+  int ierr;
+
+  if(((mic_coup_1_t*)macmic.coup)->im_leader){
+    int remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
+    ierr = MPI_Ssend(c_homo, nvoi*nvoi, MPI_DOUBLE, remote_rank, 0, WORLD_COMM);
     if(ierr)return 1;
   }
-  else{
-    return 1;
-  }
-  return 0;
+
+  return ierr;
 }
-/****************************************************************************************************/
-int mac_recv_rho(MPI_Comm WORLD_COMM, double *rho)
-{
-  /* The processes will wait here until they receive the stress */
-  int ierr, remote_rank;
-  MPI_Status status;
-
-  if(macmic.type==COUP_1){
-    remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
-    ierr = MPI_Recv(rho, 1, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, &status); 
-    if(ierr) return 1;
-  }
-  else{
-    return 1;
-  }
-  return 0;
-}
-/****************************************************************************************************/
-int mac_recv_c_homo(MPI_Comm WORLD_COMM, int nvoi, double c_homo[36])
-{
-  /* The processes will wait here until they receive the c_homo */
-
-  int        ierr;
-  int        remote_rank;
-  MPI_Status status;
-
-  if(macmic.type==COUP_1){
-    remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
-    ierr = MPI_Recv(c_homo, nvoi*nvoi, MPI_DOUBLE, remote_rank, 0, WORLD_COMM, &status);
-    if(ierr)return 1; 
-  }
-  else{
-    return 1;
-  }
-  return 0;
-}
-/****************************************************************************************************/
-int mic_send_c_homo(MPI_Comm WORLD_COMM, int nvoi, double c_homo[36])
-{
-  /* Sends to macro leader the C homogenized tensor */
-
-  int ierr, remote_rank;
-
-  if(macmic.type == COUP_1){
-    if(((mic_coup_1_t*)macmic.coup)->im_leader){
-      // only the micro leader sends the tensor
-      remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
-      ierr = MPI_Ssend(c_homo, nvoi*nvoi, MPI_DOUBLE, remote_rank, 0, WORLD_COMM);
-      if(ierr)return 1;
-    }
-  }
-  else{
-    return 1;
-  }
-  return 0;
-}
-/****************************************************************************************************/
