@@ -813,75 +813,73 @@ int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp,  double *
 }
 
 
-int get_stress( int e , int gp, double *strain_gp , double *stress_gp )
-{
+int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
 
   char        name_s[64];
-  int         ierr;
-  int         macro_gp = 0;
   material_t  *mat_p;
-  get_mat_name( elm_id[e], name_s );
+  get_mat_name(elm_id[e], name_s);
 
   node_list_t *pn = material_list.head;
-  while( pn ){
-    mat_p = ( material_t * )pn->data;
-    if( strcmp( name_s, mat_p->name ) == 0 ) break;
+  while(pn != NULL){
+    mat_p = (material_t *)pn->data;
+    if(strcmp(name_s, mat_p->name) == 0) break;
     pn = pn->next;
   }
-  if( pn == NULL ){
-    myio_printf(&MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
+  if(pn == NULL){
+    myio_printf(&MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e);
     return 1;
   }
 
-  if( mat_p->type_id == MAT_MICRO )
-  {
-    ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN); if(ierr) return 1;
-    ierr = mac_send_strain(WORLD_COMM, strain_gp);
-    ierr = mac_send_macro_gp(WORLD_COMM, &macro_gp);
-    ierr = mac_recv_stress(WORLD_COMM, stress_gp);
+  if(mat_p->type_id == MAT_MICRO){
+
+    for(int i = 0 ; i < nvoi ; i++)
+      message.strain_mac[i] = strain_gp[i];
+
+    comm_macro_send(&message);
+    comm_macro_recv(&message);
+
+    for(int i = 0 ; i < nvoi ; i++)
+      stress_gp[i] = message.stress_ave[i];
+
   }
   else
-    material_get_stress( mat_p, dim, strain_gp, stress_gp );
-
-#ifdef ZERO
-  int v;
-  for( v = 0 ; v < nvoi ; v++ )
-    stress_gp[v] = ( fabs(stress_gp[v]) < 1.0e-6 ) ? 0.0 : stress_gp[v];
-#endif
+    material_get_stress(mat_p, dim, strain_gp, stress_gp);
 
   return 0;
 }
 
 
-int get_c_tan( const char * name, int e , int gp , double * strain_gp , double * c_tan )
-{
+int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan){
 
   char        name_s[64];
-  int         ierr;
-  int         macro_gp = 0;
   material_t  *mat_p;
-  get_mat_name( elm_id[e], name_s );
+  get_mat_name(elm_id[e], name_s);
 
   node_list_t *pn = material_list.head;
   while( pn ){
-    mat_p = ( material_t * )pn->data;
-    if( strcmp( name_s, mat_p->name ) == 0 ) break;
+    mat_p = (material_t *)pn->data;
+    if(strcmp(name_s, mat_p->name) == 0) break;
     pn = pn->next;
   }
-  if( pn == NULL ){
+  if(pn == NULL){
     myio_printf(&MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
     return 1;
   }
 
-  if( mat_p->type_id == MAT_MICRO )
-  {
-    ierr = mac_send_signal(WORLD_COMM, C_HOMO); if(ierr) return 1;
-    ierr = mac_send_strain(WORLD_COMM, strain_gp);
-    ierr = mac_send_macro_gp(WORLD_COMM, &macro_gp);
-    ierr = mac_recv_c_homo(WORLD_COMM, nvoi, c_tan);
+  if(mat_p->type_id == MAT_MICRO){
+
+    for(int i = 0 ; i < nvoi ; i++)
+      message.strain_mac[i] = strain_gp[i];
+
+    comm_macro_send(&message);
+    comm_macro_recv(&message);
+
+    for(int i = 0 ; i < nvoi ; i++)
+      c_tan[i] = message.c_tangent_ave[i];
+
   }
   else
-    material_get_c_tang( mat_p, dim, strain_gp, c_tan );
+    material_get_c_tang(mat_p, dim, strain_gp, c_tan);
 
   return 0;
 }
