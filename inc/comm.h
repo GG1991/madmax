@@ -8,31 +8,19 @@
 
 #define  COLOR_MACRO        1
 #define  COLOR_MICRO        2
-#define  COUP_NULL          0
-#define  COUP_1             1
+#define  MAX_VOIGT 6
 
-#define  MIC_END            1
-#define  MAC2MIC_STRAIN     2
-#define  C_HOMO             3
-#define  RHO                4
-
-#define  DOUBLE_ARRAY_LENGTH 36
-#define  INT_ARRAY_LENGTH 36
-
-#define  ACTION_SEND_STRAIN 0
-#define  ACTION_SEND_GAUSSP 1
-#define  ACTION_SEND_STRESS 2
-#define  ACTION_SEND_CTANGT 3
+#define ACTION_NULL       0
+#define ACTION_MICRO_CALC 1
+#define ACTION_MICRO_END  2
 
 typedef struct {
 
   int action;
-
-  int num_double_array;
-  double double_array[DOUBLE_ARRAY_LENGTH];
-
-  int num_int_array;
-  int int_array[INT_ARRAY_LENGTH];
+  int num_voigt;
+  double strain_mac[MAX_VOIGT];
+  double stress_mac[MAX_VOIGT];
+  double c_tangent_mac[MAX_VOIGT*MAX_VOIGT];
 
 }message_t;
 
@@ -41,7 +29,21 @@ message_t message;
 MPI_Datatype mpi_message_t;
 
 int comm_init_message(message_t *message);
+int comm_macro_send(message_t *message);
+int comm_macro_recv(message_t *message);
+int comm_micro_send(message_t *message);
+int comm_micro_recv(message_t *message);
 int comm_finalize_message(void);
+
+
+#define  COUP_NULL          0
+#define  COUP_1             1
+
+#define  MIC_END            1
+#define  MAC2MIC_STRAIN     2
+#define  C_HOMO             3
+#define  RHO                4
+
 
 int       coup_type;
 
