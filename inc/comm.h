@@ -19,8 +19,8 @@ typedef struct {
   int action;
   int num_voigt;
   double strain_mac[MAX_VOIGT];
-  double stress_mac[MAX_VOIGT];
-  double c_tangent_mac[MAX_VOIGT*MAX_VOIGT];
+  double stress_ave[MAX_VOIGT];
+  double c_tangent_ave[MAX_VOIGT*MAX_VOIGT];
 
 }message_t;
 
