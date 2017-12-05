@@ -1,7 +1,37 @@
 #include "comm.h"
 
-int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM, bool flag_coupling)
-{
+
+int comm_init_message(message_t *message){
+
+  const int nitems = 5;
+  int block_lengths[5] = {1, 1, DOUBLE_ARRAY_LENGTH, 1, INT_ARRAY_LENGTH};
+  MPI_Datatype types[5] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_INT, MPI_INT};
+  MPI_Aint offsets[5];
+
+  offsets[0] = offsetof(message_t, action);
+  offsets[1] = offsetof(message_t, num_double_array);
+  offsets[2] = offsetof(message_t, double_array);
+  offsets[3] = offsetof(message_t, num_int_array);
+  offsets[4] = offsetof(message_t, int_array);
+
+
+  int ierr = 0;
+  ierr = MPI_Type_create_struct(nitems, block_lengths, offsets, types, &mpi_message_t);
+  ierr = MPI_Type_commit(&mpi_message_t);
+
+  return ierr;
+}
+
+
+int comm_finalize_message(void){
+
+  int ierr = MPI_Type_free(&mpi_message_t);
+
+  return ierr;
+}
+
+
+int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM, bool flag_coupling){
 
   int  i, ierr, c;
   int  nproc_wor, rank_wor;

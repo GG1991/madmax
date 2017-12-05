@@ -1,9 +1,10 @@
+#ifndef _COMM_H_
+#define _COMM_H_
+
 #include <mpi.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
-#ifndef _COMM_H_
-#define _COMM_H_
+#include <stddef.h>
 
 #define  COLOR_MACRO        1
 #define  COLOR_MICRO        2
@@ -14,6 +15,33 @@
 #define  MAC2MIC_STRAIN     2
 #define  C_HOMO             3
 #define  RHO                4
+
+#define  DOUBLE_ARRAY_LENGTH 36
+#define  INT_ARRAY_LENGTH 36
+
+#define  ACTION_SEND_STRAIN 0
+#define  ACTION_SEND_GAUSSP 1
+#define  ACTION_SEND_STRESS 2
+#define  ACTION_SEND_CTANGT 3
+
+typedef struct {
+
+  int action;
+
+  int num_double_array;
+  double double_array[DOUBLE_ARRAY_LENGTH];
+
+  int num_int_array;
+  int int_array[INT_ARRAY_LENGTH];
+
+}message_t;
+
+message_t message;
+
+MPI_Datatype mpi_message_t;
+
+int comm_init_message(message_t *message);
+int comm_finalize_message(void);
 
 int       coup_type;
 
