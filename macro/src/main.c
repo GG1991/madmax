@@ -11,11 +11,10 @@ static char help[] =
 
 params_t params;
 
-int main(int argc, char **argv)
-{
-
 #define CHECK_AND_GOTO(error){if(error){myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
 #define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
+
+int main(int argc, char **argv){
 
   int        ierr;
   int        i, j;
@@ -115,14 +114,11 @@ int main(int argc, char **argv)
   myio_comm_line_get_int(&command_line, "-nl_min_norm_tol");
   if(command_line.found) params.non_linear_min_norm_tol = command_line.double_val;
 
-  ierr = function_fill_list_from_command_line(&command_line, &function_list);
-  CHECK_AND_GOTO(ierr);
+  ierr = function_fill_list_from_command_line(&command_line, &function_list); CHECK_AND_GOTO(ierr);
 
-  ierr = mesh_fill_boundary_list_from_command_line(&command_line, &boundary_list);
-  CHECK_AND_GOTO(ierr);
+  ierr = mesh_fill_boundary_list_from_command_line(&command_line, &boundary_list); CHECK_AND_GOTO(ierr);
 
-  ierr = material_fill_list_from_command_line(&command_line, &material_list);
-  CHECK_AND_GOTO(ierr);
+  ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr);
 
   partition_algorithm = PARMETIS_GEOM;
   myio_comm_line_search_option(&command_line, "-part_kway");
@@ -136,23 +132,18 @@ int main(int argc, char **argv)
   CHECK_AND_GOTO(ierr);
 
   myio_printf(&MACRO_COMM, "partitioning and distributing mesh\n");
-  ierr = part_mesh(MACRO_COMM, myname, NULL);
-  CHECK_AND_GOTO(ierr);
+  ierr = part_mesh(MACRO_COMM, myname, NULL); CHECK_AND_GOTO(ierr);
 
   myio_printf(&MACRO_COMM, "calculating ghost nodes\n");
-  ierr = calc_local_and_ghost(MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost );
-  CHECK_AND_GOTO(ierr);
+  ierr = calc_local_and_ghost(MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost ); CHECK_AND_GOTO(ierr);
 
   myio_printf(&MACRO_COMM, "reenumering nodes\n");
-  ierr = reenumerate_PETSc( MACRO_COMM );
-  CHECK_AND_GOTO(ierr);
+  ierr = reenumerate_PETSc( MACRO_COMM ); CHECK_AND_GOTO(ierr);
 
   myio_printf(&MACRO_COMM, "reading Coordinates\n");
-  ierr = read_coord(mesh_n, nmynods, mynods, nghost , ghost, &coord );
-  CHECK_AND_GOTO(ierr);
+  ierr = read_coord(mesh_n, nmynods, mynods, nghost , ghost, &coord ); CHECK_AND_GOTO(ierr);
 
-  ierr = read_bc();
-  CHECK_AND_GOTO(ierr);
+  ierr = read_bc(); CHECK_AND_GOTO(ierr);
 
   list_init(&physical_list, sizeof(physical_t), NULL );
   gmsh_get_physical_list(mesh_n, &physical_list);
@@ -635,11 +626,6 @@ int assembly_b( void )
 	  res_elem[i] += bmat[j][i][gp] * stress_gp[j] * wp[gp] * detj[gp];
       }
     }
-
-#ifdef ZERO
-    for( i = 0 ; i < (npe * dim) ; i++ ) 
-      res_elem[i] = ( fabs(res_elem[i]) < 1.0e-6 ) ? 0.0 : res_elem[i];
-#endif
 
     for( i = 0 ; i < ( npe * dim ) ; i++ )
       b_arr[ loc_elem_index[i] ] += res_elem[i];

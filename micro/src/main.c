@@ -12,17 +12,14 @@ static char help[] =
 
 params_t params;
 
-int main(int argc, char **argv)
-{
-
 #define CHECK_AND_GOTO(error){if(error){myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
 #define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
+
+int main(int argc, char **argv){
 
   int        i, j, ierr;
   int        nval;
   PetscBool  set;
-
-  myname            = strdup("micro");
 
   myio_comm_line_init(argc, argv, &command_line);
 
