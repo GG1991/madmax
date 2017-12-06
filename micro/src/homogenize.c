@@ -355,12 +355,14 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
 
 int homogenize_init(void){
 
+  homogenize_check_linear_material();
+
   int ierr = 0;
 
   if(params.have_linear_materials == true){
 
     double strain_mac[MAX_NVOIGT];
-    for(int i = 0 ; i < nvoi ; i++) strain_mac[i] = 0.0;
+    ARRAY_SET_TO_ZERO(strain_mac, nvoi);
 
     ierr = homogenize_get_average_c_tangent_non_linear(strain_mac, params.c_tangent_linear);
     params.c_tangent_linear_calculated = true;
@@ -438,21 +440,20 @@ int homogenize_get_average_c_tangent_non_linear(double *strain_mac, double *c_ta
   double stress_1[MAX_NVOIGT], stress_2[MAX_NVOIGT];
   double strain_aux[MAX_NVOIGT];
 
-  for(int j = 0 ; j < nvoi ; j++)
-    strain_1[j] = strain_mac[j];
+  ARRAY_COPY(strain_1, strain_mac, nvoi);
 
   ierr = homogenize_get_average_strain_stress(strain_1, strain_aux, stress_1);
 
   for(int i = 0 ; i < nvoi ; i++){
 
-    for(int j = 0 ; j < nvoi ; j++)
-      strain_2[j] = strain_mac[j];
+    ARRAY_COPY(strain_2, strain_mac, nvoi);
+
     strain_2[i] = strain_2[i] + DELTA_STRAIN;
 
     ierr = homogenize_get_average_strain_stress(strain_2, strain_aux, stress_2);
 
     for(int j = 0 ; j < nvoi ; j++)
-      c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[j] - strain_1[j]);
+      c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[i] - strain_1[i]);
 
   }
 

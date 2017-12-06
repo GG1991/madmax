@@ -209,7 +209,6 @@ int main(int argc, char **argv){
 
   homogenize_init();
 
-
   double strain_mac[6], strain_ave[6], stress_ave[6];
 
   double *c_tangent_ave = malloc(36*sizeof(double));
