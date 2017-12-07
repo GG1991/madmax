@@ -32,34 +32,34 @@ else
 CFLAGS=-g -O0 -DWITH_MPI -lm -std=gnu11
 endif
 
-DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h      \
-	       ${DEP_DIR}/list.h         \
-	       ${DEP_DIR}/function.h     \
-	       ${DEP_DIR}/trace.h        \
-	       ${DEP_DIR}/gmsh.h         \
-	       ${DEP_DIR}/vtk.h          \
+DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
+	       ${DEP_DIR}/list.h \
+	       ${DEP_DIR}/function.h \
+	       ${DEP_DIR}/trace.h \
+	       ${DEP_DIR}/gmsh.h \
+	       ${DEP_DIR}/vtk.h \
 	       ${DEP_DIR}/material.h
 
-DEPS_MAC = ${MAC_INC_DIR}/macro.h        \
-           ${DEP_DIR}/sputnik.h          \
-           ${DEP_DIR}/util.h             \
-           ${DEP_DIR}/gmsh.h             \
-           ${DEP_DIR}/comm.h             \
-	   ${DEP_DIR}/mesh.h             \
-           ${DEP_DIR}/material.h         \
-           ${DEP_DIR}/vtk.h              \
-           ${DEP_DIR}/myio.h             \
-           ${DEP_DIR}/function.h         \
+DEPS_MAC = ${MAC_INC_DIR}/macro.h \
+           ${DEP_DIR}/sputnik.h \
+           ${DEP_DIR}/util.h \
+           ${DEP_DIR}/gmsh.h \
+           ${DEP_DIR}/comm.h \
+	   ${DEP_DIR}/mesh.h \
+           ${DEP_DIR}/material.h \
+           ${DEP_DIR}/vtk.h \
+           ${DEP_DIR}/myio.h \
+           ${DEP_DIR}/function.h \
            ${DEP_DIR}/trace.h
 
-DEPS_MIC = ${MIC_INC_DIR}/micro.h        \
+DEPS_MIC = ${MIC_INC_DIR}/micro.h \
 	   ${MIC_INC_DIR}/micro_struct.h \
 	   ${MIC_INC_DIR}/homogenize.h \
-           ${DEP_DIR}/comm.h             \
-           ${DEP_DIR}/material.h         \
-           ${DEP_DIR}/myio.h             \
-           ${DEP_DIR}/vtk.h              \
-           ${DEP_DIR}/geometry.h         \
+           ${DEP_DIR}/comm.h \
+           ${DEP_DIR}/material.h \
+           ${DEP_DIR}/myio.h \
+           ${DEP_DIR}/vtk.h \
+           ${DEP_DIR}/geometry.h \
            ${DEP_DIR}/trace.h
 
 MAC_OBJ  = ${MAC_OBJ_DIR}/main.o \
@@ -72,21 +72,21 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/main.o \
            $(SPU_OBJ_DIR)/list.o \
            $(SPU_OBJ_DIR)/mesh.o \
            $(SPU_OBJ_DIR)/fem.o \
-           $(SPU_OBJ_DIR)/function.o     \
-           $(SPU_OBJ_DIR)/myio.o         \
+           $(SPU_OBJ_DIR)/function.o \
+           $(SPU_OBJ_DIR)/myio.o \
            $(SPU_OBJ_DIR)/vtk.o
 
-MIC_OBJ  = ${MIC_OBJ_DIR}/main.o         \
-           ${MIC_OBJ_DIR}/homogenize.o   \
+MIC_OBJ  = ${MIC_OBJ_DIR}/main.o \
+           ${MIC_OBJ_DIR}/homogenize.o \
            ${MIC_OBJ_DIR}/micro_struct.o \
            ${MIC_OBJ_DIR}/init.o \
            ${MIC_OBJ_DIR}/finalize.o \
            $(SPU_OBJ_DIR)/comm.o \
            $(SPU_OBJ_DIR)/trace.o \
-           $(SPU_OBJ_DIR)/material.o     \
-           $(SPU_OBJ_DIR)/vtk.o          \
-           $(SPU_OBJ_DIR)/myio.o         \
-           $(SPU_OBJ_DIR)/geometry.o     \
+           $(SPU_OBJ_DIR)/material.o \
+           $(SPU_OBJ_DIR)/vtk.o \
+           $(SPU_OBJ_DIR)/myio.o \
+           $(SPU_OBJ_DIR)/geometry.o \
            $(SPU_OBJ_DIR)/list.o
 
 ##############################
