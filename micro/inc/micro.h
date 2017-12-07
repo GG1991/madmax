@@ -18,8 +18,9 @@
 #include "micro_struct.h"
 #include <gsl/gsl_linalg.h>
 
-#define PRINTF1(message){if(params.flag_coupling == false) myio_printf(&MICRO_COMM, message);}
-#define PRINTF2(message, arg_1){if(params.flag_coupling == false) myio_printf(&MICRO_COMM, message,arg_1);}
+#define PRINT_ALWAYS 0
+#define PRINTF1(message){if(params.flag_coupling == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message);}
+#define PRINTF2(message, arg_1){if(params.flag_coupling == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message,arg_1);}
 
 #define TAYLOR_S     1
 #define TAYLOR_P     2
