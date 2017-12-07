@@ -178,7 +178,15 @@ int main(int argc, char **argv){
     elem_energy = malloc(nelm*sizeof(double));
   }
   elem_type   = malloc( nelm      * sizeof(int));
-  micro_struct_init_elem_type( &micro_struct, dim, nelm, &get_elem_centroid, elem_type );
+
+  ierr = micro_struct_init_elem_type(&micro_struct, dim, nelm, &get_elem_centroid, elem_type); CHECK_AND_GOTO(ierr)
+
+  ierr = micro_check_material_and_elem_type(&material_list, elem_type, nelm);
+  if(ierr){
+    myio_printf(&MICRO_COMM, "error checking elem_type and material_list\n");
+    goto end;
+  }
+
 
   init_shapes( &struct_sh, &struct_dsh, &struct_wp );
 
@@ -663,5 +671,41 @@ int micro_pvtu( char *name )
       "</VTKFile>\n");
 
   fclose(fm);
+  return 0;
+}
+
+
+int micro_check_material_and_elem_type(list_t *material_list, int *elem_type, int nelm){
+
+  char *word_to_search;
+
+  for(int e ; e < nelm ; e++ ){
+
+    switch(elem_type[e]){
+
+      case ID_FIBER:
+	word_to_search = strdup("FIBER");
+	break;
+
+      case ID_MATRIX:
+	word_to_search = strdup("MATRIX");
+	break;
+
+      default:
+	return 1;
+    }
+
+    material_t  *mat_p;
+    node_list_t *pm = material_list->head;
+
+    while(pm != NULL){
+      mat_p = (material_t *)pm->data;
+      if(strcmp(mat_p->name, word_to_search) == 0) break;
+      pm = pm->next;
+    }
+
+    if(pm == NULL) return 1;
+  }
+
   return 0;
 }
