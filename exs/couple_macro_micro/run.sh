@@ -8,8 +8,8 @@ else
   NP=$1;
 fi
 
-#$MPIEXEC -np $NP ../../macro/macro \
-$MPIEXEC -np $NP xterm -e gdb -x file_macro.gdb --args ../../macro/macro \
+#$MPIEXEC -np $NP xterm -e gdb -x file_macro.gdb --args ../../macro/macro \
+$MPIEXEC -np $NP ../../macro/macro \
     -coupl \
     -boundary "X0 11 0 0","X1 11 1 0" \
     -material "MICRO MAT_MICRO" \
@@ -24,14 +24,18 @@ $MPIEXEC -np $NP xterm -e gdb -x file_macro.gdb --args ../../macro/macro \
     -part_geom \
     -nl_max_its 2 \
     -eps_nev 2 \
-    -options_left 0   \
+    -options_left 0 \
 : -np $NP xterm -e gdb -x file_micro.gdb --args ../../micro/micro \
     -coupl \
     -struct_n 75,75 \
     -dim 2 \
-    -material "matrix mat_elastic 1.0e7 1.0e6 0.3","fiber mat_elastic 1.0e7 1.0e7 0.3" \
+    -material "matrix MAT_ELASTIC 1.0e7 1.0e6 0.3","fiber MAT_ELASTIC 1.0e7 1.0e7 0.3" \
     -micro_struct "fiber_cilin 3.0 3.0 1 1 0.75 0.0 0.0" \
     -pc_type jacobi \
     -ksp_type cg \
     -homo_us \
-    -options_left  0
+    -options_left 0
+
+#xterm -e gdb -x file_micro.gdb --args
+#: -np $NP xterm -e gdb -x file_micro.gdb --args ../../micro/micro \
+#: -np $NP ../../micro/micro \
