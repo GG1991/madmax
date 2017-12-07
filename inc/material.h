@@ -35,7 +35,8 @@ list_t material_list;
 int material_get_stress(material_t *mat, int dim, double *strain, double *stress);
 int material_get_c_tang(material_t *mat, int dim, double *strain, double *c_tang);
 int material_get_rho(material_t *mat, int dim, double *rho);
-bool material_are_all_linear(list_t * material_list);
 int material_fill_list_from_command_line(command_line_t *command_line, list_t *material_list);
+bool material_are_all_linear(list_t * material_list);
+bool material_check_in_list(list_t *material_list, char *name_to_check);
 
 #endif

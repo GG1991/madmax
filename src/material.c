@@ -129,3 +129,17 @@ int material_fill_list_from_command_line(command_line_t *command_line, list_t *m
 
   return 0;
 }
+
+
+bool material_check_in_list(list_t *material_list, char *name_to_check){
+
+  node_list_t *pm = material_list->head;
+
+  while(pm != NULL){
+    material_t *mat_p = (material_t *)pm->data;
+    if(strcmp(mat_p->name, name_to_check) == 0) break;
+    pm = pm->next;
+  }
+
+  return (pm == NULL) ? false : true;
+}
