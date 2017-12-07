@@ -114,7 +114,7 @@ int main(int argc, char **argv){
   }
 
   center_coor = malloc ( dim * sizeof(double));
-  if ( dim == 2 ){
+  if(dim == 2){
     center_coor[0] = lx / 2;
     center_coor[1] = ly / 2;
     vol_elem = hx*hy;
@@ -130,7 +130,7 @@ int main(int argc, char **argv){
     vol_loc  = lx * (hy*ney) * lz;
   }
 
-  material_fill_list_from_command_line(&command_line, &material_list);
+  ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr)
 
   homo_type=0;
   PetscOptionsHasName(NULL,NULL,"-homo_tp",&set);
