@@ -78,14 +78,12 @@ int main(int argc, char **argv){
     nn   = nx*ny*nz;
     nex  = (nx-1);
 
-    /* local number of elements in y direction */
     ney  = (ny-1)/nproc_mic + (((ny-1) % nproc_mic > rank_mic) ? 1:0); 
     nez  = (nz-1);
-    nelm = ( dim == 2 ) ? nex*ney : nex*ney*nez;       // number of local elements
-    nyl  = ( rank_mic == 0 ) ? ney+1 : ney;            // local number of nodes in y direction
-    nl   = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;          // local number of nodes
+    nelm = ( dim == 2 ) ? nex*ney : nex*ney*nez;
+    nyl  = ( rank_mic == 0 ) ? ney+1 : ney;
+    nl   = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;
 
-    /* set the elements' size */
     hx   = lx/nex;
     hy   = ly/(ny-1);
     hz   = ( dim == 3 ) ? (lz/nez) : -1;
@@ -188,7 +186,7 @@ int main(int argc, char **argv){
   init_shapes( &struct_sh, &struct_dsh, &struct_wp );
 
   struct_bmat = malloc( nvoi * sizeof(double**));
-  for( i = 0 ; i < nvoi  ; i++ ){
+  for( i = 0 ; i < nvoi ; i++ ){
     struct_bmat[i] = malloc( npe*dim * sizeof(double*));
     for( j = 0 ; j < npe*dim ; j++ )
       struct_bmat[i][j] = malloc( ngp * sizeof(double));
