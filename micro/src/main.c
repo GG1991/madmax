@@ -258,8 +258,9 @@ int main(int argc, char **argv){
 
     double strain_mac[6], c_homo[36];
 
-    memset(c_homo,0.0,36*sizeof(double));
-    for( i = 0 ; i < nvoi ; i++ ){
+    ARRAY_SET_TO_ZERO(c_homo, 36)
+
+    for(int i = 0 ; i < nvoi ; i++){
 
       ARRAY_SET_TO_ZERO(strain_mac, nvoi); strain_mac[i]=0.005;
 
@@ -268,7 +269,7 @@ int main(int argc, char **argv){
       PRINT_ARRAY("strain_ave = ", strain_ave, nvoi)
       PRINT_ARRAY("stress_ave = ", stress_ave, nvoi)
 
-      for( j = 0 ; j < nvoi ; j++ )
+      for(int j = 0 ; j < nvoi ; j++ )
 	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
 
       if( flag_print & ( 1 << PRINT_VTU ) && homo_type == UNIF_STRAINS ){
@@ -282,33 +283,30 @@ int main(int argc, char **argv){
       }
 
     }
+
     myio_printf(&MICRO_COMM,"\nConstitutive Average Tensor\n");
-    for( i = 0 ; i < nvoi ; i++ ){
-      for( j = 0 ; j < nvoi ; j++ )
-	myio_printf(&MICRO_COMM,"%e ",(fabs(c_homo[i*nvoi+j])>1.0)?c_homo[i*nvoi+j]:0.0);
-      myio_printf(&MICRO_COMM,"\n");
+    for(int i = 0 ; i < nvoi ; i++){
+      for(int j = 0 ; j < nvoi ; j++)
+	myio_printf(&MICRO_COMM, "%e ", (fabs(c_homo[i*nvoi+j])>1.0) ? c_homo[i*nvoi+j] : 0.0);
+      myio_printf(&MICRO_COMM, "\n");
     }
-    myio_printf(&MICRO_COMM,"\n");
+    myio_printf(&MICRO_COMM, "\n");
 
     strain_mac[0] = 0.01; strain_mac[1] = -0.02; strain_mac[2] = +0.03;
     strain_mac[3] = 0.01; strain_mac[4] = -0.02; strain_mac[5] = +0.03;
+
     ierr = homogenize_get_average_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
 
-    myio_printf(&MICRO_COMM,"\nstrain_ave = ");
-    for( j = 0 ; j < nvoi ; j++ )
-      myio_printf(&MICRO_COMM,"%e ",strain_ave[j]);
-    myio_printf(&MICRO_COMM,"\nstress_ave = ");
-    for( j = 0 ; j < nvoi ; j++ )
-      myio_printf(&MICRO_COMM,"%e ",stress_ave[j]);
+    PRINT_ARRAY("strain_ave = ", strain_ave, nvoi)
+    PRINT_ARRAY("stress_ave = ", stress_ave, nvoi)
+
     for( i = 0 ; i < nvoi ; i++ ){
       stress_ave[i] = 0.0;
-	for( j = 0 ; j < nvoi ; j++ )
+      for( j = 0 ; j < nvoi ; j++ )
 	stress_ave[i] +=  c_homo[i*nvoi+j] * strain_mac[j];
     }
-    myio_printf(&MICRO_COMM,"\nstress_ave = ");
-    for( j = 0 ; j < nvoi ; j++ )
-      myio_printf(&MICRO_COMM,"%e ",stress_ave[j]);
-    myio_printf(&MICRO_COMM," (c_homo*strain_mac)\n");
+
+    PRINT_ARRAY("stress_ave (c_homo*strain_mac) = ", stress_ave, nvoi)
 
   }
 
