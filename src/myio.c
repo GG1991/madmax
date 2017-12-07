@@ -169,48 +169,37 @@ int myio_comm_line_get_double(command_line_t *command_line, const char *option_n
 }
 
 
-int myio_comm_line_get_string_array(command_line_t *command_line, int n_str_expec, const char *option_name){
+int myio_comm_line_get_string_array(command_line_t *command_line, const char *option_name,\
+    char ***string_arr, int max_num_string_expected, int *num_string_found, bool *found){
 
-  command_line->found = false;
+  *found = false;
 
-  if(! command_line->argv || ! option_name)
-    return 1;
-
-  if(! command_line->argc)
-    return 0;
-
-  myio_free_string_array(command_line->str_arr, command_line->n_str_found);
-
-  command_line->n_str_expec = n_str_expec;
-  command_line->str_arr = malloc(command_line->n_str_expec*sizeof(char**));
+  *string_arr = malloc(max_num_string_expected*sizeof(char*));
 
   int i = 0;
-
   while(i < command_line->argc){
-    if(! strcmp(command_line->argv[i], option_name))
-      break;
+    if(strcmp(command_line->argv[i], option_name) == 0) break;
     i++ ;
   }
 
-  command_line->n_str_found = 0;
+  if(i == command_line->argc - 1) return 1;
 
-  if(i < command_line->argc - 1){
-    i = i + 1;
-    char *str_token, *argv_dup;
-    argv_dup = strdup(command_line->argv[i]);
-    str_token = strtok(argv_dup, ",\n");
-    while(str_token){
-      command_line->str_arr[command_line->n_str_found] = strdup(str_token);
-      str_token = strtok(NULL, ",\n");
-      command_line->n_str_found++;
-    }
-    command_line->found = true;
+  *found = true;
+
+  char *str_token, *argv_dup;
+  argv_dup = strdup(command_line->argv[i+1]);
+  str_token = strtok(argv_dup, ",\n");
+  int n = 0;
+  while(str_token){
+    (*string_arr)[n] = strdup(str_token);
+    str_token = strtok(NULL, ",\n");
+    n ++;
   }
-  else{
-    command_line->str_arr = NULL;
-  }
+  
+  *num_string_found = n;
 
   return 0;
+
 }
 
 

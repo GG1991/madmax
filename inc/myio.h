@@ -53,7 +53,7 @@ int myio_comm_line_get_int_array(command_line_t *command_line, int n_int_expec, 
 int myio_comm_line_get_double(command_line_t *command_line, const char *option_name);
 
 int myio_comm_line_get_string(command_line_t *command_line, const char *option_name);
-int myio_comm_line_get_string_array(command_line_t *command_line, int n_str_expec, const char *option_name);
+int myio_comm_line_get_string_array(command_line_t *command_line, const char *option_name, char ***string_arr, int max_num_string_expected, int *num_string_found, bool *found);
 
 
 #endif

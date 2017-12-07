@@ -6,25 +6,29 @@
 
 int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list_t *boundary_list){
 
-  myio_comm_line_get_string_array(command_line, MAX_NUM_OF_BOUNDARIES, "-boundary");
+  bool found;
+  int num_string_found;
+  char **string_arr;
 
-  if(! command_line->found || ! command_line->n_str_found)
+  myio_comm_line_get_string_array(command_line, "-boundary", &string_arr, MAX_NUM_OF_BOUNDARIES, &num_string_found, &found);
+
+  if(found == false || num_string_found == 0)
     return 1;
 
   list_init(boundary_list, sizeof(mesh_boundary_t), NULL);
-  mesh_boundary_t  bou;
 
-  char *str_token;
-  int i;
-  for( i=0 ; i<command_line->n_str_found ; i++ ){
-    str_token = strtok(command_line->str_arr[i]," \n");
-    bou.name  = strdup(str_token);
+  for(int i = 0 ; i < num_string_found ; i++){
+
+    char *str_token = strtok(command_line->str_arr[i]," \n");
+
+    mesh_boundary_t bou;
+    bou.name = strdup(str_token);
     str_token = strtok(NULL," \n");
-    bou.kind  = strbin2dec(str_token);
+    bou.kind = strbin2dec(str_token);
     if(dim == 2){
-      if( bou.kind == 1 || bou.kind == 2 ) bou.ndirpn =  1;
-      if( bou.kind == 3 )                  bou.ndirpn =  2;
-      if( bou.kind == 0 )                  bou.ndirpn =  0;
+      if(bou.kind == 1 || bou.kind == 2 ) bou.ndirpn =  1;
+      if(bou.kind == 3) bou.ndirpn =  2;
+      if(bou.kind == 0) bou.ndirpn =  0;
     }
     bou.nneupn   = dim - bou.ndirpn;
     bou.fnum     = malloc(dim * sizeof(int));

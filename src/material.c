@@ -83,19 +83,23 @@ bool material_are_all_linear(list_t *material_list){
 
 int material_fill_list_from_command_line(command_line_t *command_line, list_t *material_list){
 
-  myio_comm_line_get_string_array(command_line, MAX_NUM_OF_MATERIALS, "-material");
+  bool found;
+  int num_string_found;
+  char **string_arr;
 
-  if(command_line->found == false)
+  myio_comm_line_get_string_array(command_line, "-material", &string_arr, MAX_NUM_OF_MATERIALS, &num_string_found, &found);
+
+  if(found == false || num_string_found == 0)
     return 1;
 
   list_init(material_list, sizeof(material_t), NULL);
 
-  material_t  mat;
 
-  for(int i = 0 ; i < command_line->n_str_found ; i++){
+  for(int i = 0 ; i < num_string_found ; i++){
 
-    char *data = strtok(command_line->str_arr[i], " \n");
+    char *data = strtok(string_arr[i], " \n");
 
+    material_t  mat;
     mat.name = strdup( data );
 
     data = strtok(NULL, " \n");
