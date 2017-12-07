@@ -58,13 +58,13 @@ int main(int argc, char **argv){
   
   lx = micro_struct.size[0];
   ly = micro_struct.size[1];
-  lz = ( dim == 3 ) ? micro_struct.size[2] : -1;
+  lz = (dim == 3) ? micro_struct.size[2] : -1;
 
   int    nval_expect;
   int    struct_mesh_n[3];
 
-  if( dim == 2 ) nval_expect = nval = 2;
-  if( dim == 3 ) nval_expect = nval = 3;
+  if(dim == 2) nval_expect = nval = 2;
+  if(dim == 3) nval_expect = nval = 3;
 
   PetscOptionsGetIntArray( NULL, NULL, "-struct_n", struct_mesh_n, &nval, &set );
   if( set == PETSC_TRUE ){
@@ -167,15 +167,15 @@ int main(int argc, char **argv){
   x   = NULL;
   dx  = NULL;
 
-  loc_elem_index = malloc( dim*npe * sizeof(int));
-  glo_elem_index = malloc( dim*npe * sizeof(int));
-  elem_disp      = malloc( dim*npe * sizeof(double));
-  stress_gp      = malloc( nvoi    * sizeof(double));
-  strain_gp      = malloc( nvoi    * sizeof(double));
+  loc_elem_index = malloc(dim*npe*sizeof(int));
+  glo_elem_index = malloc(dim*npe*sizeof(int));
+  elem_disp      = malloc(dim*npe*sizeof(double));
+  stress_gp      = malloc(nvoi*sizeof(double));
+  strain_gp      = malloc(nvoi*sizeof(double));
   if( flag_print & ( 1 << PRINT_VTU ) ){
-    elem_strain = malloc( nelm*nvoi * sizeof(double));
-    elem_stress = malloc( nelm*nvoi * sizeof(double));
-    elem_energy = malloc( nelm      * sizeof(double));
+    elem_strain = malloc(nelm*nvoi*sizeof(double));
+    elem_stress = malloc(nelm*nvoi*sizeof(double));
+    elem_energy = malloc(nelm*sizeof(double));
   }
   elem_type   = malloc( nelm      * sizeof(int));
   micro_struct_init_elem_type( &micro_struct, dim, nelm, &get_elem_centroid, elem_type );
@@ -203,9 +203,9 @@ int main(int argc, char **argv){
     }
   }
 
-  init_trace( MICRO_COMM, "micro_trace.dat" );
+  init_trace(MICRO_COMM, "micro_trace.dat");
 
-  ierr = KSPCreate(MICRO_COMM,&ksp); CHKERRQ(ierr);
+  ierr = KSPCreate(PETSC_COMM_WORLD, &ksp); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
 
   homogenize_init();

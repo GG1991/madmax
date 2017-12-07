@@ -299,23 +299,23 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
   double  norm = params.non_linear_min_norm_tol*10;
 
   VecNorm( x , NORM_2 , &norm );
-  PRINTF2("|x| = %lf\n",norm);
+  PRINTF2("|x| = %lf\n", norm);
 
-  while( nr_its<params.non_linear_max_its  && norm>params.non_linear_min_norm_tol )
-  {
-    save_event( MICRO_COMM, "ass_0" );
+  while(nr_its < params.non_linear_max_its  && norm > params.non_linear_min_norm_tol){
+
+    save_event(MICRO_COMM, "ass_0");
 
     assembly_b();
     
-    VecGetArray( b, &b_arr );
+    VecGetArray(b, &b_arr);
     for( i = 0; i < ndir_ix ; i++ )
       b_arr[dir_ix_loc[i]] = 0.0;
-    VecRestoreArray( b, &b_arr );
-    VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
-    VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
+    VecRestoreArray(b, &b_arr);
+    VecGhostUpdateBegin(b, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(b, INSERT_VALUES, SCATTER_FORWARD);
 
-    VecNorm( b , NORM_2 , &norm );
-    PRINTF2("|b| = %lf \n",norm);
+    VecNorm(b, NORM_2, &norm);
+    PRINTF2("|b| = %lf \n", norm);
 
     if(norm < params.non_linear_min_norm_tol) break;
 
@@ -323,23 +323,23 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
 
     assembly_A();
 
-    MatZeroRowsColumns( A, ndir_ix, dir_ix_glo, 1.0, NULL, NULL );
-    save_event( MICRO_COMM, "ass_1" );
+    MatZeroRowsColumns(A, ndir_ix, dir_ix_glo, 1.0, NULL, NULL);
+    save_event(MICRO_COMM, "ass_1");
 
-    save_event( MICRO_COMM, "sol_0" );
-    KSPSetOperators( ksp, A, A );
-    KSPSolve( ksp, b, dx );
-    save_event( MICRO_COMM, "sol_1" );
+    save_event(MICRO_COMM, "sol_0");
+    KSPSetOperators(ksp, A, A);
+    KSPSolve(ksp, b, dx);
+    save_event(MICRO_COMM, "sol_1");
 
-    VecAXPY( x, 1.0, dx );
-    VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
-    VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
+    VecAXPY(x, 1.0, dx);
+    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
     nr_its ++;
   }
-  save_event( MICRO_COMM, "ass_1" );
+  save_event(MICRO_COMM, "ass_1");
 
-  get_averages( strain_ave, stress_ave );
+  get_averages(strain_ave, stress_ave);
 
   if( flag_print & (1<<PRINT_PETSC) ){
     PetscViewer  viewer;
@@ -472,60 +472,56 @@ int strain_x_coord( double *strain , double *coord , double *u ){
 }
 
 
-int assembly_b(void)
-{
+int assembly_b(void){
 
-  VecZeroEntries( b);
-  VecGhostUpdateBegin( b , INSERT_VALUES , SCATTER_FORWARD );
-  VecGhostUpdateEnd  ( b , INSERT_VALUES , SCATTER_FORWARD );
+  VecZeroEntries(b);
+  VecGhostUpdateBegin(b ,INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(b ,INSERT_VALUES, SCATTER_FORWARD);
 
-  Vec      b_loc;
-  double  *b_arr;
+  Vec b_loc;
+  double *b_arr;
 
-  VecGhostGetLocalForm( b , &b_loc );
-  VecGetArray         ( b_loc, &b_arr );
+  VecGhostGetLocalForm(b, &b_loc);
+  VecGetArray(b_loc, &b_arr);
 
-  int    e, gp;
-  int    i, j;
-  double *res_elem  = malloc( dim*npe * sizeof(double));
+  double *res_elem  = malloc(dim*npe*sizeof(double));
 
-  for( e = 0 ; e < nelm ; e++ ){
+  for(int e = 0 ; e < nelm ; e++){
 
-    for( i = 0 ; i < npe*dim ; i++ )
-      res_elem[i] = 0.0;
+    ARRAY_SET_TO_ZERO(res_elem, npe*dim)
 
     get_local_elem_index(e, loc_elem_index);
 
-    for( gp = 0; gp < ngp ; gp++ ){
+    for(int gp = 0; gp < ngp ; gp++){
 
-      get_strain( e , gp, strain_gp );
-      get_stress( e , gp , strain_gp , stress_gp );
+      get_strain(e, gp, strain_gp);
+      get_stress(e, gp, strain_gp, stress_gp);
 
-      for( i = 0 ; i < npe*dim ; i++ ){
-	for( j = 0; j < nvoi ; j++ )
+      for(int i = 0 ; i < npe*dim ; i++){
+	for(int j = 0; j < nvoi ; j++)
 	  res_elem[i] += struct_bmat[j][i][gp] * stress_gp[j] * struct_wp[gp];
       }
 
     }
 
-    for( i = 0 ; i < npe*dim ; i++ )
+    for(int i = 0 ; i < npe*dim ; i++ )
       b_arr[loc_elem_index[i]] += res_elem[i];
 
   }
 
-  VecRestoreArray         ( b_loc, &b_arr );
-  VecGhostRestoreLocalForm( b    , &b_loc );
+  VecRestoreArray(b_loc, &b_arr);
+  VecGhostRestoreLocalForm(b, &b_loc);
 
-  VecGhostUpdateBegin( b, ADD_VALUES   , SCATTER_REVERSE );
-  VecGhostUpdateEnd  ( b, ADD_VALUES   , SCATTER_REVERSE );
-  VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
-  VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
+  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateBegin(b, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(b, INSERT_VALUES, SCATTER_FORWARD);
 
   return 0;
 }
 
 
-int assembly_A( void ){
+int assembly_A(void){
 
   MatZeroEntries(A);
 
