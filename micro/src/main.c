@@ -12,9 +12,9 @@ static char help[] =
 
 params_t params;
 
-#define CHECK_AND_GOTO(error){if(error){myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
-#define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
-#define PRINT_ARRAY(name_str,array,length){ myio_printf(&MICRO_COMM,"%s ",name_str); for( i = 0 ; i < length ; i++ ) myio_printf(&MICRO_COMM,"%e ",array[i]); myio_printf(&MICRO_COMM,"\n");}
+#define CHECK_AND_GOTO(error){if(error){myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
+#define CHECK_INST_ELSE_GOTO(cond, instr){if(cond){instr}else{myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
+#define PRINT_ARRAY(name_str, array, length){ myio_printf(&MICRO_COMM,"%s ",name_str); for(int i = 0 ; i < length ; i++) myio_printf(&MICRO_COMM, "%e ", array[i]); myio_printf(&MICRO_COMM, "\n");}
 
 int main(int argc, char **argv){
 
@@ -226,7 +226,7 @@ int main(int argc, char **argv){
 
 	  ARRAY_COPY(strain_mac, message.strain_mac, nvoi)
 
-	  ierr = homogenize_get_average_strain_stress(strain_mac, strain_ave, stress_ave);
+	  ierr = homogenize_get_strain_stress(strain_mac, strain_ave, stress_ave);
 
 	  ARRAY_COPY(message.stress_ave, stress_ave, nvoi)
 
@@ -236,7 +236,7 @@ int main(int argc, char **argv){
 
 	  ARRAY_COPY(strain_mac, message.strain_mac, nvoi)
 
-	  ierr = homogenize_get_average_c_tangent(strain_mac, &c_tangent_ave);
+	  ierr = homogenize_get_c_tangent(strain_mac, &c_tangent_ave);
 
 	  ARRAY_COPY(message.c_tangent_ave, c_tangent_ave, nvoi*nvoi)
 
@@ -264,7 +264,7 @@ int main(int argc, char **argv){
 
       ARRAY_SET_TO_ZERO(strain_mac, nvoi); strain_mac[i]=0.005;
 
-      ierr = homogenize_get_average_strain_stress(strain_mac, strain_ave, stress_ave);
+      ierr = homogenize_get_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
 
       PRINT_ARRAY("strain_ave = ", strain_ave, nvoi)
       PRINT_ARRAY("stress_ave = ", stress_ave, nvoi)
@@ -295,7 +295,7 @@ int main(int argc, char **argv){
     strain_mac[0] = 0.01; strain_mac[1] = -0.02; strain_mac[2] = +0.03;
     strain_mac[3] = 0.01; strain_mac[4] = -0.02; strain_mac[5] = +0.03;
 
-    ierr = homogenize_get_average_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
+    ierr = homogenize_get_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
 
     PRINT_ARRAY("strain_ave = ", strain_ave, nvoi)
     PRINT_ARRAY("stress_ave = ", stress_ave, nvoi)

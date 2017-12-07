@@ -361,10 +361,8 @@ int homogenize_init(void){
 
   if(params.have_linear_materials == true){
 
-    double strain_mac[MAX_NVOIGT];
-    ARRAY_SET_TO_ZERO(strain_mac, nvoi);
+    ierr = homogenize_calculate_c_tangent_around_zero(params.c_tangent_linear);
 
-    ierr = homogenize_get_average_c_tangent_non_linear(strain_mac, params.c_tangent_linear);
     params.c_tangent_linear_calculated = true;
 
   }
@@ -373,7 +371,7 @@ int homogenize_init(void){
 }
 
 
-int homogenize_get_average_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave){
+int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave){
 
   if(params.have_linear_materials == true && params.c_tangent_linear_calculated == true){
 
@@ -387,7 +385,7 @@ int homogenize_get_average_strain_stress(double *strain_mac, double *strain_ave,
   }
   else{
 
-    int ierr = homogenize_get_average_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
+    int ierr = homogenize_get_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
     if(ierr) return 1;
 
   }
@@ -395,7 +393,7 @@ int homogenize_get_average_strain_stress(double *strain_mac, double *strain_ave,
 }
 
 
-int homogenize_get_average_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave){
+int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave){
 
   int ierr = 0;
 
@@ -412,7 +410,7 @@ int homogenize_get_average_strain_stress_non_linear(double *strain_mac, double *
 }
 
 
-int homogenize_get_average_c_tangent(double *strain_mac, double **c_tangent){
+int homogenize_get_c_tangent(double *strain_mac, double **c_tangent){
 
   int ierr = 0;
 
@@ -423,7 +421,7 @@ int homogenize_get_average_c_tangent(double *strain_mac, double **c_tangent){
   }
   else if(params.have_linear_materials == false){
 
-    ierr = homogenize_get_average_c_tangent_non_linear(strain_mac, params.c_tangent);
+    ierr = homogenize_calculate_c_tangent(strain_mac, params.c_tangent);
     (*c_tangent) = params.c_tangent;
 
   }
@@ -432,8 +430,18 @@ int homogenize_get_average_c_tangent(double *strain_mac, double **c_tangent){
 }
 
 
-#define DELTA_STRAIN 0.005
-int homogenize_get_average_c_tangent_non_linear(double *strain_mac, double *c_tangent){
+int homogenize_calculate_c_tangent_around_zero(double *c_tangent){
+
+  double strain[MAX_NVOIGT];
+  ARRAY_SET_TO_ZERO(strain, nvoi);
+
+  int ierr = homogenize_calculate_c_tangent(strain, c_tangent);
+
+  return ierr;
+}
+
+
+int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent){
 
   int ierr = 0;
   double strain_1[MAX_NVOIGT], strain_2[MAX_NVOIGT];
@@ -442,15 +450,15 @@ int homogenize_get_average_c_tangent_non_linear(double *strain_mac, double *c_ta
 
   ARRAY_COPY(strain_1, strain_mac, nvoi);
 
-  ierr = homogenize_get_average_strain_stress(strain_1, strain_aux, stress_1);
+  ierr = homogenize_get_strain_stress(strain_1, strain_aux, stress_1);
 
   for(int i = 0 ; i < nvoi ; i++){
 
     ARRAY_COPY(strain_2, strain_mac, nvoi);
 
-    strain_2[i] = strain_2[i] + DELTA_STRAIN;
+    strain_2[i] = strain_2[i] + HOMOGENIZE_DELTA_STRAIN;
 
-    ierr = homogenize_get_average_strain_stress(strain_2, strain_aux, stress_2);
+    ierr = homogenize_get_strain_stress(strain_2, strain_aux, stress_2);
 
     for(int j = 0 ; j < nvoi ; j++)
       c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[i] - strain_1[i]);
