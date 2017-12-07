@@ -18,13 +18,15 @@ typedef struct command_line_t_{
   int argc;
   char **argv;
 
+  char *str;
   char **str_arr;
   int n_str_found;
   int n_str_expec;
 
-  char *str;
-
   int int_val;
+  int n_int_found;
+  int n_int_expect;
+  int *int_arr;
 
   double double_val;
 
@@ -46,11 +48,11 @@ int myio_comm_line_init(int argc, char **argv, command_line_t *command_line);
 int myio_comm_line_search_option(command_line_t *command_line, const char *option_name);
 
 int myio_comm_line_get_int(command_line_t *command_line, const char *option_name);
+int myio_comm_line_get_int_array(command_line_t *command_line, int n_int_expec, const char *option_name);
 
 int myio_comm_line_get_double(command_line_t *command_line, const char *option_name);
 
 int myio_comm_line_get_string(command_line_t *command_line, const char *option_name);
-
 int myio_comm_line_get_string_array(command_line_t *command_line, int n_str_expec, const char *option_name);
 
 

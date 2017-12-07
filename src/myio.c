@@ -26,17 +26,16 @@ int myio_printf(void* COMM, const char format[], ...){
 
 int myio_comm_line_init(int argc, char **argv, command_line_t *command_line){
 
-  if(!command_line){
-    return 1;
-  }
-  else{
-    command_line->argc = argc;
-    command_line->argv = malloc(argc*sizeof(char*));
-    int i;
-    for( i=0 ; i<argc ; i++ ){
-      command_line->argv[i] = strdup(argv[i]);
-    }
-  }
+  if(command_line == NULL) return 1;
+
+  command_line->argc = argc;
+  command_line->argv = malloc(argc*sizeof(char*));
+  for(int i = 0 ; i < argc ; i++)
+    command_line->argv[i] = strdup(argv[i]);
+
+  command_line->str = NULL;
+  command_line->str_arr = NULL;
+  command_line->int_arr = NULL;
 
   return 0;
 }
@@ -91,6 +90,50 @@ int myio_comm_line_get_int(command_line_t *command_line, const char *option_name
   else{
     command_line->str = NULL;
   }
+
+  return 0;
+}
+
+
+int myio_comm_line_get_int_array(command_line_t *command_line, int n_int_expec, const char *option_name){
+
+  command_line->found = false;
+
+  if(command_line->argv == NULL || option_name == NULL)
+    return 1;
+
+  if(command_line->argc == 0)
+    return 0;
+
+  if(command_line->int_arr != NULL) free(command_line->int_arr);
+  command_line->int_arr = malloc(n_int_expec*sizeof(int));
+
+  int i = 0;
+
+  while(i < command_line->argc){
+    if(strcmp(command_line->argv[i], option_name) == 0) break;
+    i++;
+  }
+
+  if(i < command_line->argc - 1){
+
+    i = i + 1;
+
+    char *argv_dup = strdup(command_line->argv[i]);
+    char *str_token = strtok(argv_dup, ",\n");
+    command_line->n_str_found = 0;
+
+    while(str_token){
+      command_line->int_arr[command_line->n_str_found] = atoi(str_token);
+      str_token = strtok(NULL, ",\n");
+      command_line->n_str_found++;
+    }
+    free(argv_dup);
+
+    command_line->found = true;
+  }
+  else
+    command_line->int_arr = NULL;
 
   return 0;
 }
@@ -208,12 +251,11 @@ int myio_comm_line_get_string(command_line_t *command_line, const char *option_n
 
 int myio_free_string_array(char **str_arr, int n_str_found){
 
-  int i;
-  if(! str_arr) return 0;
+  if(str_arr == NULL) return 0;
 
-  for( i=0 ; i<n_str_found ; i++ ){
+  for(int i = 0 ; i < n_str_found ; i++)
     if(str_arr[i]) free(str_arr[i]);
-  }
+
   free(str_arr);
 
   return 0;
