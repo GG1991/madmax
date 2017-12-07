@@ -22,10 +22,6 @@
 #define PRINTF1(message){if(params.flag_coupling == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message);}
 #define PRINTF2(message, arg_1){if(params.flag_coupling == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message,arg_1);}
 
-#define TAYLOR_S     1
-#define TAYLOR_P     2
-#define UNIF_STRAINS 3
-
 #define MAX_NVOIGT   6
 
 #define NBUF         256

@@ -3,19 +3,19 @@
 
 int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave){
     
-  int          i, j, e, ierr;
-  int          ne_i = 0, ne_m = 0;
-  double       *c_i = malloc( nvoi*nvoi * sizeof(double));
-  double       *c_m = malloc( nvoi*nvoi * sizeof(double));
-  double       *c   = malloc( nvoi*nvoi * sizeof(double));
-  double       vol_i = 0.0, vol_ia = 0.0;  // inclusion volume
-  double       vol_m = 0.0, vol_ma = 0.0;  // matrix volume
+  int ierr;
+  int ne_i = 0, ne_m = 0;
+  double *c_i = malloc( nvoi*nvoi * sizeof(double));
+  double *c_m = malloc( nvoi*nvoi * sizeof(double));
+  double *c   = malloc( nvoi*nvoi * sizeof(double));
+  double vol_i = 0.0, vol_ia = 0.0;
+  double vol_m = 0.0, vol_ma = 0.0;
 
   if(params.flag_first_homogenization){
 
-    for( e = 0 ; e < nelm ; e++ ){
+    for(int e = 0 ; e < nelm ; e++){
 
-      if( elem_type[e] == 1 ){
+      if(elem_type[e] == 1){
 	vol_ia += vol_elem;
 	ne_i++;
       }
@@ -27,31 +27,29 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
     }
     ierr = MPI_Allreduce( &vol_ia, &vol_i, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
     ierr = MPI_Allreduce( &vol_ma, &vol_m, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
-    vi   = vol_i / vol_tot;              // inclusion fraction
-    vm   = vol_m / vol_tot;              // matrix fraction
+    vi = vol_i / vol_tot;
+    vm = vol_m / vol_tot;
     myio_printf(&MICRO_COMM, "vi = %lf \n", vi );
     myio_printf(&MICRO_COMM, "vm = %lf \n", vm );
   }
-  get_c_tan("FIBER" , -1, -1, NULL, c_i);  //returns c_i of FIBER
-  get_c_tan("MATRIX", -1, -1, NULL, c_m);  //returns c_m of MATRIX
+  get_c_tan("FIBER" , -1, -1, NULL, c_i);
+  get_c_tan("MATRIX", -1, -1, NULL, c_m);
  
-  if( homo_type == TAYLOR_P ){
+  if(params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL){
 
-    /* PARALLEL THEORY */
-    for( i = 0 ; i < nvoi ; i++ ){
-      for( j = 0 ; j < nvoi ; j++ )
+    for(int i = 0 ; i < nvoi ; i++){
+      for(int j = 0 ; j < nvoi ; j++)
 	c[i*nvoi + j] = vi * c_i[i*nvoi + j] + vm * c_m[i*nvoi + j];
     }
 
   }
-  else if( homo_type == TAYLOR_S ){
+  else if(params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL){
 
-    /* SERIAL THEORY */
-    int              s;
-    double *c_mi = malloc( nvoi*nvoi * sizeof(double));
-    double *c_ii = malloc( nvoi*nvoi * sizeof(double));
-    gsl_matrix_view  gsl_c_m , gsl_c_i ;  // gsl arrays of c_i and c_m
-    gsl_matrix_view  gsl_c_mi, gsl_c_ii;  // gsl arrays of c_i and c_m (inverted)
+    int s;
+    double *c_mi = malloc(nvoi*nvoi*sizeof(double));
+    double *c_ii = malloc(nvoi*nvoi*sizeof(double));
+    gsl_matrix_view  gsl_c_m , gsl_c_i ;
+    gsl_matrix_view  gsl_c_mi, gsl_c_ii;
 
     gsl_permutation  *p;
 
@@ -67,15 +65,14 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
     gsl_linalg_LU_decomp (&gsl_c_i.matrix, p, &s);
     gsl_linalg_LU_invert (&gsl_c_i.matrix, p, &gsl_c_ii.matrix);
 
-    /* we reuse c_i */
-    for( i = 0; i < nvoi*nvoi ; i++)
+    for(int i = 0; i < nvoi*nvoi ; i++)
       c_i[i] = vi * c_ii[i] + vm * c_mi[i];
 
     gsl_linalg_LU_decomp (&gsl_c_i.matrix, p, &s);
     gsl_linalg_LU_invert (&gsl_c_i.matrix, p, &gsl_c_mi.matrix);
 
-    for( i = 0; i < nvoi; i++ ){
-      for( j = 0; j < nvoi; j++ )
+    for(int i = 0; i < nvoi; i++){
+      for(int j = 0; j < nvoi; j++)
 	c[i*nvoi + j] = gsl_matrix_get( &gsl_c_mi.matrix, i, j );
     }
 
@@ -84,10 +81,10 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
     free(c_ii);
   }
 
-  for( i = 0; i < nvoi; i++ ){
+  for(int i = 0; i < nvoi; i++){
     strain_ave[i] = strain_mac[i];
     stress_ave[i] = 0.0;
-    for( j = 0; j < nvoi; j++ )
+    for(int j = 0; j < nvoi; j++)
       stress_ave[i] += c[i*nvoi + j] * strain_mac[j];
   }
 
@@ -113,13 +110,12 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
     MatGetOwnershipRange(A,&istart,&iend);
     nstart = istart / dim;
     nend   = iend   / dim;
-    //    ny_inf = ( dim == 2 ) ? nstart / nx : nstart / (nx*nz);
 
     int *ghost_index;
-    if( nproc_mic == 1 )
+    if(nproc_mic == 1)
       ngho = 0;
     else{
-      if( rank_mic == 0 )
+      if(rank_mic == 0)
 	ngho = 0;
       else
 	ngho = ( dim == 2 ) ? nx : nx*nz;
@@ -395,11 +391,11 @@ int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_a
 
   int ierr = 0;
 
-  if(homo_type == HOMOG_METHOD_TAYLOR_P || homo_type == HOMOG_METHOD_TAYLOR_S){
+  if(params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL || params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL){
 
     ierr = mic_homogenize_taylor(strain_mac, strain_ave, stress_ave);
   }
-  else if(homo_type == UNIF_STRAINS){
+  else if(params.homog_method == HOMOG_METHOD_UNIF_STRAINS){
 
     ierr = mic_homog_us(strain_mac, strain_ave, stress_ave);
   }
