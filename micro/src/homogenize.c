@@ -266,32 +266,30 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
 
   /* Set the displacement boundary conditions "u = E . X" */
 
-  VecZeroEntries( x );
-  VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD);
+  VecZeroEntries(x);
+  VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
   Vec     x_loc;
   double  *x_arr;
-  VecGhostGetLocalForm( x    , &x_loc );
-  VecGetArray         ( x_loc, &x_arr );
+  VecGhostGetLocalForm(x, &x_loc);
+  VecGetArray(x_loc, &x_arr);
 
-  int  n , d;
-  if( dim == 2 ){
+  if(dim == 2){
 
     double  displ[2]; // (ux,uy) displacement
 
-    for( n = 0 ; n < ndir_ix/dim ; n++ )
-    {
-      strain_x_coord( strain_mac , &coor_dir[n*dim] , displ );
-      for( d = 0 ; d < dim ; d++ )
+    for(int n = 0 ; n < ndir_ix/dim ; n++ ){
+      strain_x_coord(strain_mac, &coor_dir[n*dim], displ);
+      for(int d = 0 ; d < dim ; d++)
 	x_arr[dir_ix_loc[n*dim + d]] = displ[d];
     }
   }
 
-  VecRestoreArray         ( x_loc , &x_arr );
-  VecGhostRestoreLocalForm( x     , &x_loc );
-  VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD);
+  VecRestoreArray(x_loc, &x_arr);
+  VecGhostRestoreLocalForm(x, &x_loc);
+  VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
   int     i;
   int     nr_its = 0; 
@@ -301,7 +299,7 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
   VecNorm( x , NORM_2 , &norm );
   PRINTF2("|x| = %lf\n", norm);
 
-  while(nr_its < params.non_linear_max_its  && norm > params.non_linear_min_norm_tol){
+  while(nr_its < params.non_linear_max_its && norm > params.non_linear_min_norm_tol){
 
     save_event(MICRO_COMM, "ass_0");
 

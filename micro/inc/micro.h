@@ -18,8 +18,8 @@
 #include "micro_struct.h"
 #include <gsl/gsl_linalg.h>
 
-#define PRINTF1(message){if(params.flag_coupling == false) myio_printf(&MICRO_COMM,message);}
-#define PRINTF2(message,arg_1){if(params.flag_coupling == false) myio_printf(&MICRO_COMM,message,arg_1);}
+#define PRINTF1(message){if(params.flag_coupling == false) myio_printf(&MICRO_COMM, message);}
+#define PRINTF2(message, arg_1){if(params.flag_coupling == false) myio_printf(&MICRO_COMM, message,arg_1);}
 
 #define TAYLOR_S     1
 #define TAYLOR_P     2
@@ -120,10 +120,6 @@ int voigt2mat(double voigt[6], double matrix[3][3]);
 int micro_print_info( void );
 int micro_pvtu( char *name );
 
-int mic_calc_stress_ave(MPI_Comm MICRO_COMM, double strain_mac[6], double strain_ave[6], double stress_ave[6]);
-int mic_calc_c_homo(MPI_Comm MICRO_COMM, double strain_mac[6], double c_homo[36]);
-int mic_calc_c_homo_lineal(MPI_Comm MICRO_COMM, double c_homo_lineal[36]);
-
 int get_local_elem_index( int e, int *loc_index );
 int get_global_elem_index( int e, int *glo_elem_index );
 int assembly_b( void );
@@ -132,7 +128,6 @@ int get_stress( int e , int gp, double *strain_gp , double *stress_gp );
 int get_strain( int e , int gp, double *strain_gp );
 int get_c_tan( const char * name , int e , int gp, double *strain_gp , double *c_tan );
 int get_elem_centroid( int e, int dim, double *centroid );
-int is_in_fiber( int e );
 int strain_x_coord( double * strain , double * coord , double * u );
 int get_node_local_coor( int n , double * coord );
 int get_node_ghost_coor( int n , double * coord );
