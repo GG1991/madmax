@@ -1,8 +1,3 @@
-/* List Declarations
- * 
- * 
- */
-
 #ifndef LIST_H
 #define LIST_H
 
@@ -32,5 +27,6 @@ int list_insertlast(list_t * list, void *data);
 int list_delfirst(list_t * list);
 int list_del(list_t *list, node_list_t* pNod);
 int list_clear(list_t *list);
+
 
 #endif
