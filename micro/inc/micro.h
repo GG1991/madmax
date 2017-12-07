@@ -20,8 +20,6 @@
 
 #define PRINTF1(message){if(params.flag_coupling == false) myio_printf(&MICRO_COMM,message);}
 #define PRINTF2(message,arg_1){if(params.flag_coupling == false) myio_printf(&MICRO_COMM,message,arg_1);}
-#define ARRAY_SET_TO_ZERO(array,length){for(int i = 0 ; i < length ; i++) array[i] = 0.0;}
-#define ARRAY_COPY(array_1,array_2,length){for(int i = 0 ; i < length ; i++) array_1[i] = array_2[i];}
 
 #define TAYLOR_S     1
 #define TAYLOR_P     2

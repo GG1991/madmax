@@ -820,14 +820,12 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
 
     message.action = ACTION_MICRO_CALC_STRESS;
 
-    for(int i = 0 ; i < nvoi ; i++)
-      message.strain_mac[i] = strain_gp[i];
+    ARRAY_COPY(message.strain_mac, strain_gp, nvoi);
 
     comm_macro_send(&message);
     comm_macro_recv(&message);
 
-    for(int i = 0 ; i < nvoi ; i++)
-      stress_gp[i] = message.stress_ave[i];
+    ARRAY_COPY(stress_gp, message.stress_ave, nvoi);
 
   }
   else
@@ -858,14 +856,12 @@ int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 
     message.action = ACTION_MICRO_CALC_C_TANGENT;
 
-    for(int i = 0 ; i < nvoi ; i++)
-      message.strain_mac[i] = strain_gp[i];
+    ARRAY_COPY(message.strain_mac, strain_gp, nvoi);
 
     comm_macro_send(&message);
     comm_macro_recv(&message);
 
-    for(int i = 0 ; i < nvoi ; i++)
-      c_tan[i] = message.c_tangent_ave[i];
+    ARRAY_COPY(c_tan, message.c_tangent_ave, nvoi*nvoi);
 
   }
   else

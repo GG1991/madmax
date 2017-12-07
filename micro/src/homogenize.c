@@ -355,7 +355,7 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
 
 int homogenize_init(void){
 
-  homogenize_check_linear_material();
+  params.have_linear_materials = (material_are_all_linear(&material_list) == true) ? true : false;
 
   int ierr = 0;
 
@@ -458,13 +458,6 @@ int homogenize_get_average_c_tangent_non_linear(double *strain_mac, double *c_ta
   }
 
   return ierr;
-}
-
-
-void homogenize_check_linear_material(void){
-
-  params.have_linear_materials = (material_are_all_linear(&material_list) == true) ? true : false;
-
 }
 
 

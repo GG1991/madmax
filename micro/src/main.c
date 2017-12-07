@@ -14,6 +14,7 @@ params_t params;
 
 #define CHECK_AND_GOTO(error){if(error){myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
 #define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
+#define PRINT_ARRAY(name_str,array,length){ myio_printf(&MICRO_COMM,"%s ",name_str); for( i = 0 ; i < length ; i++ ) myio_printf(&MICRO_COMM,"%e ",array[i]); myio_printf(&MICRO_COMM,"\n");}
 
 int main(int argc, char **argv){
 
@@ -223,22 +224,21 @@ int main(int argc, char **argv){
 
 	case ACTION_MICRO_CALC_STRESS:
 
-	  for(int i = 0 ; i < nvoi ; i++)
-	    strain_mac[i] = message.strain_mac[i];
+	  ARRAY_COPY(strain_mac, message.strain_mac, nvoi)
 
 	  ierr = homogenize_get_average_strain_stress(strain_mac, strain_ave, stress_ave);
 
-	  for(int i = 0 ; i < nvoi ; i++)
-	    message.stress_ave[i] = stress_ave[i];
+	  ARRAY_COPY(message.stress_ave, stress_ave, nvoi)
 
 	  break;
 
 	case ACTION_MICRO_CALC_C_TANGENT:
 
+	  ARRAY_COPY(strain_mac, message.strain_mac, nvoi)
+
 	  ierr = homogenize_get_average_c_tangent(strain_mac, &c_tangent_ave);
 
-	  for(int i = 0 ; i < nvoi*nvoi ; i++)
-	    message.c_tangent_ave[i] = c_tangent_ave[i];
+	  ARRAY_COPY(message.c_tangent_ave, c_tangent_ave, nvoi*nvoi)
 
 	  break;
 
@@ -259,26 +259,19 @@ int main(int argc, char **argv){
     double strain_mac[6], c_homo[36];
 
     memset(c_homo,0.0,36*sizeof(double));
-    for( i = 0 ; i < nvoi ; i++ )
-    {
-      memset(strain_mac,0.0,nvoi*sizeof(double)); strain_mac[i]=0.005;
+    for( i = 0 ; i < nvoi ; i++ ){
+
+      ARRAY_SET_TO_ZERO(strain_mac, nvoi); strain_mac[i]=0.005;
+
       ierr = homogenize_get_average_strain_stress(strain_mac, strain_ave, stress_ave);
-      if(ierr) goto end;
 
-      myio_printf(&MICRO_COMM,"\nstrain_ave = ");
-      for( j = 0 ; j < nvoi ; j++ )
-	myio_printf(&MICRO_COMM,"%e ",strain_ave[j]);
-
-      myio_printf(&MICRO_COMM,"\nstress_ave = ");
-      for( j = 0 ; j < nvoi ; j++ )
-	myio_printf(&MICRO_COMM,"%e ",stress_ave[j]);
-      myio_printf(&MICRO_COMM,"\n");
+      PRINT_ARRAY("strain_ave = ", strain_ave, nvoi)
+      PRINT_ARRAY("stress_ave = ", stress_ave, nvoi)
 
       for( j = 0 ; j < nvoi ; j++ )
 	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
 
-      if( flag_print & ( 1 << PRINT_VTU ) && homo_type == UNIF_STRAINS )
-      {
+      if( flag_print & ( 1 << PRINT_VTU ) && homo_type == UNIF_STRAINS ){
         get_elem_properties();
 	sprintf(filename,"micro_exp%d",i);
 	ierr = micro_pvtu( filename );
