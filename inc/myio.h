@@ -42,7 +42,7 @@ int myio_free_string(char *str);
 
 int myio_comm_line_init(int argc, char **argv, command_line_t *command_line);
 
-int myio_comm_line_search_option(command_line_t *command_line, const char *option_name);
+int myio_comm_line_search_option(command_line_t *command_line, const char *option_name, bool *found);
 
 int myio_comm_line_get_int(command_line_t *command_line, const char *option_name);
 int myio_comm_line_get_int_array(command_line_t *command_line, int n_int_expec, const char *option_name);

@@ -40,21 +40,21 @@ int myio_comm_line_init(int argc, char **argv, command_line_t *command_line){
 }
 
 
-int myio_comm_line_search_option(command_line_t *command_line, const char *option_name){
+int myio_comm_line_search_option(command_line_t *command_line, const char *option_name, bool *found){
 
-  command_line->found = false;
+  *found = false;
 
-  if(! command_line->argv || ! option_name)
+  if(command_line->argv == 0 || option_name == 0)
     return 1;
 
-  if(! command_line->argc)
+  if(command_line->argc == 0)
     return 0;
 
   int i = 0;
 
   while(i < command_line->argc){
-    if(! strcmp(command_line->argv[i], option_name)){
-      command_line->found = true;
+    if(strcmp(command_line->argv[i], option_name) == 0){
+      *found = true;
       break;
     }
     i++;

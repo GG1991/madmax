@@ -16,8 +16,9 @@ params_t params;
 
 int main(int argc, char **argv){
 
-  int        ierr;
-  int        i, j;
+  int ierr;
+  int i, j;
+  bool found;
 
   myname = strdup("macro");
 
@@ -28,8 +29,8 @@ int main(int argc, char **argv){
   MPI_Comm_size( WORLD_COMM, &nproc_wor );
   MPI_Comm_rank( WORLD_COMM, &rank_wor );
 
-  myio_comm_line_search_option(&command_line, "-coupl");
-  if(command_line.found) params.flag_coupling = true;
+  myio_comm_line_search_option(&command_line, "-coupl", &found);
+  if(found) params.flag_coupling = true;
 
   macmic.type = COUP_1;
   color = COLOR_MACRO;
@@ -53,9 +54,9 @@ int main(int argc, char **argv){
       "--------------------------------------------------\n");
 
   init_variables(&params, &message);
-  myio_comm_line_search_option(&command_line, "-normal");
+  myio_comm_line_search_option(&command_line, "-normal", &found);
 
-  if(command_line.found){
+  if(found){
 
     params.calc_mode = CALC_MODE_NORMAL;
 
@@ -66,13 +67,13 @@ int main(int argc, char **argv){
     CHECK_INST_ELSE_GOTO(command_line.found, params.delta_time = command_line.double_val;)
   }
 
-  myio_comm_line_search_option(&command_line, "-testcomm");
-  if(command_line.found){
+  myio_comm_line_search_option(&command_line, "-testcomm", &found);
+  if(found){
     params.calc_mode = CALC_MODE_TEST;
   }
 
-  myio_comm_line_search_option(&command_line, "-eigen");
-  if(command_line.found){
+  myio_comm_line_search_option(&command_line, "-eigen", &found);
+  if(found){
     params.calc_mode = CALC_MODE_EIGEN;
     myio_comm_line_get_double(&command_line, "-energy_stored");
     if(command_line.found) params.energy_stored = command_line.double_val;
@@ -102,11 +103,11 @@ int main(int argc, char **argv){
   ngp_max = npe_max;
 
   flag_print = 0;
-  myio_comm_line_search_option(&command_line, "-print_petsc");
-  if(command_line.found) flag_print = flag_print | (1<<PRINT_PETSC);
+  myio_comm_line_search_option(&command_line, "-print_petsc", &found);
+  if(found) flag_print = flag_print | (1<<PRINT_PETSC);
 
-  myio_comm_line_search_option(&command_line, "-print_vtu");
-  if(command_line.found) flag_print = flag_print | (1<<PRINT_VTU);
+  myio_comm_line_search_option(&command_line, "-print_vtu", &found);
+  if(found) flag_print = flag_print | (1<<PRINT_VTU);
 
   myio_comm_line_get_int(&command_line, "-nl_max_its");
   if(command_line.found) params.non_linear_max_its = command_line.int_val;
@@ -121,11 +122,11 @@ int main(int argc, char **argv){
   ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr);
 
   partition_algorithm = PARMETIS_GEOM;
-  myio_comm_line_search_option(&command_line, "-part_kway");
-  if(command_line.found) partition_algorithm = PARMETIS_MESHKWAY;
+  myio_comm_line_search_option(&command_line, "-part_kway", &found);
+  if(found) partition_algorithm = PARMETIS_MESHKWAY;
 
-  myio_comm_line_search_option(&command_line, "-part_geom");
-  if(command_line.found) partition_algorithm = PARMETIS_GEOM;
+  myio_comm_line_search_option(&command_line, "-part_geom", &found);
+  if(found) partition_algorithm = PARMETIS_GEOM;
 
   myio_printf(&MACRO_COMM, "reading mesh elements\n" );
   ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);

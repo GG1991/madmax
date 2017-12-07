@@ -18,8 +18,9 @@ params_t params;
 
 int main(int argc, char **argv){
 
-  int        i, j, ierr;
-  int        nval;
+  int i, j, ierr;
+  int nval;
+  bool found;
 
   myio_comm_line_init(argc, argv, &command_line);
 
@@ -30,8 +31,8 @@ int main(int argc, char **argv){
 
   init_variables(&params, &message);
 
-  myio_comm_line_search_option(&command_line, "-coupl");
-  if(command_line.found) params.flag_coupling = true;
+  myio_comm_line_search_option(&command_line, "-coupl", &found);
+  if(found) params.flag_coupling = true;
 
   macmic.type = COUP_1;
   color = COLOR_MICRO; /* color can change */
@@ -62,6 +63,7 @@ int main(int argc, char **argv){
   if(dim == 2) nval = 2;
   if(dim == 3) nval = 3;
 
+  
   myio_comm_line_get_int_array(&command_line, nval, "-struct_n");
   if(command_line.found){
 
@@ -128,14 +130,14 @@ int main(int argc, char **argv){
 
   ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr)
 
-  myio_comm_line_search_option(&command_line, "-homo_us");
-  if(command_line.found) params.homog_method = HOMOG_METHOD_UNIF_STRAINS;
+  myio_comm_line_search_option(&command_line, "-homo_us", &found);
+  if(found) params.homog_method = HOMOG_METHOD_UNIF_STRAINS;
 
-  myio_comm_line_search_option(&command_line, "-homo_tp");
-  if(command_line.found) params.homog_method = HOMOG_METHOD_TAYLOR_PARALLEL;
+  myio_comm_line_search_option(&command_line, "-homo_tp", &found);
+  if(found) params.homog_method = HOMOG_METHOD_TAYLOR_PARALLEL;
 
-  myio_comm_line_search_option(&command_line, "-homo_ts");
-  if(command_line.found) params.homog_method = HOMOG_METHOD_TAYLOR_SERIAL;
+  myio_comm_line_search_option(&command_line, "-homo_ts", &found);
+  if(found) params.homog_method = HOMOG_METHOD_TAYLOR_SERIAL;
 
   myio_comm_line_get_int(&command_line, "-nl_max_its");
   if(command_line.found) params.non_linear_max_its = command_line.int_val;
@@ -144,11 +146,11 @@ int main(int argc, char **argv){
   if(command_line.found) params.non_linear_min_norm_tol = command_line.double_val;
 
   flag_print = 0;
-  myio_comm_line_search_option(&command_line, "-print_petsc");
-  if(command_line.found) flag_print = flag_print | (1<<PRINT_PETSC);
+  myio_comm_line_search_option(&command_line, "-print_petsc", &found);
+  if(found) flag_print = flag_print | (1<<PRINT_PETSC);
 
-  myio_comm_line_search_option(&command_line, "-print_vtu");
-  if(command_line.found) flag_print = flag_print | (1<<PRINT_VTU);
+  myio_comm_line_search_option(&command_line, "-print_vtu", &found);
+  if(found) flag_print = flag_print | (1<<PRINT_VTU);
 
   if(params.flag_coupling == false){
     myio_printf(&MICRO_COMM,
