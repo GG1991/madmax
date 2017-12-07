@@ -671,7 +671,6 @@ int get_strain(int e, int gp, double *strain_gp){
 int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
 
   char *word_to_search;
-  int ierr;
 
   switch(elem_type[e]){
 
@@ -698,7 +697,7 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
 
   if(pm == NULL) return 1;
 
-  ierr = material_get_stress(mat_p, dim, strain_gp, stress_gp);
+  int ierr = material_get_stress(mat_p, dim, strain_gp, stress_gp);
 
   return ierr;
 }

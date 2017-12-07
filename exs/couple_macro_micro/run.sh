@@ -25,11 +25,11 @@ $MPIEXEC -np $NP ../../macro/macro \
     -nl_max_its 2 \
     -eps_nev 2 \
     -options_left 0 \
-: -np $NP xterm -e gdb -x file_micro.gdb --args ../../micro/micro \
+: -np $NP ../../micro/micro \
     -coupl \
     -struct_n 75,75 \
     -dim 2 \
-    -material "matrix MAT_ELASTIC 1.0e7 1.0e6 0.3","fiber MAT_ELASTIC 1.0e7 1.0e7 0.3" \
+    -material "MATRIX MAT_ELASTIC 1.0e7 1.0e6 0.3","FIBER MAT_ELASTIC 1.0e7 1.0e7 0.3" \
     -micro_struct "fiber_cilin 3.0 3.0 1 1 0.75 0.0 0.0" \
     -pc_type jacobi \
     -ksp_type cg \
