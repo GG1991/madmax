@@ -121,12 +121,12 @@ int myio_comm_line_get_int_array(command_line_t *command_line, int n_int_expec, 
 
     char *argv_dup = strdup(command_line->argv[i]);
     char *str_token = strtok(argv_dup, ",\n");
-    command_line->n_str_found = 0;
+    command_line->n_int_found = 0;
 
     while(str_token){
-      command_line->int_arr[command_line->n_str_found] = atoi(str_token);
+      command_line->int_arr[command_line->n_int_found] = atoi(str_token);
       str_token = strtok(NULL, ",\n");
-      command_line->n_str_found++;
+      command_line->n_int_found++;
     }
     free(argv_dup);
 

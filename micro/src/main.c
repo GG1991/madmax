@@ -20,7 +20,6 @@ int main(int argc, char **argv){
 
   int        i, j, ierr;
   int        nval;
-  PetscBool  set;
 
   myio_comm_line_init(argc, argv, &command_line);
 
@@ -60,22 +59,19 @@ int main(int argc, char **argv){
   ly = micro_struct.size[1];
   lz = (dim == 3) ? micro_struct.size[2] : -1;
 
-  int    nval_expect;
-  int    struct_mesh_n[3];
+  if(dim == 2) nval = 2;
+  if(dim == 3) nval = 3;
 
-  if(dim == 2) nval_expect = nval = 2;
-  if(dim == 3) nval_expect = nval = 3;
+  myio_comm_line_get_int_array(&command_line, nval, "-struct_n");
+  if(command_line.found){
 
-  PetscOptionsGetIntArray( NULL, NULL, "-struct_n", struct_mesh_n, &nval, &set );
-  if( set == PETSC_TRUE ){
-
-    if( nval != nval_expect ){
-      myio_printf(&MICRO_COMM,"-struct_n should include %d arguments\n", nval_expect);
+    if(nval != command_line.n_int_found){
+      myio_printf(&MICRO_COMM,"-struct_n should include %d arguments\n", nval);
       goto end;
     }
-    nx   = struct_mesh_n[0];
-    ny   = struct_mesh_n[1];
-    nz   = ( dim == 3 ) ? struct_mesh_n[2] : 1;
+    nx   = command_line.int_arr[0];
+    ny   = command_line.int_arr[1];
+    nz   = ( dim == 3 ) ? command_line.int_arr[2] : 1;
 
     nn   = nx*ny*nz;
     nex  = (nx-1);
@@ -148,11 +144,11 @@ int main(int argc, char **argv){
   if(command_line.found) params.non_linear_min_norm_tol = command_line.double_val;
 
   flag_print = 0;
-  PetscOptionsHasName(NULL,NULL,"-print_petsc",&set);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_PETSC);
+  myio_comm_line_search_option(&command_line, "-print_petsc");
+  if(command_line.found) flag_print = flag_print | (1<<PRINT_PETSC);
 
-  PetscOptionsHasName(NULL,NULL,"-print_vtu",&set);
-  if(set == PETSC_TRUE) flag_print = flag_print | (1<<PRINT_VTU);
+  myio_comm_line_search_option(&command_line, "-print_vtu");
+  if(command_line.found) flag_print = flag_print | (1<<PRINT_VTU);
 
   if(params.flag_coupling == false){
     myio_printf(&MICRO_COMM,

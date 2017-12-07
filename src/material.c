@@ -92,7 +92,7 @@ int material_fill_list_from_command_line(command_line_t *command_line, list_t *m
 
   material_t  mat;
 
-  for(int i=0 ; i<command_line->n_str_found ; i++){
+  for(int i = 0 ; i < command_line->n_str_found ; i++){
 
     char *data = strtok(command_line->str_arr[i], " \n");
 
