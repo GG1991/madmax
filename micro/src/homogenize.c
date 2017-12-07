@@ -668,33 +668,39 @@ int get_strain(int e, int gp, double *strain_gp){
 }
 
 
-int get_stress( int e , int gp, double *strain_gp , double *stress_gp ){
+int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
 
   char *word_to_search;
+  int ierr;
 
-  if( elem_type[e] == ID_FIBER )
-  {
-    word_to_search = strdup( "FIBER" );
-  }
-  else if( elem_type[e] == ID_MATRIX )
-  {
-    word_to_search = strdup( "MATRIX" );
+  switch(elem_type[e]){
+
+    case ID_FIBER:
+      word_to_search = strdup("FIBER");
+      break;
+
+    case ID_MATRIX:
+      word_to_search = strdup("MATRIX");
+      break;
+
+    default:
+      return 1;
   }
 
   material_t  *mat_p;
   node_list_t *pm = material_list.head;
 
-  while( pm )
-  {
+  while(pm != NULL){
     mat_p = (material_t *)pm->data;
-    if( strcmp ( mat_p->name , word_to_search ) == 0 ) break;
+    if(strcmp(mat_p->name, word_to_search) == 0) break;
     pm = pm->next;
   }
-  if( !pm ) return 1;
 
-  material_get_stress( mat_p, dim, strain_gp, stress_gp );
+  if(pm == NULL) return 1;
 
-  return 0;
+  ierr = material_get_stress(mat_p, dim, strain_gp, stress_gp);
+
+  return ierr;
 }
 
 
