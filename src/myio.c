@@ -34,7 +34,6 @@ int myio_comm_line_init(int argc, char **argv, command_line_t *command_line){
     command_line->argv[i] = strdup(argv[i]);
 
   command_line->str = NULL;
-  command_line->str_arr = NULL;
   command_line->int_arr = NULL;
 
   return 0;

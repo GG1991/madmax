@@ -19,9 +19,6 @@ typedef struct command_line_t_{
   char **argv;
 
   char *str;
-  char **str_arr;
-  int n_str_found;
-  int n_str_expec;
 
   int int_val;
   int n_int_found;
