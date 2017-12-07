@@ -132,15 +132,14 @@ int main(int argc, char **argv){
 
   ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr)
 
-  homo_type=0;
-  PetscOptionsHasName(NULL,NULL,"-homo_tp",&set);
-  if(set==PETSC_TRUE) homo_type = TAYLOR_P;
+  myio_comm_line_search_option(&command_line, "-homo_us");
+  if(command_line.found) params.homog_method = HOMOG_METHOD_UNIF_STRAINS;
 
-  PetscOptionsHasName(NULL,NULL,"-homo_ts",&set);
-  if(set==PETSC_TRUE) homo_type = TAYLOR_S;
+  myio_comm_line_search_option(&command_line, "-homo_tp");
+  if(command_line.found) params.homog_method = HOMOG_METHOD_TAYLOR_PARALLEL;
 
-  PetscOptionsHasName(NULL,NULL,"-homo_us",&set);
-  if(set==PETSC_TRUE) homo_type = UNIF_STRAINS;
+  myio_comm_line_search_option(&command_line, "-homo_ts");
+  if(command_line.found) params.homog_method = HOMOG_METHOD_TAYLOR_SERIAL;
 
   myio_comm_line_get_int(&command_line, "-nl_max_its");
   if(command_line.found) params.non_linear_max_its = command_line.int_val;
@@ -280,7 +279,7 @@ int main(int argc, char **argv){
       for(int j = 0 ; j < nvoi ; j++ )
 	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
 
-      if( flag_print & ( 1 << PRINT_VTU ) && homo_type == UNIF_STRAINS ){
+      if(flag_print & (1 << PRINT_VTU) && params.homog_method == HOMOG_METHOD_UNIF_STRAINS){
         get_elem_properties();
 	sprintf(filename,"micro_exp%d",i);
 	ierr = micro_pvtu( filename );
@@ -357,15 +356,14 @@ end:
 }
 
 
-int micro_print_info( void )
-{
+int micro_print_info( void ){
 
   FILE *fm = fopen("mic_info.dat","w");
 
   int  *i_data;
   int   i , ierr;
 
-  if( rank_mic == 0 ){
+  if(rank_mic == 0){
     fprintf(fm,"-----------\n");
     fprintf(fm,"nproc %d\n", nproc_mic);
     fprintf(fm,"-----------\n");
@@ -380,7 +378,7 @@ int micro_print_info( void )
     fprintf(fm,"-----------\n");
   }
 
-  if( rank_mic == 0 ){
+  if(rank_mic == 0){
     i_data = malloc( nproc_mic * sizeof(double) );
     fprintf(fm,"%-20s","rank ");
     for( i = 0 ; i < nproc_mic ; i++  )
@@ -533,21 +531,20 @@ int micro_pvtu( char *name )
   fprintf(fm,"<DataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
 
   double *coord = malloc( dim * sizeof(double));
-  int    n , d;
 
-  for( n = 0 ; n < nl ; n++ ){
-    get_node_local_coor( n , coord );
-    for( d = 0 ; d < dim ; d++ )
-      fprintf(fm,"%e ",  coord[d] );
-    for( d = dim ; d < 3 ; d++ )
+  for(int n = 0 ; n < nl ; n++){
+    get_node_local_coor( n , coord);
+    for(int d = 0 ; d < dim ; d++)
+      fprintf(fm,"%e ",  coord[d]);
+    for(int d = dim ; d < 3 ; d++)
       fprintf(fm,"%e ",0.0);
     fprintf(fm,"\n");
   }
-  for( n = 0 ; n < ngho ; n++ ){
+  for(int n = 0 ; n < ngho ; n++ ){
     get_node_ghost_coor( n , coord );
-    for( d = 0 ; d < dim ; d++ )
+    for(int d = 0 ; d < dim ; d++ )
       fprintf(fm,"%e ",  coord[d] );
-    for( d = dim ; d < 3 ; d++ )
+    for(int d = dim ; d < 3 ; d++ )
       fprintf(fm,"%e ",0.0);
     fprintf(fm,"\n");
   }
@@ -555,12 +552,10 @@ int micro_pvtu( char *name )
   fprintf(fm,"</Points>\n");
   fprintf(fm,"<Cells>\n");
 
-  int e;
-
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for ( e = 0 ; e < nelm ; e++ ){
+  for(int e = 0 ; e < nelm ; e++){
     get_local_elem_node( e , loc_elem_index );
-    for ( n = 0 ; n < npe ; n++ )
+    for(int n = 0 ; n < npe ; n++)
       fprintf(fm,"%d ", loc_elem_index[n]);
     fprintf(fm,"\n");
   }
@@ -568,7 +563,7 @@ int micro_pvtu( char *name )
 
   int ce = npe;
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"offsets\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for ( e = 0 ; e < nelm ; e++ ){
+  for(int e = 0 ; e < nelm ; e++){
     fprintf(fm,"%d ", ce);
     ce += npe;
   }
@@ -576,8 +571,8 @@ int micro_pvtu( char *name )
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for ( e = 0 ; e < nelm ; e++ )
-    fprintf(fm, "%d ",vtkcode( dim , npe ) );  
+  for(int e = 0 ; e < nelm ; e++)
+    fprintf(fm, "%d ",vtkcode(dim, npe));  
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
@@ -585,34 +580,32 @@ int micro_pvtu( char *name )
   
   fprintf(fm,"<PointData Vectors=\"displ\">\n"); // Vectors inside is a filter we should not use this here
 
-  /* <displ> */
-  VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD );
-  VecGhostUpdateEnd(   x , INSERT_VALUES , SCATTER_FORWARD );
-  VecGhostGetLocalForm(x , &xlocal );
+  VecGhostUpdateBegin(x , INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(x , INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostGetLocalForm(x , &xlocal);
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   VecGetArray( xlocal , &xvalues );
-  for( n = 0 ; n < (nl + ngho) ; n++ ){
-    for( d = 0 ; d < dim ; d++ )
+  for(int n = 0 ; n < (nl + ngho) ; n++){
+    for(int d = 0 ; d < dim ; d++)
       fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
-    for( d = dim ; d < 3 ; d++ )
+    for(int d = dim ; d < 3 ; d++)
       fprintf(fm,"%lf ",0.0);
     fprintf(fm,"\n");
   }
   VecRestoreArray( xlocal , &xvalues );
   fprintf(fm,"</DataArray>\n");
 
-  /* <residual> */
   VecGhostUpdateBegin( b , INSERT_VALUES, SCATTER_FORWARD );
   VecGhostUpdateEnd  ( b , INSERT_VALUES, SCATTER_FORWARD );
   VecGhostGetLocalForm(b , &xlocal);
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   VecGetArray(xlocal, &xvalues);
-  for( n = 0 ; n < (nl + ngho) ; n++ ){
-    for( d = 0 ; d < dim ; d++ )
+  for(int n = 0 ; n < (nl + ngho) ; n++){
+    for(int d = 0 ; d < dim ; d++)
       fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
-    for( d = dim ; d < 3 ; d++ )
+    for(int d = dim ; d < 3 ; d++)
       fprintf(fm, "%lf ", 0.0);
     fprintf(fm,"\n");
   }
@@ -622,55 +615,41 @@ int micro_pvtu( char *name )
   fprintf(fm,"</PointData>\n");
   fprintf(fm,"<CellData>\n");
 
-  /* <part> */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for( e = 0; e < nelm ; e++ )
+  for(int e = 0; e < nelm ; e++ )
     fprintf( fm, "%d ", rank_mic );  
   fprintf( fm, "\n");
   fprintf( fm, "</DataArray>\n");
 
-  int v;
-
-  /* <strain> */
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for( e = 0; e < nelm ; e++ ){
-    for( v = 0 ; v < nvoi ; v++ )
+  for(int e = 0; e < nelm ; e++){
+    for(int v = 0 ; v < nvoi ; v++)
       fprintf(fm, "%lf ", elem_strain[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
 
-  /* <stress> */
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for( e = 0; e < nelm ; e++ ){
-    for( v = 0 ; v < nvoi ; v++ )
+  for(int e = 0; e < nelm ; e++){
+    for(int v = 0 ; v < nvoi ; v++)
       fprintf(fm, "%lf ", elem_stress[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
 
-  /* <elem_type> */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"elem_type\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for( e = 0; e < nelm ; e++ )
-    fprintf( fm, "%d ", elem_type[e] );
+  for(int e = 0; e < nelm ; e++)
+    fprintf(fm, "%d ", elem_type[e]);
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
-  /* <energy> */
-//  fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-//  for (i=0;i<nelm;i++){
-//    fprintf(fm, "%lf ", energy[i]);
-//  }
-//  fprintf(fm,"\n");
-//  fprintf(fm,"</DataArray>\n");
-
   fprintf(fm,
-      "</CellData>\n"
-      "</Piece>\n"
+      "</CellData>\n""</Piece>\n"
       "</UnstructuredGrid>\n"
       "</VTKFile>\n");
 
   fclose(fm);
+
   return 0;
 }
 
