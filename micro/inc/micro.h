@@ -121,6 +121,8 @@ int voigt2mat(double voigt[6], double matrix[3][3]);
 int micro_print_info( void );
 int micro_pvtu( char *name );
 
+int micro_check_material_and_elem_type(list_t *material_list, int *elem_type, int nelm);
+
 int get_local_elem_index( int e, int *loc_index );
 int get_global_elem_index( int e, int *glo_elem_index );
 int assembly_b( void );
