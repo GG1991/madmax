@@ -34,8 +34,7 @@ int main(int argc, char **argv){
 
   macmic.type = COUP_1;
   color = COLOR_MACRO;
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM, params.flag_coupling);
-  CHECK_AND_GOTO(ierr);
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM, params.flag_coupling); CHECK_AND_GOTO(ierr);
 
   MPI_Comm_size(MACRO_COMM, &nproc_mac);
   MPI_Comm_rank(MACRO_COMM, &rank_mac);
@@ -60,11 +59,8 @@ int main(int argc, char **argv){
 
     params.calc_mode = CALC_MODE_NORMAL;
 
-    myio_comm_line_get_double(&command_line, "-tf");
-    CHECK_INST_ELSE_GOTO(command_line.found, params.final_time = command_line.double_val;)
-
-    myio_comm_line_get_double(&command_line, "-dt");
-    CHECK_INST_ELSE_GOTO(command_line.found, params.delta_time = command_line.double_val;)
+    myio_comm_line_get_double(&command_line, "-tf", &params.final_time, &found);
+    myio_comm_line_get_double(&command_line, "-dt", &params.delta_time, &found);
   }
 
   myio_comm_line_search_option(&command_line, "-testcomm", &found);
@@ -75,17 +71,13 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-eigen", &found);
   if(found){
     params.calc_mode = CALC_MODE_EIGEN;
-    myio_comm_line_get_double(&command_line, "-energy_stored");
-    if(command_line.found) params.energy_stored = command_line.double_val;
+    myio_comm_line_get_double(&command_line, "-energy_stored", &params.energy_stored, &found);
   }
 
   mesh_f = FORMAT_GMSH;
 
-  myio_comm_line_get_string(&command_line, "-mesh");
-  if(command_line.found){
-    mesh_n = strdup(command_line.str);
-  }
-  else{
+  myio_comm_line_get_string(&command_line, "-mesh", mesh_n, &found);
+  if(found == false){
     myio_printf(&MACRO_COMM,"mesh file not given on command line.\n");
     goto end;
   }
@@ -95,8 +87,11 @@ int main(int argc, char **argv){
     myio_printf(&MACRO_COMM,"mesh file not found.\n");
     goto end;
   }
-  myio_comm_line_get_int(&command_line, "-dim");
-  CHECK_INST_ELSE_GOTO(command_line.found, dim = command_line.int_val;)
+  myio_comm_line_get_int(&command_line, "-dim", &dim, &found);
+  if(found == false){
+    myio_printf(&MACRO_COMM,"-dim not given on command line.\n");
+    goto end;
+  }
 
   nvoi    = (dim == 2) ? 3 : 6;
   npe_max = (dim == 2) ? 4 : 8;
@@ -109,11 +104,9 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-print_vtu", &found);
   if(found) flag_print = flag_print | (1<<PRINT_VTU);
 
-  myio_comm_line_get_int(&command_line, "-nl_max_its");
-  if(command_line.found) params.non_linear_max_its = command_line.int_val;
+  myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
 
-  myio_comm_line_get_int(&command_line, "-nl_min_norm_tol");
-  if(command_line.found) params.non_linear_min_norm_tol = command_line.double_val;
+  myio_comm_line_get_double(&command_line, "-nl_min_norm_tol", &params.non_linear_min_norm_tol, &found);
 
   ierr = function_fill_list_from_command_line(&command_line, &function_list); CHECK_AND_GOTO(ierr);
 

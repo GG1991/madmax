@@ -19,7 +19,9 @@ params_t params;
 int main(int argc, char **argv){
 
   int i, j, ierr;
-  int nval;
+  int values_i[10];
+  char string_buf[NBUF];
+  int nval_expect, nval_found;
   bool found;
 
   myio_comm_line_init(argc, argv, &command_line);
@@ -48,32 +50,31 @@ int main(int argc, char **argv){
   hx = hy = hz = -1;
   lx = ly = lz = -1;
 
-  myio_comm_line_get_int(&command_line, "-dim");
-  CHECK_INST_ELSE_GOTO(command_line.found, dim = command_line.int_val;)
+  ierr = myio_comm_line_get_int(&command_line, "-dim", &dim, &found); CHECK_AND_GOTO(ierr)
 
   nvoi = (dim == 2) ? 3 : 6;
 
-  myio_comm_line_get_string(&command_line, "-micro_struct");
-  CHECK_INST_ELSE_GOTO(command_line.found, micro_struct_init(dim, command_line.str, &micro_struct);)
+  ierr = myio_comm_line_get_string(&command_line, "-micro_struct", string_buf, &found); CHECK_AND_GOTO(ierr)
+  micro_struct_init(dim, string_buf, &micro_struct);
   
   lx = micro_struct.size[0];
   ly = micro_struct.size[1];
   lz = (dim == 3) ? micro_struct.size[2] : -1;
 
-  if(dim == 2) nval = 2;
-  if(dim == 3) nval = 3;
+  if(dim == 2) nval_expect = 2;
+  if(dim == 3) nval_expect = 3;
 
   
-  myio_comm_line_get_int_array(&command_line, nval, "-struct_n");
-  if(command_line.found){
+  myio_comm_line_get_int_array(&command_line, "-struct_n", values_i, nval_expect, &nval_found, &found);
+  if(found){
 
-    if(nval != command_line.n_int_found){
-      myio_printf(&MICRO_COMM,"-struct_n should include %d arguments\n", nval);
+    if(nval_found != nval_expect){
+      myio_printf(&MICRO_COMM,"-struct_n should include %d arguments\n", nval_expect);
       goto end;
     }
-    nx   = command_line.int_arr[0];
-    ny   = command_line.int_arr[1];
-    nz   = ( dim == 3 ) ? command_line.int_arr[2] : 1;
+    nx   = values_i[0];
+    ny   = values_i[1];
+    nz   = (dim == 3) ? values_i[2] : 1;
 
     nn   = nx*ny*nz;
     nex  = (nx-1);
@@ -86,20 +87,20 @@ int main(int argc, char **argv){
 
     hx   = lx/nex;
     hy   = ly/(ny-1);
-    hz   = ( dim == 3 ) ? (lz/nez) : -1;
+    hz   = (dim == 3) ? (lz/nez) : -1;
 
     int *nyl_arr = malloc(nproc_mic * sizeof(int));
-    ierr = MPI_Allgather( &nyl, 1, MPI_INT, nyl_arr, 1, MPI_INT, MICRO_COMM); if(ierr) return 1;
+    ierr = MPI_Allgather(&nyl, 1, MPI_INT, nyl_arr, 1, MPI_INT, MICRO_COMM); if(ierr) return 1;
     ny_inf = 0;
-    for( i = 0 ; i < rank_mic ; i++ ){
+    for(i = 0 ; i < rank_mic ; i++){
       ny_inf += nyl_arr[i];
     }
     free(nyl_arr);
 
-    npe  = ( dim == 2 ) ? 4 : 8;
-    ngp  = ( dim == 2 ) ? 4 : 8;
-    if( !( ny > nproc_mic ) ){
-      myio_printf( &MICRO_COMM, "ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
+    npe  = (dim == 2) ? 4 : 8;
+    ngp  = (dim == 2) ? 4 : 8;
+    if(ny < nproc_mic){
+      myio_printf(&MICRO_COMM, "ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
       goto end;
     }
 
@@ -109,7 +110,7 @@ int main(int argc, char **argv){
     goto end;
   }
 
-  center_coor = malloc ( dim * sizeof(double));
+  center_coor = malloc(dim*sizeof(double));
   if(dim == 2){
     center_coor[0] = lx / 2;
     center_coor[1] = ly / 2;
@@ -137,11 +138,8 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-homo_ts", &found);
   if(found) params.homog_method = HOMOG_METHOD_TAYLOR_SERIAL;
 
-  myio_comm_line_get_int(&command_line, "-nl_max_its");
-  if(command_line.found) params.non_linear_max_its = command_line.int_val;
-
-  myio_comm_line_get_int(&command_line, "-nl_min_norm_tol");
-  if(command_line.found) params.non_linear_min_norm_tol = command_line.double_val;
+  myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
+  myio_comm_line_get_int(&command_line, "-nl_min_norm_tol", &params.non_linear_max_its, &found);
 
   flag_print = 0;
   myio_comm_line_search_option(&command_line, "-print_petsc", &found);
