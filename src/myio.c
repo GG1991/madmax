@@ -123,7 +123,7 @@ int myio_comm_line_get_string(command_line_t *command_line, const char *option_n
   int i = 0; SEARCH_ARGV_INDEX(i, option_name)
   if(i == command_line->argc - 1) return 1;
 
-  string = strdup(command_line->argv[i+1]);
+  strcpy(string, command_line->argv[i+1]);
 
   *found = true;
 
@@ -149,10 +149,11 @@ int myio_comm_line_get_string_array(command_line_t *command_line, const char *op
   int n = 0;
   while(str_token){
     if(string_arr[0]) return 1;
-    string_arr[n] = strdup(str_token);
+    strcpy(string_arr[n], strdup(str_token));
     str_token = strtok(NULL, ",\n");
     n++;
   }
+  free(argv_dup);
 
   *nval_found = n;
   *found = true;
