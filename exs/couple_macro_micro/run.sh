@@ -24,6 +24,7 @@ $MPIEXEC -np $NP ../../macro/macro \
     -part_geom \
     -nl_max_its 2 \
     -eps_nev 2 \
+    -print_vtu \
     -options_left 0 \
 : -np $NP ../../micro/micro \
     -coupl \

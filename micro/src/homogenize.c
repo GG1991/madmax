@@ -11,27 +11,25 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
   double vol_i = 0.0, vol_ia = 0.0;
   double vol_m = 0.0, vol_ma = 0.0;
 
-  if(params.flag_first_homogenization){
-
-    for(int e = 0 ; e < nelm ; e++){
-
-      if(elem_type[e] == 1){
-	vol_ia += vol_elem;
-	ne_i++;
-      }
-      else{
-	vol_ma += vol_elem;
-	ne_m++;
-      }
-
+  for(int e = 0 ; e < nelm ; e++){
+    if(elem_type[e] == ID_FIBER){
+      vol_ia += vol_elem;
+      ne_i++;
     }
-    ierr = MPI_Allreduce( &vol_ia, &vol_i, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
-    ierr = MPI_Allreduce( &vol_ma, &vol_m, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
-    vi = vol_i / vol_tot;
-    vm = vol_m / vol_tot;
-    myio_printf(&MICRO_COMM, "vi = %lf \n", vi );
-    myio_printf(&MICRO_COMM, "vm = %lf \n", vm );
+    else{
+      vol_ma += vol_elem;
+      ne_m++;
+    }
   }
+
+  ierr = MPI_Allreduce( &vol_ia, &vol_i, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
+  ierr = MPI_Allreduce( &vol_ma, &vol_m, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if(ierr) return 1;
+
+  vi = vol_i / vol_tot;
+  vm = vol_m / vol_tot;
+  myio_printf(&MICRO_COMM, "vi = %lf \n", vi );
+  myio_printf(&MICRO_COMM, "vm = %lf \n", vm );
+
   get_c_tan("FIBER" , -1, -1, NULL, c_i);
   get_c_tan("MATRIX", -1, -1, NULL, c_m);
  
@@ -94,9 +92,9 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
 
 int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
 
-  if(params.flag_have_allocated == false){
+  if(flags.allocated == false){
 
-    params.flag_have_allocated = true;
+    flags.allocated = true;
 
     int nnz = (dim==2)? 18:81;
 
@@ -349,15 +347,15 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
 
 int homogenize_init(void){
 
-  params.have_linear_materials = (material_are_all_linear(&material_list) == true) ? true : false;
+  flags.linear_materials = (material_are_all_linear(&material_list) == true) ? true : false;
 
   int ierr = 0;
 
-  if(params.have_linear_materials == true){
+  if(flags.linear_materials == true){
 
     ierr = homogenize_calculate_c_tangent_around_zero(params.c_tangent_linear);
 
-    params.c_tangent_linear_calculated = true;
+    flags.c_linear_calculated = true;
 
   }
 
@@ -367,7 +365,7 @@ int homogenize_init(void){
 
 int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave){
 
-  if(params.have_linear_materials == true && params.c_tangent_linear_calculated == true){
+  if(flags.linear_materials == true && flags.c_linear_calculated == true){
 
     for(int i = 0 ; i < nvoi ; i++){
       strain_ave[i] = strain_mac[i];
@@ -408,12 +406,12 @@ int homogenize_get_c_tangent(double *strain_mac, double **c_tangent){
 
   int ierr = 0;
 
-  if(params.have_linear_materials == true && params.have_linear_materials == true){
+  if(flags.linear_materials == true && flags.linear_materials == true){
 
     (*c_tangent) = params.c_tangent_linear;
 
   }
-  else if(params.have_linear_materials == false){
+  else if(flags.linear_materials == false){
 
     ierr = homogenize_calculate_c_tangent(strain_mac, params.c_tangent);
     (*c_tangent) = params.c_tangent;

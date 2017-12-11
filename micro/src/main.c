@@ -11,6 +11,7 @@ static char help[] =
 "-print_vtu                                                                                   \n";
 
 params_t params;
+flags_t flags;
 
 #define CHECK_AND_GOTO(error){if(error){myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
 #define CHECK_INST_ELSE_GOTO(cond, instr){if(cond){instr}else{myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
@@ -34,11 +35,11 @@ int main(int argc, char **argv){
   init_variables(&params, &message);
 
   myio_comm_line_search_option(&command_line, "-coupl", &found);
-  if(found) params.flag_coupling = true;
+  if(found) flags.coupled = true;
 
   macmic.type = COUP_1;
   color = COLOR_MICRO; /* color can change */
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM, params.flag_coupling); CHECK_AND_GOTO(ierr);
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM, flags.coupled); CHECK_AND_GOTO(ierr);
 
   MPI_Comm_size(MICRO_COMM, &nproc_mic);
   MPI_Comm_rank(MICRO_COMM, &rank_mic);
@@ -148,7 +149,7 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-print_vtu", &found);
   if(found) flag_print = flag_print | (1<<PRINT_VTU);
 
-  if(params.flag_coupling == false){
+  if(flags.coupled == false){
     myio_printf(&MICRO_COMM,
 	"--------------------------------------------------\n"
 	"  MICRO: STANDALONE \n"
@@ -215,7 +216,7 @@ int main(int argc, char **argv){
 
   double *c_tangent_ave = malloc(36*sizeof(double));
 
-  if(params.flag_coupling == true){
+  if(flags.coupled == true){
 
     while(message.action != ACTION_MICRO_END){
 

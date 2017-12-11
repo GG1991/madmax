@@ -19,8 +19,8 @@
 #include <gsl/gsl_linalg.h>
 
 #define PRINT_ALWAYS 0
-#define PRINTF1(message){if(params.flag_coupling == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message);}
-#define PRINTF2(message, arg_1){if(params.flag_coupling == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message,arg_1);}
+#define PRINTF1(message){if(flags.coupled == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message);}
+#define PRINTF2(message, arg_1){if(flags.coupled == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message,arg_1);}
 
 #define MAX_NVOIGT   6
 
@@ -82,10 +82,13 @@ int          macro_gp;
 double       c_homo_lineal[36];
 double       rho;
 
-Mat          A, J;                // petsc matrices
-Vec          x, b;                // petsc vectors
-Vec          dx;
-KSP          ksp;                 // linear solver context
+Mat A, J;
+Vec x, b;
+Vec dx;
+KSP ksp;
+
+#define PETSC_SOLVER 0
+#define ELLPACK_JACOBI 1
 
 typedef struct{
 
@@ -94,16 +97,21 @@ typedef struct{
   double non_linear_min_norm_tol;
   double c_tangent_linear[MAX_NVOIGT*MAX_NVOIGT];
   double c_tangent[MAX_NVOIGT*MAX_NVOIGT];
-
-  bool flag_coupling;
-  bool flag_first_homogenization;
-  bool have_linear_materials;
-  bool flag_have_allocated;
-  bool c_tangent_linear_calculated;
+  int solver;
 
 }params_t;
 
+typedef struct{
+
+  bool coupled;
+  bool allocated;
+  bool linear_materials;
+  bool c_linear_calculated;
+
+}flags_t;
+
 extern params_t params;
+extern flags_t flags;
 
 #define PRINT_PETSC        0
 #define PRINT_VTU          1
