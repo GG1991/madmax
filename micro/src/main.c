@@ -81,9 +81,9 @@ int main(int argc, char **argv){
 
     ney  = (ny-1)/nproc_mic + (((ny-1) % nproc_mic > rank_mic) ? 1:0); 
     nez  = (nz-1);
-    nelm = ( dim == 2 ) ? nex*ney : nex*ney*nez;
-    nyl  = ( rank_mic == 0 ) ? ney+1 : ney;
-    nl   = ( dim == 2 ) ? nyl*nx : nyl*nx*nz;
+    nelm = (dim == 2) ? nex*ney : nex*ney*nez;
+    nyl  = (rank_mic == 0) ? ney+1 : ney;
+    nl   = (dim == 2) ? nyl*nx : nyl*nx*nz;
 
     hx   = lx/nex;
     hy   = ly/(ny-1);

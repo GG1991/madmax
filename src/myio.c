@@ -131,7 +131,7 @@ int myio_comm_line_get_string(command_line_t *command_line, const char *option_n
 }
 
 
-int myio_comm_line_get_string_array(command_line_t *command_line, const char *option_name, char **string_arr, int nval_expect, int *nval_found, bool *found){
+int myio_comm_line_get_string_array(command_line_t *command_line, const char *option_name, char string_arr[][STRING_LENGTH], int nval_expect, int *nval_found, bool *found){
 
   *found = false;
 
@@ -148,7 +148,6 @@ int myio_comm_line_get_string_array(command_line_t *command_line, const char *op
 
   int n = 0;
   while(str_token){
-    if(string_arr[0]) return 1;
     strcpy(string_arr[n], strdup(str_token));
     str_token = strtok(NULL, ",\n");
     n++;

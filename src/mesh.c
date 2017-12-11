@@ -8,9 +8,9 @@ int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list
 
   bool found;
   int num_string_found;
-  char **string_arr;
+  char string_arr[MAX_NUM_OF_BOUNDARIES][128];
 
-  myio_comm_line_get_string_array(command_line, "-boundary", &string_arr, MAX_NUM_OF_BOUNDARIES, &num_string_found, &found);
+  myio_comm_line_get_string_array(command_line, "-boundary", string_arr, MAX_NUM_OF_BOUNDARIES, &num_string_found, &found);
 
   if(found == false || num_string_found == 0)
     return 1;

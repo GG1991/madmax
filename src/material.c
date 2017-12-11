@@ -85,9 +85,9 @@ int material_fill_list_from_command_line(command_line_t *command_line, list_t *m
 
   bool found;
   int num_string_found;
-  char **string_arr;
+  char string_arr[MAX_NUM_OF_MATERIALS][128];
 
-  myio_comm_line_get_string_array(command_line, "-material", &string_arr, MAX_NUM_OF_MATERIALS, &num_string_found, &found);
+  myio_comm_line_get_string_array(command_line, "-material", string_arr, MAX_NUM_OF_MATERIALS, &num_string_found, &found);
 
   if(found == false || num_string_found == 0)
     return 1;
