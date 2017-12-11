@@ -41,6 +41,7 @@ DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
 	       ${DEP_DIR}/material.h
 
 DEPS_MAC = ${MAC_INC_DIR}/macro.h \
+	   ${MAC_INC_DIR}/assembly.h \
            ${DEP_DIR}/sputnik.h \
            ${DEP_DIR}/util.h \
            ${DEP_DIR}/gmsh.h \
@@ -63,6 +64,7 @@ DEPS_MIC = ${MIC_INC_DIR}/micro.h \
            ${DEP_DIR}/trace.h
 
 MAC_OBJ  = ${MAC_OBJ_DIR}/main.o \
+           $(MAC_OBJ_DIR)/assembly.o \
            $(MAC_OBJ_DIR)/init.o \
            $(MAC_OBJ_DIR)/finalize.o \
            $(SPU_OBJ_DIR)/material.o \
