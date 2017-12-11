@@ -245,7 +245,7 @@ int main(int argc, char **argv){
     VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD );
     VecGhostUpdateEnd  ( x , INSERT_VALUES , SCATTER_FORWARD );
 
-    ierr = assembly_AM();
+    ierr = assembly_AM_petsc();
     if( ierr ){
       myio_printf(&MACRO_COMM,"problem during matrix assembly\n");
       goto end;
@@ -320,15 +320,14 @@ int main(int argc, char **argv){
 
     int * ghost_index = malloc( nghost*dim * sizeof(int) );
 
-    int d;
-    for( i = 0 ; i < nghost ; i++ ){
-      for( d = 0 ; d < dim ; d++ )
+    for(int i = 0 ; i < nghost ; i++ ){
+      for(int d = 0 ; d < dim ; d++ )
 	ghost_index[ i * dim + d ] = loc2petsc[ nmynods + i ] * dim + d;
     }
 
-    VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
-    VecDuplicate( x, &dx );
-    VecDuplicate( x, &b );
+    VecCreateGhost(MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
+    VecDuplicate(x, &dx);
+    VecDuplicate(x, &b);
 
     KSPCreate( MACRO_COMM, &ksp );
     KSPSetFromOptions( ksp );
@@ -340,81 +339,50 @@ int main(int argc, char **argv){
     VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
     VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
 
-    while( params.time < (params.final_time + 1.0e-10) ){
+    while(params.time < (params.final_time + 1.0e-10)){
 
       myio_printf(&MACRO_COMM,"\ntime step %-3d %-e seg\n", params.time_step, params.time);
 
-      update_boundary( params.time , &function_list, &boundary_list );
+      update_boundary(params.time, &function_list, &boundary_list);
 
-      Vec      x_loc,  b_loc;
-      double  *x_arr, *b_arr;
+      Vec x_loc;
+      double *x_arr;
 
-      VecGhostGetLocalForm( x    , &x_loc );
-      VecGetArray(          x_loc, &x_arr );
+      VecGhostGetLocalForm(x, &x_loc);
+      VecGetArray(x_loc, &x_arr);
 
       node_list_t * pn = boundary_list.head;
-      while( pn )
-      {
+      while( pn ){
 	mesh_boundary_t *bou = ( mesh_boundary_t * )pn->data;
 	for( i = 0 ; i < bou->ndirix ; i++ )
 	  x_arr[bou->dir_loc_ixs[i]] = bou->dir_val[i];
 	pn = pn->next;
       }
 
-      VecRestoreArray         ( x_loc, &x_arr );
-      VecGhostRestoreLocalForm( x    , &x_loc );
+      VecRestoreArray(x_loc, &x_arr);
+      VecGhostRestoreLocalForm(x, &x_loc);
 
-      VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
-      VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
+      VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+      VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
-      nr_its = 0; norm = 2 * params.non_linear_min_norm_tol;
-      while( nr_its < params.non_linear_max_its && norm > params.non_linear_min_norm_tol )
-      {
+      nr_its = 0; norm = 2*params.non_linear_min_norm_tol;
+
+      while(nr_its < params.non_linear_max_its && norm > params.non_linear_min_norm_tol){
 
 	myio_printf(&MACRO_COMM, "MACRO: assembling residual\n" );
-	assembly_b();
+	assembly_b_petsc();
 
-	if( flag_neg_detj == 1)
-	  myio_printf(&MACRO_COMM, "MACRO: warning negative jacobian detected\n");
-
-	VecGhostGetLocalForm( b    , &b_loc );
-	VecGetArray         ( b_loc, &b_arr );
-	pn = boundary_list.head;
-	while( pn )
-	{
-	  mesh_boundary_t *bou = ( mesh_boundary_t * )pn->data;
-	  for( i = 0 ; i < bou->ndirix ; i++ )
-	    b_arr[bou->dir_loc_ixs[i]] = 0.0;
-	  pn = pn->next;
-	}
-	VecRestoreArray         ( b_loc, &b_arr );
-	VecGhostRestoreLocalForm( b    , &b_loc );
-	VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
-	VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
-
-	VecNorm( b, NORM_2, &norm );
-	VecScale( b, -1.0 );
+	VecNorm(b, NORM_2, &norm);
 
 	myio_printf(&MACRO_COMM,"MACRO: |b| = %e\n", norm );
-
-	if( norm < params.non_linear_min_norm_tol ) break;
+	if(norm < params.non_linear_min_norm_tol) break;
 
 	myio_printf(&MACRO_COMM, "MACRO: assembling jacobian\n");
-	assembly_A();
-
-	node_list_t *pn = boundary_list.head;
-	while( pn )
-	{
-	  mesh_boundary_t * bou = (mesh_boundary_t * )pn->data;
-	  MatZeroRowsColumns( A, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL );
-	  pn = pn->next;
-	}
-	MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
-	MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
+	assembly_A_petsc();
 
 	myio_printf(&MACRO_COMM, "MACRO: solving system\n" );
-	KSPSetOperators( ksp, A, A );
-	KSPSolve( ksp, b, dx );
+	KSPSetOperators(ksp, A, A);
+	KSPSolve(ksp, b, dx);
 	print_ksp_info( MACRO_COMM, ksp);
 	myio_printf(&MACRO_COMM, "\n");
 
@@ -433,8 +401,7 @@ int main(int argc, char **argv){
 	PetscViewerASCIIOpen(MACRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
       }
 
-      if( flag_print & (1<<PRINT_VTU) )
-      { 
+      if(flag_print & (1<<PRINT_VTU)){ 
 	get_elem_properties();
 	sprintf( filename, "macro_t_%d", params.time_step );
 	macro_pvtu( filename );
@@ -527,19 +494,17 @@ end:
 }
 
 
-int read_bc()
-{
+int read_bc(){
 
-  int        *ix, i, d, da, n;
-  int         ierr;
   mesh_boundary_t    *bou;
 
   node_list_t *pn = boundary_list.head;
   while( pn )
   {
-    bou = ( mesh_boundary_t * )pn->data;
-    ierr = gmsh_get_node_index( mesh_n, bou->name, nmynods, mynods, dim, &n, &ix );
-    if( ierr ){
+    int *ix, n;
+    bou = (mesh_boundary_t *)pn->data;
+    int ierr = gmsh_get_node_index(mesh_n, bou->name, nmynods, mynods, dim, &n, &ix);
+    if(ierr){
       myio_printf(&MACRO_COMM, "problem finding nodes of boundary %s on msh file\n", bou->name );
       return 1;
     }
@@ -548,10 +513,10 @@ int read_bc()
     bou->dir_val     = malloc( bou->ndirix * sizeof(double));
     bou->dir_loc_ixs = malloc( bou->ndirix * sizeof(int));
     bou->dir_glo_ixs = malloc( bou->ndirix * sizeof(int));
-    for( i = 0 ; i < n ; i++ ){
-      da = 0;
+    for(int i = 0 ; i < n ; i++ ){
+      int da = 0;
       int * p = bsearch( &ix[i], mynods, nmynods, sizeof(int), cmpfunc );
-      for( d = 0 ; d < dim ; d++ )
+      for(int d = 0 ; d < dim ; d++ )
 	if( bou->kind & (1<<d) ) {
 	  bou->dir_loc_ixs[i* (bou->ndirpn) + da] = (p - mynods) * dim + d;
 	  bou->dir_glo_ixs[i* (bou->ndirpn) + da] = loc2petsc[(p - mynods)] * dim + d;
@@ -566,8 +531,7 @@ int read_bc()
 }
 
 
-int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord )
-{
+int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord ){
 
   (*coord) = malloc( ( nmynods + nghost )*dim * sizeof(double));
 
@@ -577,74 +541,86 @@ int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost,
 }
 
 
-int assembly_b( void )
-{
-  int      npe, ngp;
-  int      e, gp, i, j;
+int assembly_b_petsc(void){
+
   double  *wp;
 
   double  *b_arr;
   Vec      b_loc;
 
-  VecGhostGetLocalForm( b    , &b_loc );
-  VecGetArray         ( b_loc, &b_arr );
+  VecGhostGetLocalForm(b, &b_loc);
+  VecGetArray(b_loc, &b_arr);
 
-  for( i = 0 ; i < nallnods*dim ; i++ )
-    b_arr[i] = 0.0;
+  ARRAY_SET_TO_ZERO(b_arr,nallnods*dim)
 
-  for( e = 0 ; e < nelm ; e++ )
-  {
+  for(int e = 0 ; e < nelm ; e++){
+
     get_local_elem_index( e, loc_elem_index );
-    ngp = npe = eptr[e+1] - eptr[e];
+    int npe = eptr[e+1] - eptr[e];
+    int ngp = npe;
 
-    for( i = 0 ; i < npe*dim ; i++ )
-      res_elem[i] = 0.0;
+    ARRAY_SET_TO_ZERO(res_elem, npe*dim)
 
     get_dsh( e, loc_elem_index, dsh, detj);
     get_bmat( e, dsh, bmat );
     get_wp( dim, npe, &wp );
 
-    for( gp = 0; gp < ngp ; gp++ ){
+    for(int gp = 0; gp < ngp ; gp++ ){
 
       if( detj[gp] < 0.0 ) flag_neg_detj = 1;
       detj[gp] = fabs( detj[gp] );
 
-      /* calc strain at gp */
-      get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
+      get_strain(e, gp, loc_elem_index, dsh, bmat, strain_gp);
+      get_stress(e, gp, strain_gp, stress_gp);
 
-      /* calc stress at gp */
-      get_stress( e , gp, strain_gp, stress_gp );
-
-      for( i = 0 ; i < npe*dim ; i++ ){
-	for( j = 0; j < nvoi ; j++ )
+      for(int i = 0 ; i < npe*dim ; i++){
+	for(int j = 0; j < nvoi ; j++)
 	  res_elem[i] += bmat[j][i][gp] * stress_gp[j] * wp[gp] * detj[gp];
       }
     }
 
-    for( i = 0 ; i < ( npe * dim ) ; i++ )
+    for(int i = 0 ; i < ( npe * dim ) ; i++)
       b_arr[ loc_elem_index[i] ] += res_elem[i];
 
   }
 
-  VecRestoreArray         ( b_loc , &b_arr );
-  VecGhostRestoreLocalForm( b     , &b_loc );
+  VecRestoreArray(b_loc, &b_arr);
+  VecGhostRestoreLocalForm(b, &b_loc);
 
-  VecGhostUpdateBegin( b, ADD_VALUES   , SCATTER_REVERSE );
-  VecGhostUpdateEnd  ( b, ADD_VALUES   , SCATTER_REVERSE );
-  VecGhostUpdateBegin( b, INSERT_VALUES, SCATTER_FORWARD );
-  VecGhostUpdateEnd  ( b, INSERT_VALUES, SCATTER_FORWARD );
+  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateBegin(b, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(b, INSERT_VALUES, SCATTER_FORWARD);
+
+  if(flag_neg_detj == 1)
+    myio_printf(&MACRO_COMM, "MACRO: warning negative jacobian detected\n");
+
+  VecGhostGetLocalForm(b, &b_loc);
+  VecGetArray(b_loc, &b_arr);
+
+  node_list_t *pn = boundary_list.head;
+  while(pn){
+    mesh_boundary_t *bou = (mesh_boundary_t *)pn->data;
+    for(int i = 0 ; i < bou->ndirix ; i++)
+      b_arr[bou->dir_loc_ixs[i]] = 0.0;
+    pn = pn->next;
+  }
+
+  VecRestoreArray(b_loc, &b_arr);
+  VecGhostRestoreLocalForm(b, &b_loc);
+  VecGhostUpdateBegin(b, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(b, INSERT_VALUES, SCATTER_FORWARD);
+  VecScale(b, -1.0);
 
   return 0;
 }
 
 
-int assembly_AM( void )
-{
+int assembly_AM_petsc(void){
 
   MatZeroEntries(A);
   MatZeroEntries(M);
 
-  int       e, gp;
   int       i, j, d, k, h;
   int       npe, ngp;
   int       ierr;
@@ -652,8 +628,8 @@ int assembly_AM( void )
   double  **sh;
   double   *wp;
 
-  for( e = 0 ; e < nelm ; e++ )
-  {
+  for(int e = 0 ; e < nelm ; e++ ){
+
     ngp = npe = eptr[e+1] - eptr[e];
 
     for( i = 0 ; i < npe*dim*npe*dim ; i++ ){
@@ -669,7 +645,7 @@ int assembly_AM( void )
     get_bmat( e, dsh, bmat );
     get_wp( dim, npe, &wp );
 
-    for( gp = 0; gp < ngp ; gp++ ){
+    for(int gp = 0; gp < ngp ; gp++ ){
 
       detj[gp] = fabs( detj[gp] );
 
@@ -711,8 +687,7 @@ int assembly_AM( void )
 }
 
 
-int assembly_A( void )
-{
+int assembly_A_petsc( void ){
 
   MatZeroEntries(A);
 
@@ -759,15 +734,23 @@ int assembly_A( void )
 
   }
 
-  MatAssemblyBegin( A , MAT_FINAL_ASSEMBLY );
-  MatAssemblyEnd  ( A , MAT_FINAL_ASSEMBLY );
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+
+  node_list_t *pn = boundary_list.head;
+  while(pn){
+    mesh_boundary_t *bou = (mesh_boundary_t *)pn->data;
+    MatZeroRowsColumns(A, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL);
+    pn = pn->next;
+  }
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
   return 0;
 }
 
 
-int get_strain( int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat, double *strain_gp )
-{
+int get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat, double *strain_gp){
 
   double  *x_arr; 
   Vec      x_loc; 
