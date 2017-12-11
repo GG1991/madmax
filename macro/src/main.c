@@ -29,8 +29,10 @@ int main(int argc, char **argv){
   MPI_Comm_size( WORLD_COMM, &nproc_wor );
   MPI_Comm_rank( WORLD_COMM, &rank_wor );
 
+  init_variables(&params, &message);
+
   myio_comm_line_search_option(&command_line, "-coupl", &found);
-  if(found) params.flag_coupling = true;
+  if(found == true) params.flag_coupling = true;
 
   macmic.type = COUP_1;
   color = COLOR_MACRO;
@@ -52,7 +54,6 @@ int main(int argc, char **argv){
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
       "--------------------------------------------------\n");
 
-  init_variables(&params, &message);
   myio_comm_line_search_option(&command_line, "-normal", &found);
 
   if(found){
@@ -386,15 +387,15 @@ int main(int argc, char **argv){
 	print_ksp_info( MACRO_COMM, ksp);
 	myio_printf(&MACRO_COMM, "\n");
 
-	VecAXPY( x, 1.0, dx );
-	VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
-	VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
+	VecAXPY(x, 1.0, dx);
+	VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+	VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
 	nr_its ++;
       }
 
       if(flag_print & (1<<PRINT_PETSC)){
-	PetscViewer  viewer;
+	PetscViewer viewer;
 	PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
 	PetscViewerASCIIOpen(MACRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
 	PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
@@ -461,7 +462,7 @@ int main(int argc, char **argv){
 end:
 
   if(params.flag_coupling){
-    ierr = mac_send_signal(WORLD_COMM, MIC_END);
+    ierr = mac_send_signal(WORLD_COMM, ACTION_MICRO_END);
     if(ierr){
       myio_printf(&PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
       return 1;

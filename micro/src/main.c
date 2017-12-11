@@ -162,9 +162,9 @@ int main(int argc, char **argv){
 
   loc_elem_index = malloc(dim*npe*sizeof(int));
   glo_elem_index = malloc(dim*npe*sizeof(int));
-  elem_disp      = malloc(dim*npe*sizeof(double));
-  stress_gp      = malloc(nvoi*sizeof(double));
-  strain_gp      = malloc(nvoi*sizeof(double));
+  elem_disp = malloc(dim*npe*sizeof(double));
+  stress_gp = malloc(nvoi*sizeof(double));
+  strain_gp = malloc(nvoi*sizeof(double));
   if( flag_print & ( 1 << PRINT_VTU ) ){
     elem_strain = malloc(nelm*nvoi*sizeof(double));
     elem_stress = malloc(nelm*nvoi*sizeof(double));
@@ -252,7 +252,8 @@ int main(int argc, char **argv){
 
       }
 
-      ierr = comm_micro_send(&message);
+      if(message.action != ACTION_MICRO_END)
+	ierr = comm_micro_send(&message);
     }
   }
   else{
@@ -315,10 +316,10 @@ int main(int argc, char **argv){
 
   free(loc_elem_index); 
   free(glo_elem_index); 
-  free(elem_disp     ); 
-  free(stress_gp     ); 
-  free(strain_gp     ); 
-  if( flag_print & ( 1 << PRINT_VTU ) ){
+  free(elem_disp);
+  free(stress_gp);
+  free(strain_gp);
+  if(flag_print & (1 << PRINT_VTU)){
     free(elem_strain); 
     free(elem_stress); 
     free(elem_energy); 
@@ -332,7 +333,7 @@ int main(int argc, char **argv){
   }
   free(struct_bmat);
 
-  end_trace( MICRO_COMM );
+  end_trace(MICRO_COMM);
 
   PRINTF1("--------------------------------------------------\n"
       "  MICRO: FINISH COMPLETE\n"
