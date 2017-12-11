@@ -545,20 +545,19 @@ int get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double **
 
   double  *x_arr; 
   Vec      x_loc; 
-  VecGhostGetLocalForm( x    , &x_loc );
-  VecGetArray         ( x_loc, &x_arr );
+  VecGhostGetLocalForm(x, &x_loc);
+  VecGetArray(x_loc, &x_arr);
 
-  int  i , v;
   int  npe = eptr[e+1] - eptr[e];
-  for( i = 0 ; i < ( npe * dim ) ; i++ )
-    elem_disp[i] = x_arr[ loc_elem_index[i] ];
+  for(int i = 0 ; i < npe*dim ; i++)
+    elem_disp[i] = x_arr[loc_elem_index[i]];
 
-  VecRestoreArray         ( x_loc , &x_arr);
-  VecGhostRestoreLocalForm( x     , &x_loc);
+  VecRestoreArray(x_loc , &x_arr);
+  VecGhostRestoreLocalForm(x, &x_loc);
 
-  for( v = 0; v < nvoi ; v++ ){
+  for(int v = 0; v < nvoi ; v++ ){
     strain_gp[v] = 0.0;
-    for( i = 0 ; i < npe*dim ; i++ )
+    for(int i = 0 ; i < npe*dim ; i++ )
       strain_gp[v] += bmat[v][i][gp] * elem_disp[i];
     strain_gp[v] = ( fabs(strain_gp[v]) < 1.0e-6 ) ? 0.0 : strain_gp[v];
   }

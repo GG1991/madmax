@@ -1,5 +1,5 @@
 lc=1.5;
-N = 2;
+N = 10;
 
 Point(1) = {-lc,-lc,-lc,0.1};
 Point(2) = {lc,-lc,-lc,0.1};
