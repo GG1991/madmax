@@ -9,7 +9,7 @@ lx   = 1.5;
 ly   = 1.5;
 r    = 0.75;
 Nc   = 3;
-Next = 3*Nc;
+Next = 2*Nc;
 Nint = Nc;
 sin45=0.707106781;
 
