@@ -1,9 +1,3 @@
-/*
-   functions for reading thing from gmsh file
-
-   Author: Guido Giuntoli
-   Date  : 09 - 11 - 17
-*/
 #include "gmsh.h"
 
 int gmsh_get_node_index( const char * mesh_n, const char * bou_name, int nmynods, int *mynods, int dim, int * n, int ** ix )
@@ -21,7 +15,6 @@ int gmsh_get_node_index( const char * mesh_n, const char * bou_name, int nmynods
 
   list_init( &nod_list, sizeof(int), &gmsh_funcmp_int_a );
 
-  /* searchs in the physical entities the "id" */
   id_s = gmsh_which_id( mesh_n, bou_name ); if( id_s < 0 ) return 1;
 
   while( fgets( buf, NBUF_GMSH, fm ) != NULL ){
@@ -49,7 +42,6 @@ int gmsh_get_node_index( const char * mesh_n, const char * bou_name, int nmynods
 
 	if( id == id_s ){
 
-	  // salteamos los tags y nos vamos derecho para los nodos
 	  d = 1;
 	  while( d < ntag ){
 	    data = strtok(NULL," \n");
@@ -86,12 +78,10 @@ int gmsh_get_node_index( const char * mesh_n, const char * bou_name, int nmynods
   return 1;
 }
 
-/****************************************************************************************************/
 
 int gmsh_which_id( const char * mesh_n, const char * name )
 {
 
-  /* returns the "id" of a physical entity with name "name" */
 
   FILE         *fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
   int          id;
@@ -129,7 +119,6 @@ int gmsh_which_id( const char * mesh_n, const char * name )
   return -1;
 }
 
-/****************************************************************************************************/
 
 int gmsh_get_physical_list( char *mesh_n, list_t *physical_list )
 {
@@ -171,7 +160,6 @@ int gmsh_get_physical_list( char *mesh_n, list_t *physical_list )
   return 0;
 }
 
-/****************************************************************************************************/
 
 int gmsh_read_coord_parall( char *mesh_n, int dim, int nmynods, int *mynods, int nghost , int *ghost, double *coord )
 {
@@ -199,7 +187,6 @@ int gmsh_read_coord_parall( char *mesh_n, int dim, int nmynods, int *mynods, int
       data  = strtok(buf," \n");
       ntotnod = atoi(data);
 
-      /* start with local nodes */
       i = c = 0;
       while( c < nmynods ){
 	while( i< mynods[c] ){
@@ -222,7 +209,6 @@ int gmsh_read_coord_parall( char *mesh_n, int dim, int nmynods, int *mynods, int
     ln ++;
   }
 
-  /* continue with ghost nodes */
   fseek( fm, offset, SEEK_SET);
   i = c = 0;
   while( c < nghost ){
@@ -245,7 +231,6 @@ int gmsh_read_coord_parall( char *mesh_n, int dim, int nmynods, int *mynods, int
   return 0;
 }
 
-/****************************************************************************************************/
 
 int  gmsh_funcmp_int_a(void *a, void *b){
      if( *(int*)a > *(int*)b ) return  1;
@@ -253,7 +238,6 @@ int  gmsh_funcmp_int_a(void *a, void *b){
      return 0;
 }
 
-/****************************************************************************************************/
 
 int  gmsh_funcmp_int_b(const void *a, const void *b){
      if( *(int*)a > *(int*)b ) return  1;
@@ -261,11 +245,9 @@ int  gmsh_funcmp_int_b(const void *a, const void *b){
      return 0;
 }
 
-/****************************************************************************************************/
 
 int gmsh_is_surf( int code , int dim )
 {
-  // returns 1 if the code corresponds to a surface element, 0 othewhise
   if(dim == 2)
     return (code == 1 || code == 15) ? 1 : 0;
   else if(dim == 3)
@@ -273,7 +255,6 @@ int gmsh_is_surf( int code , int dim )
   return 1;
 }
 
-/****************************************************************************************************/
 
 int gmsh_npe(int code)
 {
@@ -296,5 +277,3 @@ int gmsh_npe(int code)
 	    return -1;
     }
 }
-
-/****************************************************************************************************/

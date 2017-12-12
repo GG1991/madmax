@@ -1,7 +1,3 @@
-/* 
-   gmsh functions for reading thing grom file
- */
-
 #ifndef GMSH_H
 #define GMSH_H
 
