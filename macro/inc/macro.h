@@ -76,12 +76,20 @@ typedef struct{
   int time_step;
 
   double energy_stored;
-
-  bool flag_coupling;
+  int non_linear_its;
+  double residual_norm;
 
 }params_t;
 
+typedef struct{
+
+  bool coupled;
+  bool allocated;
+
+}flags_t;
+
 extern params_t params;
+extern flags_t flags;
 
 list_t boundary_list;
 list_t physical_list;
@@ -108,5 +116,7 @@ int update_boundary(double t, list_t *function_list, list_t *boundary_list);
 int read_coord(char *mesh_n, int nmynods, int *mynods, int nghost, int *ghost, double **coord);
 void init_variables(params_t *params, message_t *message);
 void finalize(void);
+
+int alloc_memory(void);
 
 #endif

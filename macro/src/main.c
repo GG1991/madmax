@@ -10,6 +10,7 @@ static char help[] =
 "-print_vtu   : prints solutions on .vtu and .pvtu files                                           \n";
 
 params_t params;
+flags_t flags;
 
 #define CHECK_AND_GOTO(error){if(error){myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
 #define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
@@ -32,11 +33,11 @@ int main(int argc, char **argv){
   init_variables(&params, &message);
 
   myio_comm_line_search_option(&command_line, "-coupl", &found);
-  if(found == true) params.flag_coupling = true;
+  if(found == true) flags.coupled = true;
 
   macmic.type = COUP_1;
   color = COLOR_MACRO;
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM, params.flag_coupling); CHECK_AND_GOTO(ierr);
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM, flags.coupled); CHECK_AND_GOTO(ierr);
 
   MPI_Comm_size(MACRO_COMM, &nproc_mac);
   MPI_Comm_rank(MACRO_COMM, &rank_mac);
@@ -150,6 +151,8 @@ int main(int argc, char **argv){
   x   = NULL;
   dx  = NULL;
 
+  alloc_memory();
+
   int ixpe = npe_max * dim;
   loc_elem_index = malloc( ixpe * sizeof(int));
   glo_elem_index = malloc( ixpe * sizeof(int));
@@ -197,81 +200,27 @@ int main(int argc, char **argv){
 
   ierr = fem_inigau();
 
-  int      nr_its = -1;
-  double   norm = -1.0;
-  double   limit[6];
 
+  double   limit[6];
   ierr = get_bbox_local_limits(coord, nallnods, &limit[0], &limit[2], &limit[4]);
-  myio_printf(&MACRO_COMM,"Limit = ");
-  for( i = 0 ; i < nvoi ; i++ )
-    myio_printf(&MACRO_COMM,"%lf ", limit[i]);
-  myio_printf(&MACRO_COMM,"\n");
 
   if(params.calc_mode == CALC_MODE_EIGEN){
 
-    EPS     eps;
-    int     nnz = ( dim == 2 ) ? dim*9 : dim*27;
+    EPS eps;
 
-    MatCreate( MACRO_COMM, &A );
-    MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
-    MatSetType( A, MATAIJ );
-    MatSeqAIJSetPreallocation( A, nnz, NULL );
-    MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );
-    MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
-    MatSetUp( A );
-    MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
-    MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
+    VecZeroEntries(x);
 
-    MatCreate( MACRO_COMM, &M );
-    MatSetSizes( M, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
-    MatSetType( M, MATAIJ );
-    MatSeqAIJSetPreallocation( M, nnz, NULL );
-    MatMPIAIJSetPreallocation( M, nnz, NULL, nnz, NULL );
-    MatSetOption( M, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
-    MatSetUp( M );
-    MatAssemblyBegin( M, MAT_FINAL_ASSEMBLY );
-    MatAssemblyEnd  ( M, MAT_FINAL_ASSEMBLY );
-
-    int *ghost_index = malloc( nghost*dim *sizeof(int) );
-
-    int d;
-    for( i = 0 ; i < nghost ; i++ ){
-      for( d = 0 ; d < dim ; d++ )
-	ghost_index[ i * dim + d ] = loc2petsc[ nmynods + i ] * dim + d;
-    }
-
-    VecCreateGhost( MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
-    VecZeroEntries( x );
-
-    VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD );
-    VecGhostUpdateEnd  ( x , INSERT_VALUES , SCATTER_FORWARD );
+    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
     ierr = assembly_AM_petsc();
-    if( ierr ){
+    if(ierr != 0){
       myio_printf(&MACRO_COMM,"problem during matrix assembly\n");
       goto end;
     }
 
-    node_list_t *pn = boundary_list.head;
-    while( pn )
-    {
-      mesh_boundary_t * bou = (mesh_boundary_t * )pn->data;
-      MatZeroRowsColumns( M, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL );
-      MatZeroRowsColumns( A, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL );
-      pn = pn->next;
-    }
-    MatAssemblyBegin( M, MAT_FINAL_ASSEMBLY );
-    MatAssemblyEnd  ( M, MAT_FINAL_ASSEMBLY );
-    MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
-    MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
 
-    if(flag_print & ( 1<<PRINT_PETSC )){
-      PetscViewer  viewer;
-      PetscViewerASCIIOpen(MACRO_COMM,"M.dat" ,&viewer); MatView(M ,viewer);
-      PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
-    }
-
-    int    nconv;
+    int nconv;
     double error;
 
     EPSCreate(MACRO_COMM, &eps);
@@ -286,14 +235,13 @@ int main(int argc, char **argv){
     EPSGetConverged(eps, &nconv);
     myio_printf(&MACRO_COMM,"Number of converged eigenpairs: %d\n",nconv);
 
-    for( i=0 ; i<params.num_eigen_vals ; i++ ){
+    for(int i = 0 ; i < params.num_eigen_vals ; i++){
 
       EPSGetEigenpair( eps, i, &params.eigen_vals[i], NULL, x, NULL );
       EPSComputeError( eps, i, EPS_ERROR_RELATIVE, &error );
       myio_printf(&MACRO_COMM, "omega %d = %e   error = %e\n", i, params.eigen_vals[i], error);
 
-      if(flag_print & (1<<PRINT_VTU))
-      { 
+      if(flag_print & (1<<PRINT_VTU)){ 
 	get_elem_properties();
 	sprintf( filename, "macro_eigen_%d", i);
 	macro_pvtu( filename );
@@ -306,29 +254,7 @@ int main(int argc, char **argv){
   }
   else if(params.calc_mode == CALC_MODE_NORMAL){
 
-    int     nnz = ( dim == 2 ) ? dim*9 : dim*27;
-    KSP     ksp;
-
-    MatCreate( MACRO_COMM, &A );
-    MatSetSizes( A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod );
-    MatSetType( A, MATAIJ );
-    MatSeqAIJSetPreallocation( A, nnz, NULL );
-    MatMPIAIJSetPreallocation( A, nnz, NULL, nnz, NULL );
-    MatSetOption( A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE );
-    MatSetUp( A );
-    MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY );
-    MatAssemblyEnd  ( A, MAT_FINAL_ASSEMBLY );
-
-    int * ghost_index = malloc( nghost*dim * sizeof(int) );
-
-    for(int i = 0 ; i < nghost ; i++ ){
-      for(int d = 0 ; d < dim ; d++ )
-	ghost_index[ i * dim + d ] = loc2petsc[ nmynods + i ] * dim + d;
-    }
-
-    VecCreateGhost(MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x );
-    VecDuplicate(x, &dx);
-    VecDuplicate(x, &b);
+    KSP ksp;
 
     KSPCreate( MACRO_COMM, &ksp );
     KSPSetFromOptions( ksp );
@@ -366,17 +292,17 @@ int main(int argc, char **argv){
       VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
       VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
-      nr_its = 0; norm = 2*params.non_linear_min_norm_tol;
+      params.non_linear_its = 0; params.residual_norm = 2*params.non_linear_min_norm_tol;
 
-      while(nr_its < params.non_linear_max_its && norm > params.non_linear_min_norm_tol){
+      while(params.non_linear_its < params.non_linear_max_its && params.residual_norm > params.non_linear_min_norm_tol){
 
 	myio_printf(&MACRO_COMM, "MACRO: assembling residual\n" );
 	assembly_b_petsc();
 
-	VecNorm(b, NORM_2, &norm);
+	VecNorm(b, NORM_2, &params.residual_norm);
 
-	myio_printf(&MACRO_COMM,"MACRO: |b| = %e\n", norm );
-	if(norm < params.non_linear_min_norm_tol) break;
+	myio_printf(&MACRO_COMM,"MACRO: |b| = %e\n", params.residual_norm );
+	if(params.residual_norm < params.non_linear_min_norm_tol) break;
 
 	myio_printf(&MACRO_COMM, "MACRO: assembling jacobian\n");
 	assembly_A_petsc();
@@ -391,15 +317,15 @@ int main(int argc, char **argv){
 	VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
 	VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
-	nr_its ++;
+	params.non_linear_its ++;
       }
 
       if(flag_print & (1<<PRINT_PETSC)){
 	PetscViewer viewer;
-	PetscViewerASCIIOpen(MACRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
-	PetscViewerASCIIOpen(MACRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
-	PetscViewerASCIIOpen(MACRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
-	PetscViewerASCIIOpen(MACRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
+	PetscViewerASCIIOpen(MACRO_COMM, "A.dat", &viewer); MatView(A ,viewer);
+	PetscViewerASCIIOpen(MACRO_COMM, "b.dat", &viewer); VecView(b ,viewer);
+	PetscViewerASCIIOpen(MACRO_COMM, "dx.dat", &viewer); VecView(dx,viewer);
+	PetscViewerASCIIOpen(MACRO_COMM, "x.dat", &viewer); VecView(x ,viewer);
       }
 
       if(flag_print & (1<<PRINT_VTU)){ 
@@ -461,7 +387,7 @@ int main(int argc, char **argv){
 
 end:
 
-  if(params.flag_coupling){
+  if(flags.coupled){
     ierr = mac_send_signal(WORLD_COMM, ACTION_MICRO_END);
     if(ierr){
       myio_printf(&PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");

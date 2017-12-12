@@ -9,6 +9,7 @@
 #define PARMETIS_KWAY       3
 #define PARMETIS_MESHKWAY   4
 
+#define MAX_ADJ_NODES 30
 #define MAX_NUM_OF_BOUNDARIES 4
 
 int      *elmdist;     // number of elements in each procesor
@@ -29,8 +30,8 @@ double   *coord;       // nodes' coordinates
 int      *loc2petsc;   // array of size <nmynods> + <nghost>
                        // returns the position in PETSc matrix & vectors
 
-typedef struct mesh_boundary_t_
-{
+typedef struct{
+
   char     *name;
   int       kind;                // boundary kind ( xxx -> to decimal )
   int      *fnum;                // funtion numbers to evaluate
@@ -44,8 +45,8 @@ typedef struct mesh_boundary_t_
 
 }mesh_boundary_t;
 
-typedef struct mesh_t_
-{
+typedef struct{
+
   int dim;
   int n_elem_local;
   int n_elem_total;
@@ -56,6 +57,7 @@ typedef struct mesh_t_
   int *local_ghost_nodes;
   double *coord;
   list_t boundary_list;
+
 }mesh_t;
 
 mesh_t mesh;

@@ -12,7 +12,7 @@ void init_variables(params_t *params, message_t *message){
   params->time_step = 0.0;
   params->energy_stored = 1.0;
 
-  params->flag_coupling = false;
+  flags.allocated = false;
 
   comm_init_message(message);
 

@@ -82,10 +82,10 @@ int assembly_AM_petsc(void){
   MatZeroEntries(A);
   MatZeroEntries(M);
 
-  int       ierr;
-  double    rho_gp;
-  double  **sh;
-  double   *wp;
+  int ierr;
+  double rho_gp;
+  double **sh;
+  double *wp;
 
   for(int e = 0 ; e < nelm ; e++ ){
 
@@ -138,6 +138,24 @@ int assembly_AM_petsc(void){
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(M, MAT_FINAL_ASSEMBLY);
+
+  node_list_t *pn = boundary_list.head;
+  while(pn){
+    mesh_boundary_t * bou = (mesh_boundary_t * )pn->data;
+    MatZeroRowsColumns(M, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL);
+    MatZeroRowsColumns(A, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL);
+    pn = pn->next;
+  }
+  MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(M, MAT_FINAL_ASSEMBLY);
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+
+  if(flag_print & ( 1<<PRINT_PETSC )){
+    PetscViewer viewer;
+    PetscViewerASCIIOpen(MACRO_COMM, "M.dat", &viewer); MatView(M, viewer);
+    PetscViewerASCIIOpen(MACRO_COMM, "A.dat", &viewer); MatView(A, viewer);
+  }
 
   return 0;
 }
