@@ -43,6 +43,7 @@ DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
 DEPS_MAC = ${MAC_INC_DIR}/macro.h \
 	   ${MAC_INC_DIR}/assembly.h \
            ${DEP_DIR}/sputnik.h \
+           ${DEP_DIR}/solvers.h \
            ${DEP_DIR}/util.h \
            ${DEP_DIR}/gmsh.h \
            ${DEP_DIR}/comm.h \
