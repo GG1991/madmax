@@ -12,6 +12,8 @@ void init_variables(void){
   params.ts = 0;
   params.energy_stored = 1.0;
 
+  solver.type = SOLVER_PETSC;
+
   flags.allocated = false;
 
   A = NULL;

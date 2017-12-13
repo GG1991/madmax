@@ -4,47 +4,60 @@ int alloc_memory(void){
 
   int ierr;
 
-  if(params.calc_mode == CALC_MODE_EIGEN || params.calc_mode == CALC_MODE_NORMAL){
+  if(solver.type == SOLVER_PETSC){
 
-    int nnz = dim * MAX_ADJ_NODES;
+#ifdef SLEPC
+    PETSC_COMM_WORLD = MACRO_COMM;
+    SlepcInitialize(&command_line.argc, &command_line.argv, (char*)0, NULL);
+#elif  PETSC
+    PETSC_COMM_WORLD = MACRO_COMM;
+    PetscInitialize(&command_line.argc, &command_line.argv, (char*)0, NULL);
+#else
+    return 1;
+#endif
 
-    ierr = MatCreate(MACRO_COMM, &A);
-    ierr = MatSetSizes(A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod);
-    ierr = MatSetType(A, MATAIJ);
-    ierr = MatSeqAIJSetPreallocation(A, nnz, NULL);
-    ierr = MatMPIAIJSetPreallocation(A, nnz, NULL, nnz, NULL );
-    ierr = MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
-    ierr = MatSetUp(A);
-    ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-    ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+    if(params.calc_mode == CALC_MODE_EIGEN || params.calc_mode == CALC_MODE_NORMAL){
 
-    int *ghost_index = malloc(nghost*dim*sizeof(int));
+      int nnz = dim * MAX_ADJ_NODES;
 
-    for(int i = 0 ; i < nghost ; i++){
-      for(int d = 0 ; d < dim ; d++)
-	ghost_index[i*dim + d] = loc2petsc[nmynods + i]*dim + d;
-    }
+      ierr = MatCreate(MACRO_COMM, &A);
+      ierr = MatSetSizes(A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod);
+      ierr = MatSetType(A, MATAIJ);
+      ierr = MatSeqAIJSetPreallocation(A, nnz, NULL);
+      ierr = MatMPIAIJSetPreallocation(A, nnz, NULL, nnz, NULL );
+      ierr = MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+      ierr = MatSetUp(A);
+      ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+      ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
-    ierr = VecCreateGhost(MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x);
+      int *ghost_index = malloc(nghost*dim*sizeof(int));
 
-    if(params.calc_mode == CALC_MODE_EIGEN){
+      for(int i = 0 ; i < nghost ; i++){
+	for(int d = 0 ; d < dim ; d++)
+	  ghost_index[i*dim + d] = loc2petsc[nmynods + i]*dim + d;
+      }
 
-      ierr = MatCreate(MACRO_COMM, &M);
-      ierr = MatSetSizes(M, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod);
-      ierr = MatSetType(M, MATAIJ);
-      ierr = MatSeqAIJSetPreallocation(M, nnz, NULL);
-      ierr = MatMPIAIJSetPreallocation(M, nnz, NULL, nnz, NULL);
-      ierr = MatSetOption(M, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
-      ierr = MatSetUp(M);
-      ierr = MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);
-      ierr = MatAssemblyEnd(M, MAT_FINAL_ASSEMBLY);
+      ierr = VecCreateGhost(MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x);
 
-    }
-    else if(params.calc_mode == CALC_MODE_NORMAL){
+      if(params.calc_mode == CALC_MODE_EIGEN){
 
-      ierr = VecDuplicate(x, &dx);
-      ierr = VecDuplicate(x, &b);
+	ierr = MatCreate(MACRO_COMM, &M);
+	ierr = MatSetSizes(M, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod);
+	ierr = MatSetType(M, MATAIJ);
+	ierr = MatSeqAIJSetPreallocation(M, nnz, NULL);
+	ierr = MatMPIAIJSetPreallocation(M, nnz, NULL, nnz, NULL);
+	ierr = MatSetOption(M, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+	ierr = MatSetUp(M);
+	ierr = MatAssemblyBegin(M, MAT_FINAL_ASSEMBLY);
+	ierr = MatAssemblyEnd(M, MAT_FINAL_ASSEMBLY);
 
+      }
+      else if(params.calc_mode == CALC_MODE_NORMAL){
+
+	ierr = VecDuplicate(x, &dx);
+	ierr = VecDuplicate(x, &b);
+
+      }
     }
   }
 

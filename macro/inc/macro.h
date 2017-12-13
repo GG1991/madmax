@@ -9,7 +9,7 @@
 #include "vtk.h"
 #include "myio.h"
 #include "mesh.h"
-#include <string.h>
+#include "solvers.h"
 
 #define CALC_MODE_NULL   0
 #define CALC_MODE_NORMAL 1

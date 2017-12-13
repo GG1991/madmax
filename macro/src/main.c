@@ -11,6 +11,7 @@ static char help[] =
 
 params_t params;
 flags_t flags;
+solver_t solver;
 
 #define CHECK_AND_GOTO(error){if(error){myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
 #define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
@@ -43,18 +44,15 @@ int main(int argc, char **argv){
   MPI_Comm_size(MACRO_COMM, &nproc_mac);
   MPI_Comm_rank(MACRO_COMM, &rank_mac);
 
-  PETSC_COMM_WORLD = MACRO_COMM;
-
-#ifdef SLEPC
-  SlepcInitialize(&argc,&argv,(char*)0,help);
-#elif  PETSC
-  PetscInitialize(&argc,&argv,(char*)0,help);
-#endif
-
   myio_printf(&MACRO_COMM,
       "--------------------------------------------------\n"
       "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
       "--------------------------------------------------\n");
+
+  myio_comm_line_search_option(&command_line, "-help", &found);
+  if(found == true){
+    myio_printf(&MACRO_COMM, "%s", help);
+  }
 
   myio_comm_line_search_option(&command_line, "-normal", &found);
   if(found == true){

@@ -87,9 +87,6 @@ Vec x, b;
 Vec dx;
 KSP ksp;
 
-#define PETSC_SOLVER 0
-#define ELLPACK_JACOBI 1
-
 typedef struct{
 
   int homog_method;
@@ -97,7 +94,6 @@ typedef struct{
   double non_linear_min_norm_tol;
   double c_tangent_linear[MAX_NVOIGT*MAX_NVOIGT];
   double c_tangent[MAX_NVOIGT*MAX_NVOIGT];
-  int solver;
 
 }params_t;
 
