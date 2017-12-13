@@ -48,6 +48,46 @@ int alloc_memory(void){
     }
   }
 
+  loc_elem_index = malloc(npe_max*dim*sizeof(int));
+  glo_elem_index = malloc(npe_max*dim*sizeof(int));
+  elem_disp = malloc(npe_max*dim*sizeof(double));
+  elem_coor = malloc(npe_max*dim*sizeof(double));
+  k_elem = malloc(npe_max*dim*npe_max*dim*sizeof(double));
+  m_elem = malloc(npe_max*dim*npe_max*dim*sizeof(double));
+  res_elem = malloc(npe_max*dim*sizeof(double));
+  stress_gp = malloc(nvoi*sizeof(double));
+  strain_gp = malloc(nvoi*sizeof(double));
+  c = malloc(nvoi*nvoi*sizeof(double));
+  elem_strain = malloc(nelm*nvoi*sizeof(double));
+  elem_stress = malloc(nelm*nvoi*sizeof(double));
+  elem_energy = malloc(nelm*sizeof(double));
+  elem_type = malloc(nelm*sizeof(int));
+  flag_neg_detj  = 0;
+
+  bmat = malloc(nvoi*sizeof(double**));
+  for(int i = 0 ; i < nvoi  ; i++){
+    bmat[i] = malloc(npe_max*dim*sizeof(double*));
+    for(int j = 0 ; j < npe_max*dim ; j++)
+      bmat[i][j] = malloc(ngp_max*sizeof(double));
+  }
+
+  dsh = malloc(npe_max*sizeof(double**));
+  for(int i = 0 ; i < npe_max ; i++){
+    dsh[i] = malloc( dim * sizeof(double*));
+    for(int j = 0 ; j < dim ; j++)
+      dsh[i][j] = malloc( ngp_max * sizeof(double));
+  }
+
+  jac = malloc(dim*sizeof(double*));
+  for(int k = 0 ; k < dim ; k++)
+    jac[k] = malloc( dim * sizeof(double));
+
+  jac_inv = malloc(dim*sizeof(double*));
+  for(int i = 0 ; i < dim ; i++)
+    jac_inv[i] = malloc( dim * sizeof(double));
+
+  detj = malloc(ngp_max*sizeof(double));
+
   if(ierr == 0) flags.allocated = true;
 
   return ierr;

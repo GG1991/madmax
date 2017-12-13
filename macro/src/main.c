@@ -13,12 +13,13 @@ params_t params;
 flags_t flags;
 
 #define CHECK_AND_GOTO(error){if(error){myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
-#define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
+#define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(&MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
+#define CHECK_FOUND_GOTO(message){if(found == false){myio_printf(&MACRO_COMM, "%s\n", message); goto end;}}
+#define CHECK_ERROR_GOTO(message){if(ierr != 0){myio_printf(&MACRO_COMM, "%s\n", message); goto end;}}
 
 int main(int argc, char **argv){
 
   int ierr;
-  int i, j;
   bool found;
 
   myname = strdup("macro");
@@ -30,7 +31,7 @@ int main(int argc, char **argv){
   MPI_Comm_size( WORLD_COMM, &nproc_wor );
   MPI_Comm_rank( WORLD_COMM, &rank_wor );
 
-  init_variables(&params, &message);
+  init_variables();
 
   myio_comm_line_search_option(&command_line, "-coupl", &found);
   if(found == true) flags.coupled = true;
@@ -56,22 +57,23 @@ int main(int argc, char **argv){
       "--------------------------------------------------\n");
 
   myio_comm_line_search_option(&command_line, "-normal", &found);
-
-  if(found){
-
+  if(found == true){
     params.calc_mode = CALC_MODE_NORMAL;
 
-    myio_comm_line_get_double(&command_line, "-tf", &params.final_time, &found);
-    myio_comm_line_get_double(&command_line, "-dt", &params.delta_time, &found);
+    myio_comm_line_get_double(&command_line, "-tf", &params.tf, &found);
+    CHECK_FOUND_GOTO("-tf option should be given in -normal mode.\n");
+
+    myio_comm_line_get_double(&command_line, "-dt", &params.dt, &found);
+    CHECK_FOUND_GOTO("-dt option should be given in -normal mode.\n");
   }
 
   myio_comm_line_search_option(&command_line, "-testcomm", &found);
-  if(found){
+  if(found == true){
     params.calc_mode = CALC_MODE_TEST;
   }
 
   myio_comm_line_search_option(&command_line, "-eigen", &found);
-  if(found){
+  if(found == true){
     params.calc_mode = CALC_MODE_EIGEN;
     myio_comm_line_get_double(&command_line, "-energy_stored", &params.energy_stored, &found);
   }
@@ -84,8 +86,8 @@ int main(int argc, char **argv){
     goto end;
   }
 
-  FILE *fm = fopen( mesh_n, "r");
-  if( fm == NULL ){
+  FILE *fm = fopen(mesh_n, "r");
+  if(fm == NULL){
     myio_printf(&MACRO_COMM,"mesh file not found.\n");
     goto end;
   }
@@ -146,63 +148,9 @@ int main(int argc, char **argv){
 
   myio_printf(&MACRO_COMM, "allocating ");
 
-  A   = NULL;
-  b   = NULL;
-  x   = NULL;
-  dx  = NULL;
-
-  alloc_memory();
-
-  int ixpe = npe_max * dim;
-  loc_elem_index = malloc( ixpe * sizeof(int));
-  glo_elem_index = malloc( ixpe * sizeof(int));
-  elem_disp      = malloc( ixpe * sizeof(double));
-  elem_coor      = malloc( ixpe * sizeof(double));
-  k_elem         = malloc( ixpe*ixpe * sizeof(double));
-  m_elem         = malloc( ixpe*ixpe * sizeof(double));
-  res_elem       = malloc( ixpe * sizeof(double));
-  stress_gp      = malloc( nvoi * sizeof(double));
-  strain_gp      = malloc( nvoi * sizeof(double));
-  c              = malloc( nvoi*nvoi * sizeof(double));
-  if( flag_print & ( 1 << PRINT_VTU ) ){
-    elem_strain  = malloc( nelm*nvoi * sizeof(double));
-    elem_stress  = malloc( nelm*nvoi * sizeof(double));
-    elem_energy  = malloc( nelm      * sizeof(double));
-    elem_type    = malloc( nelm      * sizeof(int));
-  }
-  flag_neg_detj  = 0;
-
-  bmat = malloc( nvoi * sizeof(double**));
-  for( i = 0 ; i < nvoi  ; i++ ){
-    bmat[i] = malloc( ixpe * sizeof(double*));
-    for( j = 0 ; j < ixpe ; j++ )
-      bmat[i][j] = malloc( ngp_max * sizeof(double));
-  }
-
-  dsh  = malloc( npe_max * sizeof(double**));
-  for( i = 0 ; i < npe_max ; i++ ){
-    dsh[i] = malloc( dim * sizeof(double*));
-    for( j = 0 ; j < dim ; j++ )
-      dsh[i][j] = malloc( ngp_max * sizeof(double));
-  }
-
-  jac = malloc( dim * sizeof(double*));
-  for( int k = 0 ; k < dim ; k++ )
-    jac[k] = malloc( dim * sizeof(double));
-
-  jac_inv = malloc( dim * sizeof(double*));
-  for( i = 0 ; i < dim ; i++ )
-    jac_inv[i] = malloc( dim * sizeof(double));
-
-  detj = malloc( ngp_max * sizeof(double));
-
-  myio_printf(&MACRO_COMM, "ok\n");
+  ierr = alloc_memory();
 
   ierr = fem_inigau();
-
-
-  double   limit[6];
-  ierr = get_bbox_local_limits(coord, nallnods, &limit[0], &limit[2], &limit[4]);
 
   if(params.calc_mode == CALC_MODE_EIGEN){
 
@@ -214,11 +162,7 @@ int main(int argc, char **argv){
     VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
     ierr = assembly_AM_petsc();
-    if(ierr != 0){
-      myio_printf(&MACRO_COMM,"problem during matrix assembly\n");
-      goto end;
-    }
-
+    CHECK_ERROR_GOTO("problem during matrix assembly\n")
 
     int nconv;
     double error;
@@ -256,21 +200,21 @@ int main(int argc, char **argv){
 
     KSP ksp;
 
-    KSPCreate( MACRO_COMM, &ksp );
+    KSPCreate(MACRO_COMM, &ksp);
     KSPSetFromOptions( ksp );
 
-    params.time = 0.0;
-    params.time_step = 0;
+    params.t = 0.0;
+    params.ts = 0;
 
-    VecZeroEntries( x );
-    VecGhostUpdateBegin( x, INSERT_VALUES, SCATTER_FORWARD );
-    VecGhostUpdateEnd  ( x, INSERT_VALUES, SCATTER_FORWARD );
+    VecZeroEntries(x);
+    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
-    while(params.time < (params.final_time + 1.0e-10)){
+    while(params.t < (params.tf + 1.0e-10)){
 
-      myio_printf(&MACRO_COMM,"\ntime step %-3d %-e seg\n", params.time_step, params.time);
+      myio_printf(&MACRO_COMM,"\ntime step %-3d %-e seg\n", params.ts, params.t);
 
-      update_boundary(params.time, &function_list, &boundary_list);
+      update_boundary(params.t, &function_list, &boundary_list);
 
       Vec x_loc;
       double *x_arr;
@@ -279,9 +223,9 @@ int main(int argc, char **argv){
       VecGetArray(x_loc, &x_arr);
 
       node_list_t * pn = boundary_list.head;
-      while( pn ){
-	mesh_boundary_t *bou = ( mesh_boundary_t * )pn->data;
-	for( i = 0 ; i < bou->ndirix ; i++ )
+      while(pn){
+	mesh_boundary_t *bou = (mesh_boundary_t *)pn->data;
+	for(int i = 0 ; i < bou->ndirix ; i++)
 	  x_arr[bou->dir_loc_ixs[i]] = bou->dir_val[i];
 	pn = pn->next;
       }
@@ -330,12 +274,12 @@ int main(int argc, char **argv){
 
       if(flag_print & (1<<PRINT_VTU)){ 
 	get_elem_properties();
-	sprintf( filename, "macro_t_%d", params.time_step );
-	macro_pvtu( filename );
+	sprintf(filename, "macro_t_%d", params.ts);
+	macro_pvtu(filename);
       }
 
-      params.time += params.delta_time;
-      params.time_step ++;
+      params.t += params.dt;
+      params.ts ++;
     }
     KSPDestroy(&ksp);
   }
@@ -344,15 +288,15 @@ int main(int argc, char **argv){
     double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
     double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
-    for( i = 0 ; i < nvoi ; i++ ){
-      for( j = 0 ; j < nvoi ; j++ )
+    for(int i = 0 ; i < nvoi ; i++){
+      for(int j = 0 ; j < nvoi ; j++)
 	strain_mac[j] = 0.0;
       strain_mac[i] = 0.005;
       ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);
       ierr = mac_send_strain(WORLD_COMM, strain_mac    );
       ierr = mac_recv_stress(WORLD_COMM, stress_mac    );
       myio_printf(&MACRO_COMM,"\nstress_ave = ");
-      for( j = 0 ; j < nvoi ; j++ )
+      for(int j = 0 ; j < nvoi ; j++)
 	myio_printf(&MACRO_COMM,"%e ",stress_mac[j]);
       myio_printf(&MACRO_COMM,"\n");
     }
@@ -371,15 +315,15 @@ int main(int argc, char **argv){
     free(elem_type); 
   }
 
-  for( i = 0 ; i < nvoi  ; i++ ){
-    for( j = 0 ; j < ixpe ; j++ )
+  for(int i = 0 ; i < nvoi  ; i++){
+    for(int j = 0 ; j < npe_max*dim ; j++)
       free(bmat[i][j]);
     free(bmat[i]);
   }
   free(bmat);
 
-  for( i = 0 ; i < npe_max ; i++ ){
-    for( j = 0 ; j < dim ; j++ )
+  for(int i = 0 ; i < npe_max ; i++){
+    for(int j = 0 ; j < dim ; j++)
       free(dsh[i][j]);
     free(dsh[i]);
   }

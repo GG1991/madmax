@@ -69,11 +69,10 @@ typedef struct{
   int num_eigen_vals;
   double *eigen_vals;
 
-  double final_time;
-  double delta_time;
-  double time;
-
-  int time_step;
+  double tf;
+  double dt;
+  double t;
+  int ts;
 
   double energy_stored;
   int non_linear_its;
@@ -114,7 +113,8 @@ int get_mat_name(int id, char * name_s);
 int macro_pvtu(char *name);
 int update_boundary(double t, list_t *function_list, list_t *boundary_list);
 int read_coord(char *mesh_n, int nmynods, int *mynods, int nghost, int *ghost, double **coord);
-void init_variables(params_t *params, message_t *message);
+
+void init_variables(void);
 void finalize(void);
 
 int alloc_memory(void);
