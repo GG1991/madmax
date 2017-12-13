@@ -256,16 +256,14 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
     for( i = 0; i < ndir_ix ; i++ )
       dir_ix_glo[i] = local_to_global_index( dir_ix_loc[i] );
 
-  } // first time for allocation
-
-  /* Set the displacement boundary conditions "u = E . X" */
+  }
 
   VecZeroEntries(x);
   VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
-  Vec     x_loc;
-  double  *x_arr;
+  Vec x_loc;
+  double *x_arr;
   VecGhostGetLocalForm(x, &x_loc);
   VecGetArray(x_loc, &x_arr);
 
@@ -285,10 +283,9 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
   VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
-  int     i;
-  int     nr_its = 0; 
-  double  *b_arr;
-  double  norm = params.non_linear_min_norm_tol*10;
+  int nr_its = 0; 
+  double *b_arr;
+  double norm = params.non_linear_min_norm_tol*10;
 
   VecNorm( x , NORM_2 , &norm );
   PRINTF2("|x| = %lf\n", norm);
@@ -300,8 +297,9 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
     assembly_b();
     
     VecGetArray(b, &b_arr);
-    for( i = 0; i < ndir_ix ; i++ )
+    for(int i = 0; i < ndir_ix ; i++)
       b_arr[dir_ix_loc[i]] = 0.0;
+
     VecRestoreArray(b, &b_arr);
     VecGhostUpdateBegin(b, INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd(b, INSERT_VALUES, SCATTER_FORWARD);
@@ -347,7 +345,8 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
 
 int homogenize_init(void){
 
-  flags.linear_materials = (material_are_all_linear(&material_list) == true) ? true : false;
+  if(material_are_all_linear(&material_list) == true)
+    flags.linear_materials = true;
 
   int ierr = 0;
 
@@ -881,14 +880,13 @@ int get_node_ghost_coor( int n , double * coord )
 }
 
 
-int init_shapes( double ***sh, double ****dsh, double **wp )
-{
-  int    nsh = ( dim == 2 ) ? 4 : 8;
-  int    gp;
+int init_shapes(double ***sh, double ****dsh, double **wp){
+
+  int nsh = (dim == 2) ? 4 : 8;
+  int gp;
   double *xp = malloc( ngp*dim * sizeof(double));
 
-  if( dim == 2 )
-  {
+  if(dim == 2){
     xp[0] = -0.577350269189626;   xp[1]= -0.577350269189626;
     xp[2] = +0.577350269189626;   xp[3]= -0.577350269189626;
     xp[4] = +0.577350269189626;   xp[5]= +0.577350269189626;

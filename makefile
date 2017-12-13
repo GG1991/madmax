@@ -85,6 +85,7 @@ MIC_OBJ  = ${MIC_OBJ_DIR}/main.o \
            ${MIC_OBJ_DIR}/micro_struct.o \
            ${MIC_OBJ_DIR}/init.o \
            ${MIC_OBJ_DIR}/finalize.o \
+           ${MIC_OBJ_DIR}/alloc.o \
            $(SPU_OBJ_DIR)/comm.o \
            $(SPU_OBJ_DIR)/trace.o \
            $(SPU_OBJ_DIR)/material.o \
@@ -147,7 +148,7 @@ ${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c ${DEPS_MAC}
 ##############################
 # MICRO OBJECTS
 ${MIC_OBJ_DIR}/%.o: ${MIC_SRC_DIR}/%.c ${DEPS_MIC}
-	${PETSC_COMPILE} -c ${CFLAGS} ${INC_FLAG} -o $@ $<
+	${PETSC_COMPILE} -c -DPETSC ${CFLAGS} ${INC_FLAG} -o $@ $<
 	@echo ">>> "$@
 
 vars:

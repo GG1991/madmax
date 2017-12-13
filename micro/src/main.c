@@ -12,10 +12,12 @@ static char help[] =
 
 params_t params;
 flags_t flags;
+solver_t solver;
 
 #define CHECK_AND_GOTO(error){if(error){myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
 #define CHECK_INST_ELSE_GOTO(cond, instr){if(cond){instr}else{myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
 #define PRINT_ARRAY(name_str, array, length){ myio_printf(&MICRO_COMM,"%s ",name_str); for(int i = 0 ; i < length ; i++) myio_printf(&MICRO_COMM, "%e ", array[i]); myio_printf(&MICRO_COMM, "\n");}
+#define CHECK_ERROR_GOTO(message){if(ierr != 0){myio_printf(&MICRO_COMM, "%s\n", message); goto end;}}
 
 int main(int argc, char **argv){
 
@@ -27,12 +29,16 @@ int main(int argc, char **argv){
 
   myio_comm_line_init(argc, argv, &command_line);
 
-  WORLD_COMM = MPI_COMM_WORLD;
-  MPI_Init(&argc, &argv);
+  init_variables();
+
   MPI_Comm_size(WORLD_COMM, &nproc_wor);
   MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
-  init_variables(&params, &message);
+  myio_comm_line_search_option(&command_line, "-help", &found);
+  if(found == true){
+    myio_printf(&MACRO_COMM, "%s", help);
+    goto end;
+  }
 
   myio_comm_line_search_option(&command_line, "-coupl", &found);
   if(found) flags.coupled = true;
@@ -44,9 +50,6 @@ int main(int argc, char **argv){
   MPI_Comm_size(MICRO_COMM, &nproc_mic);
   MPI_Comm_rank(MICRO_COMM, &rank_mic);
   
-  PETSC_COMM_WORLD = MICRO_COMM;
-  ierr = PetscInitialize(&argc,&argv,(char*)0,help);
-
   nx = ny = nz = -1;
   hx = hy = hz = -1;
   lx = ly = lz = -1;
@@ -65,7 +68,6 @@ int main(int argc, char **argv){
   if(dim == 2) nval_expect = 2;
   if(dim == 3) nval_expect = 3;
 
-  
   myio_comm_line_get_int_array(&command_line, "-struct_n", values_i, nval_expect, &nval_found, &found);
   if(found){
 
@@ -156,45 +158,19 @@ int main(int argc, char **argv){
 	"--------------------------------------------------\n");
   }
 
-  A   = NULL;
-  b   = NULL;
-  x   = NULL;
-  dx  = NULL;
-
-  loc_elem_index = malloc(dim*npe*sizeof(int));
-  glo_elem_index = malloc(dim*npe*sizeof(int));
-  elem_disp = malloc(dim*npe*sizeof(double));
-  stress_gp = malloc(nvoi*sizeof(double));
-  strain_gp = malloc(nvoi*sizeof(double));
-  if( flag_print & ( 1 << PRINT_VTU ) ){
-    elem_strain = malloc(nelm*nvoi*sizeof(double));
-    elem_stress = malloc(nelm*nvoi*sizeof(double));
-    elem_energy = malloc(nelm*sizeof(double));
-  }
-  elem_type   = malloc( nelm      * sizeof(int));
+  myio_printf(&MICRO_COMM, "allocating ");
+  ierr = alloc_memory();
 
   ierr = micro_struct_init_elem_type(&micro_struct, dim, nelm, &get_elem_centroid, elem_type); CHECK_AND_GOTO(ierr)
 
   ierr = micro_check_material_and_elem_type(&material_list, elem_type, nelm);
-  if(ierr){
-    myio_printf(&MICRO_COMM, "error checking elem_type and material_list\n");
-    goto end;
-  }
+  CHECK_ERROR_GOTO("error checking elem_type and material_list");
 
+  init_shapes(&struct_sh, &struct_dsh, &struct_wp);
 
-  init_shapes( &struct_sh, &struct_dsh, &struct_wp );
-
-  struct_bmat = malloc( nvoi * sizeof(double**));
-  for( i = 0 ; i < nvoi ; i++ ){
-    struct_bmat[i] = malloc( npe*dim * sizeof(double*));
-    for( j = 0 ; j < npe*dim ; j++ )
-      struct_bmat[i][j] = malloc( ngp * sizeof(double));
-  }
-
-  int is, gp;
-  for( gp = 0; gp < ngp ; gp++ ){
-    for( is = 0; is < npe ; is++ ){
-      if( dim == 2 ){
+  for(int gp = 0; gp < ngp ; gp++){
+    for(int is = 0; is < npe ; is++){
+      if(dim == 2){
 	struct_bmat[0][is*dim + 0][gp] = struct_dsh[is][0][gp];
 	struct_bmat[0][is*dim + 1][gp] = 0;
 	struct_bmat[1][is*dim + 0][gp] = 0;

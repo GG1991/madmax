@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <gsl/gsl_linalg.h>
 #include "petscksp.h"
 #include "petscsys.h"
 #include "slepceps.h"
@@ -16,7 +17,7 @@
 #include "vtk.h"
 #include "homogenize.h"
 #include "micro_struct.h"
-#include <gsl/gsl_linalg.h>
+#include "solvers.h"
 
 #define PRINT_ALWAYS 0
 #define PRINTF1(message){if(flags.coupled == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message);}
@@ -140,9 +141,12 @@ int get_averages(double * strain_ave, double *stress_ave);
 int get_elem_type(int e, int *type);
 int get_elem_properties(void);
 int init_shapes(double ***sh, double ****dsh, double **wp);
-void init_variables(params_t *params, message_t *message);
-void finalize(void);
+
 void homogenize_check_linear_material(void);
 
+void init_variables(void);
+void finalize(void);
+
+int alloc_memory(void);
 
 #endif
