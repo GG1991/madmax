@@ -262,14 +262,6 @@ int main(int argc, char **argv){
 	params.non_linear_its ++;
       }
 
-      if(flag_print & (1<<PRINT_PETSC)){
-	PetscViewer viewer;
-	PetscViewerASCIIOpen(MACRO_COMM, "A.dat", &viewer); MatView(A ,viewer);
-	PetscViewerASCIIOpen(MACRO_COMM, "b.dat", &viewer); VecView(b ,viewer);
-	PetscViewerASCIIOpen(MACRO_COMM, "dx.dat", &viewer); VecView(dx,viewer);
-	PetscViewerASCIIOpen(MACRO_COMM, "x.dat", &viewer); VecView(x ,viewer);
-      }
-
       if(flag_print & (1<<PRINT_VTU)){ 
 	get_elem_properties();
 	sprintf(filename, "macro_t_%d", params.ts);

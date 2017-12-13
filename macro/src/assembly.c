@@ -73,6 +73,11 @@ int assembly_b_petsc(void){
   VecGhostUpdateEnd(b, INSERT_VALUES, SCATTER_FORWARD);
   VecScale(b, -1.0);
 
+  if(flags.print_vectors == true){
+    PetscViewer viewer;
+    PetscViewerASCIIOpen(MACRO_COMM, "b.dat", &viewer); VecView(b ,viewer);
+  }
+
   return 0;
 }
 
@@ -151,7 +156,7 @@ int assembly_AM_petsc(void){
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
-  if(flag_print & ( 1<<PRINT_PETSC )){
+  if(flags.print_vectors == true){
     PetscViewer viewer;
     PetscViewerASCIIOpen(MACRO_COMM, "M.dat", &viewer); MatView(M, viewer);
     PetscViewerASCIIOpen(MACRO_COMM, "A.dat", &viewer); MatView(A, viewer);
@@ -215,6 +220,11 @@ int assembly_A_petsc(void){
   }
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+
+  if(flags.print_vectors == true){
+    PetscViewer viewer;
+    PetscViewerASCIIOpen(MACRO_COMM, "A.dat", &viewer); MatView(A ,viewer);
+  }
 
   return 0;
 }

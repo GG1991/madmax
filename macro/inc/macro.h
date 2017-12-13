@@ -84,6 +84,8 @@ typedef struct{
 
   bool coupled;
   bool allocated;
+  bool print_vectors;
+  bool print_matrices;
 
 }flags_t;
 

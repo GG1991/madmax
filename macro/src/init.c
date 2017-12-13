@@ -14,7 +14,10 @@ void init_variables(void){
 
   solver.type = SOLVER_PETSC;
 
+  flags.coupled = false;
   flags.allocated = false;
+  flags.print_vectors = false;
+  flags.print_matrices = false;
 
   A = NULL;
   b = NULL;
