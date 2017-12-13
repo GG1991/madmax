@@ -19,12 +19,12 @@ void init_variables(void){
   flags.print_vectors = false;
   flags.print_matrices = false;
 
+  comm_init_message(&message);
+
   A = NULL;
   b = NULL;
   x = NULL;
   dx = NULL;
-
-  comm_init_message(&message);
 
   return;
 }

@@ -52,6 +52,7 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-help", &found);
   if(found == true){
     myio_printf(&MACRO_COMM, "%s", help);
+    goto end;
   }
 
   myio_comm_line_search_option(&command_line, "-normal", &found);
@@ -145,7 +146,6 @@ int main(int argc, char **argv){
   gmsh_get_physical_list(mesh_n, &physical_list);
 
   myio_printf(&MACRO_COMM, "allocating ");
-
   ierr = alloc_memory();
 
   ierr = fem_inigau();
