@@ -1,14 +1,15 @@
 #include "micro.h"
 
 static char help[] = 
-"micro multiscale code\n"
-"-coupl    [0 (no coupling ) | 1 (coupling with micro)]                                       \n"
-"-homo_ts     : c =  vi ci + vm cm            (serial)                                        \n"
-"-homo_tp     : c = (vi ci^-1 + vm cm^-1)^-1  (parallel)                                      \n"
-"-homo_us     : homogenization using uniform strains approach                                 \n"
-"-struct_n [<nx,ny>] if dim = 2                                                               \n"
-"-print_petsc                                                                                 \n"
-"-print_vtu                                                                                   \n";
+"micro multiscale code \n"
+"-coupl    [0 (no coupling ) | 1 (coupling with micro)] \n"
+"-homo_ts     : c =  vi ci + vm cm            (serial) \n"
+"-homo_tp     : c = (vi ci^-1 + vm cm^-1)^-1  (parallel) \n"
+"-homo_us     : homogenization using uniform strains approach \n"
+"-struct_n [<nx,ny>] if dim = 2 \n"
+"-print_matrices \n"
+"-print_vectors \n"
+"-print_pvtu \n";
 
 params_t params;
 flags_t flags;
@@ -20,7 +21,7 @@ solver_t solver;
 
 int main(int argc, char **argv){
 
-  int i, j, ierr;
+  int ierr;
   int values_i[10];
   char string_buf[NBUF];
   int nval_expect, nval_found;
@@ -94,9 +95,8 @@ int main(int argc, char **argv){
     int *nyl_arr = malloc(nproc_mic * sizeof(int));
     ierr = MPI_Allgather(&nyl, 1, MPI_INT, nyl_arr, 1, MPI_INT, MICRO_COMM); if(ierr) return 1;
     ny_inf = 0;
-    for(i = 0 ; i < rank_mic ; i++){
+    for(int i = 0 ; i < rank_mic ; i++)
       ny_inf += nyl_arr[i];
-    }
     free(nyl_arr);
 
     npe  = (dim == 2) ? 4 : 8;
@@ -143,12 +143,19 @@ int main(int argc, char **argv){
   myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
   myio_comm_line_get_int(&command_line, "-nl_min_norm_tol", &params.non_linear_max_its, &found);
 
-  flag_print = 0;
-  myio_comm_line_search_option(&command_line, "-print_petsc", &found);
-  if(found) flag_print = flag_print | (1<<PRINT_PETSC);
+  myio_comm_line_search_option(&command_line, "-print_matrices", &found);
+  if(found == true)
+    flags.print_matrices = true;
 
-  myio_comm_line_search_option(&command_line, "-print_vtu", &found);
-  if(found) flag_print = flag_print | (1<<PRINT_VTU);
+  myio_comm_line_search_option(&command_line, "-print_vectors", &found);
+  if(found == true)
+    flags.print_vectors = true;
+
+  myio_comm_line_search_option(&command_line, "-print_pvtu", &found);
+  if(found == true &&
+    params.homog_method != HOMOG_METHOD_TAYLOR_PARALLEL &&
+    params.homog_method != HOMOG_METHOD_TAYLOR_SERIAL)
+    flags.print_pvtu = true;
 
   PRINTF1(
       "--------------------------------------------------\n"
@@ -244,39 +251,16 @@ int main(int argc, char **argv){
 
   micro_print_info();
 
-  free(loc_elem_index); 
-  free(glo_elem_index); 
-  free(elem_disp);
-  free(stress_gp);
-  free(strain_gp);
-  if(flag_print & (1 << PRINT_VTU)){
-    free(elem_strain); 
-    free(elem_stress); 
-    free(elem_energy); 
-    free(elem_type); 
-  }
-
-  for( i = 0 ; i < nvoi  ; i++ ){
-    for( j = 0 ; j < npe*dim ; j++ )
-      free(struct_bmat[i][j]);
-    free(struct_bmat[i]);
-  }
-  free(struct_bmat);
-
   end_trace(MICRO_COMM);
+
+end:
 
   PRINTF1(
       "--------------------------------------------------\n"
       "  MICRO: FINISH COMPLETE\n"
       "--------------------------------------------------\n");
 
-  ierr = PetscFinalize();
-
-  finalize();
-
-end:
-  ierr = MPI_Finalize();
-
+  ierr = finalize();
 
   return 0;
 }

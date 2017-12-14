@@ -331,12 +331,16 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
 
   get_averages(strain_ave, stress_ave);
 
-  if( flag_print & (1<<PRINT_PETSC) ){
-    PetscViewer  viewer;
-    PetscViewerASCIIOpen(MICRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
+  if(flags.print_vectors == true){
+    PetscViewer viewer;
     PetscViewerASCIIOpen(MICRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
     PetscViewerASCIIOpen(MICRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
     PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
+  }
+
+  if(flags.print_matrices == true){
+    PetscViewer viewer;
+    PetscViewerASCIIOpen(MICRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
   }
 
   return 0;
@@ -456,7 +460,7 @@ int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent){
     for(int j = 0 ; j < nvoi ; j++)
       c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[i] - strain_1[i]);
 
-    if(flag_print & (1 << PRINT_VTU) && params.homog_method == HOMOG_METHOD_UNIF_STRAINS){
+    if(flags.print_pvtu == true){
       get_elem_properties();
       sprintf(filename,"micro_exp%d",i);
       ierr = micro_pvtu( filename );
