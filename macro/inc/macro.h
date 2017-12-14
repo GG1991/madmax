@@ -118,7 +118,7 @@ int update_boundary(double t, list_t *function_list, list_t *boundary_list);
 int read_coord(char *mesh_n, int nmynods, int *mynods, int nghost, int *ghost, double **coord);
 
 void init_variables(void);
-void finalize(void);
+int finalize(void);
 
 int alloc_memory(void);
 

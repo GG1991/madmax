@@ -16,8 +16,8 @@ $MPIEXEC -np $NP  ../../micro/micro \
     -micro_struct "fiber_cilin 3.0 3.0 1 1 0.75 0.0 0.0" \
     -pc_type jacobi \
     -ksp_type cg \
-    -print_vtu \
     -homo_us \
+    -print_pvtu \
     -options_left  0
 
 #xterm -e gdb --args 
