@@ -81,8 +81,6 @@ double       vm;                  // volumetric fraction of matrix
 
 int          homo_type;
 int          macro_gp;
-double       c_homo_lineal[36];
-double       rho;
 
 Mat A, J;
 Vec x, b;
@@ -96,6 +94,7 @@ typedef struct{
   double non_linear_min_norm_tol;
   double c_tangent_linear[MAX_NVOIGT*MAX_NVOIGT];
   double c_tangent[MAX_NVOIGT*MAX_NVOIGT];
+  double rho;
 
 }params_t;
 

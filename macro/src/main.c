@@ -1,13 +1,14 @@
 #include "macro.h"
 
 static char help[] = 
-"macro multiscale code                                                                             \n"
-"-coupl       : coupled with \"micro\" code for solving multiscale problem                         \n"
-"-normal      : normal execution, solves a time dependent boundary condition problem               \n"
-"-testcomm    : communication testing with the \"micro\" code                                      \n"
-"-eigen       : calculates the eigensystem Mx = -(1/omega)Kx                                       \n"
-"-print_petsc : prints petsc structures on files such as Mat and Vec objects                       \n"
-"-print_vtu   : prints solutions on .vtu and .pvtu files                                           \n";
+"macro multiscale code \n"
+"-coupl       : coupled with \"micro\" code for solving multiscale problem \n"
+"-normal      : normal execution, solves a time dependent boundary condition problem \n"
+"-testcomm    : communication testing with the \"micro\" code \n"
+"-eigen       : calculates the eigensystem Mx = -(1/omega)Kx \n"
+"-print_matrices \n"
+"-print_vectors \n"
+"-print_pvtu \n";
 
 params_t params;
 flags_t flags;
@@ -441,31 +442,36 @@ int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 
 int get_rho(const char *name, int e, double *rho){
 
-  material_t  *mat_p;
-  char         name_s[64];
-  int          ierr;
+  char name_s[64];
+  int ierr;
 
-  get_mat_name( elm_id[e], name_s );
+  get_mat_name(elm_id[e], name_s);
 
+  material_t *mat_p;
   node_list_t *pn = material_list.head;
-  while( pn ){
+  while(pn != NULL){
     mat_p = ( material_t * )pn->data;
-    if( strcmp( name_s, mat_p->name ) == 0 ) break;
+    if(strcmp(name_s, mat_p->name) == 0) break;
     pn = pn->next;
   }
-  if( pn == NULL ){
+  if(pn == NULL){
     myio_printf(&MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
     return 1;
   }
 
   if(mat_p->type_id == MAT_MICRO){
-    ierr = mac_send_signal(WORLD_COMM, RHO); if(ierr) return 1;
-    ierr = mac_recv_rho(WORLD_COMM, rho);
+
+    message.action = ACTION_MICRO_CALC_RHO;
+
+    ierr = comm_macro_send(&message);
+    ierr = comm_macro_recv(&message);
+
+    *rho = message.rho;
   }
   else
     material_get_rho( mat_p, dim, rho );
 
-  return 0;
+  return ierr;
 }
 
 

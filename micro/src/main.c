@@ -207,21 +207,20 @@ int main(int argc, char **argv){
 	case ACTION_MICRO_CALC_STRESS:
 
 	  ARRAY_COPY(strain_mac, message.strain_mac, nvoi)
-
 	  ierr = homogenize_get_strain_stress(strain_mac, strain_ave, stress_ave);
-
 	  ARRAY_COPY(message.stress_ave, stress_ave, nvoi)
-
 	  break;
 
 	case ACTION_MICRO_CALC_C_TANGENT:
 
 	  ARRAY_COPY(strain_mac, message.strain_mac, nvoi)
-
 	  ierr = homogenize_get_c_tangent(strain_mac, &c_tangent_ave);
-
 	  ARRAY_COPY(message.c_tangent_ave, c_tangent_ave, nvoi*nvoi)
+	  break;
 
+	case ACTION_MICRO_CALC_RHO:
+
+	  message.rho = params.rho;
 	  break;
 
 	case ACTION_MICRO_END:
@@ -374,8 +373,7 @@ int micro_print_info( void ){
   return 0;
 }
 
-int micro_pvtu( char *name )
-{
+int micro_pvtu(char *name){
 
   FILE    *fm;
   char     file_name[NBUF];

@@ -23,6 +23,7 @@ typedef struct {
   double strain_mac[MAX_VOIGT];
   double stress_ave[MAX_VOIGT];
   double c_tangent_ave[MAX_VOIGT*MAX_VOIGT];
+  double rho;
 
 }message_t;
 
@@ -40,12 +41,6 @@ int comm_finalize_message(void);
 
 #define  COUP_NULL          0
 #define  COUP_1             1
-
-#define  MIC_END            1
-#define  MAC2MIC_STRAIN     2
-#define  C_HOMO             3
-#define  RHO                4
-
 
 int       coup_type;
 
