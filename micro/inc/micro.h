@@ -105,18 +105,16 @@ typedef struct{
   bool allocated;
   bool linear_materials;
   bool c_linear_calculated;
+  bool print_pvtu;
+  bool print_vectors;
+  bool print_matrices;
 
 }flags_t;
 
 extern params_t params;
 extern flags_t flags;
 
-#define PRINT_PETSC        0
-#define PRINT_VTU          1
-
-int         flag_print;
-
-double      center_domain[3];
+double center_domain[3];
 
 int voigt2mat(double voigt[6], double matrix[3][3]);
 
@@ -146,7 +144,7 @@ int init_shapes(double ***sh, double ****dsh, double **wp);
 void homogenize_check_linear_material(void);
 
 void init_variables(void);
-void finalize(void);
+int finalize(void);
 
 int alloc_memory(void);
 
