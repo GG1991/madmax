@@ -6,14 +6,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define  COLOR_MACRO        1
-#define  COLOR_MICRO        2
+#define  COLOR_MACRO 1
+#define  COLOR_MICRO 2
 #define  MAX_VOIGT 6
 
-#define ACTION_NULL                 0
-#define ACTION_MICRO_CALC_STRESS    1
+#define ACTION_NULL 0
+#define ACTION_MICRO_CALC_STRESS 1
 #define ACTION_MICRO_CALC_C_TANGENT 2
-#define ACTION_MICRO_END            3
+#define ACTION_MICRO_CALC_RHO 3
+#define ACTION_MICRO_END 4
 
 typedef struct {
 
@@ -80,20 +81,5 @@ typedef struct coupling_t_{
 coupling_t macmic;
 
 int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM, bool flag_coupling);
-
-int mic_recv_signal(MPI_Comm WORLD_COMM, int *signal);
-int mic_recv_strain(MPI_Comm WORLD_COMM, double strain[6]);
-int mic_recv_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp);
-int mic_send_strain(MPI_Comm WORLD_COMM, double strain[6]);
-int mic_send_stress(MPI_Comm WORLD_COMM, double stress[6]);
-int mic_send_c_homo(MPI_Comm WORLD_COMM, int nvoi, double c_homo[36]);
-int mic_send_rho(MPI_Comm WORLD_COMM, double *rho);
-
-int mac_send_signal(MPI_Comm WORLD_COMM, int signal);
-int mac_send_strain(MPI_Comm WORLD_COMM, double strain[6]);
-int mac_recv_stress(MPI_Comm WORLD_COMM, double stress[6]);
-int mac_recv_rho(MPI_Comm WORLD_COMM, double *rho);
-int mac_recv_c_homo(MPI_Comm WORLD_COMM, int nvoi, double c_homo[36]);
-int mac_send_macro_gp(MPI_Comm WORLD_COMM, int *macro_gp);
 
 #endif
