@@ -7,6 +7,16 @@ int finalize(void){
 
   int ierr;
 
+  if(flags.coupled == true){
+
+    message.action = ACTION_MICRO_END;
+    ierr = comm_macro_send(&message);
+    if(ierr != 0){
+      myio_printf(&PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
+      return 1;
+    }
+  }
+
   free(loc_elem_index);
   free(glo_elem_index);
   free(elem_disp);
@@ -30,15 +40,6 @@ int finalize(void){
     free(dsh[i]);
   }
   free(dsh);
-
-
-  if(flags.coupled == true){
-    ierr = mac_send_signal(WORLD_COMM, ACTION_MICRO_END);
-    if(ierr != 0){
-      myio_printf(&PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
-      return 1;
-    }
-  }
 
   list_clear(&material_list);
   list_clear(&physical_list);

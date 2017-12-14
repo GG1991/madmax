@@ -280,21 +280,6 @@ int main(int argc, char **argv){
 
   }else if(params.calc_mode == CALC_MODE_TEST){
 
-    double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
-    double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
-    for(int i = 0 ; i < nvoi ; i++){
-      for(int j = 0 ; j < nvoi ; j++)
-	strain_mac[j] = 0.0;
-      strain_mac[i] = 0.005;
-      ierr = mac_send_signal(WORLD_COMM, MAC2MIC_STRAIN);
-      ierr = mac_send_strain(WORLD_COMM, strain_mac    );
-      ierr = mac_recv_stress(WORLD_COMM, stress_mac    );
-      myio_printf(&MACRO_COMM,"\nstress_ave = ");
-      for(int j = 0 ; j < nvoi ; j++)
-	myio_printf(&MACRO_COMM,"%e ",stress_mac[j]);
-      myio_printf(&MACRO_COMM,"\n");
-    }
 
   }
 
@@ -316,8 +301,7 @@ int read_bc(){
   mesh_boundary_t    *bou;
 
   node_list_t *pn = boundary_list.head;
-  while( pn )
-  {
+  while(pn){
     int *ix, n;
     bou = (mesh_boundary_t *)pn->data;
     int ierr = gmsh_get_node_index(mesh_n, bou->name, nmynods, mynods, dim, &n, &ix);
