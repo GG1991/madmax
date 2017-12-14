@@ -100,12 +100,17 @@ int main(int argc, char **argv){
   npe_max = (dim == 2) ? 4 : 8;
   ngp_max = npe_max;
 
-  flag_print = 0;
-  myio_comm_line_search_option(&command_line, "-print_petsc", &found);
-  if(found) flag_print = flag_print | (1<<PRINT_PETSC);
+  myio_comm_line_search_option(&command_line, "-print_matrices", &found);
+  if(found == true)
+    flags.print_matrices = true;
 
-  myio_comm_line_search_option(&command_line, "-print_vtu", &found);
-  if(found) flag_print = flag_print | (1<<PRINT_VTU);
+  myio_comm_line_search_option(&command_line, "-print_vectors", &found);
+  if(found == true)
+    flags.print_vectors = true;
+
+  myio_comm_line_search_option(&command_line, "-print_pvtu", &found);
+  if(found == true)
+    flags.print_pvtu = true;
 
   myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
 
@@ -183,7 +188,7 @@ int main(int argc, char **argv){
       EPSComputeError( eps, i, EPS_ERROR_RELATIVE, &error );
       myio_printf(&MACRO_COMM, "omega %d = %e   error = %e\n", i, params.eigen_vals[i], error);
 
-      if(flag_print & (1<<PRINT_VTU)){ 
+      if(flags.print_pvtu == true){
 	get_elem_properties();
 	sprintf( filename, "macro_eigen_%d", i);
 	macro_pvtu( filename );
@@ -262,7 +267,7 @@ int main(int argc, char **argv){
 	params.non_linear_its ++;
       }
 
-      if(flag_print & (1<<PRINT_VTU)){ 
+      if(flags.print_pvtu == true){
 	get_elem_properties();
 	sprintf(filename, "macro_t_%d", params.ts);
 	macro_pvtu(filename);
@@ -272,8 +277,8 @@ int main(int argc, char **argv){
       params.ts ++;
     }
     KSPDestroy(&ksp);
-  }
-  else if(params.calc_mode == CALC_MODE_TEST){
+
+  }else if(params.calc_mode == CALC_MODE_TEST){
 
     double   strain_mac[6] = {0.1, 0.1, 0.2, 0.0, 0.0, 0.0};
     double   stress_mac[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -293,63 +298,14 @@ int main(int argc, char **argv){
 
   }
 
-  free(loc_elem_index); 
-  free(glo_elem_index); 
-  free(elem_disp     ); 
-  free(stress_gp     ); 
-  free(strain_gp     ); 
-  if( flag_print & ( 1 << PRINT_VTU ) ){
-    free(elem_strain); 
-    free(elem_stress); 
-    free(elem_energy); 
-    free(elem_type); 
-  }
-
-  for(int i = 0 ; i < nvoi  ; i++){
-    for(int j = 0 ; j < npe_max*dim ; j++)
-      free(bmat[i][j]);
-    free(bmat[i]);
-  }
-  free(bmat);
-
-  for(int i = 0 ; i < npe_max ; i++){
-    for(int j = 0 ; j < dim ; j++)
-      free(dsh[i][j]);
-    free(dsh[i]);
-  }
-  free(dsh);
-
 end:
-
-  if(flags.coupled){
-    ierr = mac_send_signal(WORLD_COMM, ACTION_MICRO_END);
-    if(ierr){
-      myio_printf(&PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
-      return 1;
-    }
-  }
-
-  list_clear(&material_list);
-  list_clear(&physical_list);
-  list_clear(&function_list);
-
-  MatDestroy(&A);
-  VecDestroy(&x);
-  VecDestroy(&b);
 
   myio_printf(&MACRO_COMM,
       "--------------------------------------------------\n"
       "  MACRO: FINISH COMPLETE\n"
       "--------------------------------------------------\n");
 
-#ifdef SLEPC
-  SlepcFinalize();
-#elif  PETSC
-  PetscFinalize();
-#endif
-
   finalize();
-  ierr = MPI_Finalize();
 
   return 0;
 }

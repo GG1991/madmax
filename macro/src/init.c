@@ -16,6 +16,7 @@ void init_variables(void){
 
   flags.coupled = false;
   flags.allocated = false;
+  flags.print_pvtu = false;
   flags.print_vectors = false;
   flags.print_matrices = false;
 
