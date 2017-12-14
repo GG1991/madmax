@@ -41,7 +41,7 @@ int main(int argc, char **argv){
   }
 
   myio_comm_line_search_option(&command_line, "-coupl", &found);
-  if(found) flags.coupled = true;
+  if(found == true) flags.coupled = true;
 
   macmic.type = COUP_1;
   color = COLOR_MICRO; /* color can change */
@@ -153,8 +153,8 @@ int main(int argc, char **argv){
 
   myio_comm_line_search_option(&command_line, "-print_pvtu", &found);
   if(found == true &&
-    params.homog_method != HOMOG_METHOD_TAYLOR_PARALLEL &&
-    params.homog_method != HOMOG_METHOD_TAYLOR_SERIAL)
+      params.homog_method != HOMOG_METHOD_TAYLOR_PARALLEL &&
+      params.homog_method != HOMOG_METHOD_TAYLOR_SERIAL)
     flags.print_pvtu = true;
 
   PRINTF1(
@@ -262,7 +262,7 @@ end:
 
   ierr = finalize();
 
-  return 0;
+  return ierr;
 }
 
 
