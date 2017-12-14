@@ -352,6 +352,7 @@ int homogenize_init(void){
 
   if(flags.linear_materials == true){
 
+    PRINTF1("calculating c tangent arround zero...\n")
     ierr = homogenize_calculate_c_tangent_around_zero(params.c_tangent_linear);
 
     flags.c_linear_calculated = true;
@@ -423,10 +424,10 @@ int homogenize_get_c_tangent(double *strain_mac, double **c_tangent){
 
 int homogenize_calculate_c_tangent_around_zero(double *c_tangent){
 
-  double strain[MAX_NVOIGT];
-  ARRAY_SET_TO_ZERO(strain, nvoi);
+  double strain_zero[MAX_NVOIGT];
+  ARRAY_SET_TO_ZERO(strain_zero, nvoi);
 
-  int ierr = homogenize_calculate_c_tangent(strain, c_tangent);
+  int ierr = homogenize_calculate_c_tangent(strain_zero, c_tangent);
 
   return ierr;
 }
@@ -434,17 +435,18 @@ int homogenize_calculate_c_tangent_around_zero(double *c_tangent){
 
 int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent){
 
-  int ierr = 0;
   double strain_1[MAX_NVOIGT], strain_2[MAX_NVOIGT];
   double stress_1[MAX_NVOIGT], stress_2[MAX_NVOIGT];
   double strain_aux[MAX_NVOIGT];
 
+  PRINTF1("calc stress in ") PRINT_ARRAY("strain", strain_1, nvoi)
   ARRAY_COPY(strain_1, strain_mac, nvoi);
 
-  ierr = homogenize_get_strain_stress(strain_1, strain_aux, stress_1);
+  int ierr = homogenize_get_strain_stress(strain_1, strain_aux, stress_1);
 
   for(int i = 0 ; i < nvoi ; i++){
 
+    PRINTF2("exp %d\n", i)
     ARRAY_COPY(strain_2, strain_mac, nvoi);
 
     strain_2[i] = strain_2[i] + HOMOGENIZE_DELTA_STRAIN;
@@ -453,6 +455,16 @@ int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent){
 
     for(int j = 0 ; j < nvoi ; j++)
       c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[i] - strain_1[i]);
+
+    if(flag_print & (1 << PRINT_VTU) && params.homog_method == HOMOG_METHOD_UNIF_STRAINS){
+      get_elem_properties();
+      sprintf(filename,"micro_exp%d",i);
+      ierr = micro_pvtu( filename );
+      if(ierr != 0){
+	myio_printf(&MICRO_COMM,"Problem writing vtu file\n");
+	return ierr;
+      }
+    }
 
   }
 

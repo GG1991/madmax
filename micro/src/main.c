@@ -16,7 +16,6 @@ solver_t solver;
 
 #define CHECK_AND_GOTO(error){if(error){myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
 #define CHECK_INST_ELSE_GOTO(cond, instr){if(cond){instr}else{myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
-#define PRINT_ARRAY(name_str, array, length){ myio_printf(&MICRO_COMM,"%s ",name_str); for(int i = 0 ; i < length ; i++) myio_printf(&MICRO_COMM, "%e ", array[i]); myio_printf(&MICRO_COMM, "\n");}
 #define CHECK_ERROR_GOTO(message){if(ierr != 0){myio_printf(&MICRO_COMM, "%s\n", message); goto end;}}
 
 int main(int argc, char **argv){
@@ -151,14 +150,12 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-print_vtu", &found);
   if(found) flag_print = flag_print | (1<<PRINT_VTU);
 
-  if(flags.coupled == false){
-    myio_printf(&MICRO_COMM,
-	"--------------------------------------------------\n"
-	"  MICRO: STANDALONE \n"
-	"--------------------------------------------------\n");
-  }
+  PRINTF1(
+      "--------------------------------------------------\n"
+      "  MICRO: START\n"
+      "--------------------------------------------------\n\n");
 
-  myio_printf(&MICRO_COMM, "allocating ");
+  PRINTF1("allocating...\n")
   ierr = alloc_memory();
 
   ierr = micro_struct_init_elem_type(&micro_struct, dim, nelm, &get_elem_centroid, elem_type); CHECK_AND_GOTO(ierr)
@@ -235,57 +232,13 @@ int main(int argc, char **argv){
   }
   else{
 
-    double strain_mac[6], c_homo[36];
-
-    ARRAY_SET_TO_ZERO(c_homo, 36)
-
-    for(int i = 0 ; i < nvoi ; i++){
-
-      ARRAY_SET_TO_ZERO(strain_mac, nvoi); strain_mac[i]=0.005;
-
-      ierr = homogenize_get_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
-
-      PRINT_ARRAY("strain_ave = ", strain_ave, nvoi)
-      PRINT_ARRAY("stress_ave = ", stress_ave, nvoi)
-
-      for(int j = 0 ; j < nvoi ; j++ )
-	c_homo[j*nvoi+i] = stress_ave[j] / strain_ave[i];
-
-      if(flag_print & (1 << PRINT_VTU) && params.homog_method == HOMOG_METHOD_UNIF_STRAINS){
-        get_elem_properties();
-	sprintf(filename,"micro_exp%d",i);
-	ierr = micro_pvtu( filename );
-	if(ierr){
-	  myio_printf(&MICRO_COMM,"Problem writing vtu file\n");
-	  goto end;
-	}
-      }
-
-    }
-
     myio_printf(&MICRO_COMM,"\nConstitutive Average Tensor\n");
     for(int i = 0 ; i < nvoi ; i++){
       for(int j = 0 ; j < nvoi ; j++)
-	myio_printf(&MICRO_COMM, "%e ", (fabs(c_homo[i*nvoi+j])>1.0) ? c_homo[i*nvoi+j] : 0.0);
+	myio_printf(&MICRO_COMM, "%e ", (fabs(params.c_tangent_linear[i*nvoi+j])>1.0) ? params.c_tangent_linear[i*nvoi+j] : 0.0);
       myio_printf(&MICRO_COMM, "\n");
     }
     myio_printf(&MICRO_COMM, "\n");
-
-    strain_mac[0] = 0.01; strain_mac[1] = -0.02; strain_mac[2] = +0.03;
-    strain_mac[3] = 0.01; strain_mac[4] = -0.02; strain_mac[5] = +0.03;
-
-    ierr = homogenize_get_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
-
-    PRINT_ARRAY("strain_ave = ", strain_ave, nvoi)
-    PRINT_ARRAY("stress_ave = ", stress_ave, nvoi)
-
-    for( i = 0 ; i < nvoi ; i++ ){
-      stress_ave[i] = 0.0;
-      for( j = 0 ; j < nvoi ; j++ )
-	stress_ave[i] +=  c_homo[i*nvoi+j] * strain_mac[j];
-    }
-
-    PRINT_ARRAY("stress_ave (c_homo*strain_mac) = ", stress_ave, nvoi)
 
   }
 
@@ -312,7 +265,8 @@ int main(int argc, char **argv){
 
   end_trace(MICRO_COMM);
 
-  PRINTF1("--------------------------------------------------\n"
+  PRINTF1(
+      "--------------------------------------------------\n"
       "  MICRO: FINISH COMPLETE\n"
       "--------------------------------------------------\n");
 
