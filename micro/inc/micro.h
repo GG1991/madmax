@@ -22,6 +22,7 @@
 #define PRINT_ALWAYS 0
 #define PRINTF1(message){if(flags.coupled == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message);}
 #define PRINTF2(message, arg_1){if(flags.coupled == false || PRINT_ALWAYS) myio_printf(&MICRO_COMM, message,arg_1);}
+#define PRINT_ARRAY(name_str, array, length){ PRINTF2("%s ",name_str); for(int i = 0 ; i < length ; i++) PRINTF2("%lf ", array[i]); PRINTF1("\n");}
 
 #define MAX_NVOIGT   6
 
