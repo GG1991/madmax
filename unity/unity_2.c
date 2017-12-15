@@ -52,12 +52,6 @@ int main(void){
     }
   }
 
-  PRINT_ARRAY(gmsh_mesh.elem_per_proc, nproc);
-
-//  TEST("$Elements", 1, 4202)
-//  TEST("$Nodes", 2, 152)
-//  TEST("$PhysicalNames", 3, 35)
-
 end:
 
   MPI_Finalize();
