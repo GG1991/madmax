@@ -29,6 +29,8 @@ typedef struct {
     int num_vol_elems_local;
     int *elem_per_proc;
     int *elem_dist;
+    int *elem_centroid;
+    int *elem_id;
     int *eptr;
     int *eind;
     char *name;
