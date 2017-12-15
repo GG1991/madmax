@@ -19,3 +19,6 @@ $(OBJ_DIR)/myio.o: ../src/myio.c $(HEA_DIR)/myio.h
 
 clean:	    
 	rm -f $(OBJ_DIR)/* unity_1 unity_1.o
+
+run:
+	./unity_1
