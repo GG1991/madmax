@@ -23,8 +23,6 @@ int main(void){
 
   FILE *fm = fopen(file_name, "r"); if(fm == NULL) return 1;
 
-  printf("unity_1\n");
-
   TEST("$Elements", 1, 4202)
   TEST("$Nodes", 2, 152)
   TEST("$PhysicalNames", 3, 35)
