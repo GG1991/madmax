@@ -29,7 +29,7 @@ $MPIEXEC -np $NP $EXECUTABLE  \
     -ksp_type cg \
     -ksp_atol 1.0e-14 \
     -ksp_rtol 1.0e-13 \
-    -print_vtu \
+    -print_pvtu \
     -options_left 0
 
 mv macro_* force_x/.
@@ -53,7 +53,7 @@ $MPIEXEC -np $NP $EXECUTABLE  \
     -ksp_type cg \
     -ksp_atol 1.0e-14 \
     -ksp_rtol 1.0e-13 \
-    -print_vtu \
+    -print_pvtu \
     -options_left 0
 
 mv macro_* force_y/.
