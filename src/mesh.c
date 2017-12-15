@@ -48,7 +48,7 @@ int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list
 
 int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
 
-  int        rank, nproc, i, j, ierr;
+  int        rank, nproc, ierr;
   idx_t     *elmwgt;           // (inp) Element weights
   idx_t      wgtflag;          // (inp) Element weight flag (0 desactivated)
   idx_t      numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
@@ -76,7 +76,7 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
   tpwgts  = malloc( ncon * nparts * sizeof(real_t) );
 
   // uniform distribution of vertex in all processes
-  for( i = 0 ; i < ncon * nparts ; i++)
+  for(int i = 0 ; i < ncon * nparts ; i++)
     tpwgts[i] = 1.0 / nparts;
 
   ncommonnodes = 3;
@@ -86,47 +86,21 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
   options[2] = 0; // random seed
 
   ubvec = malloc( ncon * sizeof(real_t) );
-  for( i = 0 ; i < ncon ; i++ )
+  for(int i = 0 ; i < ncon ; i++)
     ubvec[i] = 1.05;
 
-  if(partition_algorithm == PARMETIS_GEOM)
-  {
-    /* uses the space-filling curve algorithm */ 
+  if(partition_algorithm == PARMETIS_GEOM){
+
     ParMETIS_V3_PartGeom( elmdist, &dim, (real_t*)elmv_centroid, part, &COMM );
 
-  }
-  else if(partition_algorithm == PARMETIS_MESHKWAY){
+  }else if(partition_algorithm == PARMETIS_MESHKWAY){
 
-    // Performe the partition with no weights
-    ParMETIS_V3_PartMeshKway (
-	elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
-	&ncon, &ncommonnodes, &nparts, tpwgts, ubvec,
-	options, &edgecut, part, &COMM );
+    ParMETIS_V3_PartMeshKway(elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
+	&ncon, &ncommonnodes, &nparts, tpwgts, ubvec, options, &edgecut, part, &COMM);
 
   }
   else
     return 1;
-
-  /* 
-     Graph distribution
-
-     First we create an array "npe" that follows
-     the same function as eptr but is a global 
-     reference 
-
-     eptr = [ 0 3 5 8 9 ]
-     npe  = [ 3 2 3 1 ]    (npe[i] = eptr[i+1] - eptr[i])
-
-     Then vectors are switched acording to "part"
-     we create npe_swi, eind_swi, npe_swi_size
-
-     We do MPI_Alltoall of : "npe_swi_size"  ->  "npe_size_new"
-     "eind_swi_size" ->  "eind_size_new"
-
-     we free and reallocate memory for : "npe" using "npe_size" 
-     "eind" using "eind_size" 
-
-   */
 
   int *eind_swi, *eind_swi_size, *eind_size_new;
   int *npe_swi, *npe_swi_size, *npe_size_new;         
@@ -134,7 +108,7 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
   int *npe;
 
   npe = malloc( nelm * sizeof(int) );
-  for( i = 0 ; i < nelm ; i++ )
+  for(int i = 0 ; i < nelm ; i++)
     npe[i] = eptr[i+1] - eptr[i];
 
   eind_swi       = malloc(eptr[nelm]*sizeof(int)); 
@@ -145,7 +119,6 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
   eind_size_new  = malloc(nproc*sizeof(int)); 
   npe_size_new   = malloc(nproc*sizeof(int)); 
 
-  // swap "npe" and "eind"
   ierr = swap_vectors_SCR( part, nproc, nelm, 
       npe, eptr, eind, elm_id,
       npe_swi, eind_swi, elm_id_swi,
@@ -155,73 +128,59 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
   ierr = MPI_Alltoall( npe_swi_size,  1, MPI_INT, npe_size_new,  1, MPI_INT, COMM ); if( ierr ) return 1;
   ierr = MPI_Alltoall( eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, COMM ); if( ierr ) return 1;
 
-  // free & reallocate memory for "npe" & "eind"
   int npe_size_new_tot = 0, eind_size_new_tot = 0;
 
-  for( i = 0 ; i < nproc ; i++ ){
+  for(int i = 0 ; i < nproc ; i++){
     npe_size_new_tot += npe_size_new[i];
     eind_size_new_tot += eind_size_new[i];
   }
   nelm = npe_size_new_tot;
 
-  free( npe );
-  free( eptr );
-  free( eind );
-  free( elm_id );
-  free( part );
+  free(npe);
+  free(eptr);
+  free(eind);
+  free(elm_id);
+  free(part);
 
-  npe    = malloc( nelm              * sizeof(int));
-  eptr   = malloc( (nelm+1)          * sizeof(int));
-  eind   = malloc( eind_size_new_tot * sizeof(int));
-  elm_id = malloc( nelm              * sizeof(int));
-
-  /* 
-     performe the MPI_Alltoall operation for calculating "npe" & "eind"
-
-     for "npe"
-     sdispls = npe_swi_size
-     rdispls = npe_size_new
-
-     for "eind"
-     sdispls = eind_swi_size
-     rdispls = eind_size_new
-   */
+  npe = malloc(nelm*sizeof(int));
+  eptr = malloc((nelm+1)*sizeof(int));
+  eind = malloc(eind_size_new_tot*sizeof(int));
+  elm_id = malloc(nelm*sizeof(int));
 
   int *sdispls, *rdispls;
 
   sdispls = malloc( nproc * sizeof(int) );
   rdispls = malloc( nproc * sizeof(int) );
 
-  for( i = 0 ; i < nproc ; i++ ){
+  for(int i = 0 ; i < nproc ; i++){
     sdispls[i] = 0;
-    for( j = 0 ; j < i ; j++ )
+    for(int j = 0 ; j < i ; j++)
       sdispls[i] += npe_swi_size[j];
   }
-  for( i = 0 ; i < nproc ; i++ ){
+  for(int i = 0 ; i < nproc ; i++){
     rdispls[i] = 0;
-    for( j = 0 ; j < i ; j++ )
+    for(int j = 0 ; j < i ; j++)
       rdispls[i] += npe_size_new[j];
   }
 
-  ierr = MPI_Alltoallv( npe_swi, npe_swi_size, sdispls, MPI_INT, 
-      npe, npe_size_new, rdispls, MPI_INT, COMM ); if( ierr ) return 1;
+  ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
+      npe, npe_size_new, rdispls, MPI_INT, COMM); if(ierr != 0) return ierr;
 
-  ierr = MPI_Alltoallv( elm_id_swi, npe_swi_size, sdispls, MPI_INT, 
-      elm_id, npe_size_new, rdispls, MPI_INT, COMM ); if( ierr ) return 1;
+  ierr = MPI_Alltoallv(elm_id_swi, npe_swi_size, sdispls, MPI_INT, 
+      elm_id, npe_size_new, rdispls, MPI_INT, COMM); if(ierr != 0) return ierr;
 
-  // rebuild "eptr"
   eptr[0] = 0;
-  for( i = 0 ; i < nelm ; i++ )
+  for(int i = 0 ; i < nelm ; i++)
     eptr[i+1] = eptr[i] + npe[i];
 
-  for( i = 0 ; i < nproc ; i++ ){
+  for(int i = 0 ; i < nproc ; i++){
     sdispls[i] = 0;
-    for( j = 0 ; j < i ; j++ )
+    for(int j = 0 ; j < i ; j++)
       sdispls[i] += eind_swi_size[j];
   }
-  for( i = 0 ; i < nproc ; i++ ){
+  for(int i = 0 ; i < nproc ; i++){
     rdispls[i] = 0;
-    for( j = 0 ; j < i ; j++ )
+    for(int j = 0 ; j < i ; j++)
       rdispls[i] += eind_size_new[j];
   }
 
@@ -240,53 +199,39 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
   free(ubvec);
   free(tpwgts);
 
-  // We delete repeated nodes and save the <nallnods> values on <allnods> in order
   allnods = NULL;
   clean_vector_qsort( eptr[nelm], eind, &allnods, &nallnods );
 
   return 0;
 }
 
-/****************************************************************************************************/
 
-int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
-{
+int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts ){
+
   /*
-     swaps a vector
-     example>
-
      swap       = [ 0 1 0 0 1 2 2 ]
      vector     = [ 0 1 2 3 4 5 6 ]
-     n = 7
-
      new_vector = [ 0 2 3 1 4 5 6 ] 
      cut        = [ 3 2 2 ]
-
-     Notes>
-
-     -> if new_vector = NULL the result is saved on vector
-     -> swap should have values in [0,n)
    */
 
   int *aux_vector;
-  int i,p,aux,j;
 
-  if( n == 0 )
-    return 0;
-  else if( vector == NULL || cuts == NULL )
-    return 1;
+  if(n == 0) return 0;
 
-  if( new_vector == NULL )
+  if(vector == NULL || cuts == NULL) return 1;
+
+  if(new_vector == NULL)
     aux_vector = vector;
   else
     aux_vector = new_vector;
 
-  j = 0;
-  for( p = 0 ; p < n ; p++ ){
+  int j = 0;
+  for(int p = 0 ; p < n ; p++ ){
     cuts[p] = 0;
-    for( i = 0 ; i < n ; i++ ){
+    for(int i = 0 ; i < n ; i++ ){
       if(swap[i] == p){
-	aux=vector[i];
+	int aux = vector[i];
 	aux_vector[i] = vector[j];
 	aux_vector[j] = aux;
 	j ++;
@@ -298,40 +243,26 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts )
   return 0;
 }
 
-/****************************************************************************************************/
 
-int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
+int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe, 
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,
-    int *npe_size, int *eind_size )
-{
+    int *npe_size, int *eind_size){
+
   /*
-     swaps a vectors in SCR format 
-    
-     example>
-    
      swap        = [ 0 2 1 0 ] (swap will be generally the "part" array)
      npe         = [ 3 2 3 1 ]             
      elm_id  = [ 0 0 1 2 ]             
      eind        = [ 3 2 0 | 1 2 | 1 0 1 |3 ]
        
-     swap operation with swap_vectors_CSR 
-      
      npe_swi     = [ 3 1 3 2 ]
      elm_id  = [ 0 2 1 0 ]
      eind_swi    = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]
-    
-     Notes>
-    
-     -> <n> is the length of <npe>
-     -> <eptr> is used to identify quickly the <eind> values to be swapped
-     -> results are saved on <eind_swi> and <npe_swi> (memory is duplicated)
-     -> swap should have values in [0,nproc)
    */
 
-  int e, p, i, j, lp, pi, c;
+  int lp, pi, c;
 
-  if(n==0) return 0;
+  if(n == 0) return 0;
 
   if(!npe || !eind || !elm_id ||
       !eind_swi || !npe_swi || !elm_id_swi || 
@@ -339,11 +270,11 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
     return 1;
   }
 
-  j = pi = lp = 0;
-  for(p=0;p<nproc;p++){
+  int j = pi = lp = 0;
+  for(int p = 0 ; p < nproc ; p++){
 
     npe_size[p] = 0;
-    for(e=0;e<n;e++){
+    for(int e = 0 ; e < n ; e++){
 
       if(swap[e] == p){
 
@@ -355,7 +286,7 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
 	// swap eind
 	pi = eptr[e];
 
-	for(i=0;i<npe[e];i++){
+	for(int i = 0 ; i < npe[e] ; i++){
 	  eind_swi[lp] = eind[ pi + i ];
 	  lp ++;
 	}
@@ -365,27 +296,15 @@ int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
   }
 
   c = 0;
-  for(i=0;i<nproc;i++){
+  for(int i = 0 ; i < nproc ; i++){
     eind_size[i] = 0;
-    for(j=0;j<npe_size[i];j++){
+    for(j = 0 ; j < npe_size[i] ; j++){
       eind_size[i] += npe_swi[c];
       c++;
     }
   }
 
   return 0;
-}
-
-
-int gmsh_is_vol_elm(int code){
-
-  if(dim == 2){
-    return (code == 2 || code == 3) ? 1 : 0;
-  }
-  else if(dim == 3){
-    return (code == 4 || code == 5 || code == 6) ? 1 : 0;
-  }
-  return 1;
 }
 
 
@@ -429,11 +348,11 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n){
 
   offset   = 0;
   nelm_tot = 0;
-  while(fgets(buf,NBUF,fm)!=NULL){
+  while(fgets(buf, NBUF, fm) != NULL){
     offset += strlen(buf); 
     data=strtok(buf," \n");
     if(strcmp(data,"$Elements")==0){
-      fgets(buf,NBUF,fm);
+      fgets(buf, NBUF, fm);
       offset += strlen(buf); 
       data  = strtok(buf," \n");
       total = atoi(data);
@@ -443,9 +362,8 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n){
 	len = strlen(buf);
 	data=strtok(buf," \n");
 	data=strtok(NULL," \n");
-	if(gmsh_is_vol_elm(atoi(data))){
+	if(gmsh_is_vol_elm(dim, atoi(data)) != 0)
 	  nelm_tot ++;
-	}
 	else{
 	  ln ++;
 	  offset += len; 
