@@ -46,6 +46,11 @@ mpirun
 # gdb
 *.gdb
 
+unity/unity_1
+unity/unity_2
+unity/unity_3
+unity/unity_4
+
 # utils
 utils/fig43_01.tex
 utils/trace_final.*
@@ -55,7 +60,6 @@ utils/trace_half.tex
 meshes/cube_unif/cube.geo
 meshes/barbero
 exs/ex1/coupling.sh
-exs/ex1/tmpi2
 exs/micro_hom/mpiexec
 exs/micro_hom/file.gdb
 exs/macro_alone/file.gdb
