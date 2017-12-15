@@ -159,3 +159,29 @@ int myio_comm_line_get_string_array(command_line_t *command_line, const char *op
   
   return 0;
 }
+
+
+int myio_file_get_offset_line_start_word(const char *file_name, const char *line_start_word, int *offset){
+
+  if(file_name == NULL || line_start_word == NULL) return 1;
+
+  FILE *fm = fopen(file_name, "r"); if(fm == NULL) return 1;
+  char buf[STRING_LENGTH];
+
+  *offset = 0;
+
+  while(fgets(buf, STRING_LENGTH, fm) != NULL){
+
+    int buf_length = strlen(buf); 
+    char *str_token = strtok(buf, " \n");
+    if(strcmp(str_token, line_start_word) == 0){
+      fclose(fm);
+      return 0;
+    }
+
+    *offset += buf_length;
+  }
+
+  fclose(fm);
+  return 1;
+}

@@ -43,5 +43,6 @@ int myio_comm_line_get_double(command_line_t *command_line, const char *option_n
 int myio_comm_line_get_string(command_line_t *command_line, const char *option_name, char *string, bool *found);
 int myio_comm_line_get_string_array(command_line_t *command_line, const char *option_name, char string_arr[][STRING_LENGTH], int nval_expect, int *nval_found, bool *found);
 
+int myio_file_get_offset_line_start_word(const char *file_name, const char *line_start_word, int *offset);
 
 #endif
