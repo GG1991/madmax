@@ -39,7 +39,6 @@ int give_inter_sort( MPI_Comm COMM, int *array1, int n1, int *array2, int n2, in
 int is_in_vector(int val, int *vector, int size);
 int cmpfunc(const void * a, const void * b);
 int gmsh_npe(int code);
-int gmsh_is_vol_elm(int code);
 int get_bbox_limit_lengths(MPI_Comm PROBLEM_COMM, double *coord, int n, double *lx, double *ly, double *lz);
 int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z);
 int get_domain_center(MPI_Comm PROBLEM_COMM, double *coord, int n, double center[3]);

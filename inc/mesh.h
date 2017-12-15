@@ -60,11 +60,10 @@ typedef struct{
 
 }mesh_t;
 
-mesh_t mesh;
+extern mesh_t mesh;
 
-
-int part_mesh( MPI_Comm COMM, char *myname, double *centroid );
-int reenumerate_PETSc( MPI_Comm COMM );
+int part_mesh(MPI_Comm COMM, char *myname, double *centroid);
+int reenumerate_PETSc(MPI_Comm COMM);
 
 int calc_local_and_ghost( MPI_Comm COMM, int nallnods, int *allnods,
     int *ntotnod, int *nmynods, int **mynods, int *nghost , int **ghost );
