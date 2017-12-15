@@ -20,4 +20,6 @@ int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_a
 int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave);
 int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave);
 
+int homogenize_get_rho(double *rho);
+
 #endif
