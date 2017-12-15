@@ -134,9 +134,10 @@ ${MIC_DIR}/micro: ${MIC_OBJ}
 	@echo "MICRO great :) !" 
 
 ##############################
-# SPUTNIK OBJECTS (do not work)
+# SPUTNIK OBJECTS
+
 ${SPU_OBJ_DIR}/%.o: ${SPU_SRC_DIR}/%.c ${DEPS_SPUTNIK} ${PARMETIS_HEA} ${SLEPC_EPS_LIB}
-	${PETSC_COMPILE} -DPETSC -c ${CFLAGS} ${INC_FLAG}  -o $@ $< 
+	${PETSC_COMPILE} -DPETSC -DMPI -c ${CFLAGS} ${INC_FLAG}  -o $@ $< 
 	@echo ">>> "$@
 
 ##############################
