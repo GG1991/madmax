@@ -27,8 +27,8 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
 
   vi = vol_i / vol_tot;
   vm = vol_m / vol_tot;
-  myio_printf(&MICRO_COMM, "vi = %lf \n", vi );
-  myio_printf(&MICRO_COMM, "vm = %lf \n", vm );
+  myio_printf(MICRO_COMM, "vi = %lf \n", vi );
+  myio_printf(MICRO_COMM, "vm = %lf \n", vm );
 
   get_c_tan("FIBER" , -1, -1, NULL, c_i);
   get_c_tan("MATRIX", -1, -1, NULL, c_m);
@@ -465,7 +465,7 @@ int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent){
       sprintf(filename,"micro_exp%d",i);
       ierr = micro_pvtu( filename );
       if(ierr != 0){
-	myio_printf(&MICRO_COMM,"Problem writing vtu file\n");
+	myio_printf(MICRO_COMM,"Problem writing vtu file\n");
 	return ierr;
       }
     }

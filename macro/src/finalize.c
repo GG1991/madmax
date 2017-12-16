@@ -12,7 +12,7 @@ int finalize(void){
     message.action = ACTION_MICRO_END;
     ierr = comm_macro_send(&message);
     if(ierr != 0){
-      myio_printf(&PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
+      myio_printf(PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
       return 1;
     }
   }

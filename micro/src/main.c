@@ -15,9 +15,9 @@ params_t params;
 flags_t flags;
 solver_t solver;
 
-#define CHECK_AND_GOTO(error){if(error){myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
-#define CHECK_INST_ELSE_GOTO(cond, instr){if(cond){instr}else{myio_printf(&MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
-#define CHECK_ERROR_GOTO(message){if(ierr != 0){myio_printf(&MICRO_COMM, "%s\n", message); goto end;}}
+#define CHECK_AND_GOTO(error){if(error){myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
+#define CHECK_INST_ELSE_GOTO(cond, instr){if(cond){instr}else{myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
+#define CHECK_ERROR_GOTO(message){if(ierr != 0){myio_printf(MICRO_COMM, "%s\n", message); goto end;}}
 
 int main(int argc, char **argv){
 
@@ -36,7 +36,7 @@ int main(int argc, char **argv){
 
   myio_comm_line_search_option(&command_line, "-help", &found);
   if(found == true){
-    myio_printf(&MACRO_COMM, "%s", help);
+    myio_printf(MACRO_COMM, "%s", help);
     goto end;
   }
 
@@ -72,7 +72,7 @@ int main(int argc, char **argv){
   if(found){
 
     if(nval_found != nval_expect){
-      myio_printf(&MICRO_COMM,"-struct_n should include %d arguments\n", nval_expect);
+      myio_printf(MICRO_COMM,"-struct_n should include %d arguments\n", nval_expect);
       goto end;
     }
     nx   = values_i[0];
@@ -102,13 +102,13 @@ int main(int argc, char **argv){
     npe  = (dim == 2) ? 4 : 8;
     ngp  = (dim == 2) ? 4 : 8;
     if(ny < nproc_mic){
-      myio_printf(&MICRO_COMM, "ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
+      myio_printf(MICRO_COMM, "ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
       goto end;
     }
 
   }
   else{
-    myio_printf(&MICRO_COMM,"-struct_n is request\n");
+    myio_printf(MICRO_COMM,"-struct_n is request\n");
     goto end;
   }
 
@@ -227,7 +227,7 @@ int main(int argc, char **argv){
 	  break;
 
 	default:
-	  myio_printf(&MICRO_COMM, "MICRO:signal %d not identified\n", signal);
+	  myio_printf(MICRO_COMM, "MICRO:signal %d not identified\n", signal);
 	  goto end;
 
       }
@@ -238,13 +238,13 @@ int main(int argc, char **argv){
   }
   else{
 
-    myio_printf(&MICRO_COMM,"\nConstitutive Average Tensor\n");
+    myio_printf(MICRO_COMM,"\nConstitutive Average Tensor\n");
     for(int i = 0 ; i < nvoi ; i++){
       for(int j = 0 ; j < nvoi ; j++)
-	myio_printf(&MICRO_COMM, "%e ", (fabs(params.c_tangent_linear[i*nvoi+j])>1.0) ? params.c_tangent_linear[i*nvoi+j] : 0.0);
-      myio_printf(&MICRO_COMM, "\n");
+	myio_printf(MICRO_COMM, "%e ", (fabs(params.c_tangent_linear[i*nvoi+j])>1.0) ? params.c_tangent_linear[i*nvoi+j] : 0.0);
+      myio_printf(MICRO_COMM, "\n");
     }
-    myio_printf(&MICRO_COMM, "\n");
+    myio_printf(MICRO_COMM, "\n");
 
   }
 
@@ -426,7 +426,7 @@ int micro_pvtu(char *name){
   sprintf(file_name,"%s_%d.vtu",name,rank_mic);
   fm = fopen(file_name,"w"); 
   if(!fm){
-    myio_printf(&MICRO_COMM,"Problem trying to opening file %s for writing\n", file_name);
+    myio_printf(MICRO_COMM,"Problem trying to opening file %s for writing\n", file_name);
     return 1;
   }
 

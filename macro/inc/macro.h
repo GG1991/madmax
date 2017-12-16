@@ -4,10 +4,10 @@
 #include "sputnik.h"
 #include "comm.h"
 #include "util.h"
-#include "gmsh.h"
 #include "function.h"
 #include "vtk.h"
 #include "myio.h"
+#include "gmsh.h"
 #include "mesh.h"
 #include "solvers.h"
 

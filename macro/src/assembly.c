@@ -54,7 +54,7 @@ int assembly_b_petsc(void){
   VecGhostUpdateEnd(b, INSERT_VALUES, SCATTER_FORWARD);
 
   if(flag_neg_detj == 1)
-    myio_printf(&MACRO_COMM, "MACRO: warning negative jacobian detected\n");
+    myio_printf(MACRO_COMM, "MACRO: warning negative jacobian detected\n");
 
   VecGhostGetLocalForm(b, &b_loc);
   VecGetArray(b_loc, &b_arr);

@@ -215,8 +215,6 @@ int gmsh_read_coord_parall(char *mesh_n, int dim, int nmynods, int *mynods, int 
 }
 
 
-#ifdef MPI
-
 int gmsh_read_vol_elms_csr_format_parall(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh){
 
   int rank, nproc;
@@ -321,8 +319,6 @@ int gmsh_read_vol_elms_csr_format_parall(MPI_Comm COMM, const char *gmsh_file, g
 
   return 0;   
 }
-
-#endif
 
 
 int  gmsh_funcmp_int_a(void *a, void *b){
