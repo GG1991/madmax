@@ -27,9 +27,9 @@ MIC_INC_DIR= ${MIC_DIR}/inc
 
 OPT = 0
 ifeq ($(OPT),1)
-CFLAGS=-O3 -DWITH_MPI
+CFLAGS=-O3
 else
-CFLAGS=-g -O0 -DWITH_MPI -lm -std=gnu11
+CFLAGS=-g -O0 -lm -std=gnu11
 endif
 
 DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \

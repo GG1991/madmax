@@ -1,24 +1,24 @@
 #include "myio.h"
 
 
-int myio_printf(void* COMM, const char format[], ...){
+#define SEARCH_ARGV_INDEX(i, option_name) { \
+  while(i < command_line->argc){ \
+    if(strcmp(command_line->argv[i], option_name) == 0) break; \
+    i++; \
+  } \
+}
 
-  va_list arg;
-  int     done;
 
-#ifdef WITH_MPI
-  int     rank;
-  done = MPI_Comm_rank( *(MPI_Comm*)COMM , &rank );
+int myio_printf(MPI_Comm COMM, const char format[], ...){
+
+  int rank;
+  int done = MPI_Comm_rank(COMM , &rank);
   if(!rank){
+    va_list arg;
     va_start(arg, format);
-    done = vfprintf( stdout, format, arg );
+    done = vfprintf(stdout, format, arg);
     va_end(arg);
   }
-#else
-  va_start(arg, format);
-  done = vfprintf( stdout, format, arg );
-  va_end(arg);
-#endif
 
   return done;
 }
