@@ -29,8 +29,7 @@ $MPIEXEC -np $NP $EXECUTABLE  \
     -ksp_type cg \
     -ksp_atol 1.0e-14 \
     -ksp_rtol 1.0e-13 \
-    -print_pvtu \
-    -options_left 0
+    -print_pvtu
 
 mv macro_* force_x/.
 
@@ -53,14 +52,6 @@ $MPIEXEC -np $NP $EXECUTABLE  \
     -ksp_type cg \
     -ksp_atol 1.0e-14 \
     -ksp_rtol 1.0e-13 \
-    -print_pvtu \
-    -options_left 0
+    -print_pvtu
 
 mv macro_* force_y/.
-
-#-pc_type  jacobi lu \
-#-ksp_type cg        \
-#-ksp_atol 1.0e-22   \
-#-boundary_2 "X1 001 0 0 1"
-#-ksp_type cg        \
-#-print_petsc        \
