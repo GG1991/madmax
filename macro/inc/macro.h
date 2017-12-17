@@ -11,6 +11,10 @@
 #include "mesh.h"
 #include "solvers.h"
 
+#define GREEN "\x1B[32m"
+#define RED "\x1B[31m"
+#define NORMAL "\x1B[0m"
+
 #define CALC_MODE_NULL   0
 #define CALC_MODE_NORMAL 1
 #define CALC_MODE_EIGEN  2

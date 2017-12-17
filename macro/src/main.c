@@ -47,10 +47,10 @@ int main(int argc, char **argv){
   MPI_Comm_size(MACRO_COMM, &nproc_mac);
   MPI_Comm_rank(MACRO_COMM, &rank_mac);
 
-  myio_printf(MACRO_COMM,
+  myio_printf(MACRO_COMM, GREEN
       "--------------------------------------------------\n"
-      "  MACRO: COMPOSITE MATERIAL MULTISCALE CODE\n"
-      "--------------------------------------------------\n");
+      "  MACRO: STARTS\n"
+      "--------------------------------------------------" NORMAL "\n");
 
   myio_comm_line_search_option(&command_line, "-help", &found);
   if(found == true){
@@ -137,6 +137,7 @@ int main(int argc, char **argv){
   ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
   CHECK_AND_GOTO(ierr);
 
+  gmsh_mesh.dim = dim;
   gmsh_read_vol_elms_csr_format_parall(MACRO_COMM, mesh_n, &gmsh_mesh);
 
   myio_printf(MACRO_COMM, "partitioning and distributing mesh\n");
@@ -218,6 +219,7 @@ int main(int argc, char **argv){
     VecZeroEntries(x);
     VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+    myio_printf(MACRO_COMM, "\n");
 
     while(params.t < (params.tf + 1.0e-10)){
 
@@ -227,7 +229,6 @@ int main(int argc, char **argv){
 
       Vec x_loc;
       double *x_arr;
-
       VecGhostGetLocalForm(x, &x_loc);
       VecGetArray(x_loc, &x_arr);
 
@@ -249,21 +250,18 @@ int main(int argc, char **argv){
 
       while(params.non_linear_its < params.non_linear_max_its && params.residual_norm > params.non_linear_min_norm_tol){
 
-	myio_printf(MACRO_COMM, "MACRO: assembling residual\n" );
 	assembly_b_petsc();
-
 	VecNorm(b, NORM_2, &params.residual_norm);
+	myio_printf(MACRO_COMM, GREEN "|b| = %e" NORMAL " ", params.residual_norm);
 
-	myio_printf(MACRO_COMM,"MACRO: |b| = %e\n", params.residual_norm );
-	if(params.residual_norm < params.non_linear_min_norm_tol) break;
+	if(params.residual_norm < params.non_linear_min_norm_tol)
+	  break;
 
-	myio_printf(MACRO_COMM, "MACRO: assembling jacobian\n");
 	assembly_A_petsc();
 
-	myio_printf(MACRO_COMM, "MACRO: solving system\n" );
 	KSPSetOperators(ksp, A, A);
 	KSPSolve(ksp, b, dx);
-	print_ksp_info( MACRO_COMM, ksp);
+	print_petsc_ksp_info( MACRO_COMM, ksp);
 	myio_printf(MACRO_COMM, "\n");
 
 	VecAXPY(x, 1.0, dx);
@@ -272,6 +270,7 @@ int main(int argc, char **argv){
 
 	params.non_linear_its ++;
       }
+      myio_printf(MACRO_COMM, "\n");
 
       if(flags.print_pvtu == true){
 	get_elem_properties();
@@ -288,13 +287,14 @@ int main(int argc, char **argv){
 
 
   }
+  myio_printf(MACRO_COMM, "\n");
 
 end:
 
-  myio_printf(MACRO_COMM,
+  myio_printf(MACRO_COMM, GREEN
       "--------------------------------------------------\n"
       "  MACRO: FINISH COMPLETE\n"
-      "--------------------------------------------------\n");
+      "--------------------------------------------------" NORMAL "\n");
 
   finalize();
 
