@@ -523,56 +523,49 @@ int get_global_elem_index( int e, int * glo_elem_index )
 }
 
 
-int get_local_elem_index( int e, int * loc_elem_index )
-{
+int get_local_elem_index( int e, int * loc_elem_index ){
 
-  int  n, d;
   int  npe = eptr[e+1] - eptr[e];
 
-  for( n = 0 ; n < npe ; n++ ){
-    for( d = 0 ; d < dim ; d++ )
-      loc_elem_index[ n * dim + d ] = eind[ eptr[e] + n ] * dim + d;
+  for(int n = 0 ; n < npe ; n++){
+    for(int d = 0 ; d < dim ; d++)
+      loc_elem_index[n * dim + d] = eind[eptr[e] + n]*dim + d;
   }
+
   return 0;
 }
 
 
-int get_dsh( int e, int *loc_elem_index, double ***dsh, double *detj )
-{
+int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj){
 
   double ***dsh_master;
-  int       i, gp;
   int       npe = eptr[e+1] - eptr[e];
   int       ngp = npe;
 
-  for( i = 0 ; i < npe*dim ; i++ )
+  for(int i = 0 ; i < npe*dim ; i++)
     elem_coor[i] = coord[loc_elem_index[i]];
 
-  for( gp = 0; gp < ngp ; gp++ ){
+  for(int gp = 0; gp < ngp ; gp++){
 
     fem_get_dsh_master( npe, dim, &dsh_master );
 
     fem_calc_jac( dim, npe, gp, elem_coor, dsh_master, jac );
     fem_invjac( dim, jac, jac_inv, &detj[gp] );
     fem_trans_dsh( dim, npe, gp, jac_inv, dsh_master, dsh );
-
   }
 
   return 0;
 }
 
 
-int get_bmat( int e, double ***dsh, double ***bmat )
-{
+int get_bmat(int e, double ***dsh, double ***bmat){
 
-
-  int       i, gp;
   int       npe = eptr[e+1] - eptr[e];
   int       ngp = npe;
 
-  if( dim == 2 ){
-    for( i = 0 ; i < npe ; i++ ){
-      for( gp = 0; gp < ngp ; gp++ ){
+  if(dim == 2){
+    for(int i = 0 ; i < npe ; i++){
+      for(int gp = 0; gp < ngp ; gp++){
 	bmat[0][i*dim + 0][gp] = dsh[i][0][gp];
 	bmat[0][i*dim + 1][gp] = 0             ;
 	bmat[1][i*dim + 0][gp] = 0             ;
@@ -587,8 +580,7 @@ int get_bmat( int e, double ***dsh, double ***bmat )
 }
 
 
-int get_sh( int dim, int npe, double ***sh )
-{
+int get_sh(int dim, int npe, double ***sh){
 
   fem_get_sh( npe, dim, sh );
 
@@ -596,8 +588,7 @@ int get_sh( int dim, int npe, double ***sh )
 }
 
 
-int get_wp( int dim, int npe, double **wp )
-{
+int get_wp(int dim, int npe, double **wp){
 
   fem_get_wp( npe, dim, wp );
 
@@ -605,21 +596,19 @@ int get_wp( int dim, int npe, double **wp )
 }
 
 
-int get_elem_properties( void )
-{
+int get_elem_properties(void){
 
-  int      e, v, gp;
   double  *strain_aux = malloc( nvoi * sizeof(double) );
   double  *stress_aux = malloc( nvoi * sizeof(double) );
   double  *wp;
 
-  for ( e = 0 ; e < nelm ; e++ ){
+  for(int e = 0 ; e < nelm ; e++){
 
     int     npe = eptr[e+1] - eptr[e];
     int     ngp = npe;
     double  vol_elem = 0.0;
 
-    for ( v = 0 ; v < nvoi ; v++ ) 
+    for(int v = 0 ; v < nvoi ; v++) 
       strain_aux[v] = stress_aux[v] = 0.0;
 
     get_local_elem_index (e, loc_elem_index);
@@ -628,43 +617,41 @@ int get_elem_properties( void )
     get_bmat( e, dsh, bmat );
     get_wp( dim, npe, &wp );
 
-    for ( gp = 0 ; gp < ngp ; gp++ ){
+    for(int gp = 0 ; gp < ngp ; gp++){
 
       detj[gp] = fabs( detj[gp] );
 
       get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );
-      for ( v = 0 ; v < nvoi ; v++ ){
+      for(int v = 0 ; v < nvoi ; v++){
 	strain_aux[v] += strain_gp[v] * detj[gp] * wp[gp];
 	stress_aux[v] += stress_gp[v] * detj[gp] * wp[gp];
       }
       vol_elem += detj[gp] * wp[gp];
     }
-    for ( v = 0 ; v < nvoi ; v++ ){
+    for(int v = 0 ; v < nvoi ; v++){
       elem_strain[ e*nvoi + v ] = strain_aux[v] / vol_elem;
       elem_stress[ e*nvoi + v ] = stress_aux[v] / vol_elem;
     }
 
     physical_t * phy;
     node_list_t * pn = physical_list.head;
-    while ( pn )
-    {
+    while(pn != NULL){
       phy = pn->data;
       if( phy->id == elm_id[e] ) break;
       pn = pn->next;
     }
-    if( !pn ) return 1;
+    if(pn == NULL) return 1;
 
     int type = 0;
     pn = material_list.head;
-    while ( pn )
-    {
+    while(pn != NULL){
       material_t *mat = pn->data;
-      if( strcmp( phy->name , mat->name) == 0 ) break;
+      if(strcmp(phy->name, mat->name) == 0) break;
       pn = pn->next;
       type ++;
     }
-    if( !pn ) return 1;
+    if(pn == NULL) return 1;
 
     elem_type[e] = type;
   }
@@ -673,21 +660,19 @@ int get_elem_properties( void )
 }
 
 
-int update_boundary( double t , list_t * function_list, list_t * boundary_list )
-{
+int update_boundary(double t, list_t *function_list, list_t *boundary_list){
 
   node_list_t * pn = boundary_list->head;
-  while( pn )
-  {
+  while(pn != NULL){
+
     mesh_boundary_t * bou = ( mesh_boundary_t * ) pn->data;
     function_t   * function = NULL;
-    int i, d;
-    for( d = 0 ; d < dim ; d++ ){
-      function_get_from_list( bou->fnum[d] , function_list , &function );
+    for(int d = 0 ; d < dim ; d++){
+      function_get_from_list(bou->fnum[d], function_list, &function);
       double val;
-      function_eval( t , function , &val );
-      for( i = 0 ; i < bou->ndir ; i++ )
-	bou->dir_val[ i* (bou->ndirpn) + d ] = val;
+      function_eval(t, function, &val);
+      for(int i = 0 ; i < bou->ndir ; i++)
+	bou->dir_val[i*(bou->ndirpn) + d] = val;
     }
     pn = pn->next;
   }
@@ -696,15 +681,14 @@ int update_boundary( double t , list_t * function_list, list_t * boundary_list )
 }
 
 
-int macro_pvtu( char *name )
-{
+int macro_pvtu(char *name){
 
   FILE    *fm;
   char    file_name[NBUF];
   double  *xvalues;
   Vec     xlocal;
 
-  if( rank_mac == 0 ){
+  if(rank_mac == 0){
 
     strcpy(file_name,name);
     strcat(file_name,".pvtu");
@@ -723,9 +707,9 @@ int macro_pvtu( char *name )
 	"</PCells>\n");
 
     fprintf(fm, "<PPointData Vectors=\"displ\">\n");
-    if( x != NULL )
+    if(x != NULL)
     fprintf(fm, "<PDataArray type=\"Float64\" Name=\"displ\"    NumberOfComponents=\"3\" />\n");
-    if( b != NULL )
+    if(b != NULL)
       fprintf(fm, "<PDataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" />\n");
 
     fprintf(fm, "</PPointData>\n"
@@ -736,8 +720,7 @@ int macro_pvtu( char *name )
 	"<PDataArray type=\"Int32\"   Name=\"elem_type\" NumberOfComponents=\"1\"/>\n"
 	"</PCellData>\n" , nvoi , nvoi);
 
-    int i;
-    for( i = 0 ; i < nproc_mac ; i++ ){
+    for(int i = 0 ; i < nproc_mac ; i++ ){
       sprintf(file_name,"%s_%d", name, i );
       fprintf(fm, "<Piece Source=\"%s.vtu\"/>\n", file_name );
     }
@@ -762,25 +745,21 @@ int macro_pvtu( char *name )
   fprintf(fm,"<Points>\n");
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
 
-  int    n , d;
-
-  for( n = 0 ; n < nallnods ; n++ ){
-    for( d = 0 ; d < dim ; d++ )
-      fprintf( fm,"% 01.6e ",  coord[n*dim + d] );
-    for( d = dim ; d < 3 ; d++ )
-      fprintf( fm, "% 01.6e ", 0.0 );
-    fprintf( fm, "\n" );
+  for(int n = 0 ; n < nallnods ; n++){
+    for(int d = 0 ; d < dim ; d++)
+      fprintf(fm,"% 01.6e ",  coord[n*dim + d] );
+    for(int d = dim ; d < 3 ; d++)
+      fprintf(fm, "% 01.6e ", 0.0 );
+    fprintf(fm, "\n" );
   }
   fprintf(fm,"</DataArray>\n");
   fprintf(fm,"</Points>\n");
   fprintf(fm,"<Cells>\n");
 
-  int npe, e;
-
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for ( e = 0 ; e < nelm ; e++ ){
-    npe = eptr[e+1] - eptr[e];
-    for ( n = 0 ; n < npe ; n++ )
+  for(int e = 0 ; e < nelm ; e++){
+    int npe = eptr[e+1] - eptr[e];
+    for(int n = 0 ; n < npe ; n++)
       fprintf(fm,"%-6d ", eind[eptr[e]+n]);
     fprintf(fm,"\n");
   }
@@ -788,17 +767,19 @@ int macro_pvtu( char *name )
 
   int ce = 0.0;
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"offsets\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for ( e = 0 ; e < nelm ; e++ ){
-    npe = eptr[e+1] - eptr[e];
+  for(int e = 0 ; e < nelm ; e++){
+    int npe = eptr[e+1] - eptr[e];
     ce += npe;
-    fprintf(fm,"%d ", ce);
+    fprintf(fm, "%d ", ce);
   }
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for ( e = 0 ; e < nelm ; e++ )
-    fprintf(fm, "%-3d ", vtkcode( dim , npe ) );
+  for(int e = 0 ; e < nelm ; e++){
+    int npe = eptr[e+1] - eptr[e];
+    fprintf(fm, "%-3d ", vtkcode(dim , npe));
+  }
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
@@ -806,17 +787,17 @@ int macro_pvtu( char *name )
 
   fprintf(fm,"<PointData Vectors=\"displ\">\n"); // Vectors inside is a filter we should not use this here
 
-  if( x != NULL ){
-    VecGhostUpdateBegin( x , INSERT_VALUES , SCATTER_FORWARD);
-    VecGhostUpdateEnd(   x , INSERT_VALUES , SCATTER_FORWARD);
-    VecGhostGetLocalForm(x , &xlocal );
+  if(x != NULL){
+    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostGetLocalForm(x, &xlocal);
 
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
     VecGetArray( xlocal , &xvalues );
-    for( n = 0 ; n < nallnods ; n++ ){
-      for( d = 0 ; d < dim ; d++ )
-	fprintf(fm, "% 01.6e ", xvalues[ n * dim + d ]);
-      for( d = dim ; d < 3 ; d++ )
+    for(int n = 0 ; n < nallnods ; n++){
+      for(int d = 0 ; d < dim ; d++)
+	fprintf(fm, "% 01.6e ", xvalues[n*dim + d]);
+      for(int d = dim ; d < 3 ; d++)
 	fprintf(fm,"% 01.6e ",0.0);
       fprintf(fm,"\n");
     }
@@ -824,54 +805,51 @@ int macro_pvtu( char *name )
     fprintf(fm,"</DataArray>\n");
   }
 
-  if( b != NULL ){
-    VecGhostUpdateBegin( b , INSERT_VALUES,SCATTER_FORWARD);
-    VecGhostUpdateEnd  ( b , INSERT_VALUES,SCATTER_FORWARD);
+  if(b != NULL){
+    VecGhostUpdateBegin(b , INSERT_VALUES,SCATTER_FORWARD);
+    VecGhostUpdateEnd(b , INSERT_VALUES,SCATTER_FORWARD);
     VecGhostGetLocalForm(b , &xlocal);
 
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
     VecGetArray(xlocal, &xvalues);
-    for( n = 0 ; n < nallnods ; n++ ){
-      for( d = 0 ; d < dim ; d++ )
-	fprintf(fm, "% 01.6e ", xvalues[ n * dim + d ]);
-      for( d = dim ; d < 3 ; d++ )
+    for(int n = 0 ; n < nallnods ; n++){
+      for(int d = 0 ; d < dim ; d++)
+	fprintf(fm, "% 01.6e ", xvalues[n*dim + d]);
+      for(int d = dim ; d < 3 ; d++)
 	fprintf(fm, "% 01.6e ", 0.0);
       fprintf(fm,"\n");
     }
-    VecRestoreArray( xlocal , &xvalues );
+    VecRestoreArray(xlocal, &xvalues);
     fprintf(fm,"</DataArray>\n");
-
   }
   fprintf(fm,"</PointData>\n");
   fprintf(fm,"<CellData>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for( e = 0; e < nelm ; e++ )
-    fprintf( fm, "%d ", rank_mac );  
-  fprintf( fm, "\n");
-  fprintf( fm, "</DataArray>\n");
-
-  int v;
+  for(int e = 0; e < nelm ; e++)
+    fprintf(fm, "%d ", rank_mac );  
+  fprintf(fm, "\n");
+  fprintf(fm, "</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for( e = 0 ; e < nelm ; e++ ){
-    for( v = 0 ; v < nvoi ; v++ )
-      fprintf( fm, "% 01.6e ", elem_strain[ e*nvoi + v ]);
+  for(int e = 0 ; e < nelm ; e++){
+    for(int v = 0 ; v < nvoi ; v++)
+      fprintf( fm, "% 01.6e ", elem_strain[e*nvoi + v]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for( e = 0; e < nelm ; e++ ){
-    for( v = 0 ; v < nvoi ; v++ )
-      fprintf(fm, "% 01.6e ", elem_stress[ e*nvoi + v ]);
+  for(int e = 0; e < nelm ; e++){
+    for(int v = 0 ; v < nvoi ; v++)
+      fprintf(fm, "% 01.6e ", elem_stress[e*nvoi + v]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"elem_type\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for( e = 0; e < nelm ; e++ )
-    fprintf( fm, "%d ", elem_type[e] );
+  for(int e = 0; e < nelm ; e++)
+    fprintf(fm, "%d ", elem_type[e]);
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
