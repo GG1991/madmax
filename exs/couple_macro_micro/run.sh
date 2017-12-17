@@ -25,7 +25,6 @@ $MPIEXEC -np $NP ../../macro/macro \
     -nl_max_its 2 \
     -eps_nev 2 \
     -print_pvtu \
-    -options_left 0 \
 : -np $NP ../../micro/micro \
     -coupl \
     -struct_n 75,75 \
@@ -35,8 +34,7 @@ $MPIEXEC -np $NP ../../macro/macro \
     -pc_type jacobi \
     -ksp_type cg \
     -homo_us \
-    -print_pvtu \
-    -options_left 0
+    -print_pvtu
 
 #xterm -e gdb -x file_micro.gdb --args
 #: -np $NP xterm -e gdb -x file_micro.gdb --args ../../micro/micro \

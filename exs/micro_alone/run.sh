@@ -17,8 +17,7 @@ $MPIEXEC -np $NP  ../../micro/micro \
     -pc_type jacobi \
     -ksp_type cg \
     -homo_us \
-    -print_pvtu \
-    -options_left  0
+    -print_pvtu
 
 #xterm -e gdb --args 
 #xterm -e gdb -x file.gdb --args 
