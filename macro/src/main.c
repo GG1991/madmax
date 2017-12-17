@@ -19,7 +19,7 @@ mesh_t mesh;
 #define CHECK_AND_GOTO(error){if(error){myio_printf(MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
 #define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
 #define CHECK_FOUND_GOTO(message){if(found == false){myio_printf(MACRO_COMM, "%s\n", message); goto end;}}
-#define CHECK_ERROR_GOTO(message){if(ierr != 0){myio_printf(MACRO_COMM, "%s\n", message); goto end;}}
+#define CHECK_ERROR_GOTO(ierr, message){if(ierr != 0){myio_printf(MACRO_COMM, "%s\n", message); goto end;}}
 
 int main(int argc, char **argv){
 
@@ -31,6 +31,8 @@ int main(int argc, char **argv){
   myio_comm_line_init(argc, argv, &command_line);
 
   WORLD_COMM = MPI_COMM_WORLD;
+  MACRO_COMM = MPI_COMM_WORLD;
+
   MPI_Init(&argc, &argv);
   MPI_Comm_size(WORLD_COMM, &nproc_wor);
   MPI_Comm_rank(WORLD_COMM, &rank_wor);
@@ -42,7 +44,12 @@ int main(int argc, char **argv){
 
   macmic.type = COUP_1;
   color = COLOR_MACRO;
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM, flags.coupled); CHECK_AND_GOTO(ierr);
+  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM, flags.coupled);
+  if(ierr != 0){
+    flags.coupled = false;
+    myio_printf(MACRO_COMM, RED "error in coloring" NORMAL "\n");
+    goto end_no_message;
+  }
 
   MPI_Comm_size(MACRO_COMM, &nproc_mac);
   MPI_Comm_rank(MACRO_COMM, &rank_mac);
@@ -172,7 +179,7 @@ int main(int argc, char **argv){
     VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
     ierr = assembly_AM_petsc();
-    CHECK_ERROR_GOTO("problem during matrix assembly\n")
+    CHECK_ERROR_GOTO(ierr, "problem during matrix assembly\n")
 
     int nconv;
     double error;
@@ -295,6 +302,8 @@ end:
       "--------------------------------------------------\n"
       "  MACRO: FINISH COMPLETE\n"
       "--------------------------------------------------" NORMAL "\n");
+
+end_no_message:
 
   finalize();
 

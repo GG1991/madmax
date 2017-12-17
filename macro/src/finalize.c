@@ -12,7 +12,7 @@ int finalize(void){
     message.action = ACTION_MICRO_END;
     ierr = comm_macro_send(&message);
     if(ierr != 0){
-      myio_printf(PETSC_COMM_WORLD, "macro: problem sending MIC_END to micro\n");
+      myio_printf(MACRO_COMM, "macro: problem sending MIC_END to micro\n");
       return 1;
     }
   }
@@ -45,9 +45,11 @@ int finalize(void){
   list_clear(&physical_list);
   list_clear(&function_list);
 
-  MatDestroy(&A);
-  VecDestroy(&x);
-  VecDestroy(&b);
+  if(solver.type == SOLVER_PETSC){
+    MatDestroy(&A);
+    VecDestroy(&x);
+    VecDestroy(&b);
+  }
 
   comm_finalize_message();
 
