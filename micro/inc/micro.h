@@ -19,6 +19,10 @@
 #include "micro_struct.h"
 #include "solvers.h"
 
+#define GREEN "\x1B[32m"
+#define RED "\x1B[31m"
+#define NORMAL "\x1B[0m"
+
 #define PRINT_ALWAYS 0
 #define PRINTF1(message){if(flags.coupled == false || PRINT_ALWAYS) myio_printf(MICRO_COMM, message);}
 #define PRINTF2(message, arg_1){if(flags.coupled == false || PRINT_ALWAYS) myio_printf(MICRO_COMM, message,arg_1);}

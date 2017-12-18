@@ -3,7 +3,7 @@
 
 int micro_print_info(void){
 
-  FILE *fm = fopen("mic_info.dat","w");
+  FILE *fm = fopen("micro_info.dat","w");
   int *i_data;
 
   if(rank_mic == 0){

@@ -157,10 +157,11 @@ int main(int argc, char **argv){
       params.homog_method != HOMOG_METHOD_TAYLOR_SERIAL)
     flags.print_pvtu = true;
 
-  PRINTF1(
+
+  PRINTF1(GREEN
       "--------------------------------------------------\n"
       "  MICRO: START\n"
-      "--------------------------------------------------\n\n");
+      "--------------------------------------------------" NORMAL "\n\n");
 
   PRINTF1("allocating...\n")
   ierr = alloc_memory();
@@ -254,10 +255,10 @@ int main(int argc, char **argv){
 
 end:
 
-  PRINTF1(
+  PRINTF1(GREEN
       "--------------------------------------------------\n"
-      "  MICRO: FINISH COMPLETE\n"
-      "--------------------------------------------------\n");
+      "  MICRO: FINISH\n"
+      "--------------------------------------------------" NORMAL "\n");
 
   ierr = finalize();
 
