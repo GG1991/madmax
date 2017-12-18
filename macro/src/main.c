@@ -107,7 +107,7 @@ int main(int argc, char **argv){
     goto end;
   }
 
-  nvoi    = (dim == 2) ? 3 : 6;
+  nvoi = (dim == 2) ? 3 : 6;
   npe_max = (dim == 2) ? 4 : 8;
   ngp_max = npe_max;
 
@@ -167,7 +167,7 @@ int main(int argc, char **argv){
   myio_printf(MACRO_COMM, "allocating ");
   ierr = alloc_memory();
 
-  ierr = fem_inigau();
+  ierr = fem_init();
 
   if(params.calc_mode == CALC_MODE_EIGEN){
 
@@ -240,7 +240,7 @@ int main(int argc, char **argv){
       VecGetArray(x_loc, &x_arr);
 
       node_list_t * pn = boundary_list.head;
-      while(pn){
+      while(pn != NULL){
 	mesh_boundary_t *bou = (mesh_boundary_t *)pn->data;
 	for(int i = 0 ; i < bou->ndirix ; i++)
 	  x_arr[bou->dir_loc_ixs[i]] = bou->dir_val[i];
@@ -313,14 +313,14 @@ end_no_message:
 
 int read_bc(){
 
-  mesh_boundary_t    *bou;
+  mesh_boundary_t *bou;
 
   node_list_t *pn = boundary_list.head;
-  while(pn){
+  while(pn != NULL){
     int *ix, n;
     bou = (mesh_boundary_t *)pn->data;
     int ierr = gmsh_get_node_index(mesh_n, bou->name, nmynods, mynods, dim, &n, &ix);
-    if(ierr){
+    if(ierr != 0){
       myio_printf(MACRO_COMM, "problem finding nodes of boundary %s on msh file\n", bou->name );
       return 1;
     }
@@ -329,11 +329,11 @@ int read_bc(){
     bou->dir_val     = malloc( bou->ndirix * sizeof(double));
     bou->dir_loc_ixs = malloc( bou->ndirix * sizeof(int));
     bou->dir_glo_ixs = malloc( bou->ndirix * sizeof(int));
-    for(int i = 0 ; i < n ; i++ ){
+    for(int i = 0 ; i < n ; i++){
       int da = 0;
-      int * p = bsearch( &ix[i], mynods, nmynods, sizeof(int), cmpfunc );
-      for(int d = 0 ; d < dim ; d++ )
-	if( bou->kind & (1<<d) ) {
+      int * p = bsearch( &ix[i], mynods, nmynods, sizeof(int), cmpfunc);
+      for(int d = 0 ; d < dim ; d++)
+	if(bou->kind & (1<<d)) {
 	  bou->dir_loc_ixs[i* (bou->ndirpn) + da] = (p - mynods) * dim + d;
 	  bou->dir_glo_ixs[i* (bou->ndirpn) + da] = loc2petsc[(p - mynods)] * dim + d;
 	  da++;
@@ -347,11 +347,11 @@ int read_bc(){
 }
 
 
-int read_coord( char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord ){
+int read_coord(char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord){
 
   (*coord) = malloc( ( nmynods + nghost )*dim * sizeof(double));
 
-  int ierr = gmsh_read_coord_parall( mesh_n, dim, nmynods, mynods, nghost , ghost, *coord );
+  int ierr = gmsh_read_coord_parall(mesh_n, dim, nmynods, mynods, nghost , ghost, *coord);
 
   return ierr;
 }
@@ -425,7 +425,7 @@ int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
   get_mat_name(elm_id[e], name_s);
 
   node_list_t *pn = material_list.head;
-  while( pn ){
+  while(pn != NULL){
     mat_p = (material_t *)pn->data;
     if(strcmp(name_s, mat_p->name) == 0) break;
     pn = pn->next;
@@ -556,8 +556,8 @@ int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj){
 
 int get_bmat(int e, double ***dsh, double ***bmat){
 
-  int       npe = eptr[e+1] - eptr[e];
-  int       ngp = npe;
+  int npe = eptr[e+1] - eptr[e];
+  int ngp = npe;
 
   if(dim == 2){
     for(int i = 0 ; i < npe ; i++){
@@ -578,7 +578,7 @@ int get_bmat(int e, double ***dsh, double ***bmat){
 
 int get_sh(int dim, int npe, double ***sh){
 
-  fem_get_sh( npe, dim, sh );
+  fem_get_sh(npe, dim, sh);
 
   return 0;
 }
@@ -586,7 +586,7 @@ int get_sh(int dim, int npe, double ***sh){
 
 int get_wp(int dim, int npe, double **wp){
 
-  fem_get_wp( npe, dim, wp );
+  fem_get_wp(npe, dim, wp);
 
   return 0;
 }
@@ -617,8 +617,8 @@ int get_elem_properties(void){
 
       detj[gp] = fabs(detj[gp]);
 
-      get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
-      get_stress( e , gp, strain_gp, stress_gp );
+      get_strain(e, gp, loc_elem_index, dsh, bmat, strain_gp);
+      get_stress(e, gp, strain_gp, stress_gp);
       for(int v = 0 ; v < nvoi ; v++){
 	strain_aux[v] += strain_gp[v] * detj[gp] * wp[gp];
 	stress_aux[v] += stress_gp[v] * detj[gp] * wp[gp];
@@ -626,15 +626,15 @@ int get_elem_properties(void){
       vol_elem += detj[gp] * wp[gp];
     }
     for(int v = 0 ; v < nvoi ; v++){
-      elem_strain[ e*nvoi + v ] = strain_aux[v] / vol_elem;
-      elem_stress[ e*nvoi + v ] = stress_aux[v] / vol_elem;
+      elem_strain[e*nvoi + v] = strain_aux[v] / vol_elem;
+      elem_stress[e*nvoi + v] = stress_aux[v] / vol_elem;
     }
 
     physical_t * phy;
     node_list_t * pn = physical_list.head;
     while(pn != NULL){
       phy = pn->data;
-      if( phy->id == elm_id[e] ) break;
+      if(phy->id == elm_id[e]) break;
       pn = pn->next;
     }
     if(pn == NULL) return 1;
