@@ -4,9 +4,10 @@
 
 int assembly_b_petsc(void){
 
-  double  *wp;
-  double  *b_arr;
-  Vec      b_loc;
+  double *wp;
+  double *b_arr;
+  Vec b_loc;
+  int ierr;
 
   VecGhostGetLocalForm(b, &b_loc);
   VecGetArray(b_loc, &b_arr);
@@ -21,9 +22,9 @@ int assembly_b_petsc(void){
 
     ARRAY_SET_TO_ZERO(res_elem, npe*dim)
 
-    get_dsh(e, loc_elem_index, dsh, detj);
-    get_bmat(e, dsh, bmat);
-    get_wp(dim, npe, &wp);
+    ierr = get_dsh(e, loc_elem_index, dsh, detj);
+    ierr = get_bmat(e, dsh, bmat);
+    ierr = get_wp(dim, npe, &wp);
 
     for(int gp = 0; gp < ngp ; gp++){
 
@@ -77,7 +78,7 @@ int assembly_b_petsc(void){
     PetscViewerASCIIOpen(MACRO_COMM, "b.dat", &viewer); VecView(b ,viewer);
   }
 
-  return 0;
+  return ierr;
 }
 
 
@@ -111,8 +112,7 @@ int assembly_AM_petsc(void){
 
       detj[gp] = fabs(detj[gp]);
 
-      get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
-
+      ierr = get_strain(e , gp, loc_elem_index, dsh, bmat, strain_gp);
       ierr = get_c_tan(NULL, e, gp, strain_gp, c); if(ierr != 0) return 1;
       ierr = get_rho(NULL, e, &rho_gp); if(ierr != 0) return 1;
 
@@ -144,7 +144,7 @@ int assembly_AM_petsc(void){
   MatAssemblyEnd(M, MAT_FINAL_ASSEMBLY);
 
   node_list_t *pn = boundary_list.head;
-  while(pn){
+  while(pn != NULL){
     mesh_boundary_t * bou = (mesh_boundary_t * )pn->data;
     MatZeroRowsColumns(M, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL);
     MatZeroRowsColumns(A, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL);
@@ -161,7 +161,7 @@ int assembly_AM_petsc(void){
     PetscViewerASCIIOpen(MACRO_COMM, "A.dat", &viewer); MatView(A, viewer);
   }
 
-  return 0;
+  return ierr;
 }
 
 
@@ -169,8 +169,8 @@ int assembly_A_petsc(void){
 
   MatZeroEntries(A);
 
-  int      ierr;
-  double  *wp;
+  int ierr;
+  double *wp;
 
   for(int e = 0 ; e < nelm ; e++ ){
 
@@ -182,29 +182,29 @@ int assembly_A_petsc(void){
     get_local_elem_index (e, loc_elem_index);
     get_global_elem_index(e, glo_elem_index);
 
-    get_dsh( e, loc_elem_index, dsh, detj);
-    get_bmat( e, dsh, bmat );
-    get_wp( dim, npe, &wp );
+    get_dsh(e, loc_elem_index, dsh, detj);
+    get_bmat(e, dsh, bmat);
+    get_wp(dim, npe, &wp);
 
-    for(int gp = 0; gp < ngp ; gp++ ){
+    for(int gp = 0; gp < ngp ; gp++){
 
-      detj[gp] = fabs( detj[gp] );
+      detj[gp] = fabs(detj[gp]);
 
-      get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
+      get_strain(e, gp, loc_elem_index, dsh, bmat, strain_gp);
 
-      ierr = get_c_tan( NULL , e , gp , strain_gp , c ); if(ierr != 0) return ierr;
+      ierr = get_c_tan(NULL , e , gp , strain_gp , c); if(ierr != 0) return ierr;
 
       for(int i = 0 ; i < npe*dim ; i++){
 	for(int j = 0 ; j < npe*dim ; j++){
 	  for(int k = 0; k < nvoi ; k++){
 	    for(int h = 0; h < nvoi ; h++)
-	      k_elem[ i*npe*dim + j] += bmat[h][i][gp]*c[h*nvoi + k]*bmat[k][j][gp]*wp[gp]*detj[gp] ;
+	      k_elem[ i*npe*dim + j] += bmat[h][i][gp]*c[h*nvoi + k]*bmat[k][j][gp]*wp[gp]*detj[gp];
 	  }
 	}
       }
 
     }
-    MatSetValues( A, npe*dim, glo_elem_index, npe*dim, glo_elem_index, k_elem, ADD_VALUES );
+    MatSetValues(A, npe*dim, glo_elem_index, npe*dim, glo_elem_index, k_elem, ADD_VALUES);
 
   }
 
@@ -212,7 +212,7 @@ int assembly_A_petsc(void){
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
   node_list_t *pn = boundary_list.head;
-  while(pn){
+  while(pn != NULL){
     mesh_boundary_t *bou = (mesh_boundary_t *)pn->data;
     MatZeroRowsColumns(A, bou->ndirix, bou->dir_glo_ixs, 1.0, NULL, NULL);
     pn = pn->next;
@@ -225,7 +225,7 @@ int assembly_A_petsc(void){
     PetscViewerASCIIOpen(MACRO_COMM, "A.dat", &viewer); MatView(A ,viewer);
   }
 
-  return 0;
+  return ierr;
 }
 
 #endif
