@@ -149,10 +149,10 @@ int fem_inigau(void){
 	ds_quad_4[i][j] = calloc(4,sizeof(double));
     }
 
-    xp_quad_4[0][0] = -0.577350269189626;  xp_quad_4[0][1] = -0.577350269189626;  wp_quad_4[0] = +1.0;
-    xp_quad_4[1][0] = +0.577350269189626;  xp_quad_4[1][1] = -0.577350269189626;  wp_quad_4[1] = +1.0;
-    xp_quad_4[2][0] = +0.577350269189626;  xp_quad_4[2][1] = +0.577350269189626;  wp_quad_4[2] = +1.0;
-    xp_quad_4[3][0] = -0.577350269189626;  xp_quad_4[3][1] = +0.577350269189626;  wp_quad_4[3] = +1.0;
+    xp_quad_4[0][0] = -0.577350269189626;  xp_quad_4[0][1] = -0.577350269189626;  wp_quad_4[0] = +0.25;
+    xp_quad_4[1][0] = +0.577350269189626;  xp_quad_4[1][1] = -0.577350269189626;  wp_quad_4[1] = +0.25;
+    xp_quad_4[2][0] = +0.577350269189626;  xp_quad_4[2][1] = +0.577350269189626;  wp_quad_4[2] = +0.25;
+    xp_quad_4[3][0] = -0.577350269189626;  xp_quad_4[3][1] = +0.577350269189626;  wp_quad_4[3] = +0.25;
 
     for(int gp = 0 ; gp < 4 ; gp++){
 
@@ -555,6 +555,7 @@ int fem_get_sh(int npe, int dim, double ***sh){
         default:
           return 1;
       }
+      break;
 
     case 3:
 
@@ -575,6 +576,7 @@ int fem_get_sh(int npe, int dim, double ***sh){
         default:
           return 1;
       }
+      break;
 
     default:
       return 1;
@@ -603,6 +605,7 @@ int fem_get_wp(int npe, int dim, double **wp){
         default:
 	  return 1;
       }
+      break;
 
     case 3:
 
@@ -623,6 +626,7 @@ int fem_get_wp(int npe, int dim, double **wp){
         default:
 	  return 1;
       }
+      break;
 
     default:
       return 1;
