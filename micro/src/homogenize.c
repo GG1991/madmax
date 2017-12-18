@@ -27,8 +27,8 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
 
   vi = vol_i / vol_tot;
   vm = vol_m / vol_tot;
-  myio_printf(MICRO_COMM, "vi = %lf \n", vi );
-  myio_printf(MICRO_COMM, "vm = %lf \n", vm );
+  PRINTF2("vi = %lf \n", vi);
+  PRINTF2("vm = %lf \n", vm);
 
   get_c_tan("FIBER" , -1, -1, NULL, c_i);
   get_c_tan("MATRIX", -1, -1, NULL, c_m);

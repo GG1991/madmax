@@ -56,8 +56,8 @@ int main(int argc, char **argv){
 
   myio_printf(MACRO_COMM, GREEN
       "--------------------------------------------------\n"
-      "  MACRO: STARTS\n"
-      "--------------------------------------------------" NORMAL "\n");
+      "  MACRO: START\n"
+      "--------------------------------------------------" NORMAL "\n\n");
 
   myio_comm_line_search_option(&command_line, "-help", &found);
   if(found == true){
@@ -300,7 +300,7 @@ end:
 
   myio_printf(MACRO_COMM, GREEN
       "--------------------------------------------------\n"
-      "  MACRO: FINISH COMPLETE\n"
+      "  MACRO: FINISH\n"
       "--------------------------------------------------" NORMAL "\n");
 
 end_no_message:
