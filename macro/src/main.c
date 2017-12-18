@@ -140,26 +140,26 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-part_geom", &found);
   if(found) partition_algorithm = PARMETIS_GEOM;
 
-  myio_printf(MACRO_COMM, "reading mesh elements\n" );
-  ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f);
-  CHECK_AND_GOTO(ierr);
+  ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f); CHECK_AND_GOTO(ierr);
 
   gmsh_mesh.dim = dim;
-  gmsh_read_vol_elms_csr_format_parall(MACRO_COMM, mesh_n, &gmsh_mesh);
+  ierr = gmsh_read_vol_elms_csr_format_parall(MACRO_COMM, mesh_n, &gmsh_mesh);
+  CHECK_ERROR_GOTO(ierr, RED "error reading gmsh mesh" NORMAL "\n")
 
-  myio_printf(MACRO_COMM, "partitioning and distributing mesh\n");
-  ierr = part_mesh(MACRO_COMM, myname, NULL); CHECK_AND_GOTO(ierr);
+  ierr = part_mesh(MACRO_COMM, myname, NULL);
+  CHECK_ERROR_GOTO(ierr, RED "error partitioning mesh" NORMAL "\n")
 
-  myio_printf(MACRO_COMM, "calculating ghost nodes\n");
-  ierr = calc_local_and_ghost(MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost ); CHECK_AND_GOTO(ierr);
+  ierr = calc_local_and_ghost(MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost);
+  CHECK_ERROR_GOTO(ierr, RED "error calculating ghost nodes" NORMAL "\n")
 
-  myio_printf(MACRO_COMM, "reenumering nodes\n");
-  ierr = reenumerate_PETSc( MACRO_COMM ); CHECK_AND_GOTO(ierr);
+  ierr = reenumerate_PETSc(MACRO_COMM);
+  CHECK_ERROR_GOTO(ierr, RED "error reenumbering nodes" NORMAL "\n")
 
-  myio_printf(MACRO_COMM, "reading Coordinates\n");
-  ierr = read_coord(mesh_n, nmynods, mynods, nghost , ghost, &coord ); CHECK_AND_GOTO(ierr);
+  ierr = read_coord(mesh_n, nmynods, mynods, nghost, ghost, &coord);
+  CHECK_ERROR_GOTO(ierr, RED "error reading coordinates" NORMAL "\n")
 
-  ierr = read_bc(); CHECK_AND_GOTO(ierr);
+  ierr = read_bc();
+  CHECK_ERROR_GOTO(ierr, RED "error reading boundaries from mesh" NORMAL "\n")
 
   list_init(&physical_list, sizeof(physical_t), NULL );
   gmsh_get_physical_list(mesh_n, &physical_list);
@@ -542,10 +542,9 @@ int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj){
   for(int i = 0 ; i < npe*dim ; i++)
     elem_coor[i] = coord[loc_elem_index[i]];
 
+  fem_get_dsh_master(npe, dim, &dsh_master);
+
   for(int gp = 0; gp < ngp ; gp++){
-
-    fem_get_dsh_master(npe, dim, &dsh_master);
-
     fem_calc_jac(dim, npe, gp, elem_coor, dsh_master, jac);
     fem_invjac(dim, jac, jac_inv, &detj[gp]);
     fem_trans_dsh(dim, npe, gp, jac_inv, dsh_master, dsh);
