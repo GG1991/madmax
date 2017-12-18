@@ -244,7 +244,7 @@ int fem_init(void){
       xp_prism_6[i] = calloc(3,sizeof(double));
       sh_prism_6[i] = calloc(6,sizeof(double));
       for(int j = 0 ; j < 3 ; j++)
-	ds_prism_6[i][j]=(double *)calloc(6,sizeof(double));
+	ds_prism_6[i][j] = calloc(6,sizeof(double));
     }
 
     xp_prism_6[0][0] = +0.166666666666666;   
@@ -316,13 +316,13 @@ int fem_init(void){
     ds_hexa_8 = calloc(8,sizeof(double**));
 
     for(int i = 0 ; i < 8 ; i++)
-      ds_hexa_8[i]=(double **)calloc(3,sizeof(double*));
+      ds_hexa_8[i] = calloc(3,sizeof(double*));
 
     for(int i = 0 ; i < 8 ; i++){
-      xp_hexa_8[i]=(double *)calloc(3,sizeof(double));
-      sh_hexa_8[i]=(double *)calloc(8,sizeof(double));
+      xp_hexa_8[i] = calloc(3,sizeof(double));
+      sh_hexa_8[i] = calloc(8,sizeof(double));
       for(int j = 0 ; j < 3 ; j++)
-	ds_hexa_8[i][j]=(double *)calloc(8,sizeof(double));
+	ds_hexa_8[i][j] = calloc(8,sizeof(double));
     }
 
     xp_hexa_8[0][0] = -0.577350269189626;   
@@ -419,7 +419,7 @@ int fem_calc_jac(int dim, int npe, int gp, double * coor, double *** dsh, double
 
   for(int i = 0 ; i < dim ; i++){
     for(int j = 0 ; j < dim ; j++){
-      jac[i][j]=0.0;
+      jac[i][j] = 0.0;
       for(int n = 0 ; n < npe ; n++)
 	jac[i][j] += dsh[n][i][gp]*coor[n*dim + j];
     }
@@ -430,7 +430,7 @@ int fem_calc_jac(int dim, int npe, int gp, double * coor, double *** dsh, double
 
 int fem_invjac(int dim, double **jac, double **ijac, double *det){
 
-  double c00,c01,c02,c10,c11,c12,c20,c21,c22;
+  double c00, c01, c02, c10, c11, c12, c20, c21, c22;
 
   if(jac == NULL || ijac == NULL)
     return 1;
@@ -441,11 +441,11 @@ int fem_invjac(int dim, double **jac, double **ijac, double *det){
     c10 = -jac[0][1];
     c11 = +jac[0][0];
 
-    (*det)=jac[0][0]*c00 + jac[0][1]*c01;
-    ijac[0][0]=c00/(*det);
-    ijac[0][1]=c10/(*det);
-    ijac[1][0]=c01/(*det);
-    ijac[1][1]=c11/(*det);
+    (*det) = jac[0][0]*c00 + jac[0][1]*c01;
+    ijac[0][0] = c00/(*det);
+    ijac[0][1] = c10/(*det);
+    ijac[1][0] = c01/(*det);
+    ijac[1][1] = c11/(*det);
 
   }else if(dim == 3){
     c00 = +jac[1][1]*jac[2][2]-jac[2][1]*jac[1][2];
@@ -458,16 +458,16 @@ int fem_invjac(int dim, double **jac, double **ijac, double *det){
     c21 = -jac[0][0]*jac[1][2]+jac[1][0]*jac[0][2];
     c22 = +jac[0][0]*jac[1][1]-jac[1][0]*jac[0][1];
 
-    (*det)=jac[0][0]*c00 + jac[0][1]*c01 + jac[0][2]*c02;
-    ijac[0][0]=c00/(*det);
-    ijac[0][1]=c10/(*det);
-    ijac[0][2]=c20/(*det);
-    ijac[1][0]=c01/(*det);
-    ijac[1][1]=c11/(*det);
-    ijac[1][2]=c21/(*det);
-    ijac[2][0]=c02/(*det);
-    ijac[2][1]=c12/(*det);
-    ijac[2][2]=c22/(*det);
+    (*det) = jac[0][0]*c00 + jac[0][1]*c01 + jac[0][2]*c02;
+    ijac[0][0] = c00/(*det);
+    ijac[0][1] = c10/(*det);
+    ijac[0][2] = c20/(*det);
+    ijac[1][0] = c01/(*det);
+    ijac[1][1] = c11/(*det);
+    ijac[1][2] = c21/(*det);
+    ijac[2][0] = c02/(*det);
+    ijac[2][1] = c12/(*det);
+    ijac[2][2] = c22/(*det);
   }
 
   return 0;
@@ -634,5 +634,6 @@ int fem_get_wp(int npe, int dim, double **wp){
     default:
       return 1;
   }
+
   return 0;
 }
