@@ -1,5 +1,5 @@
-#ifndef FEM2_H
-#define FEM2_H
+#ifndef FEM_H
+#define FEM_H
 
 #include <stdio.h>
 #include <stdlib.h>

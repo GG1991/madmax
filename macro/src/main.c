@@ -42,13 +42,14 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-coupl", &found);
   if(found == true) flags.coupled = true;
 
-  macmic.type = COUP_1;
-  color = COLOR_MACRO;
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM, flags.coupled);
-  if(ierr != 0){
-    flags.coupled = false;
-    myio_printf(MACRO_COMM, RED "error in coloring" NORMAL "\n");
-    goto end_no_message;
+  if(flags.coupled == true){
+    color = COLOR_MACRO;
+    ierr = comm_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM, flags.coupled);
+    if(ierr != 0){
+      flags.coupled = false;
+      myio_printf(MACRO_COMM, RED "error in coloring" NORMAL "\n");
+      goto end_no_message;
+    }
   }
 
   MPI_Comm_size(MACRO_COMM, &nproc_mac);

@@ -31,19 +31,6 @@ message_t message;
 
 MPI_Datatype mpi_message_t;
 
-int comm_init_message(message_t *message);
-int comm_macro_send(message_t *message);
-int comm_macro_recv(message_t *message);
-int comm_micro_send(message_t *message);
-int comm_micro_recv(message_t *message);
-int comm_finalize_message(void);
-
-
-#define  COUP_NULL          0
-#define  COUP_1             1
-
-int       coup_type;
-
 MPI_Comm   WORLD_COMM;
 MPI_Comm   MICRO_COMM;
 MPI_Comm   MACRO_COMM;
@@ -75,6 +62,13 @@ typedef struct coupling_t_{
 
 coupling_t macmic;
 
-int macmic_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM, bool flag_coupling);
+int comm_init_message(message_t *message);
+int comm_macro_send(message_t *message);
+int comm_macro_recv(message_t *message);
+int comm_micro_send(message_t *message);
+int comm_micro_recv(message_t *message);
+int comm_finalize_message(void);
+int comm_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM, bool flag_coupling);
+
 
 #endif

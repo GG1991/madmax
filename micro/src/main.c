@@ -43,9 +43,11 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-coupl", &found);
   if(found == true) flags.coupled = true;
 
-  macmic.type = COUP_1;
   color = COLOR_MICRO; /* color can change */
-  ierr = macmic_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM, flags.coupled); CHECK_AND_GOTO(ierr);
+
+  if(flags.coupled == true){
+    ierr = comm_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM, flags.coupled); CHECK_AND_GOTO(ierr);
+  }
 
   MPI_Comm_size(MICRO_COMM, &nproc_mic);
   MPI_Comm_rank(MICRO_COMM, &rank_mic);
