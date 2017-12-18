@@ -464,7 +464,7 @@ int get_rho(const char *name, int e, double *rho){
   material_t *mat_p;
   node_list_t *pn = material_list.head;
   while(pn != NULL){
-    mat_p = ( material_t * )pn->data;
+    mat_p = (material_t *)pn->data;
     if(strcmp(name_s, mat_p->name) == 0) break;
     pn = pn->next;
   }
@@ -489,35 +489,32 @@ int get_rho(const char *name, int e, double *rho){
 }
 
 
-int get_mat_name( int id , char * name_s )
-{
+int get_mat_name(int id, char *name_s){
 
   node_list_t *pn;
   physical_t  *phy_p;
   
   pn = physical_list.head;
-  while( pn ){
+  while(pn != NULL){
     phy_p = ( physical_t * )pn->data;
     if( id == phy_p->id ) break;
     pn = pn->next;
   }
-  if( pn == NULL ) return 1;
+  if(pn == NULL) return 1;
 
-  strcpy( name_s, phy_p->name );
+  strcpy(name_s, phy_p->name);
 
   return 0;
 }
 
 
-int get_global_elem_index( int e, int * glo_elem_index )
-{
+int get_global_elem_index(int e, int *glo_elem_index){
 
-  int  n, d;
   int  npe = eptr[e+1] - eptr[e];
 
-  for( n = 0 ; n < npe ; n++ ){
-    for( d = 0 ; d < dim ; d++ )
-      glo_elem_index[ n * dim + d ] = loc2petsc[ eind[ eptr[e] + n ] ] * dim + d;
+  for(int n = 0 ; n < npe ; n++){
+    for(int d = 0 ; d < dim ; d++)
+      glo_elem_index[n*dim + d] = loc2petsc[ eind[ eptr[e] + n ] ] * dim + d;
   }
   return 0;
 }
@@ -539,19 +536,19 @@ int get_local_elem_index( int e, int * loc_elem_index ){
 int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj){
 
   double ***dsh_master;
-  int       npe = eptr[e+1] - eptr[e];
-  int       ngp = npe;
+  int npe = eptr[e+1] - eptr[e];
+  int ngp = npe;
 
   for(int i = 0 ; i < npe*dim ; i++)
     elem_coor[i] = coord[loc_elem_index[i]];
 
   for(int gp = 0; gp < ngp ; gp++){
 
-    fem_get_dsh_master( npe, dim, &dsh_master );
+    fem_get_dsh_master(npe, dim, &dsh_master);
 
-    fem_calc_jac( dim, npe, gp, elem_coor, dsh_master, jac );
-    fem_invjac( dim, jac, jac_inv, &detj[gp] );
-    fem_trans_dsh( dim, npe, gp, jac_inv, dsh_master, dsh );
+    fem_calc_jac(dim, npe, gp, elem_coor, dsh_master, jac);
+    fem_invjac(dim, jac, jac_inv, &detj[gp]);
+    fem_trans_dsh(dim, npe, gp, jac_inv, dsh_master, dsh);
   }
 
   return 0;
@@ -598,9 +595,9 @@ int get_wp(int dim, int npe, double **wp){
 
 int get_elem_properties(void){
 
-  double  *strain_aux = malloc( nvoi * sizeof(double) );
-  double  *stress_aux = malloc( nvoi * sizeof(double) );
-  double  *wp;
+  double *strain_aux = malloc(nvoi*sizeof(double));
+  double *stress_aux = malloc(nvoi*sizeof(double));
+  double *wp;
 
   for(int e = 0 ; e < nelm ; e++){
 
@@ -613,13 +610,13 @@ int get_elem_properties(void){
 
     get_local_elem_index (e, loc_elem_index);
 
-    get_dsh( e, loc_elem_index, dsh, detj);
-    get_bmat( e, dsh, bmat );
-    get_wp( dim, npe, &wp );
+    get_dsh(e, loc_elem_index, dsh, detj);
+    get_bmat(e, dsh, bmat);
+    get_wp(dim, npe, &wp);
 
     for(int gp = 0 ; gp < ngp ; gp++){
 
-      detj[gp] = fabs( detj[gp] );
+      detj[gp] = fabs(detj[gp]);
 
       get_strain( e , gp, loc_elem_index, dsh, bmat, strain_gp );
       get_stress( e , gp, strain_gp, stress_gp );

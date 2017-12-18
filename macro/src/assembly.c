@@ -5,7 +5,6 @@
 int assembly_b_petsc(void){
 
   double  *wp;
-
   double  *b_arr;
   Vec      b_loc;
 
