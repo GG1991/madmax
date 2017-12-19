@@ -84,7 +84,7 @@ int micro_print_info(void){
   }
 
   double norm;
- 
+
   if(b != NULL){
     VecNorm( b, NORM_2, &norm );
     if( rank_mic == 0 )
@@ -130,9 +130,9 @@ int micro_pvtu(char *name){
 	"<PDataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"Int32\" Name=\"offsets\"      NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"UInt8\" Name=\"types\"        NumberOfComponents=\"1\"/>\n"
-	"</PCells>\n" 
+	"</PCells>\n"
 
-	"<PPointData Vectors=\"displ\">\n" 
+	"<PPointData Vectors=\"displ\">\n"
 	"<PDataArray type=\"Float64\" Name=\"displ\"    NumberOfComponents=\"3\" />\n"
 	"<PDataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" />\n"
 	"</PPointData>\n"
@@ -148,7 +148,7 @@ int micro_pvtu(char *name){
       sprintf(file_name,"%s_%d",name,i);
       fprintf(fm,	"<Piece Source=\"%s.vtu\"/>\n",file_name);
     }
-    fprintf(fm,	"</PUnstructuredGrid>\n" 
+    fprintf(fm,	"</PUnstructuredGrid>\n"
       "</VTKFile>\n" );
 
     fclose(fm);
@@ -156,13 +156,13 @@ int micro_pvtu(char *name){
   }
 
   sprintf(file_name,"%s_%d.vtu",name,rank_mic);
-  fm = fopen(file_name,"w"); 
+  fm = fopen(file_name,"w");
   if(!fm){
     myio_printf(MICRO_COMM,"Problem trying to opening file %s for writing\n", file_name);
     return 1;
   }
 
-  fprintf(fm, 
+  fprintf(fm,
       "<?xml version=\"1.0\"?>\n"
       "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
       "<UnstructuredGrid>\n");
@@ -212,12 +212,12 @@ int micro_pvtu(char *name){
 
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for(int e = 0 ; e < nelm ; e++)
-    fprintf(fm, "%d ",vtkcode(dim, npe));  
+    fprintf(fm, "%d ",vtkcode(dim, npe));
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"</Cells>\n");
-  
+
   fprintf(fm,"<PointData Vectors=\"displ\">\n"); // Vectors inside is a filter we should not use this here
 
   VecGhostUpdateBegin(x , INSERT_VALUES, SCATTER_FORWARD);
@@ -257,7 +257,7 @@ int micro_pvtu(char *name){
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for(int e = 0; e < nelm ; e++ )
-    fprintf( fm, "%d ", rank_mic );  
+    fprintf( fm, "%d ", rank_mic );
   fprintf( fm, "\n");
   fprintf( fm, "</DataArray>\n");
 

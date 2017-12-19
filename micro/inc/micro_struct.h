@@ -37,7 +37,7 @@ typedef struct _fiber_cilin_t
 typedef struct _fiber_line_t
 {
 
-  int      ntype;        // number of types 
+  int      ntype;        // number of types
   int     *nfib;         // fiber number               (for each type)
   double  *theta;        // fiber angle                (for each type)
   double  *sep;          // fiber separation           (for each type)

@@ -178,7 +178,7 @@ int assembly_A_petsc(void){
     int ngp = npe;
 
     ARRAY_SET_TO_ZERO(k_elem, npe*dim*npe*dim);
-    
+
     get_local_elem_index (e, loc_elem_index);
     get_global_elem_index(e, glo_elem_index);
 

@@ -86,7 +86,7 @@ int comm_coloring(MPI_Comm WORLD_COMM, comm_t *comm, MPI_Comm *LOCAL_COMM){
     int macro_count = 0; int macro_leader = 0;
     while(macro_leader < nproc_world){
 
-      if(id_vec[macro_leader] == COLOR_MACRO){ 
+      if(id_vec[macro_leader] == COLOR_MACRO){
 	if(macro_count == micro_position) break;
 	macro_count++;
       }

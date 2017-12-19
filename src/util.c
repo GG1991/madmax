@@ -1,13 +1,13 @@
-#include "util.h" 
+#include "util.h"
 
 
 #ifdef PETSC
 int print_petsc_ksp_info(MPI_Comm COMM, KSP ksp){
- 
+
   int kspits, reason;
   double kspnorm;
   char *reason_s;
-  
+
   KSPGetIterationNumber( ksp, &kspits );
   KSPGetConvergedReason( ksp, &reason );
   KSPGetResidualNorm   ( ksp, &kspnorm);
@@ -32,7 +32,7 @@ int print_petsc_ksp_info(MPI_Comm COMM, KSP ksp){
 
 int strbin2dec(char *str){
 
-  int dec = 0; 
+  int dec = 0;
   for(int i = strlen(str)-1 ; i >= 0 ; i-- ){
     if(str[i]=='0' || str[i]=='1'){
       if(str[i] == '1')

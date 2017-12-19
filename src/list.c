@@ -1,7 +1,7 @@
 /* list_t operations
- * 
- * 
- * 
+ *
+ *
+ *
  */
 
 #include <stdio.h>
@@ -26,12 +26,12 @@ int list_init(list_t * list, int sizedata, fcmp cmp){
 int list_insert_se(list_t * list, void *data){
 
     /* Insert sort exclusive an element
-     * 
-     * 
+     *
+     *
      * return 0  if success
      *        1  if repeated
      *       -1  error
-     * 
+     *
      */
 
     node_list_t * node, *onode;
@@ -73,7 +73,7 @@ int list_insert_se(list_t * list, void *data){
         aux = onode->data;
         onode->data = node->data;
         node->data = aux;
-    }    
+    }
     if(onode==list->tail)
         list->tail=node;
     return 0;
@@ -83,9 +83,9 @@ int list_insert_se(list_t * list, void *data){
 int list_insertlast(list_t * list, void *data){
 
     /* Insert sort exclusive an element
-     * 
+     *
      * return 0  if success
-     *        1  error 
+     *        1  error
      */
 
     node_list_t * node;
@@ -111,7 +111,7 @@ int list_insertlast(list_t * list, void *data){
     }
     list->sizelist ++;
     list->tail->next = node;
-    list->tail = node;    
+    list->tail = node;
     return 0;
 
 }
@@ -119,7 +119,7 @@ int list_insertlast(list_t * list, void *data){
 int list_delfirst(list_t * list){
 
     /* Deletes the first element in the list
-     * 
+     *
      * return 0 sucess.
      *        1 if list=NULL or if there is no element to delete.
      */
@@ -127,14 +127,14 @@ int list_delfirst(list_t * list){
     node_list_t *aux;
     if(!list)
         return 1;
-    if(!list->head) 
+    if(!list->head)
         return 1;
     aux = list->head;
     list->head = aux->next;
     if(aux->data)
       free(aux->data);
     free(aux);
-    if(list->sizelist == 1) 
+    if(list->sizelist == 1)
       list->tail=NULL;
     list->sizelist--;
     return 0;
@@ -142,8 +142,8 @@ int list_delfirst(list_t * list){
 
 int list_del(list_t *list, node_list_t* pNod){
 
-    /* Removes the element if 
-     * exists 
+    /* Removes the element if
+     * exists
      */
 
     node_list_t *pNodA;
@@ -180,7 +180,7 @@ int list_del(list_t *list, node_list_t* pNod){
 
 int list_clear(list_t *list){
 
-    /* Frees the memory allocated in all the list 
+    /* Frees the memory allocated in all the list
     */
 
     if(!list)

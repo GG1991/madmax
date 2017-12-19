@@ -40,7 +40,7 @@ double **xp_prism_6;
 double *wp_prism_6;
 double **sh_prism_6;
 double ***ds_prism_6;
-          
+
 double **xp_hexa_8;
 double *wp_hexa_8;
 double **sh_hexa_8;

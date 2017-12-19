@@ -15,7 +15,7 @@ int micro_struct_init(const int dim, const char *string, micro_struct_t *micro_s
     fiber_cilin->desv = malloc(dim*sizeof(double));
 
     for(int d = 0 ; d < dim ; d++){
-      data = strtok( NULL, " \n" ); 
+      data = strtok( NULL, " \n" );
       if(!data) return 2;
       size[d] = atof( data );
     }
@@ -186,7 +186,7 @@ int micro_struct_get_elem_id(const int dim, const micro_struct_t *micro_struct, 
 }
 
 
-int micro_struct_init_elem_type(micro_struct_t *micro_struct, int dim, int nelm, 
+int micro_struct_init_elem_type(micro_struct_t *micro_struct, int dim, int nelm,
     int (*get_centroid)( int e, int dim, double *elem_centroid ), int *elem_type ){
 
   double *elem_centroid = malloc(dim*sizeof(double));

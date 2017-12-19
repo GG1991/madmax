@@ -93,7 +93,7 @@ int calc_local_and_ghost( MPI_Comm COMM, int nallnods, int *allnods,
     int *ntotnod, int *nmynods, int **mynods, int *nghost , int **ghost );
 
 int ownership_selec_rule( MPI_Comm COMM, int **repeated, int *nrep, int node, int *remoterank );
-int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe, 
+int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,
     int *cuts_npe, int *cuts_eind );

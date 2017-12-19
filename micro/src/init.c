@@ -15,7 +15,7 @@ void init_variables(void){
   flags.print_pvtu = false;
   flags.print_vectors = false;
   flags.print_matrices = false;
-  
+
   MPI_Init(&command_line.argc, &command_line.argv);
 
   WORLD_COMM = MPI_COMM_WORLD;

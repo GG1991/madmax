@@ -8,7 +8,7 @@ int init_trace(MPI_Comm COMM, const char *file_name){
   MPI_Comm_size(COMM, &size);
 
   trace.t0 = MPI_Wtime();
-  
+
   if(rank == 0){
     trace.file = fopen(file_name , "w");
     fprintf(trace.file, "%-10s", "rank");
@@ -29,7 +29,7 @@ int save_event(MPI_Comm COMM, const char *event){
   MPI_Comm_size( COMM, &size );
 
   double time = MPI_Wtime();
- 
+
   if(rank == 0){
 
     double *times = malloc( size * sizeof(double));

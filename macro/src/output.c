@@ -50,13 +50,13 @@ int macro_pvtu(char *name){
   }
 
   sprintf( file_name, "%s_%d.vtu", name, rank_mac);
-  fm = fopen(file_name,"w"); 
+  fm = fopen(file_name,"w");
   if(!fm){
     myio_printf(PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
     return 1;
   }
 
-  fprintf(fm, 
+  fprintf(fm,
       "<?xml version=\"1.0\"?>\n"
       "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
       "<UnstructuredGrid>\n");
@@ -146,7 +146,7 @@ int macro_pvtu(char *name){
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for(int e = 0; e < nelm ; e++)
-    fprintf(fm, "%d ", rank_mac );  
+    fprintf(fm, "%d ", rank_mac );
   fprintf(fm, "\n");
   fprintf(fm, "</DataArray>\n");
 

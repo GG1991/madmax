@@ -1,6 +1,6 @@
 #include "macro.h"
 
-static char help[] = 
+static char help[] =
 "macro multiscale code \n"
 "-coupl       : coupled with \"micro\" code for solving multiscale problem \n"
 "-normal      : normal execution, solves a time dependent boundary condition problem \n"
@@ -373,8 +373,8 @@ int read_coord(char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, 
 
 int get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat, double *strain_gp){
 
-  double  *x_arr; 
-  Vec      x_loc; 
+  double  *x_arr;
+  Vec      x_loc;
   VecGhostGetLocalForm(x, &x_loc);
   VecGetArray(x_loc, &x_arr);
 
@@ -507,7 +507,7 @@ int get_mat_name(int id, char *name_s){
 
   node_list_t *pn;
   physical_t  *phy_p;
-  
+
   pn = physical_list.head;
   while(pn != NULL){
     phy_p = ( physical_t * )pn->data;
@@ -618,7 +618,7 @@ int get_elem_properties(void){
     int     ngp = npe;
     double  vol_elem = 0.0;
 
-    for(int v = 0 ; v < nvoi ; v++) 
+    for(int v = 0 ; v < nvoi ; v++)
       strain_aux[v] = stress_aux[v] = 0.0;
 
     get_local_elem_index(e, loc_elem_index);

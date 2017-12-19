@@ -27,9 +27,9 @@ int vtkcode( int dim, int npe )
         case 4 :
           return VTK_TETRAHEDRON;
         case 6 :
-          return VTK_6N_PRISM;  
+          return VTK_6N_PRISM;
         case 8 :
-          return VTK_HEXAHEDRON;  
+          return VTK_HEXAHEDRON;
         default:
           return -1;
       }

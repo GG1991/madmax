@@ -14,7 +14,7 @@
 #define NBUF_GMSH 256
 
 typedef struct _physical_t{
-    
+
     int dim;
     int id;
     char *name;

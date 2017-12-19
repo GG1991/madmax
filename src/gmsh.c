@@ -4,11 +4,11 @@
 int gmsh_get_node_index(const char *mesh_n, const char * bou_name, int nmynods, int *mynods, int dim, int *n, int **ix){
 
   FILE         *fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
-  int          flag = 0; 
+  int          flag = 0;
   int          ntag;
-  int          id_s, id; 
-  int          ns, *nf; 
-  char         buf[NBUF_GMSH], *data;   
+  int          id_s, id;
+  int          ns, *nf;
+  char         buf[NBUF_GMSH], *data;
   list_t       nod_list;
   node_list_t  *pn;
 
@@ -67,9 +67,9 @@ int gmsh_get_node_index(const char *mesh_n, const char * bou_name, int nmynods, 
 	}
 	list_clear( &nod_list );
 	fclose(fm);
-	return 0;   
+	return 0;
       }
-    } 
+    }
   }
 
   return 1;
@@ -81,8 +81,8 @@ int gmsh_which_id(const char *mesh_n, const char *name){
   FILE         *fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
   int          id;
   int          i = 0, total;
-  int          flag = 0; 
-  char         buf[NBUF_GMSH], *data;   
+  int          flag = 0;
+  char         buf[NBUF_GMSH], *data;
 
   while( fgets( buf, NBUF_GMSH, fm ) != NULL ){
 
@@ -276,7 +276,7 @@ int gmsh_read_vol_elms_csr_format_parall(MPI_Comm COMM, const char *gmsh_file, g
     char *str_token = strtok(buf, " \n");
     str_token = strtok(NULL, " \n");
     int npe = gmsh_npe(atoi(str_token));
-    gmsh_mesh->eptr[i+1] = gmsh_mesh->eptr[i] + npe; 
+    gmsh_mesh->eptr[i+1] = gmsh_mesh->eptr[i] + npe;
   }
 
   gmsh_mesh->eind = malloc(gmsh_mesh->eptr[gmsh_mesh->num_vol_elems_local] * sizeof(int));
@@ -310,14 +310,14 @@ int gmsh_read_vol_elms_csr_format_parall(MPI_Comm COMM, const char *gmsh_file, g
 
     for(int j = 0 ; j < npe ; j++){
       str_token = strtok(NULL, " \n");
-      gmsh_mesh->eind[start_eind + j] = atoi(str_token); 
+      gmsh_mesh->eind[start_eind + j] = atoi(str_token);
     }
     start_eind += npe;
   }
 
   fclose(fm);
 
-  return 0;   
+  return 0;
 }
 
 
@@ -360,21 +360,21 @@ int gmsh_is_vol_elm(int dim, int code){
 int gmsh_npe(int code){
 
     switch(code){
-	case 1:  
-	    return 2; 
-	case 2:    
+	case 1:
+	    return 2;
+	case 2:
 	    return 3;
-	case 3:    
+	case 3:
 	    return 4;
-	case 4:    
+	case 4:
 	    return 4;
-	case 5:    
+	case 5:
 	    return 8;
-	case 6:   
+	case 6:
 	    return 6;
-	case 15:   
+	case 15:
 	    return 1;
-	default:    
+	default:
 	    return -1;
     }
 }

@@ -156,7 +156,7 @@ int myio_comm_line_get_string_array(command_line_t *command_line, const char *op
 
   *nval_found = n;
   *found = true;
-  
+
   return 0;
 }
 
@@ -172,7 +172,7 @@ int myio_file_get_offset_line_start_word(const char *file_name, const char *line
 
   while(fgets(buf, STRING_LENGTH, fm) != NULL){
 
-    int buf_length = strlen(buf); 
+    int buf_length = strlen(buf);
     char *str_token = strtok(buf, " \n");
     if(strcmp(str_token, line_start_word) == 0){
       fclose(fm);

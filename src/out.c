@@ -17,13 +17,13 @@
 int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
 {
 
-  /* 
+  /*
      Function for plotting the partition
    */
 
   FILE    *vtkfl;
 
-  int     rank, nproc; 
+  int     rank, nproc;
   int     count, d, n, e;
 
   MPI_Comm_size(*comm, &nproc);
@@ -36,7 +36,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
 
   /************************************************************/
   /*Mesh geometry data                                        */
-  /************************************************************/    
+  /************************************************************/
   fprintf(vtkfl, "# vtk DataFile Version 2.0\n");
   fprintf(vtkfl, "SPUTNIK\n");
   fprintf(vtkfl, "ASCII\n");
@@ -65,7 +65,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
 
   fprintf(vtkfl, "CELL_TYPES %i\n", nelm);
   for (e=0;e<nelm;e++){
-    fprintf(vtkfl, "%d\n",vtkcode(dim,eptr[e+1] - eptr[e]));  
+    fprintf(vtkfl, "%d\n",vtkcode(dim,eptr[e+1] - eptr[e]));
   }
 
   fprintf(vtkfl, "CELL_DATA %i\n",nelm);
@@ -79,21 +79,21 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
   fclose(vtkfl);
 
   return 0;
-}   
+}
 /****************************************************************************************************/
 int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strain, double *Stress)
 {
-  /* 
-     Plots in ASCII VTK > 
+  /*
+     Plots in ASCII VTK >
 
-     Displa (On nodes),  
+     Displa (On nodes),
      Strain (On elements)
      Stress (On elements)
    */
 
   FILE    *vtkfl;
 
-  int     rank, nproc; 
+  int     rank, nproc;
   int     count, d, n, e;
   double  *xvalues;
   int     ierr;
@@ -116,7 +116,7 @@ int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strai
 
   /************************************************************/
   /*Mesh geometry data                                        */
-  /************************************************************/    
+  /************************************************************/
   fprintf(vtkfl, "# vtk DataFile Version 2.0\n");
   fprintf(vtkfl, "SPUTNIK\n");
   fprintf(vtkfl, "ASCII\n");
@@ -145,7 +145,7 @@ int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strai
 
   fprintf(vtkfl, "CELL_TYPES %i\n", nelm);
   for (e=0;e<nelm;e++){
-    fprintf(vtkfl, "%d\n",vtkcode(dim,eptr[e+1] - eptr[e]));  
+    fprintf(vtkfl, "%d\n",vtkcode(dim,eptr[e+1] - eptr[e]));
   }
 
   fprintf(vtkfl, "POINT_DATA %i\n",nallnods);
@@ -169,7 +169,7 @@ int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strai
     fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+0],Strain[e*6+3],Strain[e*6+5]);
     fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+3],Strain[e*6+1],Strain[e*6+4]);
     fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+5],Strain[e*6+4],Strain[e*6+2]);
-    fprintf(vtkfl, "\n"); 
+    fprintf(vtkfl, "\n");
   }
 
   fprintf(vtkfl, "TENSORS Stress FLOAT\n");
@@ -178,19 +178,19 @@ int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strai
     fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+0],Stress[e*6+3],Stress[e*6+5]);
     fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+3],Stress[e*6+1],Stress[e*6+4]);
     fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+5],Stress[e*6+4],Stress[e*6+2]);
-    fprintf(vtkfl, "\n"); 
+    fprintf(vtkfl, "\n");
   }
 
   fclose(vtkfl);
 
   return 0;
-}   
+}
 /****************************************************************************************************/
 int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain, double *stress, double *energy)
 {
 
   FILE    *fm;
-  int     rank, nproc, ierr; 
+  int     rank, nproc, ierr;
   int     i, d, ns;
   char    file_name[NBUF];
   double  *xvalues;
@@ -209,8 +209,8 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
     default:
       return 1;
   }
- 
-  /* 
+
+  /*
      rank 0 writes the .pvtu file first
    */
   if(!rank){
@@ -229,7 +229,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 	"<PDataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"Int32\" Name=\"offsets\"      NumberOfComponents=\"1\"/>\n"
 	"<PDataArray type=\"UInt8\" Name=\"types\"        NumberOfComponents=\"1\"/>\n"
-	"</PCells>\n" 
+	"</PCells>\n"
 
 	"<PPointData Vectors=\"displ\">\n" // Vectors inside is a filter we should not use this here
 	"<PDataArray type=\"Float64\" Name=\"displ\"    NumberOfComponents=\"3\" />\n"
@@ -245,19 +245,19 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 	  "<PDataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\"/>\n",ns);
     fprintf(fm,
 	  "<PDataArray type=\"Int32\" Name=\"elm_id\" NumberOfComponents=\"1\"/>\n");
-    fprintf(fm, 
+    fprintf(fm,
 	"<PDataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\"/>\n");
     if(energy_interp!=NULL){
-      fprintf(fm, 
+      fprintf(fm,
 	  "<PDataArray type=\"Float64\" Name=\"energy_interp\" NumberOfComponents=\"1\"/>\n");
     }
-    fprintf(fm, 
-	"</PCellData>\n"); 
+    fprintf(fm,
+	"</PCellData>\n");
     for(i=0;i<nproc;i++){
       sprintf(file_name,"%s_%d",name,i);
       fprintf(fm,	"<Piece Source=\"%s.vtu\"/>\n",file_name);
     }
-    fprintf(fm,	"</PUnstructuredGrid>\n" 
+    fprintf(fm,	"</PUnstructuredGrid>\n"
       "</VTKFile>\n"
       );
 
@@ -265,13 +265,13 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   }
 
   sprintf(file_name,"%s_%d.vtu",name,rank);
-  fm = fopen(file_name,"w"); 
+  fm = fopen(file_name,"w");
   if(!fm){
     PetscPrintf(PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
     return 1;
   }
 
-  fprintf(fm, 
+  fprintf(fm,
       "<?xml version=\"1.0\"?>\n"
       "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
       "<UnstructuredGrid>\n");
@@ -309,13 +309,13 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for (i=0;i<nelm;i++){
-    fprintf(fm, "%d ",vtkcode(dim,eptr[i+1] - eptr[i]));  
+    fprintf(fm, "%d ",vtkcode(dim,eptr[i+1] - eptr[i]));
   }
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"</Cells>\n");
-  
+
   fprintf(fm,"<PointData Vectors=\"displ\">\n"); // Vectors inside is a filter we should not use this here
 
   /*
@@ -374,7 +374,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   /* <part> */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
   for (i=0;i<nelm;i++){
-    fprintf(fm,"%d ",rank);  
+    fprintf(fm,"%d ",rank);
   }
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
@@ -481,9 +481,9 @@ int vtkcode(int dim,int npe)
         case 4 :
           return VTK_TETRAHEDRON;
         case 6 :
-          return VTK_6N_PRISM;  
+          return VTK_6N_PRISM;
         case 8 :
-          return VTK_HEXAHEDRON;  
+          return VTK_HEXAHEDRON;
         default:
           return -1;
       }

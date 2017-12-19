@@ -103,7 +103,7 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
     return 1;
 
   int *eind_swi, *eind_swi_size, *eind_size_new;
-  int *npe_swi, *npe_swi_size, *npe_size_new;         
+  int *npe_swi, *npe_swi_size, *npe_size_new;
   int *elm_id_swi;
   int *npe;
 
@@ -111,15 +111,15 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
   for(int i = 0 ; i < nelm ; i++)
     npe[i] = eptr[i+1] - eptr[i];
 
-  eind_swi       = malloc(eptr[nelm]*sizeof(int)); 
-  npe_swi        = malloc(nelm*sizeof(int)); 
-  elm_id_swi = malloc(nelm*sizeof(int)); 
-  eind_swi_size  = malloc(nproc*sizeof(int)); 
-  npe_swi_size   = malloc(nproc*sizeof(int)); 
-  eind_size_new  = malloc(nproc*sizeof(int)); 
-  npe_size_new   = malloc(nproc*sizeof(int)); 
+  eind_swi       = malloc(eptr[nelm]*sizeof(int));
+  npe_swi        = malloc(nelm*sizeof(int));
+  elm_id_swi = malloc(nelm*sizeof(int));
+  eind_swi_size  = malloc(nproc*sizeof(int));
+  npe_swi_size   = malloc(nproc*sizeof(int));
+  eind_size_new  = malloc(nproc*sizeof(int));
+  npe_size_new   = malloc(nproc*sizeof(int));
 
-  ierr = swap_vectors_SCR( part, nproc, nelm, 
+  ierr = swap_vectors_SCR( part, nproc, nelm,
       npe, eptr, eind, elm_id,
       npe_swi, eind_swi, elm_id_swi,
       npe_swi_size, eind_swi_size );CHKERRQ(ierr);
@@ -163,10 +163,10 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
       rdispls[i] += npe_size_new[j];
   }
 
-  ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT, 
+  ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT,
       npe, npe_size_new, rdispls, MPI_INT, COMM); if(ierr != 0) return ierr;
 
-  ierr = MPI_Alltoallv(elm_id_swi, npe_swi_size, sdispls, MPI_INT, 
+  ierr = MPI_Alltoallv(elm_id_swi, npe_swi_size, sdispls, MPI_INT,
       elm_id, npe_size_new, rdispls, MPI_INT, COMM); if(ierr != 0) return ierr;
 
   eptr[0] = 0;
@@ -184,7 +184,7 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
       rdispls[i] += eind_size_new[j];
   }
 
-  ierr = MPI_Alltoallv( eind_swi, eind_swi_size, sdispls, MPI_INT, 
+  ierr = MPI_Alltoallv( eind_swi, eind_swi_size, sdispls, MPI_INT,
       eind, eind_size_new, rdispls, MPI_INT, COMM );
 
   free(eind_swi);
@@ -211,7 +211,7 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts ){
   /*
      swap       = [ 0 1 0 0 1 2 2 ]
      vector     = [ 0 1 2 3 4 5 6 ]
-     new_vector = [ 0 2 3 1 4 5 6 ] 
+     new_vector = [ 0 2 3 1 4 5 6 ]
      cut        = [ 3 2 2 ]
    */
 
@@ -244,17 +244,17 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts ){
 }
 
 
-int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe, 
+int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,
     int *npe_size, int *eind_size){
 
   /*
      swap        = [ 0 2 1 0 ] (swap will be generally the "part" array)
-     npe         = [ 3 2 3 1 ]             
-     elm_id  = [ 0 0 1 2 ]             
+     npe         = [ 3 2 3 1 ]
+     elm_id  = [ 0 0 1 2 ]
      eind        = [ 3 2 0 | 1 2 | 1 0 1 |3 ]
-       
+
      npe_swi     = [ 3 1 3 2 ]
      elm_id  = [ 0 2 1 0 ]
      eind_swi    = [ 3 2 0 | 3 | 1 0 1 | 1 2 ]
@@ -265,7 +265,7 @@ int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
   if(n == 0) return 0;
 
   if(!npe || !eind || !elm_id ||
-      !eind_swi || !npe_swi || !elm_id_swi || 
+      !eind_swi || !npe_swi || !elm_id_swi ||
       !npe_size || !eind_size){
     return 1;
   }
@@ -327,14 +327,14 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n){
   int                  nelm_tot=-1, npe=-1;
   int                  total;
   int                  resto;
-  int                  i, d, n; 
+  int                  i, d, n;
   int                  len;               // strlen(buf) for adding to offset
   int                  ln;                // line counter
   int                  ntag;              // ntag to read gmsh element conectivities
   int                  rank;
   int                  nproc;
 
-  char                 buf[NBUF];   
+  char                 buf[NBUF];
   char               * data;
 
   MPI_Comm_size(PROBLEM_COMM, &nproc);
@@ -349,16 +349,16 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n){
   offset   = 0;
   nelm_tot = 0;
   while(fgets(buf, NBUF, fm) != NULL){
-    offset += strlen(buf); 
+    offset += strlen(buf);
     data=strtok(buf," \n");
     if(strcmp(data,"$Elements")==0){
       fgets(buf, NBUF, fm);
-      offset += strlen(buf); 
+      offset += strlen(buf);
       data  = strtok(buf," \n");
       total = atoi(data);
 
       for(i=0; i<total; i++){
-	fgets(buf,NBUF,fm); 
+	fgets(buf,NBUF,fm);
 	len = strlen(buf);
 	data=strtok(buf," \n");
 	data=strtok(NULL," \n");
@@ -366,7 +366,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n){
 	  nelm_tot ++;
 	else{
 	  ln ++;
-	  offset += len; 
+	  offset += len;
 	}
       }
       break;
@@ -392,12 +392,12 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n){
 
   fseek( fm, offset, SEEK_SET);      // we go up to the first volumetric element
   for(i=0; i<elmdist[rank]; i++){    // we go to the first element we have to store
-    fgets(buf,NBUF,fm); 
-    offset += strlen(buf); 
+    fgets(buf,NBUF,fm);
+    offset += strlen(buf);
   }
   eptr[0] = 0;
   for(i=1; i<nelm+1; i++){
-    fgets(buf,NBUF,fm); 
+    fgets(buf,NBUF,fm);
     data=strtok(buf," \n");
     data=strtok(NULL," \n");
     npe = -1;
@@ -406,14 +406,14 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n){
       PetscPrintf( PROBLEM_COMM, "\nelement type %d not recognized", atoi(data) );
       return 1;
     }
-    eptr[i] = eptr[i-1] + npe; 
+    eptr[i] = eptr[i-1] + npe;
   }
   eind = malloc( eptr[nelm] * sizeof(int));
 
   fseek( fm, offset, SEEK_SET);         // we go up to the first volumetric element
   n = 0;
   for(i=0; i<nelm; i++){
-    fgets(buf,NBUF,fm); 
+    fgets(buf,NBUF,fm);
     data=strtok(buf," \n");
     data=strtok(NULL," \n");
     npe = gmsh_npe(atoi(data));
@@ -433,7 +433,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n){
     while(d<npe){
       data = strtok(NULL," \n");
       if(!data) return 1;
-      eind[n+d] = atoi(data); 
+      eind[n+d] = atoi(data);
       d++;
     }
     n += npe;
@@ -455,7 +455,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n){
       coord = malloc(nnods*dim*sizeof(double));
 
       for(int i = 0; i < nnods ; i++){
-	fgets(buf,NBUF,fm); 
+	fgets(buf,NBUF,fm);
 	data=strtok(buf," \n");
 	for(int d = 0 ; d < dim ; d++){
 	  data=strtok(NULL," \n");
@@ -483,7 +483,7 @@ int read_mesh_elmv_CSR_GMSH(MPI_Comm PROBLEM_COMM, char *myname, char *mesh_n){
 
   fclose(fm);
 
-  return 0;   
+  return 0;
 }
 
 
@@ -736,7 +736,7 @@ int calc_local_and_ghost( MPI_Comm COMM, int nallnods, int *allnods,
   ierr = MPI_Allreduce( nmynods, ntotnod, 1, MPI_INT, MPI_SUM, COMM );
   if( ierr ) return 1;
 
-  
+
   *mynods = malloc( (*nmynods) * sizeof(int) );
   *ghost  = malloc( (*nghost)  * sizeof(int) );
 
@@ -890,11 +890,11 @@ int reenumerate_PETSc(MPI_Comm COMM){
 
 int ownership_selec_rule(MPI_Comm COMM, int **repeated, int *nrep, int node, int *remoterank){
 
-  /*  
-      Function for determine the ownership of a repeated 
-      node on different processors. 
+  /*
+      Function for determine the ownership of a repeated
+      node on different processors.
 
-      Input 
+      Input
 
       repeated > list of nodes that each process have in common with me
       nrep     > number of elements in each <repeated> element
@@ -903,8 +903,8 @@ int ownership_selec_rule(MPI_Comm COMM, int **repeated, int *nrep, int node, int
       Notes>
       -> all process should return the same if <node> is the same
       -> the selection criteria calculates rankp = node % nproc as root
-      if the rankp in repeated contains <node> in <rankp> position 
-      then this is the ownership of it. If <rankp> = <rank> at any 
+      if the rankp in repeated contains <node> in <rankp> position
+      then this is the ownership of it. If <rankp> = <rank> at any
       part of the search then this node is of this process.
    */
 
@@ -915,9 +915,9 @@ int ownership_selec_rule(MPI_Comm COMM, int **repeated, int *nrep, int node, int
 
   int i, rankp;
 
-  // damos un guess inicial de <rankp> luego iremos buscamos 
+  // damos un guess inicial de <rankp> luego iremos buscamos
   // hacia los ranks crecientes
-  rankp = node % nproc; 
+  rankp = node % nproc;
 
   i = 0;
   while(i<nproc){
@@ -926,7 +926,7 @@ int ownership_selec_rule(MPI_Comm COMM, int **repeated, int *nrep, int node, int
       // si justo nos cayo entonces este <node> es nuestro
       *remoterank = rankp;
       return 1;
-    } 
+    }
     else{
       if(is_in_vector( node, &repeated[rankp][0], nrep[rankp])){
 	// lo encontramos pero está en otro rank
@@ -1098,8 +1098,8 @@ int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], 
   for(i=0;i<nx;i++){
     for(j=0;j<ny;j++){
       n = i*nx + j;
-      (*coor)[n*2+0] = x0 + dx*j; 
-      (*coor)[n*2+1] = y0 + dy*i; 
+      (*coor)[n*2+0] = x0 + dx*j;
+      (*coor)[n*2+1] = y0 + dy*i;
     }
   }
 

@@ -11,11 +11,11 @@ typedef struct _function_t{
 
     int n;
     int inter;
-    int fnum;    
-    
+    int fnum;
+
     double *x;
     double *y;
-    
+
 }function_t;
 
 int function_init(double *x, double *y, int n, int inter, function_t * f1d);

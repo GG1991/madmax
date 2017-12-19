@@ -1,6 +1,6 @@
 #include "micro.h"
 
-static char help[] = 
+static char help[] =
 "micro multiscale code \n"
 "-coupl    [0 (no coupling ) | 1 (coupling with micro)] \n"
 "-homo_ts     : c =  vi ci + vm cm            (serial) \n"
@@ -61,7 +61,7 @@ int main(int argc, char **argv){
 
   MPI_Comm_size(MICRO_COMM, &nproc_mic);
   MPI_Comm_rank(MICRO_COMM, &rank_mic);
-  
+
   nx = ny = nz = -1;
   hx = hy = hz = -1;
   lx = ly = lz = -1;
@@ -72,7 +72,7 @@ int main(int argc, char **argv){
 
   ierr = myio_comm_line_get_string(&command_line, "-micro_struct", string_buf, &found); CHECK_AND_GOTO(ierr)
   micro_struct_init(dim, string_buf, &micro_struct);
-  
+
   lx = micro_struct.size[0];
   ly = micro_struct.size[1];
   lz = (dim == 3) ? micro_struct.size[2] : -1;
@@ -94,7 +94,7 @@ int main(int argc, char **argv){
     nn   = nx*ny*nz;
     nex  = (nx-1);
 
-    ney  = (ny-1)/nproc_mic + (((ny-1) % nproc_mic > rank_mic) ? 1:0); 
+    ney  = (ny-1)/nproc_mic + (((ny-1) % nproc_mic > rank_mic) ? 1:0);
     nez  = (nz-1);
     nelm = (dim == 2) ? nex*ney : nex*ney*nez;
     nyl  = (rank_mic == 0) ? ney+1 : ney;

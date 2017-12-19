@@ -37,5 +37,5 @@ int geom_2d_line_side( const double n_line[2], const double p_line[2], const dou
   else if( side > 0 )         return  1;
   else                        return -1;
 
-  return -2; 
+  return -2;
 }

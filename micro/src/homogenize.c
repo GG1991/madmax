@@ -2,7 +2,7 @@
 
 
 int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave){
-    
+
   int ierr;
   int ne_i = 0, ne_m = 0;
   double *c_i = malloc( nvoi*nvoi * sizeof(double));
@@ -32,7 +32,7 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
 
   get_c_tan("FIBER" , -1, -1, NULL, c_i);
   get_c_tan("MATRIX", -1, -1, NULL, c_m);
- 
+
   if(params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL){
 
     for(int i = 0 ; i < nvoi ; i++){
@@ -283,7 +283,7 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
   VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
-  int nr_its = 0; 
+  int nr_its = 0;
   double *b_arr;
   double norm = params.non_linear_min_norm_tol*10;
 
@@ -295,7 +295,7 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave){
     save_event(MICRO_COMM, "ass_0");
 
     assembly_b();
-    
+
     VecGetArray(b, &b_arr);
     for(int i = 0; i < ndir_ix ; i++)
       b_arr[dir_ix_loc[i]] = 0.0;
@@ -830,7 +830,7 @@ int get_local_elem_node(int e , int *n_loc){
 
 
 int get_global_elem_index(int e, int *glo_elem_index){
-  
+
   if(dim == 2){
     if(rank_mic == 0){
       for(int d = 0 ; d < dim ; d++ ){
@@ -916,7 +916,7 @@ int init_shapes(double ***sh, double ****dsh, double **wp){
   for( is = 0 ; is < nsh ; is++ ){
     (*sh)[is] = malloc( ngp * sizeof(double));
   }
-  
+
   *dsh  = malloc( nsh * sizeof(double**));
   for( is = 0 ; is < nsh ; is++ ){
     (*dsh)[is] = malloc( dim * sizeof(double*));
@@ -929,7 +929,7 @@ int init_shapes(double ***sh, double ****dsh, double **wp){
 
   if( dim == 2 )
   {
-    
+
     for( gp = 0 ; gp < ngp ; gp++ ){
       (*sh)[0][gp] = (1 - xp[2*gp]) * (1 - xp[2*gp+1])/4;
       (*sh)[1][gp] = (1 + xp[2*gp]) * (1 - xp[2*gp+1])/4;

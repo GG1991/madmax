@@ -13,7 +13,7 @@ int alloc_memory(void){
     return 1;
 #endif
   }
-  
+
   loc_elem_index = malloc(dim*npe*sizeof(int));
   glo_elem_index = malloc(dim*npe*sizeof(int));
   elem_disp = malloc(dim*npe*sizeof(double));
