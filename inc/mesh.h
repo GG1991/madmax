@@ -60,6 +60,7 @@ typedef struct{
   int *local_ghost_nodes;
   int *local_to_global;
   double *coord;
+  double *coord_local;
   list_t boundary_list;
 
 }mesh_t;

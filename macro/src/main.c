@@ -155,7 +155,7 @@ int main(int argc, char **argv){
   ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f); CHECK_AND_GOTO(ierr);
 
   gmsh_mesh.dim = dim;
-  ierr = gmsh_read_vol_elms_csr_format_parall(MACRO_COMM, mesh_n, &gmsh_mesh);
+  ierr = gmsh_read_mesh(MACRO_COMM, mesh_n, &gmsh_mesh);
   CHECK_ERROR_GOTO(ierr, RED "error reading gmsh mesh" NORMAL "\n")
   copy_gmsh_to_mesh(&gmsh_mesh, &mesh);
 
@@ -336,6 +336,11 @@ int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
 
   mesh->eind = malloc(mesh->eptr[nelm_local]*sizeof(int));
   ARRAY_COPY(mesh->eind, gmsh_mesh->eind, mesh->eptr[nelm_local])
+
+  int dim = gmsh_mesh->dim;
+  int nnods = gmsh_mesh->nnods;
+  mesh->coord = malloc(nnods*dim*sizeof(double));
+  ARRAY_COPY(mesh->coord, gmsh_mesh->coord, nnods*dim)
 
   return 0;
 }

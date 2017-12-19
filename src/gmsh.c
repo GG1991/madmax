@@ -210,7 +210,7 @@ int gmsh_read_coord_parall(char *mesh_n, int dim, int nmynods, int *mynods, int 
 }
 
 
-int gmsh_read_vol_elms_csr_format_parall(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh){
+int gmsh_read_mesh(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh){
 
   int rank, nproc;
   MPI_Comm_size(COMM, &nproc);
@@ -225,6 +225,7 @@ int gmsh_read_vol_elms_csr_format_parall(MPI_Comm COMM, const char *gmsh_file, g
   fseek(fm, offset, SEEK_SET);
   fgets(buf, NBUF_GMSH, fm);
   fgets(buf, NBUF_GMSH, fm);
+
   char *str_token = strtok(buf, " \n");
   gmsh_mesh->nnods = atoi(str_token);
   gmsh_mesh->coord = malloc(gmsh_mesh->nnods*gmsh_mesh->dim*sizeof(double));
