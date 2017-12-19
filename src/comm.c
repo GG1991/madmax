@@ -78,39 +78,37 @@ int comm_coloring(MPI_Comm WORLD_COMM, comm_t *comm, MPI_Comm *LOCAL_COMM){
 
   if(comm->color == COLOR_MICRO){
 
-    int micro_position;
-    for(int i = 0 ; i <= rank_world ; i++){
-      if(id_vec[i] == COLOR_MICRO)
-	micro_position++;
-    }
+    int micro_position = 0;
+    for(int i = 0 ; i < rank_world ; i++)
+      if(id_vec[i] == COLOR_MICRO) micro_position++;
     comm->color += micro_position;
 
-    int macro_leader = 0;
+    int macro_count = 0; int macro_leader = 0;
     while(macro_leader < nproc_world){
-      if(id_vec[macro_leader] == COLOR_MACRO)
-	macro_leader++;
-      if(macro_leader == micro_position)
-	break;
-    }
 
+      if(id_vec[macro_leader] == COLOR_MACRO){ 
+	if(macro_count == micro_position) break;
+	macro_count++;
+      }
+      macro_leader++;
+    }
     comm->macro_leader = macro_leader;
 
   }else{
 
     int macro_position = 0;
-    for(int i = 0 ; i <= rank_world ; i++){
-      if(id_vec[i] == COLOR_MACRO)
-	macro_position++;
-    }
+    for(int i = 0 ; i < rank_world ; i++)
+      if(id_vec[i] == COLOR_MACRO) macro_position++;
 
-    int micro_slave = 0;
+    int micro_count = 0; int micro_slave = 0;
     while(micro_slave < nproc_world){
-      if(id_vec[micro_slave] == COLOR_MACRO)
-	micro_slave++;
-      if(micro_slave == macro_position)
-	break;
-    }
 
+      if(id_vec[micro_slave] == COLOR_MICRO){
+	if(micro_count == macro_position) break;
+	micro_count++;
+      }
+      micro_slave++;
+    }
     comm->micro_slave = micro_slave;
   }
 
