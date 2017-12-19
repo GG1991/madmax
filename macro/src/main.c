@@ -621,7 +621,7 @@ int get_elem_properties(void){
     for(int v = 0 ; v < nvoi ; v++) 
       strain_aux[v] = stress_aux[v] = 0.0;
 
-    get_local_elem_index (e, loc_elem_index);
+    get_local_elem_index(e, loc_elem_index);
 
     get_dsh(e, loc_elem_index, dsh, detj);
     get_bmat(e, dsh, bmat);

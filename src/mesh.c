@@ -947,25 +947,13 @@ int ownership_selec_rule(MPI_Comm COMM, int **repeated, int *nrep, int node, int
 
 
 int is_in_vector(int val, int *vector, int size){
-  /*  
-      val     > value to search  
-      vector 
-      size    > # of components of vector
-   */
+
   int j = 0;
-  while(j<size){
-    if(vector[j] == val){
-      break;
-    }
+  while(j < size){
+    if(vector[j] == val) break;
     j++;
   }
-  if(j == size){
-    // llegamos al final => no está
-    return 0;
-  }
-  else{
-    return 1;
-  }
+  return (j == size) ? 0 : 1;
 
   return -1;
 }
