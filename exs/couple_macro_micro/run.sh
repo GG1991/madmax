@@ -2,14 +2,8 @@
 
 MPIEXEC="/home/guido/libs/openmpi-install/bin/mpiexec" 
 
-if [ $# -eq 0 ]; then
-  NP=1;
-else
-  NP=$1;
-fi
-
-#$MPIEXEC -np $NP xterm -e gdb -x file_macro.gdb --args ../../macro/macro \
-$MPIEXEC -np $NP ../../macro/macro \
+#$MPIEXEC -np 1 xterm -e gdb -x file_macro.gdb --args ../../macro/macro \
+$MPIEXEC -np 1 ../../macro/macro \
     -coupl \
     -boundary "X0 11 0 0","X1 11 1 0" \
     -material "MICRO MAT_MICRO" \
@@ -25,7 +19,7 @@ $MPIEXEC -np $NP ../../macro/macro \
     -nl_max_its 2 \
     -eps_nev 2 \
     -print_pvtu \
-: -np $NP ../../micro/micro \
+: -np 1 ../../micro/micro \
     -coupl \
     -struct_n 75,75 \
     -dim 2 \
@@ -37,5 +31,5 @@ $MPIEXEC -np $NP ../../macro/macro \
     -print_pvtu
 
 #xterm -e gdb -x file_micro.gdb --args
-#: -np $NP xterm -e gdb -x file_micro.gdb --args ../../micro/micro \
-#: -np $NP ../../micro/micro \
+#: -np 1 xterm -e gdb -x file_micro.gdb --args ../../micro/micro \
+#: -np 1 xterm -e gdb -x file_micro.gdb --args ../../micro/micro \
