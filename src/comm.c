@@ -27,170 +27,95 @@ int comm_init_message(message_t *message){
 
 int comm_finalize_message(void){
 
-  int ierr = MPI_Type_free(&mpi_message_t);
-
-  return ierr;
+  return MPI_Type_free(&mpi_message_t);
 }
 
 
-int comm_macro_send(message_t *message){
+int comm_macro_send(message_t *message, comm_t *comm){
 
-  int remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
-  int ierr = MPI_Ssend(message, 1, mpi_message_t, remote_rank, 0, WORLD_COMM);
-
-  return ierr;
+  return MPI_Ssend(message, 1, mpi_message_t, comm->micro_slave, 0, WORLD_COMM);
 }
 
 
-int comm_macro_recv(message_t *message){
+int comm_macro_recv(message_t *message, comm_t *comm){
 
-  int remote_rank = ((mac_coup_1_t*)macmic.coup)->mic_rank;
-  int ierr = MPI_Recv(message, 1, mpi_message_t, remote_rank, 0, WORLD_COMM, MPI_STATUS_IGNORE);
-
-  return ierr;
+  return MPI_Recv(message, 1, mpi_message_t, comm->micro_slave, 0, WORLD_COMM, MPI_STATUS_IGNORE);
 }
 
 
-int comm_micro_send(message_t *message){
+int comm_micro_send(message_t *message, comm_t *comm){
 
-  int ierr = 0;
-
-  if(((mic_coup_1_t*)macmic.coup)->im_leader){
-    int remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
-    ierr = MPI_Ssend(message, 1, mpi_message_t, remote_rank, 0, WORLD_COMM);
-    if(ierr == 1) return 1;
-  }
-
-  return ierr;
+  return MPI_Ssend(message, 1, mpi_message_t, comm->macro_leader, 0, WORLD_COMM);
 }
 
 
-int comm_micro_recv(message_t *message){
+int comm_micro_recv(message_t *message, comm_t *comm){
 
-  int ierr = 0;
-
-  if(((mic_coup_1_t*)macmic.coup)->im_leader){
-    int remote_rank = ((mic_coup_1_t*)macmic.coup)->mac_rank;
-    ierr = MPI_Recv(message, 1, mpi_message_t, remote_rank, 0, WORLD_COMM, MPI_STATUS_IGNORE);
-    if(ierr == 1) return 1;
-  }
-
-  ierr = MPI_Bcast(message, 1, mpi_message_t, 0, MICRO_COMM);
-
-  return ierr;
+  return MPI_Recv(message, 1, mpi_message_t, comm->macro_leader, 0, WORLD_COMM, MPI_STATUS_IGNORE);
 }
 
 
-int comm_coloring(MPI_Comm WORLD_COMM, int *color, coupling_t *macmic, MPI_Comm *LOCAL_COMM, bool flag_coupling){
+int comm_coloring(MPI_Comm WORLD_COMM, comm_t *comm, MPI_Comm *LOCAL_COMM){
 
-  int  i, ierr, c;
-  int  nproc_wor, rank_wor;
-  int  nproc_mac_tot = 0, nproc_mic_tot = 0, mic_nproc_group;
+  int  nproc_world, rank_world;
+  MPI_Comm_size(WORLD_COMM, &nproc_world);
+  MPI_Comm_rank(WORLD_COMM, &rank_world);
 
-  ierr = MPI_Comm_size(WORLD_COMM, &nproc_wor);
-  ierr = MPI_Comm_rank(WORLD_COMM, &rank_wor);
+  int *id_vec = malloc(nproc_world*sizeof(int));
+  int ierr = MPI_Allgather(&comm->color, 1, MPI_INT, id_vec, 1, MPI_INT, WORLD_COMM);
 
-  int  *id_vec = malloc(nproc_wor * sizeof(int));
-
-  ierr = MPI_Allgather(color,1,MPI_INT,id_vec,1,MPI_INT,WORLD_COMM);
-  if(ierr)
-    return 1;
-
-  nproc_mic_tot = nproc_mac_tot = 0;
-  for(int i = 0 ; i < nproc_wor ; i++){
+  int nproc_macro = 0;  int nproc_micro = 0;
+  for(int i = 0 ; i < nproc_world ; i++){
     if(id_vec[i] == COLOR_MACRO)
-      nproc_mac_tot++;
+      nproc_macro++;
     else if(id_vec[i] == COLOR_MICRO)
-      nproc_mic_tot++;
+      nproc_micro++;
     else
       return 1;
   }
 
-  if(flag_coupling == true && (nproc_mic_tot == 0 || nproc_mac_tot == 0)) return 1;
+  if(nproc_micro != nproc_macro) return 1;
 
-  if(flag_coupling == false){
+  if(comm->color == COLOR_MICRO){
 
-    ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM); if(ierr) return 1;
-
-  }
-
-  if(nproc_mic_tot % nproc_mac_tot != 0) return 1;
-
-  mic_nproc_group = nproc_mic_tot / nproc_mac_tot;
-
-  int im_leader;
-  int mic_pos = -1;
-
-  if(*color == COLOR_MICRO){
-
-    // determine MICRO color 
-    c = -1;
-    for(i=0;i<=rank_wor;i++){
-      if(id_vec[i] == COLOR_MICRO){
-	mic_pos++;
-	if( mic_pos % mic_nproc_group == 0){
-	  c ++; 
-	}
-      }
+    int micro_position;
+    for(int i = 0 ; i <= rank_world ; i++){
+      if(id_vec[i] == COLOR_MICRO)
+	micro_position++;
     }
-    *color += c;
+    comm->color += micro_position;
 
-    im_leader = (mic_pos % mic_nproc_group == 0) ? 1 : 0;
-
-    // determine MACRO leaders
-    int mac_rank = -1;
-    i = 0;
-    c = -1;
-    while( i<nproc_wor ){
-      if(id_vec[i] == COLOR_MACRO){
-	c++;
-      }
-      if(c == mic_pos/mic_nproc_group){
-	mac_rank = i; 
+    int macro_leader = 0;
+    while(macro_leader < nproc_world){
+      if(id_vec[macro_leader] == COLOR_MACRO)
+	macro_leader++;
+      if(macro_leader == micro_position)
 	break;
-      }
-      i++;
     }
-    if(mac_rank < 0) return 1;
 
-    macmic->coup = malloc(sizeof(mic_coup_1_t));
-    ((mic_coup_1_t*)macmic->coup)->mac_rank = mac_rank;
-    ((mic_coup_1_t*)macmic->coup)->im_leader = im_leader;
+    comm->macro_leader = macro_leader;
 
   }else{
 
-    int mac_pos = 0;
-    i = 0;
-    while(i < rank_wor){
-      if(id_vec[i] == COLOR_MACRO){
-	mac_pos ++;
-      }
-      i++;
+    int macro_position = 0;
+    for(int i = 0 ; i <= rank_world ; i++){
+      if(id_vec[i] == COLOR_MACRO)
+	macro_position++;
     }
 
-    int mic_rank = -1;
-    i = 0; c = 0; mic_pos = 0;
-    while( i<nproc_wor ){
-      if(id_vec[i] == COLOR_MICRO){
-	if(c == mac_pos){
-	  mic_rank = i;
-	  break;
-	}
-	if(mic_pos % mic_nproc_group == 0) c++;
-	mic_pos ++;
-      }
-      i++;
+    int micro_slave = 0;
+    while(micro_slave < nproc_world){
+      if(id_vec[micro_slave] == COLOR_MACRO)
+	micro_slave++;
+      if(micro_slave == macro_position)
+	break;
     }
-    if(mic_rank < 0) return 1;
 
-    macmic->coup = malloc(sizeof(mac_coup_1_t));
-    ((mac_coup_1_t*)macmic->coup)->mic_rank = mic_rank;
-
+    comm->micro_slave = micro_slave;
   }
 
-  ierr = MPI_Comm_split(WORLD_COMM, *color, 0, LOCAL_COMM); if(ierr) return 1;
-
+  ierr = MPI_Comm_split(WORLD_COMM, comm->color, 0, LOCAL_COMM);
   free(id_vec);
 
-  return 0;
+  return ierr;
 }
