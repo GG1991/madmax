@@ -24,9 +24,9 @@ typedef struct _physical_t{
 typedef struct {
 
     int dim;
-    int num_vol_elems;
-    int num_surf_elems;
-    int num_vol_elems_local;
+    int nelm_surf;
+    int nelm;
+    int nelm_local;
     int *elem_per_proc;
     int *elem_dist;
     int *elem_centroid;
@@ -34,6 +34,8 @@ typedef struct {
     int *eptr;
     int *eind;
     char *name;
+    int nnods;
+    double *coord;
 
 }gmsh_mesh_t;
 

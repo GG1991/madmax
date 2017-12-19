@@ -50,7 +50,7 @@ typedef struct{
   int dim;
   int nnods_total;
   int nnods_local;
-  int nelem_total;
+  int nelem;
   int nelm_local;
   int *eptr;
   int *eind;

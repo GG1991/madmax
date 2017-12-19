@@ -157,6 +157,7 @@ int main(int argc, char **argv){
   gmsh_mesh.dim = dim;
   ierr = gmsh_read_vol_elms_csr_format_parall(MACRO_COMM, mesh_n, &gmsh_mesh);
   CHECK_ERROR_GOTO(ierr, RED "error reading gmsh mesh" NORMAL "\n")
+  copy_gmsh_to_mesh(&gmsh_mesh, &mesh);
 
   ierr = part_mesh(MACRO_COMM, myname, NULL);
   CHECK_ERROR_GOTO(ierr, RED "error partitioning mesh" NORMAL "\n")
@@ -325,6 +326,21 @@ end_no_message:
 }
 
 
+int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
+
+  int nelm_local = gmsh_mesh->nelm_local;
+  mesh->nelm_local = nelm_local;
+
+  mesh->eptr = malloc((nelm_local+1)*sizeof(int));
+  ARRAY_COPY(mesh->eptr, gmsh_mesh->eptr, nelm_local + 1)
+
+  mesh->eind = malloc(mesh->eptr[nelm_local]*sizeof(int));
+  ARRAY_COPY(mesh->eind, gmsh_mesh->eind, mesh->eptr[nelm_local])
+
+  return 0;
+}
+
+
 int read_bc(){
 
   mesh_boundary_t *bou;
@@ -378,7 +394,7 @@ int get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double **
   VecGhostGetLocalForm(x, &x_loc);
   VecGetArray(x_loc, &x_arr);
 
-  int  npe = eptr[e+1] - eptr[e];
+  int  npe = mesh.eptr[e+1] - mesh.eptr[e];
   for(int i = 0 ; i < npe*dim ; i++)
     elem_disp[i] = x_arr[loc_elem_index[i]];
 
@@ -524,11 +540,11 @@ int get_mat_name(int id, char *name_s){
 
 int get_global_elem_index(int e, int *glo_elem_index){
 
-  int  npe = eptr[e+1] - eptr[e];
+  int  npe = mesh.eptr[e+1] - mesh.eptr[e];
 
   for(int n = 0 ; n < npe ; n++){
     for(int d = 0 ; d < dim ; d++)
-      glo_elem_index[n*dim + d] = loc2petsc[ eind[ eptr[e] + n ] ] * dim + d;
+      glo_elem_index[n*dim + d] = loc2petsc[ eind[ mesh.eptr[e] + n ] ] * dim + d;
   }
   return 0;
 }
@@ -536,11 +552,11 @@ int get_global_elem_index(int e, int *glo_elem_index){
 
 int get_local_elem_index( int e, int * loc_elem_index ){
 
-  int  npe = eptr[e+1] - eptr[e];
+  int  npe = mesh.eptr[e+1] - mesh.eptr[e];
 
   for(int n = 0 ; n < npe ; n++){
     for(int d = 0 ; d < dim ; d++)
-      loc_elem_index[n * dim + d] = eind[eptr[e] + n]*dim + d;
+      loc_elem_index[n * dim + d] = eind[mesh.eptr[e] + n]*dim + d;
   }
 
   return 0;
@@ -550,7 +566,7 @@ int get_local_elem_index( int e, int * loc_elem_index ){
 int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj){
 
   double ***dsh_master;
-  int npe = eptr[e+1] - eptr[e];
+  int npe = mesh.eptr[e+1] - mesh.eptr[e];
   int ngp = npe;
 
   for(int i = 0 ; i < npe*dim ; i++)
@@ -570,7 +586,7 @@ int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj){
 
 int get_bmat(int e, double ***dsh, double ***bmat){
 
-  int npe = eptr[e+1] - eptr[e];
+  int npe = mesh.eptr[e+1] - mesh.eptr[e];
   int ngp = npe;
 
   if(dim == 2){
@@ -614,9 +630,9 @@ int get_elem_properties(void){
 
   for(int e = 0 ; e < nelm ; e++){
 
-    int     npe = eptr[e+1] - eptr[e];
-    int     ngp = npe;
-    double  vol_elem = 0.0;
+    int npe = mesh.eptr[e+1] - mesh.eptr[e];
+    int ngp = npe;
+    double vol_elem = 0.0;
 
     for(int v = 0 ; v < nvoi ; v++)
       strain_aux[v] = stress_aux[v] = 0.0;

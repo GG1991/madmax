@@ -125,5 +125,6 @@ int finalize(void);
 
 int alloc_memory(void);
 
+int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh);
 
 #endif

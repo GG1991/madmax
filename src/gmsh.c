@@ -84,30 +84,26 @@ int gmsh_which_id(const char *mesh_n, const char *name){
   int          flag = 0;
   char         buf[NBUF_GMSH], *data;
 
-  while( fgets( buf, NBUF_GMSH, fm ) != NULL ){
+  while(fgets(buf, NBUF_GMSH, fm) != NULL){
 
     data = strtok(buf," \n");
 
-    if( flag == 0 ){
-      if( !strcmp(data,"$PhysicalNames"))
-      {
+    if(flag == 0){
+      if(strcmp(data,"$PhysicalNames") == 0){
 	fgets( buf, NBUF_GMSH, fm );
 	data  = strtok(buf," \n");
 	total = atoi(data);
 	flag = 1;
       }
-    }
-    else{
-
+    }else{
       data = strtok( NULL, " \n" );
       id   = atoi(data);
       data = strtok( NULL, " \"\n" );
       if( strcmp( name , data ) == 0 )
 	return id;
       i++;
-
     }
-    if( i == total ) break;
+    if(i == total) break;
 
   }
 
@@ -126,29 +122,28 @@ int gmsh_get_physical_list(char *mesh_n, list_t *physical_list){
 
   fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
 
-  while(fgets(buf,NBUF_GMSH,fm)!=NULL)
-  {
+  while(fgets(buf,NBUF_GMSH,fm)!=NULL){
+
     data=strtok(buf," \n");
-    if( strcmp( data,"$PhysicalNames") == 0 ){
+    if(strcmp(data,"$PhysicalNames") == 0){
+
       fgets( buf, NBUF_GMSH, fm );
       data  = strtok(buf," \n");
       total = atoi(data);
       flag  = 1;
-    }
-    else if( flag == 1 ){
+
+    }else if(flag == 1){
 
       physical.dim = atoi(data);
-
       data=strtok(NULL," \n");
       physical.id = atoi(data);
-
       data=strtok(NULL," \"\n");
       physical.name = strdup( data );
 
-      list_insertlast( physical_list , &physical );
+      list_insertlast(physical_list, &physical);
       i ++;
 
-      if( i == total ) break;
+      if(i == total) break;
     }
   }
   return 0;
@@ -225,53 +220,71 @@ int gmsh_read_vol_elms_csr_format_parall(MPI_Comm COMM, const char *gmsh_file, g
 
   char buf[NBUF_GMSH];
   int offset;
+
+  myio_file_get_offset_line_start_word(gmsh_file, "$Nodes", &offset);
+  fseek(fm, offset, SEEK_SET);
+  fgets(buf, NBUF_GMSH, fm);
+  fgets(buf, NBUF_GMSH, fm);
+  char *str_token = strtok(buf, " \n");
+  gmsh_mesh->nnods = atoi(str_token);
+  gmsh_mesh->coord = malloc(gmsh_mesh->nnods*gmsh_mesh->dim*sizeof(double));
+  for(int i = 0 ; i < gmsh_mesh->nnods ; i++){
+    fgets(buf, NBUF_GMSH, fm);
+    char *str_token = strtok(buf, " \n");
+    if(strcmp(str_token, "$EndNodes") == 0) break;
+    for(int d = 0 ; d < 3 ; d++){
+      str_token = strtok(NULL, " \n");
+      gmsh_mesh->coord[i*gmsh_mesh->dim + d] = atof(str_token);
+    }
+  }
+
   myio_file_get_offset_line_start_word(gmsh_file, "$Elements", &offset);
   fseek(fm, offset, SEEK_SET);
   fgets(buf, NBUF_GMSH, fm);
   fgets(buf, NBUF_GMSH, fm);
 
-  int num_vol_elems = 0, num_surf_elems = 0;
+  int nelm = 0, nelm_surf = 0;
 
   while(fgets(buf, NBUF_GMSH, fm) != NULL){
     char *str_token = strtok(buf, " \n");
     if(strcmp(str_token, "$EndElements") == 0) break;
     str_token = strtok(NULL, " \n");
     if(gmsh_is_vol_elm(gmsh_mesh->dim, atoi(str_token)) != 0)
-      num_vol_elems ++;
+      nelm ++;
     else
-      num_surf_elems ++;
+      nelm_surf ++;
   }
 
-  gmsh_mesh->num_vol_elems = num_vol_elems;
-  gmsh_mesh->num_surf_elems = num_surf_elems;
+  gmsh_mesh->nelm = nelm;
+  gmsh_mesh->nelm_surf = nelm_surf;
   gmsh_mesh->elem_per_proc = malloc(nproc*sizeof(int));
   gmsh_mesh->elem_dist = malloc((nproc + 1)*sizeof(int));
 
   for(int i = 0 ; i < nproc ; i++)
-    gmsh_mesh->elem_per_proc[i] = num_vol_elems/nproc + ((i < num_vol_elems % nproc) ? 1 : 0);
+    gmsh_mesh->elem_per_proc[i] = nelm/nproc + ((i < nelm % nproc) ? 1 : 0);
 
-  gmsh_mesh->num_vol_elems_local = gmsh_mesh->elem_per_proc[rank];
+  gmsh_mesh->nelm_local = gmsh_mesh->elem_per_proc[rank];
 
   gmsh_mesh->elem_dist[0] = 0;
   for(int i = 1 ; i < nproc + 1 ; i++)
     gmsh_mesh->elem_dist[i] = gmsh_mesh->elem_dist[i-1] + gmsh_mesh->elem_per_proc[i-1];
 
-  gmsh_mesh->eptr = malloc((gmsh_mesh->num_vol_elems_local + 1)*sizeof(int));
-  gmsh_mesh->elem_centroid = malloc(gmsh_mesh->num_vol_elems_local * gmsh_mesh->dim * sizeof(double));
-  gmsh_mesh->elem_id = malloc(gmsh_mesh->num_vol_elems_local*sizeof(int));
+  gmsh_mesh->eptr = malloc((gmsh_mesh->nelm_local + 1)*sizeof(int));
+  gmsh_mesh->elem_centroid = malloc(gmsh_mesh->nelm_local * gmsh_mesh->dim * sizeof(double));
+  gmsh_mesh->elem_id = malloc(gmsh_mesh->nelm_local*sizeof(int));
 
   fseek(fm, offset, SEEK_SET);
   fgets(buf, NBUF_GMSH, fm);
   fgets(buf, NBUF_GMSH, fm);
 
-  for(int i = 0 ; i < gmsh_mesh->num_surf_elems ; i++)
+  for(int i = 0 ; i < gmsh_mesh->nelm_surf ; i++)
     fgets(buf, NBUF_GMSH, fm);
 
   for(int i = 0 ; i < gmsh_mesh->elem_dist[rank] ; i++)
     fgets(buf, NBUF_GMSH, fm);
 
   gmsh_mesh->eptr[0] = 0;
-  for(int i = 0 ; i < gmsh_mesh->num_vol_elems_local ; i++){
+  for(int i = 0 ; i < gmsh_mesh->nelm_local ; i++){
     fgets(buf, NBUF_GMSH, fm);
     char *str_token = strtok(buf, " \n");
     str_token = strtok(NULL, " \n");
@@ -279,20 +292,20 @@ int gmsh_read_vol_elms_csr_format_parall(MPI_Comm COMM, const char *gmsh_file, g
     gmsh_mesh->eptr[i+1] = gmsh_mesh->eptr[i] + npe;
   }
 
-  gmsh_mesh->eind = malloc(gmsh_mesh->eptr[gmsh_mesh->num_vol_elems_local] * sizeof(int));
+  gmsh_mesh->eind = malloc(gmsh_mesh->eptr[gmsh_mesh->nelm_local] * sizeof(int));
 
   fseek(fm, offset, SEEK_SET);
   fgets(buf, NBUF_GMSH, fm);
   fgets(buf, NBUF_GMSH, fm);
 
-  for(int i = 0 ; i < gmsh_mesh->num_surf_elems ; i++)
+  for(int i = 0 ; i < gmsh_mesh->nelm_surf ; i++)
     fgets(buf, NBUF_GMSH, fm);
 
   for(int i = 0 ; i < gmsh_mesh->elem_dist[rank] ; i++)
     fgets(buf, NBUF_GMSH, fm);
 
   int start_eind = 0;
-  for(int i = 0 ; i < gmsh_mesh->num_vol_elems_local ; i++){
+  for(int i = 0 ; i < gmsh_mesh->nelm_local ; i++){
     fgets(buf, NBUF_GMSH, fm);
     char *str_token = strtok(buf, " \n");
 
