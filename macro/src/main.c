@@ -216,8 +216,9 @@ int main(int argc, char **argv){
 
       if(flags.print_pvtu == true){
 	get_elem_properties();
-	sprintf( filename, "macro_eigen_%d", i);
-	macro_pvtu( filename );
+	char filename[64];
+	sprintf(filename, "macro_eigen_%d", i);
+	macro_pvtu(filename);
       }
 
     }
@@ -293,6 +294,7 @@ int main(int argc, char **argv){
 
       if(flags.print_pvtu == true){
 	get_elem_properties();
+	char filename[64];
 	sprintf(filename, "macro_t_%d", params.ts);
 	macro_pvtu(filename);
       }

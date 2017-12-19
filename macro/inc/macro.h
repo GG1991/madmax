@@ -1,6 +1,7 @@
 #ifndef MACRO_H
 #define MACRO_H
 
+
 #include "sputnik.h"
 #include "comm.h"
 #include "util.h"
@@ -22,46 +23,44 @@
 
 #define NBUF 256
 
-double    **struct_sh;           // Shape functions
-double   ***struct_dsh;          // Derivative shapes functions
-double     *struct_wp;           // Weights
-double   ***bmat;                // B matrix (Bu = epsilon)
-int         npe_max;             // maximum number of nodes per element
-int         ngp_max;             // maximum number of gauss points
-double     *elem_disp;           // elemental displacements
-double     *elem_coor;           // coordinates of the element's verteces
-int        *loc_elem_index;      // local elemental index vector for assembly and reading
-int        *glo_elem_index;      // global elemental index vector for assembly and reading
-double     *strain_gp;           // strain at Gauss point
-double     *stress_gp;           // stress at Gauss point
-int        *elem_type;           // type in each element
-double     *elem_strain;         // strain at each element
-double     *elem_stress;         // stress at each element
-double     *elem_energy;         // energy at each element
-double     *res_elem;            // elemental residue
-double     *k_elem;              // elemental steffiness matrix
-double     *m_elem;              // elemental mass matrix
-double     *c;                   // constitutive tensor
-double   ***dsh;                 // shape functions derivatives at gauss points
-double     *detj;                // jacobian determinants for each gauss point
-double    **jac;                 // elemental jacobian
-double    **jac_inv;             // inverse of elemental jacobian
+double **struct_sh;
+double ***struct_dsh;
+double *struct_wp;
+double ***bmat;
+int npe_max;
+int ngp_max;
+double *elem_disp;
+double *elem_coor;
+int *loc_elem_index;
+int *glo_elem_index;
+double *strain_gp;
+double *stress_gp;
+int *elem_type;
+double *elem_strain;
+double *elem_stress;
+double *elem_energy;
+double *res_elem;
+double *k_elem;
+double *m_elem;
+double *c;
+double ***dsh;
+double *detj;
+double **jac;
+double **jac_inv;
 
-int         nvoi;                // voigt number
+int nvoi;
 
-int         mymicro_rank_worker;
-int         flag_neg_detj;       // negative jacobian flag
+int flag_neg_detj;
 
-int         rank_mac;
-int         nproc_mac;
+int rank_mac;
+int nproc_mac;
 
-char        filename[NBUF];
-char        mesh_n[128];
-int         mesh_f;
+char mesh_n[128];
+int mesh_f;
 
-Mat         A;
-Mat         M;
-Vec         x, dx, b;
+Mat A;
+Mat M;
+Vec x, dx, b;
 
 typedef struct{
 
@@ -125,5 +124,6 @@ void init_variables(void);
 int finalize(void);
 
 int alloc_memory(void);
+
 
 #endif
