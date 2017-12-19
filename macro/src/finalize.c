@@ -10,7 +10,7 @@ int finalize(void){
   if(flags.coupled == true){
 
     message.action = ACTION_MICRO_END;
-    ierr = comm_macro_send(&message);
+    ierr = comm_macro_send(&message, &comm);
     if(ierr != 0){
       myio_printf(MACRO_COMM, "macro: problem sending MIC_END to micro\n");
       return 1;

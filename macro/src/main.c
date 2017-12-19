@@ -15,11 +15,22 @@ flags_t flags;
 solver_t solver;
 gmsh_mesh_t gmsh_mesh;
 mesh_t mesh;
+comm_t comm;
 
-#define CHECK_AND_GOTO(error){if(error){myio_printf(MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);goto end;}}
-#define CHECK_INST_ELSE_GOTO(cond,instr){if(cond){instr}else{myio_printf(MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
-#define CHECK_FOUND_GOTO(message){if(found == false){myio_printf(MACRO_COMM, "%s\n", message); goto end;}}
-#define CHECK_ERROR_GOTO(ierr, message){if(ierr != 0){myio_printf(MACRO_COMM, "%s\n", message); goto end;}}
+#define CHECK_AND_GOTO(error){\
+  if(error){\
+    myio_printf(MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);\
+    goto end;}}
+
+#define CHECK_FOUND_GOTO(message){\
+  if(found == false){\
+    myio_printf(MACRO_COMM, "%s\n", message);\
+    goto end;}}
+
+#define CHECK_ERROR_GOTO(ierr, message){\
+  if(ierr != 0){\
+    myio_printf(MACRO_COMM, "%s\n", message);\
+    goto end;}}
 
 int main(int argc, char **argv){
 
@@ -43,8 +54,8 @@ int main(int argc, char **argv){
   if(found == true) flags.coupled = true;
 
   if(flags.coupled == true){
-    color = COLOR_MACRO;
-    ierr = comm_coloring(WORLD_COMM, &color, &macmic, &MACRO_COMM, flags.coupled);
+    comm.color = COLOR_MACRO;
+    ierr = comm_coloring(WORLD_COMM, &comm, &MACRO_COMM);
     if(ierr != 0){
       flags.coupled = false;
       myio_printf(MACRO_COMM, RED "error in coloring" NORMAL "\n");
@@ -406,8 +417,8 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
 
     ARRAY_COPY(message.strain_mac, strain_gp, nvoi);
 
-    comm_macro_send(&message);
-    comm_macro_recv(&message);
+    comm_macro_send(&message, &comm);
+    comm_macro_recv(&message, &comm);
 
     ARRAY_COPY(stress_gp, message.stress_ave, nvoi);
 
@@ -442,8 +453,8 @@ int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 
     ARRAY_COPY(message.strain_mac, strain_gp, nvoi);
 
-    comm_macro_send(&message);
-    comm_macro_recv(&message);
+    comm_macro_send(&message, &comm);
+    comm_macro_recv(&message, &comm);
 
     ARRAY_COPY(c_tan, message.c_tangent_ave, nvoi*nvoi);
 
@@ -478,8 +489,8 @@ int get_rho(const char *name, int e, double *rho){
 
     message.action = ACTION_MICRO_CALC_RHO;
 
-    ierr = comm_macro_send(&message);
-    ierr = comm_macro_recv(&message);
+    ierr = comm_macro_send(&message, &comm);
+    ierr = comm_macro_recv(&message, &comm);
 
     *rho = message.rho;
   }

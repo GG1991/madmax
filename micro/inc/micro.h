@@ -32,59 +32,51 @@
 
 #define NBUF         256
 
-char        filename[NBUF];
+int rank_mic;
+int nproc_mic;
+int dim;
+int nvoi;
 
-int         rank_mic;          //  rank on macro comm
-int         nproc_mic;         //  # of micro processes (MICRO_COMM)
-int         dim;               //  problem dimensions
-int         nvoi;              //  number of voigt components (3 if dim=2, 6 if dim=3)
+int nx, ny, nz, nn;
+int nl;
+int nelm;
+int nex , ney , nez;
+int nyl;
+int ny_inf;
+double lx, ly, lz;
+double hx, hy, hz;
+double vol_tot;
+double vol_loc;
+double vol_elem;
+int npe;
+int ngp;
+int ngho;
+double **struct_sh;
+double ***struct_dsh;
+double *struct_wp;
+double ***struct_bmat;
+double *elem_disp;
+int *loc_elem_index;
+int *glo_elem_index;
+int istart, iend;
+int nstart, nend;
+int *dir_ix_loc;
+int *dir_ix_glo;
+int ndir_ix;
+double *coor_dir;
+double *strain_gp;
+double *stress_gp;
+int *elem_type;
+double *elem_strain;
+double *elem_stress;
+double *elem_energy;
+double *center_coor;
 
-char        *myname;
+double vi;
+double vm;
 
-int         micro_type;
-FILE        *fm_info;
-
-bool        flag_struct_mesh;
-int         nx, ny, nz, nn;       // number of nodes 
-int         nl;                   // number of local nodes
-int         nelm;
-int         nex , ney , nez;      // total number of elements per direction 
-int         nyl;                  // local number of nodes in y direction
-int         ny_inf;               // inferior numeration in y direction
-double      lx, ly, lz;           // dimain lenght
-double      hx, hy, hz;           // element sizes 
-double      vol_tot;              // total volume
-double      vol_loc;              // local volume
-double      vol_elem;             // elemental volume
-int         npe;                  // Nodes per element
-int         ngp;                  // Number of gauss points per element
-int         ngho;                 // Number of ghosts nodes
-double      **struct_sh;          // Shape functions
-double      ***struct_dsh;        // Derivative shapes functions
-double      *struct_wp;           // Weights
-double      ***struct_bmat;       // B matrix (Bu = epsilon)
-double      *elem_disp;           // elemental displacements
-int         *loc_elem_index;      // local elemental index vector for assembly and reading
-int         *glo_elem_index;      // global elemental index vector for assembly and reading
-int         istart, iend;         // starting and ending index of matrices
-int         nstart, nend;         // starting and ending index of nodes
-int         *dir_ix_loc;          // dirichlet indeces (local numeration)
-int         *dir_ix_glo;          // dirichlet indeces (global numeration)
-int         ndir_ix;              // number of dirichlet indeces
-double      *coor_dir;            // coordinates of dirichlet nodes
-double      *strain_gp;           // strain at Gauss point
-double      *stress_gp;           // stress at Gauss point
-int         *elem_type;           // type in each element (depends on the micro_struc)
-double      *elem_strain;         // strain at each element
-double      *elem_stress;         // stress at each element
-double      *elem_energy;         // energy at each element
-double      *center_coor;         // coordinates of the center
-
-double       vi;                  // volumetric fraction of inclusions
-double       vm;                  // volumetric fraction of matrix
-
-int          homo_type;
-int          macro_gp;
+int homo_type;
+int macro_gp;
 
 Mat A, J;
 Vec x, b;

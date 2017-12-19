@@ -14,10 +14,24 @@ static char help[] =
 params_t params;
 flags_t flags;
 solver_t solver;
+comm_t comm;
 
-#define CHECK_AND_GOTO(error){if(error){myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
-#define CHECK_INST_ELSE_GOTO(cond, instr){if(cond){instr}else{myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__); goto end;}}
-#define CHECK_ERROR_GOTO(message){if(ierr != 0){myio_printf(MICRO_COMM, "%s\n", message); goto end;}}
+#define CHECK_AND_GOTO(error){\
+if(error){\
+  myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);\
+  goto end;}}
+
+#define CHECK_INST_ELSE_GOTO(cond, instr){\
+  if(cond){\
+    instr\
+  }else{\
+    myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);\
+    goto end;}}
+
+#define CHECK_ERROR_GOTO(message){\
+  if(ierr != 0){\
+    myio_printf(MICRO_COMM, "%s\n", message);\
+    goto end;}}
 
 int main(int argc, char **argv){
 
@@ -31,9 +45,6 @@ int main(int argc, char **argv){
 
   init_variables();
 
-  MPI_Comm_size(WORLD_COMM, &nproc_wor);
-  MPI_Comm_rank(WORLD_COMM, &rank_wor);
-
   myio_comm_line_search_option(&command_line, "-help", &found);
   if(found == true){
     myio_printf(MACRO_COMM, "%s", help);
@@ -43,10 +54,9 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-coupl", &found);
   if(found == true) flags.coupled = true;
 
-  color = COLOR_MICRO; /* color can change */
-
+  comm.color = COLOR_MICRO; /* color changes */
   if(flags.coupled == true){
-    ierr = comm_coloring(WORLD_COMM, &color, &macmic, &MICRO_COMM, flags.coupled); CHECK_AND_GOTO(ierr);
+    ierr = comm_coloring(WORLD_COMM, &comm, &MICRO_COMM); CHECK_AND_GOTO(ierr);
   }
 
   MPI_Comm_size(MICRO_COMM, &nproc_mic);
@@ -203,7 +213,7 @@ int main(int argc, char **argv){
 
     while(message.action != ACTION_MICRO_END){
 
-      ierr = comm_micro_recv(&message);
+      ierr = comm_micro_recv(&message, &comm);
 
       switch(message.action){
 
@@ -236,7 +246,7 @@ int main(int argc, char **argv){
       }
 
       if(message.action != ACTION_MICRO_END)
-	ierr = comm_micro_send(&message);
+	ierr = comm_micro_send(&message, &comm);
     }
   }
   else{

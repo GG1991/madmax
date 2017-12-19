@@ -462,8 +462,9 @@ int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent){
 
     if(flags.print_pvtu == true){
       get_elem_properties();
+      char filename[64];
       sprintf(filename,"micro_exp%d",i);
-      ierr = micro_pvtu( filename );
+      ierr = micro_pvtu(filename);
       if(ierr != 0){
 	myio_printf(MICRO_COMM,"Problem writing vtu file\n");
 	return ierr;
