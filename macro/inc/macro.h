@@ -58,10 +58,6 @@ int nproc_mac;
 char mesh_n[128];
 int mesh_f;
 
-Mat A;
-Mat M;
-Vec x, dx, b;
-
 typedef struct{
 
   int calc_mode;
@@ -126,5 +122,19 @@ int finalize(void);
 int alloc_memory(void);
 
 int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh);
+
+#ifdef PETSC
+
+#include "petscksp.h"
+
+int assembly_b_petsc(void);
+int assembly_AM_petsc(void);
+int assembly_A_petsc(void);
+
+Mat A;
+Mat M;
+Vec x, dx, b;
+
+#endif
 
 #endif
