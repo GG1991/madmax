@@ -13,23 +13,11 @@
 #include "gmsh.h"
 #include "material.h"
 
-#define FORMAT_NULL        0
-#define FORMAT_GMSH        1
-#define FORMAT_ALYA        2
-
-int         partition_algorithm;
-
 char        *myname;
 
 int         rank_wor;
 int         nproc_wor;
 int         dim;
-
-int          *elm_id;
-double       *elmv_centroid;
-
-int read_mesh_elmv( MPI_Comm COMM, char *myname, char *mesh_n, int mesh_f);
-int read_mesh_elmv_CSR_GMSH( MPI_Comm COMM, char *myname, char *mesh_n);
 
 int clean_vector_qsort(int n, int *input, int **output, int *not_rep);
 int give_repvector_qsort(MPI_Comm *COMM, char *myname, int n, int *input, int **output, int *nrep);

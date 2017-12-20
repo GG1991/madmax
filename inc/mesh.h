@@ -12,23 +12,6 @@
 #define MAX_ADJ_NODES 30
 #define MAX_NUM_OF_BOUNDARIES 4
 
-int *elmdist;
-int nelm;
-int *eptr;
-int *eind;
-
-int *allnods;
-int nallnods;
-int *mynods;
-int nmynods;
-int *ghost;
-int nghost;
-int ntotnod;
-
-double *coord;
-
-int *loc2petsc;
-
 typedef struct{
 
   char *name;
@@ -48,19 +31,30 @@ typedef struct{
 typedef struct{
 
   int dim;
+
   int nnods_total;
   int nnods_local;
-  int nelem;
+  int nnods_ghost;
+  int nnods_local_ghost;
+
+  int *local_nods;
+  int *ghost_nods;
+  int *local_ghost_nods;
+  int *local_to_global;
+
+  int nelm_total;
   int nelm_local;
+
   int *eptr;
   int *eind;
   int **elements;
-  int *local_nodes;
-  int *ghost_nodes;
-  int *local_ghost_nodes;
-  int *local_to_global;
+  int *elm_id;
+
+  int partition;
+
   double *coord;
   double *coord_local;
+
   list_t boundary_list;
 
 }mesh_t;
@@ -85,7 +79,6 @@ typedef struct{
 }mesh_struct_t;
 
 extern mesh_struct_t mesh_struct;
-
 
 int part_mesh(MPI_Comm COMM, char *myname, double *centroid);
 int reenumerate_PETSc(MPI_Comm COMM);
