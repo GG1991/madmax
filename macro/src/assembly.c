@@ -1,4 +1,4 @@
-#include "assembly.h"
+#include "macro.h"
 
 #ifdef PETSC
 
@@ -12,12 +12,12 @@ int assembly_b_petsc(void){
   VecGhostGetLocalForm(b, &b_loc);
   VecGetArray(b_loc, &b_arr);
 
-  ARRAY_SET_TO_ZERO(b_arr,nallnods*dim)
+  ARRAY_SET_TO_ZERO(b_arr, mesh.nnods_local_ghost*dim)
 
-  for(int e = 0 ; e < nelm ; e++){
+  for(int e = 0 ; e < mesh.nelm_local ; e++){
 
-    get_local_elem_index( e, loc_elem_index );
-    int npe = eptr[e+1] - eptr[e];
+    get_local_elem_index(e, loc_elem_index);
+    int npe = mesh.eptr[e+1] - mesh.eptr[e];
     int ngp = npe;
 
     ARRAY_SET_TO_ZERO(res_elem, npe*dim)
@@ -40,7 +40,7 @@ int assembly_b_petsc(void){
       }
     }
 
-    for(int i = 0 ; i < ( npe * dim ) ; i++)
+    for(int i = 0 ; i < npe*dim ; i++)
       b_arr[loc_elem_index[i]] += res_elem[i];
 
   }
@@ -92,9 +92,9 @@ int assembly_AM_petsc(void){
   double **sh;
   double *wp;
 
-  for(int e = 0 ; e < nelm ; e++ ){
+  for(int e = 0 ; e < mesh.nelm_local ; e++ ){
 
-    int npe = eptr[e+1] - eptr[e];
+    int npe = mesh.eptr[e+1] - mesh.eptr[e];
     int ngp = npe;
 
     ARRAY_SET_TO_ZERO(k_elem, npe*dim*npe*dim);
@@ -172,9 +172,9 @@ int assembly_A_petsc(void){
   int ierr;
   double *wp;
 
-  for(int e = 0 ; e < nelm ; e++ ){
+  for(int e = 0 ; e < mesh.nelm_local ; e++ ){
 
-    int npe = eptr[e+1] - eptr[e];
+    int npe = mesh.eptr[e+1] - mesh.eptr[e];
     int ngp = npe;
 
     ARRAY_SET_TO_ZERO(k_elem, npe*dim*npe*dim);

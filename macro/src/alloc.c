@@ -21,28 +21,28 @@ int alloc_memory(void){
       int nnz = dim * MAX_ADJ_NODES;
 
       ierr = MatCreate(MACRO_COMM, &A);
-      ierr = MatSetSizes(A, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod);
+      ierr = MatSetSizes(A, dim*mesh.nnods_local, dim*mesh.nnods_local, dim*mesh.nnods_total, dim*mesh.nnods_total);
       ierr = MatSetType(A, MATAIJ);
       ierr = MatSeqAIJSetPreallocation(A, nnz, NULL);
-      ierr = MatMPIAIJSetPreallocation(A, nnz, NULL, nnz, NULL );
+      ierr = MatMPIAIJSetPreallocation(A, nnz, NULL, nnz, NULL);
       ierr = MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
       ierr = MatSetUp(A);
       ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
       ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
-      int *ghost_index = malloc(nghost*dim*sizeof(int));
+      int *ghost_index = malloc(mesh.nnods_ghost * dim *sizeof(int));
 
-      for(int i = 0 ; i < nghost ; i++){
+      for(int i = 0 ; i < mesh.nnods_ghost ; i++){
 	for(int d = 0 ; d < dim ; d++)
-	  ghost_index[i*dim + d] = loc2petsc[nmynods + i]*dim + d;
+	  ghost_index[i*dim + d] = mesh.local_to_global[mesh.nnods_local + i]*dim + d;
       }
 
-      ierr = VecCreateGhost(MACRO_COMM, dim*nmynods, dim*ntotnod, nghost*dim, ghost_index, &x);
+      ierr = VecCreateGhost(MACRO_COMM, dim*mesh.nnods_local, dim*mesh.nnods_total, dim*mesh.nnods_ghost, ghost_index, &x);
 
       if(params.calc_mode == CALC_MODE_EIGEN){
 
 	ierr = MatCreate(MACRO_COMM, &M);
-	ierr = MatSetSizes(M, dim*nmynods, dim*nmynods, dim*ntotnod, dim*ntotnod);
+	ierr = MatSetSizes(M, dim*mesh.nnods_local, dim*dim*mesh.nnods_local, dim*mesh.nnods_total, dim*mesh.nnods_total);
 	ierr = MatSetType(M, MATAIJ);
 	ierr = MatSeqAIJSetPreallocation(M, nnz, NULL);
 	ierr = MatMPIAIJSetPreallocation(M, nnz, NULL, nnz, NULL);
@@ -71,10 +71,10 @@ int alloc_memory(void){
   stress_gp = malloc(nvoi*sizeof(double));
   strain_gp = malloc(nvoi*sizeof(double));
   c = malloc(nvoi*nvoi*sizeof(double));
-  elem_strain = malloc(nelm*nvoi*sizeof(double));
-  elem_stress = malloc(nelm*nvoi*sizeof(double));
-  elem_energy = malloc(nelm*sizeof(double));
-  elem_type = malloc(nelm*sizeof(int));
+  elem_strain = malloc(mesh.nelm_local * nvoi*sizeof(double));
+  elem_stress = malloc(mesh.nelm_local * nvoi*sizeof(double));
+  elem_energy = malloc(mesh.nelm_local * sizeof(double));
+  elem_type = malloc(mesh.nelm_local * sizeof(int));
   flag_neg_detj  = 0;
 
   bmat = malloc(nvoi*sizeof(double**));

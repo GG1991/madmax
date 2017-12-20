@@ -99,8 +99,6 @@ int main(int argc, char **argv){
     myio_comm_line_get_double(&command_line, "-energy_stored", &params.energy_stored, &found);
   }
 
-  mesh_f = FORMAT_GMSH;
-
   myio_comm_line_get_string(&command_line, "-mesh", mesh_n, &found);
   if(found == false){
     myio_printf(MACRO_COMM,"mesh file not given on command line.\n");
@@ -346,39 +344,43 @@ int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
 }
 
 
-int read_bc(){
+int read_bc(void){
 
+  int ierr;
   mesh_boundary_t *bou;
-
   node_list_t *pn = boundary_list.head;
+
   while(pn != NULL){
+
     int *ix, n;
     bou = (mesh_boundary_t *)pn->data;
-    int ierr = gmsh_get_node_index(mesh_n, bou->name, nmynods, mynods, dim, &n, &ix);
-    if(ierr != 0){
-      myio_printf(MACRO_COMM, "problem finding nodes of boundary %s on msh file\n", bou->name );
-      return 1;
-    }
-    bou->ndir        = n;
-    bou->ndirix      = bou->ndir * bou->ndirpn;
-    bou->dir_val     = malloc( bou->ndirix * sizeof(double));
-    bou->dir_loc_ixs = malloc( bou->ndirix * sizeof(int));
-    bou->dir_glo_ixs = malloc( bou->ndirix * sizeof(int));
+    ierr = gmsh_get_node_index(mesh_n, bou->name, mesh.nnods_local, mesh.local_nods, dim, &n, &ix);
+
+    bou->ndir = n;
+    bou->ndirix = bou->ndir * bou->ndirpn;
+    bou->dir_val = malloc(bou->ndirix * sizeof(double));
+    bou->dir_loc_ixs = malloc(bou->ndirix * sizeof(int));
+    bou->dir_glo_ixs = malloc(bou->ndirix * sizeof(int));
+
     for(int i = 0 ; i < n ; i++){
+
       int da = 0;
-      int * p = bsearch( &ix[i], mynods, nmynods, sizeof(int), cmpfunc);
-      for(int d = 0 ; d < dim ; d++)
-	if(bou->kind & (1<<d)) {
-	  bou->dir_loc_ixs[i* (bou->ndirpn) + da] = (p - mynods) * dim + d;
-	  bou->dir_glo_ixs[i* (bou->ndirpn) + da] = loc2petsc[(p - mynods)] * dim + d;
+      int *p = bsearch(&ix[i], mesh.local_nods, mesh.nnods_local, sizeof(int), cmpfunc);
+
+      for(int d = 0 ; d < dim ; d++){
+	if(bou->kind & (1<<d)){
+	  bou->dir_loc_ixs[i*(bou->ndirpn) + da] = (p - mesh.local_nods) * dim + d;
+	  bou->dir_glo_ixs[i*(bou->ndirpn) + da] = mesh.local_to_global[(p - mesh.local_nods)] * dim + d;
 	  da++;
 	}
+      }
     }
+
     free(ix);
     pn = pn->next;
   }
 
-  return 0;
+  return ierr;
 }
 
 
@@ -421,7 +423,7 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
 
   char        name_s[64];
   material_t  *mat_p;
-  get_mat_name(elm_id[e], name_s);
+  get_mat_name(mesh.elm_id[e], name_s);
 
   node_list_t *pn = material_list.head;
   while(pn != NULL){
@@ -455,9 +457,9 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
 
 int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan){
 
-  char        name_s[64];
-  material_t  *mat_p;
-  get_mat_name(elm_id[e], name_s);
+  char name_s[64];
+  material_t *mat_p;
+  get_mat_name(mesh.elm_id[e], name_s);
 
   node_list_t *pn = material_list.head;
   while(pn != NULL){
@@ -494,7 +496,7 @@ int get_rho(const char *name, int e, double *rho){
   char name_s[64];
   int ierr;
 
-  get_mat_name(elm_id[e], name_s);
+  get_mat_name(mesh.elm_id[e], name_s);
 
   material_t *mat_p;
   node_list_t *pn = material_list.head;
@@ -549,21 +551,20 @@ int get_global_elem_index(int e, int *glo_elem_index){
 
   for(int n = 0 ; n < npe ; n++){
     for(int d = 0 ; d < dim ; d++)
-      glo_elem_index[n*dim + d] = loc2petsc[ eind[ mesh.eptr[e] + n ] ] * dim + d;
+      glo_elem_index[n*dim + d] = mesh.local_to_global[mesh.eind[mesh.eptr[e] + n]]*dim + d;
   }
   return 0;
 }
 
 
-int get_local_elem_index( int e, int * loc_elem_index ){
+int get_local_elem_index(int e, int *loc_elem_index){
 
   int  npe = mesh.eptr[e+1] - mesh.eptr[e];
 
   for(int n = 0 ; n < npe ; n++){
     for(int d = 0 ; d < dim ; d++)
-      loc_elem_index[n * dim + d] = eind[mesh.eptr[e] + n]*dim + d;
+      loc_elem_index[n*dim + d] = mesh.eind[mesh.eptr[e] + n]*dim + d;
   }
-
   return 0;
 }
 
@@ -575,7 +576,7 @@ int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj){
   int ngp = npe;
 
   for(int i = 0 ; i < npe*dim ; i++)
-    elem_coor[i] = coord[loc_elem_index[i]];
+    elem_coor[i] = mesh.coord_local[loc_elem_index[i]];
 
   fem_get_dsh_master(npe, dim, &dsh_master);
 
@@ -613,17 +614,13 @@ int get_bmat(int e, double ***dsh, double ***bmat){
 
 int get_sh(int dim, int npe, double ***sh){
 
-  fem_get_sh(npe, dim, sh);
-
-  return 0;
+  return fem_get_sh(npe, dim, sh);
 }
 
 
 int get_wp(int dim, int npe, double **wp){
 
-  fem_get_wp(npe, dim, wp);
-
-  return 0;
+  return fem_get_wp(npe, dim, wp);
 }
 
 
@@ -633,7 +630,7 @@ int get_elem_properties(void){
   double *stress_aux = malloc(nvoi*sizeof(double));
   double *wp;
 
-  for(int e = 0 ; e < nelm ; e++){
+  for(int e = 0 ; e < mesh.nelm_local ; e++){
 
     int npe = mesh.eptr[e+1] - mesh.eptr[e];
     int ngp = npe;
@@ -669,7 +666,7 @@ int get_elem_properties(void){
     node_list_t * pn = physical_list.head;
     while(pn != NULL){
       phy = pn->data;
-      if(phy->id == elm_id[e]) break;
+      if(phy->id == mesh.elm_id[e]) break;
       pn = pn->next;
     }
     if(pn == NULL) return 1;

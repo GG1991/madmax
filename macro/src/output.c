@@ -60,13 +60,13 @@ int macro_pvtu(char *name){
       "<?xml version=\"1.0\"?>\n"
       "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
       "<UnstructuredGrid>\n");
-  fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", nallnods, nelm);
+  fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", mesh.nnods_local_ghost, mesh.nelm_local);
   fprintf(fm,"<Points>\n");
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
 
-  for(int n = 0 ; n < nallnods ; n++){
+  for(int n = 0 ; n < mesh.nnods_local_ghost ; n++){
     for(int d = 0 ; d < dim ; d++)
-      fprintf(fm,"% 01.6e ",  coord[n*dim + d] );
+      fprintf(fm,"% 01.6e ",  mesh.coord_local[n*dim + d]);
     for(int d = dim ; d < 3 ; d++)
       fprintf(fm, "% 01.6e ", 0.0 );
     fprintf(fm, "\n" );
@@ -76,18 +76,18 @@ int macro_pvtu(char *name){
   fprintf(fm,"<Cells>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for(int e = 0 ; e < nelm ; e++){
-    int npe = eptr[e+1] - eptr[e];
+  for(int e = 0 ; e < mesh.nelm_local ; e++){
+    int npe = mesh.eptr[e+1] - mesh.eptr[e];
     for(int n = 0 ; n < npe ; n++)
-      fprintf(fm,"%-6d ", eind[eptr[e]+n]);
+      fprintf(fm,"%-6d ", mesh.eind[mesh.eptr[e] + n]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
 
   int ce = 0.0;
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"offsets\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for(int e = 0 ; e < nelm ; e++){
-    int npe = eptr[e+1] - eptr[e];
+  for(int e = 0 ; e < mesh.nelm_local ; e++){
+    int npe = mesh.eptr[e+1] - mesh.eptr[e];
     ce += npe;
     fprintf(fm, "%d ", ce);
   }
@@ -95,8 +95,8 @@ int macro_pvtu(char *name){
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for(int e = 0 ; e < nelm ; e++){
-    int npe = eptr[e+1] - eptr[e];
+  for(int e = 0 ; e < mesh.nelm_local ; e++){
+    int npe = mesh.eptr[e+1] - mesh.eptr[e];
     fprintf(fm, "%-3d ", vtkcode(dim , npe));
   }
   fprintf(fm,"\n");
@@ -113,14 +113,14 @@ int macro_pvtu(char *name){
 
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
     VecGetArray( xlocal , &xvalues );
-    for(int n = 0 ; n < nallnods ; n++){
+    for(int n = 0 ; n < mesh.nnods_local_ghost ; n++){
       for(int d = 0 ; d < dim ; d++)
 	fprintf(fm, "% 01.6e ", xvalues[n*dim + d]);
       for(int d = dim ; d < 3 ; d++)
 	fprintf(fm,"% 01.6e ",0.0);
       fprintf(fm,"\n");
     }
-    VecRestoreArray( xlocal , &xvalues );
+    VecRestoreArray(xlocal , &xvalues);
     fprintf(fm,"</DataArray>\n");
   }
 
@@ -131,7 +131,7 @@ int macro_pvtu(char *name){
 
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
     VecGetArray(xlocal, &xvalues);
-    for(int n = 0 ; n < nallnods ; n++){
+    for(int n = 0 ; n < mesh.nnods_local_ghost ; n++){
       for(int d = 0 ; d < dim ; d++)
 	fprintf(fm, "% 01.6e ", xvalues[n*dim + d]);
       for(int d = dim ; d < 3 ; d++)
@@ -145,13 +145,13 @@ int macro_pvtu(char *name){
   fprintf(fm,"<CellData>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for(int e = 0; e < nelm ; e++)
+  for(int e = 0; e < mesh.nelm_local ; e++)
     fprintf(fm, "%d ", rank_mac );
   fprintf(fm, "\n");
   fprintf(fm, "</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for(int e = 0 ; e < nelm ; e++){
+  for(int e = 0 ; e < mesh.nelm_local ; e++){
     for(int v = 0 ; v < nvoi ; v++)
       fprintf( fm, "% 01.6e ", elem_strain[e*nvoi + v]);
     fprintf(fm,"\n");
@@ -159,7 +159,7 @@ int macro_pvtu(char *name){
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for(int e = 0; e < nelm ; e++){
+  for(int e = 0; e < mesh.nelm_local ; e++){
     for(int v = 0 ; v < nvoi ; v++)
       fprintf(fm, "% 01.6e ", elem_stress[e*nvoi + v]);
     fprintf(fm,"\n");
@@ -167,7 +167,7 @@ int macro_pvtu(char *name){
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"elem_type\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for(int e = 0; e < nelm ; e++)
+  for(int e = 0; e < mesh.nelm_local ; e++)
     fprintf(fm, "%d ", elem_type[e]);
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
