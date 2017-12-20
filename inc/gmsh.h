@@ -49,7 +49,6 @@ int gmsh_is_vol_elm(int dim, int code);
 int gmsh_npe(int code);
 int gmsh_funcmp_int_a(void *a, void *b);
 int gmsh_funcmp_int_b(const void *a, const void *b);
-int gmsh_read_coord_parall(char *mesh_n, int dim, int nmynods, int *mynods, int nghost , int *ghost, double *coord);
 int gmsh_read_mesh(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh);
 
 #endif

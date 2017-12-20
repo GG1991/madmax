@@ -122,7 +122,7 @@ int gmsh_get_physical_list(char *mesh_n, list_t *physical_list){
 
   fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
 
-  while(fgets(buf,NBUF_GMSH,fm)!=NULL){
+  while(fgets(buf,NBUF_GMSH,fm) != NULL){
 
     data=strtok(buf," \n");
     if(strcmp(data,"$PhysicalNames") == 0){
@@ -146,66 +146,6 @@ int gmsh_get_physical_list(char *mesh_n, list_t *physical_list){
       if(i == total) break;
     }
   }
-  return 0;
-}
-
-
-int gmsh_read_coord_parall(char *mesh_n, int dim, int nmynods, int *mynods, int nghost, int *ghost, double *coord){
-
-  int   i, c, d;
-  int   ln, offset;
-
-  char  buf[NBUF_GMSH];
-  char  *data;
-
-  FILE * fm = fopen(mesh_n,"r");
-  if( !fm ){
-    printf( "file %s not found\n" , mesh_n );
-    return 1;
-  }
-
-  offset   = 0;
-  while(fgets(buf,NBUF_GMSH,fm)!=NULL){
-    offset += strlen(buf);
-    data=strtok(buf," \n");
-    if(strcmp(data,"$Nodes")==0){
-      fgets(buf,NBUF_GMSH,fm);
-      offset += strlen(buf);
-      data  = strtok(buf," \n");
-
-      i = c = 0;
-      while(c < nmynods){
-	while(i < mynods[c]){
-	  fgets(buf,NBUF_GMSH,fm);
-	  i++;
-	}
-	data=strtok(buf," \n");
-	for(d = 0 ; d < dim ; d++){
-	  data=strtok(NULL," \n");
-	  coord[c*dim + d] = atof(data);
-	}
-	c++;
-      }
-      break;
-    }
-    ln ++;
-  }
-
-  fseek(fm, offset, SEEK_SET);
-  i = c = 0;
-  while(c < nghost){
-    while(i < ghost[c]){
-      fgets(buf,NBUF_GMSH,fm);
-      i++;
-    }
-    data=strtok(buf," \n");
-    for(d = 0 ; d < dim ; d++){
-      data = strtok(NULL," \n");
-      coord[(nmynods + c)*dim + d] = atof(data);
-    }
-    c++;
-  }
-  fclose(fm);
   return 0;
 }
 
@@ -335,22 +275,21 @@ int gmsh_read_mesh(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh)
 }
 
 
-int  gmsh_funcmp_int_a(void *a, void *b){
+int gmsh_funcmp_int_a(void *a, void *b){
      if( *(int*)a > *(int*)b ) return  1;
      if( *(int*)a < *(int*)b ) return -1;
      return 0;
 }
 
 
-int  gmsh_funcmp_int_b(const void *a, const void *b){
+int gmsh_funcmp_int_b(const void *a, const void *b){
      if( *(int*)a > *(int*)b ) return  1;
      if( *(int*)a < *(int*)b ) return -1;
      return 0;
 }
 
 
-int gmsh_is_surf( int code , int dim )
-{
+int gmsh_is_surf( int code , int dim){
   if(dim == 2)
     return (code == 1 || code == 15) ? 1 : 0;
   else if(dim == 3)
