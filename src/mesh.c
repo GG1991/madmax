@@ -505,7 +505,7 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
 
   int c = 0;
   for(int i = 0 ; i < nproc ; i++){
-    if(int i != rank){
+    if(i != rank){
       for(int j = 0 ; j < nrep[i] ; j++)
 	rep_array[c++] = rep_matrix[i][j];
     }
@@ -527,7 +527,7 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
 
 	if(mesh->local_ghost_nods[i] == rep_array_clean[rep_count]){
 
-	  int ismine = ownership_selec_rule(COMM, rep_matrix, nrep, allnods[i], &remote_rank);
+	  int ismine = ownership_selec_rule(COMM, rep_matrix, nrep, mesh->local_ghost_nods[i], &remote_rank);
 	  if(ismine != 1)
 	    mesh->nnods_local++;
 	  else
@@ -561,7 +561,7 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
 	  int ismine = ownership_selec_rule(COMM, rep_matrix, nrep, mesh->local_ghost_nods[i], &remote_rank);
 
 	  if(ismine)
-	    mesh->local_nods[local_count+] = mesh->local_ghost_nods[i];
+	    mesh->local_nods[local_count++] = mesh->local_ghost_nods[i];
 	  else
 	    mesh->ghost_nods[ghost_count++] = mesh->local_ghost_nods[i];
 
@@ -575,12 +575,12 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
     }
 
   }else{
-    for(int i = 0 ;i < nallnods ; i++)
+    for(int i = 0 ;i < mesh->nnods_local_ghost ; i++)
       mesh->local_nods[i] = mesh->local_ghost_nods[i];
   }
 
 
-  for(int i = 0 ; i < nproc ; i++ ){
+  for(int i = 0 ; i < nproc ; i++){
     if(i != rank)
       free(rep_matrix[i]);
   }
@@ -593,101 +593,71 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
 }
 
 
-int reenumerate_PETSc(MPI_Comm COMM){
+int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh){
 
-  int i, j, *p, ierr;
-  int *rem_nods;
+  int rank, nproc;
+  MPI_Comm_rank(COMM, &rank);
+  MPI_Comm_size(COMM, &nproc);
 
-  int  rank, nproc;
-  MPI_Comm_rank( COMM, &rank );
-  MPI_Comm_size( COMM, &nproc );
+  int *rem_nnod = malloc(nproc*sizeof(int));
+  int ierr = MPI_Allgather(&mesh->nnods_local, 1, MPI_INT, rem_nnod, 1, MPI_INT, COMM); if(ierr != 0) return 1;
 
-  int *rem_nnod  = malloc( nproc * sizeof(int) );
-  int *disp_nods = malloc( nproc * sizeof(int) );
-  ierr = MPI_Allgather( &nmynods, 1, MPI_INT, rem_nnod, 1, MPI_INT, COMM ); if( ierr ) return 1;
-
+  int *disp_nods = malloc(nproc*sizeof(int));
   disp_nods[0] = 0;
-  i = 1;
-  while( i < nproc ){
+  for(int i = 1 ; i < nproc ; i++)
     disp_nods[i] = disp_nods[i-1] + rem_nnod[i-1];
-    i++;
-  }
 
-  /*  reenumeramos "eind" */
-  for( i = 0 ; i < eptr[nelm] ; i++ ){
-    p = bsearch( &eind[i], mynods, nmynods, sizeof(int), cmpfunc );
-    if( p != NULL ){
-      // is a local node
-      eind[i] = p - mynods;
-    }
-    else
-    {
-      // is a ghost node
-      p = bsearch( &eind[i], ghost, nghost, sizeof(int), cmpfunc );
-      if( p != NULL )
-	eind[i] = nmynods + p - ghost;
-      else{
-	PetscPrintf( COMM, "\nvalue %d not found on <mynods> neither <ghost>\n", eind[i] );
+  for(int i = 0 ; i < mesh->eptr[mesh->nelm_local] ; i++){
+    int *p = bsearch(&mesh->eind[i], mesh->local_nods, mesh->nnods_local, sizeof(int), cmpfunc);
+    if(p != NULL)
+      mesh->eind[i] = p - mesh->local_nods;
+    else{
+      p = bsearch(&mesh->eind[i], mesh->ghost_nods, mesh->nnods_ghost, sizeof(int), cmpfunc);
+      if(p != NULL)
+	mesh->eind[i] = mesh->nnods_local + p - mesh->ghost_nods;
+      else
 	return 1;
-      }
     }
   }
 
-  loc2petsc = malloc( (nmynods + nghost) * sizeof(int));
+  mesh->local_to_global = malloc(mesh->nnods_local_ghost*sizeof(int));
+  for(int i = 0 ; i < mesh->nnods_local ; i++)
+    mesh->local_to_global[i] = disp_nods[rank] + i;
 
-  for( i = 0 ; i < nmynods ; i++ )
-    loc2petsc[i] = disp_nods[rank] + i;
+  MPI_Request *request = malloc(nproc*sizeof(MPI_Request));
+  int *ghost_global_ix = malloc(mesh->nnods_ghost*sizeof(int));
+  for(int i = 0 ; i < mesh->nnods_ghost ; i++) ghost_global_ix[i] = -1;
 
-  MPI_Request  *request;
-
-  int   *ghost_gix; // ghost global index
-
-  request = malloc( nproc * sizeof(MPI_Request) );
-  ghost_gix = malloc( nghost * sizeof(int) );
-  for( i = 0 ; i < nghost ; i++ )
-    ghost_gix[i] = -1;
-
-  for( i = 0 ; i < nproc ; i++ ){
-    if( i != rank ){
-      ierr = MPI_Isend( mynods, nmynods, MPI_INT, i, 0, COMM, &request[i] );
-      if( ierr ) return 1;
+  for(int i = 0 ; i < nproc ; i++){
+    if(i != rank){
+      ierr = MPI_Isend(mesh->local_nods, mesh->nnods_local, MPI_INT, i, 0, COMM, &request[i]); if(ierr != 0) return 1;
     }
   }
-  for( i = 0 ; i < nproc ; i++ )
-  {
-    // receive from all peer ranks "i"
-    if( i != rank )
-    {
-      rem_nods = malloc(rem_nnod[i]*sizeof(int));
 
-      ierr = MPI_Recv(rem_nods, rem_nnod[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE );
-      if( ierr ) return 1;
+  for(int i = 0 ; i < nproc ; i++){
 
-      for( j = 0 ; j < nghost ; j++ )
-      {
-	// search this ghost node on <rem_nods>
-	p = bsearch( &ghost[j], rem_nods, rem_nnod[i], sizeof(int), cmpfunc );
-	if( p != NULL )
-	  ghost_gix[j] = disp_nods[i] + p - rem_nods;
+    if(i != rank){
+
+      int *rem_nods = malloc(rem_nnod[i]*sizeof(int));
+      ierr = MPI_Recv(rem_nods, rem_nnod[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE ); if(ierr != 0) return 1;
+
+      for(int j = 0 ; j < mesh->nnods_ghost ; j++){
+	int *p = bsearch(&mesh->ghost_nods[j], rem_nods, rem_nnod[i], sizeof(int), cmpfunc);
+	if(p != NULL)
+	  ghost_global_ix[j] = disp_nods[i] + p - rem_nods;
       }
       free(rem_nods);
     }
   }
-
-  // check if all the ghost where found remotely
-  for( i = 0 ; i < nghost ; i++ ){
-    if( ghost_gix[i] == -1 ){
-      PetscPrintf( COMM,"\n\"ghost\" value %d not found remotely", ghost[i] );
-      return 1;
-    }
-  }
-
-  for( i = 0 ; i < nghost ; i++ )
-    loc2petsc[nmynods + i] =  ghost_gix[i];
-
   free(rem_nnod);
-  free(ghost_gix);
   free(request);
+
+  for(int i = 0 ; i < mesh->nnods_ghost ; i++) if(ghost_global_ix[i] == -1) return 1;
+
+  for(int i = 0 ; i < mesh->nnods_ghost ; i++)
+    mesh->local_to_global[mesh->nnods_local + i] =  ghost_global_ix[i];
+
+  free(ghost_global_ix);
   return 0;
 }
 
@@ -695,16 +665,10 @@ int reenumerate_PETSc(MPI_Comm COMM){
 int ownership_selec_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node, int *remote_rank){
 
   /*
-      Function for determine the ownership of a rep_matrix
-      node on different processors.
-
-      Input
-
       rep_matrix > list of nodes that each process have in common with me
       nrep     > number of elements in each <rep_matrix> element
       node     > node numeration in order to know if this process owns it
 
-      Notes>
       -> all process should return the same if <node> is the same
       -> the selection criteria calculates rankp = node % nproc as root
       if the rankp in rep_matrix contains <node> in <rankp> position
@@ -909,43 +873,6 @@ int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], 
 
   return 0;
 }
-
-
-//int interpolate_structured_2d(double limit[2], int nx, int ny, double *field, double *var_interp)
-//{
-//  /*
-//     <field> size should be <nelm>
-//  */
-//  int      e, es;
-//  double   x0 = limit[0];
-//  double   x1 = limit[1];
-//  double   y0 = limit[2];
-//  double   y1 = limit[3];
-//  int      nex = (nx-1);
-//  int      ney = (ny-1);
-//  int      nelm_s = nex*ney;
-//  double   dx = (x1-x0)/nex;
-//  double   dy = (y1-y0)/ney;
-//  double   centroid[2];
-//  double   vol;
-//  double   *var_interp_struct;
-//
-//  var_interp_struct = calloc(nelm_s,sizeof(double));
-//
-//  for(e=0;e<nelm;e++){
-//    get_centroid(e, centroid);
-//    get_element_structured_2d(centroid, limit, nx, ny, &es);
-//    get_elem_vol(e, &vol);
-//    var_interp_struct[es] = var_interp_struct[es] + field[e]*vol;
-//  }
-//  for(e=0;e<nelm;e++){
-//    get_centroid(e, centroid);
-//    get_element_structured_2d(centroid, limit, nx, ny, &es);
-//    var_interp[e] = var_interp_struct[es] / (dx*dy);
-//  }
-//
-//  return 0;
-//}
 
 
 int get_element_structured_2d(double centroid[2], double limit[4], int nx, int ny, int *es){
