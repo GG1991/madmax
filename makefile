@@ -32,8 +32,7 @@ else
 CFLAGS=-g -O0 -lm -std=gnu11
 endif
 
-DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
-	       ${DEP_DIR}/list.h \
+DEPS_SPUTNIK = ${DEP_DIR}/list.h \
 	       ${DEP_DIR}/function.h \
 	       ${DEP_DIR}/trace.h \
 	       ${DEP_DIR}/gmsh.h \
@@ -41,7 +40,6 @@ DEPS_SPUTNIK = ${DEP_DIR}/sputnik.h \
 	       ${DEP_DIR}/material.h
 
 DEPS_MAC = ${MAC_INC_DIR}/macro.h \
-           ${DEP_DIR}/sputnik.h \
            ${DEP_DIR}/solvers.h \
            ${DEP_DIR}/util.h \
            ${DEP_DIR}/gmsh.h \
@@ -138,13 +136,13 @@ ${MIC_DIR}/micro: ${MIC_OBJ}
 # SPUTNIK OBJECTS
 
 ${SPU_OBJ_DIR}/%.o: ${SPU_SRC_DIR}/%.c ${DEPS_SPUTNIK} ${PARMETIS_HEA} ${SLEPC_EPS_LIB}
-	${PETSC_COMPILE} -DPETSC -DMPI -c ${CFLAGS} ${INC_FLAG}  -o $@ $< 
+	${PETSC_COMPILE} -DPARMETIS -DPETSC -DMPI -c ${CFLAGS} ${INC_FLAG}  -o $@ $< 
 	@echo ">>> "$@
 
 ##############################
 # MACRO OBJECTS
 ${MAC_OBJ_DIR}/%.o: ${MAC_SRC_DIR}/%.c ${DEPS_MAC}
-	${PETSC_COMPILE} -DSLEPC -DPETSC -c ${CFLAGS} ${INC_FLAG} -o $@ $< ${SLEPC_EPS_LIB}
+	${PETSC_COMPILE} -DPARMETIS -DSLEPC -DPETSC -c ${CFLAGS} ${INC_FLAG} -o $@ $< ${SLEPC_EPS_LIB}
 	@echo ">>> "$@
 
 ##############################

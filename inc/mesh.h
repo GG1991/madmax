@@ -3,11 +3,15 @@
 
 #include "list.h"
 #include "util.h"
+#include "myio.h"
 
+#ifdef PARMETIS
+#include "parmetis.h"
 #define PARMETIS_GEOMKWAY   1
 #define PARMETIS_GEOM       2
 #define PARMETIS_KWAY       3
 #define PARMETIS_MESHKWAY   4
+#endif
 
 #define MAX_ADJ_NODES 30
 #define MAX_NUM_OF_BOUNDARIES 4
@@ -88,8 +92,9 @@ extern mesh_struct_t mesh_struct;
 int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh);
 int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh);
 int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh);
+int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node_guess, int *owner_rank);
+int mesh_cmpfunc(const void * a, const void * b);
 
-int ownership_selec_rule( MPI_Comm COMM, int **repeated, int *nrep, int node, int *remoterank );
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,

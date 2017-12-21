@@ -1,5 +1,3 @@
-#include "sputnik.h"
-#include "parmetis.h"
 #include "mesh.h"
 
 #define NBUF 256
@@ -321,7 +319,7 @@ int clean_vector_qsort(int n, int *input, int **output, int *n_notrep){
     aux[i] = input[i];
   }
 
-  qsort(aux, n, sizeof(int), cmpfunc);
+  qsort(aux, n, sizeof(int), mesh_cmpfunc);
 
   val_o = aux[0];
   int c = 1;
@@ -377,7 +375,7 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
   aux = malloc(n*sizeof(int));
   memcpy(aux, input, n*sizeof(int));
 
-  qsort(aux, n, sizeof(int), cmpfunc);
+  qsort(aux, n, sizeof(int), mesh_cmpfunc);
 
   val_o = aux[0];
   swi = 1;
@@ -483,7 +481,7 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
 
   for(int i = 0 ; i < nproc ; i++){
     if(i != rank){
-      ierr = MPI_Isend(mesh->local_ghost_nods, mesh->nnods_local_ghost, MPI_INT, i, 0, COMM, &request[i]); 
+      ierr = MPI_Isend(mesh->local_ghost_nods, mesh->nnods_local_ghost, MPI_INT, i, 0, COMM, &request[i]);
       if(ierr != 0) return 1;
     }
   }
@@ -527,7 +525,7 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
 
 	if(mesh->local_ghost_nods[i] == rep_array_clean[rep_count]){
 
-	  int ismine = ownership_selec_rule(COMM, rep_matrix, nrep, mesh->local_ghost_nods[i], &remote_rank);
+	  int ismine = mesh_ownership_selection_rule(COMM, rep_matrix, nrep, mesh->local_ghost_nods[i], &remote_rank);
 	  if(ismine != 1)
 	    mesh->nnods_local++;
 	  else
@@ -558,7 +556,7 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
 
 	if(mesh->local_ghost_nods[i] == rep_array_clean[rep_count]){
 
-	  int ismine = ownership_selec_rule(COMM, rep_matrix, nrep, mesh->local_ghost_nods[i], &remote_rank);
+	  int ismine = mesh_ownership_selection_rule(COMM, rep_matrix, nrep, mesh->local_ghost_nods[i], &remote_rank);
 
 	  if(ismine)
 	    mesh->local_nods[local_count++] = mesh->local_ghost_nods[i];
@@ -608,11 +606,11 @@ int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh){
     disp_nods[i] = disp_nods[i-1] + rem_nnod[i-1];
 
   for(int i = 0 ; i < mesh->eptr[mesh->nelm_local] ; i++){
-    int *p = bsearch(&mesh->eind[i], mesh->local_nods, mesh->nnods_local, sizeof(int), cmpfunc);
+    int *p = bsearch(&mesh->eind[i], mesh->local_nods, mesh->nnods_local, sizeof(int), mesh_cmpfunc);
     if(p != NULL)
       mesh->eind[i] = p - mesh->local_nods;
     else{
-      p = bsearch(&mesh->eind[i], mesh->ghost_nods, mesh->nnods_ghost, sizeof(int), cmpfunc);
+      p = bsearch(&mesh->eind[i], mesh->ghost_nods, mesh->nnods_ghost, sizeof(int), mesh_cmpfunc);
       if(p != NULL)
 	mesh->eind[i] = mesh->nnods_local + p - mesh->ghost_nods;
       else
@@ -642,7 +640,7 @@ int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh){
       ierr = MPI_Recv(rem_nods, rem_nnod[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE ); if(ierr != 0) return 1;
 
       for(int j = 0 ; j < mesh->nnods_ghost ; j++){
-	int *p = bsearch(&mesh->ghost_nods[j], rem_nods, rem_nnod[i], sizeof(int), cmpfunc);
+	int *p = bsearch(&mesh->ghost_nods[j], rem_nods, rem_nnod[i], sizeof(int), mesh_cmpfunc);
 	if(p != NULL)
 	  ghost_global_ix[j] = disp_nods[i] + p - rem_nods;
       }
@@ -662,68 +660,35 @@ int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh){
 }
 
 
-int ownership_selec_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node, int *remote_rank){
-
-  /*
-      rep_matrix > list of nodes that each process have in common with me
-      nrep     > number of elements in each <rep_matrix> element
-      node     > node numeration in order to know if this process owns it
-
-      -> all process should return the same if <node> is the same
-      -> the selection criteria calculates rankp = node % nproc as root
-      if the rankp in rep_matrix contains <node> in <rankp> position
-      then this is the ownership of it. If <rankp> = <rank> at any
-      part of the search then this node is of this process.
-   */
+int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node_guess, int *owner_rank){
 
   int nproc, rank;
+  MPI_Comm_rank(COMM, &rank);
+  MPI_Comm_size(COMM, &nproc);
 
-  MPI_Comm_rank( COMM, &rank);
-  MPI_Comm_size( COMM, &nproc);
+  int rank_guess = node_guess % nproc;
 
-  int i, rankp;
+  for(int i = 0 ; i < nproc ; i++){
 
-  // damos un guess inicial de <rankp> luego iremos buscamos
-  // hacia los ranks crecientes
-  rankp = node % nproc;
+    if(rank_guess == rank){
 
-  i = 0;
-  while(i<nproc){
-    //tenemos un guess nuevo de rankp
-    if(rankp == rank){
-      // si justo nos cayo entonces este <node> es nuestro
-      *remote_rank = rankp;
-      return 1;
-    }
-    else{
-      if(is_in_vector( node, &rep_matrix[rankp][0], nrep[rankp])){
-	// lo encontramos pero está en otro rank
-	*remote_rank = rankp;
-	return 0;
-      }
-      else{
-	// buscamos siempre a la derecha
-	rankp ++;
-	if( rankp == nproc ) rankp = 0;
+      *owner_rank = rank_guess; return 1;
+
+    }else{
+
+      if(util_is_in_vector(node_guess, &rep_matrix[rank_guess][0], nrep[rank_guess]) == 1){
+
+	*owner_rank = rank_guess; return 0;
+
+      }else{
+
+	rank_guess ++; if(rank_guess == nproc) rank_guess = 0;
+
       }
     }
-    i ++;
   }
 
   return -1;	
-}
-
-
-int is_in_vector(int val, int *vector, int size){
-
-  int j = 0;
-  while(j < size){
-    if(vector[j] == val) break;
-    j++;
-  }
-  return (j == size) ? 0 : 1;
-
-  return -1;
 }
 
 
@@ -916,10 +881,9 @@ int get_element_structured_2d(double centroid[2], double limit[4], int nx, int n
 }
 
 
-int cmpfunc (const void * a, const void * b){
+int mesh_cmpfunc(const void * a, const void * b){
 
-  return ( *(int*)a - *(int*)b );
-
+  return (*(int*)a - *(int*)b);
 }
 
 
