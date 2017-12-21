@@ -9,6 +9,7 @@
 int print_petsc_ksp_info( MPI_Comm COMM, KSP ksp);
 #endif
 
-int strbin2dec( char *str );
+int strbin2dec(char *str);
+int util_is_in_vector(int val, int *vector, int size);
 
 #endif

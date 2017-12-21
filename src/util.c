@@ -43,3 +43,16 @@ int strbin2dec(char *str){
 
   return dec;
 }
+
+
+int util_is_in_vector(int val, int *vector, int size){
+
+  int j = 0;
+  while(j < size){
+    if(vector[j] == val) break;
+    j++;
+  }
+  return (j == size) ? 0 : 1;
+
+  return -1;
+}
