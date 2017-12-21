@@ -25,20 +25,22 @@ int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list
     bou.name = strdup(str_token);
     str_token = strtok(NULL," \n");
     bou.kind = strbin2dec(str_token);
+
     if(dim == 2){
-      if(bou.kind == 1 || bou.kind == 2 ) bou.ndirpn =  1;
+      if(bou.kind == 1 || bou.kind == 2) bou.ndirpn = 1;
       if(bou.kind == 3) bou.ndirpn =  2;
       if(bou.kind == 0) bou.ndirpn =  0;
     }
+
     bou.nneupn   = dim - bou.ndirpn;
     bou.fnum     = malloc(dim * sizeof(int));
-    int d;
-    for( d=0 ; d<dim ; d++ ){
+
+    for(int d = 0 ; d < dim ; d++){
       str_token = strtok(NULL," \n");
       bou.fnum[d] = atoi(str_token);
     }
     bou.dir_loc_ixs = NULL;
-    bou.dir_val     = NULL;
+    bou.dir_val = NULL;
     list_insertlast(boundary_list, &bou);
   }
 
@@ -46,87 +48,86 @@ int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list
 }
 
 
-int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
+int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh){
 
-  int        rank, nproc, ierr;
-  idx_t     *elmwgt;           // (inp) Element weights
-  idx_t      wgtflag;          // (inp) Element weight flag (0 desactivated)
-  idx_t      numflag;          // (inp) Numeration ( 0 in C, 1 in Fortran)
-  idx_t      ncon;             // (inp) number of constrains of the graph ?
-  idx_t      ncommonnodes;     // (inp) degree of connectivities among vertices in dual graph
-  idx_t      nparts;           // (inp) number of partitions
-  real_t    *tpwgts;           // (inp) array of size "ncon" x "npart" fraction of vertex for each subdomain
-  real_t    *ubvec;            // (inp) array of size "ncon"
-  idx_t      options[3];       // (inp) option parameters
-  idx_t      edgecut;          // (out) number of edges cut of the partition
+  int rank, nproc, ierr;
+  MPI_Comm_size(COMM, &nproc);
+  MPI_Comm_rank(COMM, &rank);
 
-  MPI_Comm_size( COMM, &nproc );
-  MPI_Comm_rank( COMM, &rank );
+  int *part = malloc(mesh->nelm_local * sizeof(int));
 
-  nelm = elmdist[rank+1] - elmdist[rank];
-  int *part = malloc( nelm * sizeof(int) );
+  if(mesh->partition == PARMETIS_GEOM || mesh->partition == PARMETIS_MESHKWAY){
 
-  elmwgt  = NULL;  // no weights per elements
-  wgtflag = 0;     // no weights per elements
-  numflag = 0;     // C numeration
+#ifdef PARTMETIS
 
-  nparts  = nproc; // number of partitions
+    idx_t *elmwgt;
+    idx_t wgtflag;
+    idx_t numflag;
+    idx_t ncon;
+    idx_t ncommonnodes;
+    idx_t nparts;
+    real_t *tpwgts;
+    real_t *ubvec;
+    idx_t options[3];
+    idx_t edgecut;
 
-  ncon    = 1;
-  tpwgts  = malloc( ncon * nparts * sizeof(real_t) );
+    elmwgt = NULL;
+    wgtflag = 0;
+    numflag = 0;
+    nparts = nproc;
+    ncon = 1;
+    tpwgts = malloc(ncon*nparts*sizeof(real_t));
 
-  // uniform distribution of vertex in all processes
-  for(int i = 0 ; i < ncon * nparts ; i++)
-    tpwgts[i] = 1.0 / nparts;
+    for(int i = 0 ; i < ncon*nparts ; i++)
+      tpwgts[i] = 1.0 / nparts;
 
-  ncommonnodes = 3;
+    ncommonnodes = 3;
 
-  options[0] = 0; // options (1,2) : 0 default, 1 considered
-  options[1] = 0; // level of information returned
-  options[2] = 0; // random seed
+    options[0] = 0;
+    options[1] = 0;
+    options[2] = 0;
 
-  ubvec = malloc( ncon * sizeof(real_t) );
-  for(int i = 0 ; i < ncon ; i++)
-    ubvec[i] = 1.05;
+    ubvec = malloc( ncon * sizeof(real_t) );
+    for(int i = 0 ; i < ncon ; i++)
+      ubvec[i] = 1.05;
 
-  if(partition_algorithm == PARMETIS_GEOM){
+    if(mesh->partition == PARMETIS_GEOM){
 
-    ParMETIS_V3_PartGeom( elmdist, &dim, (real_t*)elmv_centroid, part, &COMM );
+      ierr = ParMETIS_V3_PartGeom( elmdist, &dim, (real_t*)elmv_centroid, part, &COMM );
 
-  }else if(partition_algorithm == PARMETIS_MESHKWAY){
+    }else if(mesh->partition == PARMETIS_MESHKWAY){
 
-    ParMETIS_V3_PartMeshKway(elmdist, eptr, eind, elmwgt, &wgtflag, &numflag,
-	&ncon, &ncommonnodes, &nparts, tpwgts, ubvec, options, &edgecut, part, &COMM);
+      ierr = ParMETIS_V3_PartMeshKway(mesh->elm_dist, mesh->eptr, mesh->eind, elmwgt, &wgtflag, &numflag,
+	  &ncon, &ncommonnodes, &nparts, tpwgts, ubvec, options, &edgecut, part, &COMM);
+    }
+    free(ubvec);
+    free(tpwgts);
 
+#else
+    return 1;
+#endif
   }
-  else
+
+  int *eind_swi = malloc(mesh->eptr[mesh->nelm_local]*sizeof(int));
+  int *npe_swi = malloc(mesh->nelm_local*sizeof(int));
+  int *elm_id_swi = malloc(mesh->nelm_local*sizeof(int));
+  int *eind_swi_size = malloc(nproc*sizeof(int));
+  int *npe_swi_size = malloc(nproc*sizeof(int));
+  int *eind_size_new = malloc(nproc*sizeof(int));
+  int *npe_size_new = malloc(nproc*sizeof(int));
+
+  ierr = swap_vectors_SCR(part, nproc, mesh->nelm_local,
+      mesh->npe, mesh->eptr, mesh->eind, mesh->elm_id,
+      npe_swi, eind_swi, elm_id_swi,
+      npe_swi_size, eind_swi_size );
+
+  ierr = MPI_Alltoall(npe_swi_size, 1, MPI_INT, npe_size_new, 1, MPI_INT, COMM);
+  if(ierr != 0)
     return 1;
 
-  int *eind_swi, *eind_swi_size, *eind_size_new;
-  int *npe_swi, *npe_swi_size, *npe_size_new;
-  int *elm_id_swi;
-  int *npe;
-
-  npe = malloc( nelm * sizeof(int) );
-  for(int i = 0 ; i < nelm ; i++)
-    npe[i] = eptr[i+1] - eptr[i];
-
-  eind_swi       = malloc(eptr[nelm]*sizeof(int));
-  npe_swi        = malloc(nelm*sizeof(int));
-  elm_id_swi = malloc(nelm*sizeof(int));
-  eind_swi_size  = malloc(nproc*sizeof(int));
-  npe_swi_size   = malloc(nproc*sizeof(int));
-  eind_size_new  = malloc(nproc*sizeof(int));
-  npe_size_new   = malloc(nproc*sizeof(int));
-
-  ierr = swap_vectors_SCR( part, nproc, nelm,
-      npe, eptr, eind, elm_id,
-      npe_swi, eind_swi, elm_id_swi,
-      npe_swi_size, eind_swi_size );CHKERRQ(ierr);
-
-
-  ierr = MPI_Alltoall( npe_swi_size,  1, MPI_INT, npe_size_new,  1, MPI_INT, COMM ); if( ierr ) return 1;
-  ierr = MPI_Alltoall( eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, COMM ); if( ierr ) return 1;
+  ierr = MPI_Alltoall(eind_swi_size, 1, MPI_INT, eind_size_new, 1, MPI_INT, COMM);
+  if(ierr != 0)
+    return 1;
 
   int npe_size_new_tot = 0, eind_size_new_tot = 0;
 
@@ -134,23 +135,21 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
     npe_size_new_tot += npe_size_new[i];
     eind_size_new_tot += eind_size_new[i];
   }
-  nelm = npe_size_new_tot;
+  mesh->nelm_local = npe_size_new_tot;
 
-  free(npe);
-  free(eptr);
-  free(eind);
-  free(elm_id);
+  free(mesh->npe);
+  free(mesh->eptr);
+  free(mesh->eind);
+  free(mesh->elm_id);
   free(part);
 
-  npe = malloc(nelm*sizeof(int));
-  eptr = malloc((nelm+1)*sizeof(int));
-  eind = malloc(eind_size_new_tot*sizeof(int));
-  elm_id = malloc(nelm*sizeof(int));
+  mesh->npe = malloc(mesh->nelm_local*sizeof(int));
+  mesh->eptr = malloc((mesh->nelm_local + 1)*sizeof(int));
+  mesh->eind = malloc(eind_size_new_tot*sizeof(int));
+  mesh->elm_id = malloc(mesh->nelm_local*sizeof(int));
 
-  int *sdispls, *rdispls;
-
-  sdispls = malloc( nproc * sizeof(int) );
-  rdispls = malloc( nproc * sizeof(int) );
+  int *sdispls = malloc(nproc*sizeof(int));
+  int *rdispls = malloc(nproc*sizeof(int));
 
   for(int i = 0 ; i < nproc ; i++){
     sdispls[i] = 0;
@@ -164,14 +163,18 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
   }
 
   ierr = MPI_Alltoallv(npe_swi, npe_swi_size, sdispls, MPI_INT,
-      npe, npe_size_new, rdispls, MPI_INT, COMM); if(ierr != 0) return ierr;
+      mesh->npe, npe_size_new, rdispls, MPI_INT, COMM);
+  if(ierr != 0)
+    return ierr;
 
   ierr = MPI_Alltoallv(elm_id_swi, npe_swi_size, sdispls, MPI_INT,
-      elm_id, npe_size_new, rdispls, MPI_INT, COMM); if(ierr != 0) return ierr;
+      mesh->elm_id, npe_size_new, rdispls, MPI_INT, COMM);
+  if(ierr != 0)
+    return ierr;
 
-  eptr[0] = 0;
-  for(int i = 0 ; i < nelm ; i++)
-    eptr[i+1] = eptr[i] + npe[i];
+  mesh->eptr[0] = 0;
+  for(int i = 0 ; i < mesh->nelm_local ; i++)
+    mesh->eptr[i+1] = mesh->eptr[i] + mesh->npe[i];
 
   for(int i = 0 ; i < nproc ; i++){
     sdispls[i] = 0;
@@ -184,8 +187,8 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
       rdispls[i] += eind_size_new[j];
   }
 
-  ierr = MPI_Alltoallv( eind_swi, eind_swi_size, sdispls, MPI_INT,
-      eind, eind_size_new, rdispls, MPI_INT, COMM );
+  ierr = MPI_Alltoallv(eind_swi, eind_swi_size, sdispls, MPI_INT,
+      mesh->eind, eind_size_new, rdispls, MPI_INT, COMM);
 
   free(eind_swi);
   free(npe_swi);
@@ -196,11 +199,8 @@ int part_mesh(MPI_Comm COMM, char *myname, double *centroid){
   free(sdispls);
   free(rdispls);
   free(elm_id_swi);
-  free(ubvec);
-  free(tpwgts);
 
-  allnods = NULL;
-  clean_vector_qsort( eptr[nelm], eind, &allnods, &nallnods );
+  clean_vector_qsort(mesh->eptr[mesh->nelm_local], mesh->eind, &mesh->local_ghost_nods, &mesh->nnods_local_ghost);
 
   return 0;
 }

@@ -47,7 +47,12 @@ typedef struct{
 
   int *eptr;
   int *eind;
+
   int **elements;
+  int *npe;
+
+  int *nelm_dist;
+
   int *elm_id;
 
   int partition;
@@ -80,7 +85,7 @@ typedef struct{
 
 extern mesh_struct_t mesh_struct;
 
-int part_mesh(MPI_Comm COMM, char *myname, double *centroid);
+int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh);
 int reenumerate_PETSc(MPI_Comm COMM);
 
 int calc_local_and_ghost( MPI_Comm COMM, int nallnods, int *allnods,
