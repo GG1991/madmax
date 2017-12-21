@@ -13,13 +13,15 @@
 
 #define NBUF_GMSH 256
 
-typedef struct _physical_t{
+typedef struct{
 
     int dim;
     int id;
     char *name;
 
 }physical_t;
+
+extern list_t physical_list;
 
 typedef struct {
 

@@ -11,5 +11,7 @@ int print_petsc_ksp_info( MPI_Comm COMM, KSP ksp);
 
 int strbin2dec(char *str);
 int util_is_in_vector(int val, int *vector, int size);
+int util_clean_and_sort_vector(int *in_vector, int n_in, int **out_vector, int *n_out);
+int util_cmpfunc(const void * a, const void * b);
 
 #endif

@@ -56,3 +56,58 @@ int util_is_in_vector(int val, int *vector, int size){
 
   return -1;
 }
+
+
+int util_clean_and_sort_vector(int *in_vector, int n_in, int **out_vector, int *n_out){
+
+  int swi, val_o;
+
+  if(n_in == 0) return 0;
+
+  int *aux = malloc(n_in*sizeof(int));
+  for(int i = 0 ; i < n_in ; i++) aux[i] = in_vector[i];
+
+  qsort(aux, n_in, sizeof(int), util_cmpfunc);
+
+  val_o = aux[0];
+  int c = 1;
+  for(int i = 1 ; i < n_in ; i++){
+    swi = 1;
+    if(aux[i] == val_o){
+      swi = 0;
+    }
+    else{
+      val_o = aux[i];
+      swi = 1;
+    }
+    if(swi==1){
+      c++;
+    }
+  }
+  (*out_vector) = malloc(c*sizeof(int));
+
+  val_o = aux[0];
+  (*out_vector)[0] = aux[0];
+  c = 1;
+  for(int i = 1 ; i < n_in ; i++){
+    swi = 1;
+    if(aux[i] == val_o)
+      swi = 0;
+    else{
+      val_o = aux[i];
+      swi = 1;
+    }
+    if(swi == 1) (*out_vector)[c++] = aux[i];
+  }
+
+  free(aux);
+  *n_out = c;
+
+  return 0;
+}
+
+
+int util_cmpfunc(const void * a, const void * b){
+
+  return (*(int*)a - *(int*)b);
+}
