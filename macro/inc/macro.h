@@ -1,8 +1,6 @@
 #ifndef MACRO_H
 #define MACRO_H
 
-
-#include "sputnik.h"
 #include "comm.h"
 #include "util.h"
 #include "function.h"
@@ -10,7 +8,9 @@
 #include "myio.h"
 #include "gmsh.h"
 #include "mesh.h"
+#include "fem.h"
 #include "solvers.h"
+#include "material.h"
 
 #define GREEN "\x1B[32m"
 #define RED "\x1B[31m"
@@ -49,14 +49,16 @@ double **jac;
 double **jac_inv;
 
 int nvoi;
-
-int flag_neg_detj;
+int dim;
 
 int rank_mac;
 int nproc_mac;
+int nproc_wor;
+int rank_wor;
+
+int flag_neg_detj;
 
 char mesh_n[128];
-int mesh_f;
 
 typedef struct{
 
@@ -92,9 +94,6 @@ typedef struct{
 extern params_t params;
 extern flags_t flags;
 
-list_t boundary_list;
-list_t physical_list;
-
 int read_bc(void);
 int assembly_A_petsc(void);
 int assembly_b_petsc(void);
@@ -122,6 +121,12 @@ int finalize(void);
 int alloc_memory(void);
 
 int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh);
+
+#ifdef SLEPC
+
+#include "slepceps.h"
+
+#endif
 
 #ifdef PETSC
 

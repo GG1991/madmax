@@ -2,7 +2,7 @@
 
 #define NBUF 256
 
-int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list_t *boundary_list){
+int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list_t *boundary_list, mesh_t *mesh){
 
   bool found;
   int num_string_found;
@@ -24,16 +24,16 @@ int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list
     str_token = strtok(NULL," \n");
     bou.kind = strbin2dec(str_token);
 
-    if(dim == 2){
+    if(mesh->dim == 2){
       if(bou.kind == 1 || bou.kind == 2) bou.ndirpn = 1;
       if(bou.kind == 3) bou.ndirpn =  2;
       if(bou.kind == 0) bou.ndirpn =  0;
     }
 
-    bou.nneupn   = dim - bou.ndirpn;
-    bou.fnum     = malloc(dim * sizeof(int));
+    bou.nneupn   = mesh->dim - bou.ndirpn;
+    bou.fnum     = malloc(mesh->dim * sizeof(int));
 
-    for(int d = 0 ; d < dim ; d++){
+    for(int d = 0 ; d < mesh->dim ; d++){
       str_token = strtok(NULL," \n");
       bou.fnum[d] = atoi(str_token);
     }
@@ -200,7 +200,7 @@ int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh){
   free(rdispls);
   free(elm_id_swi);
 
-  clean_vector_qsort(mesh->eptr[mesh->nelm_local], mesh->eind, &mesh->local_ghost_nods, &mesh->nnods_local_ghost);
+  util_clean_and_sort_vector(mesh->eind, mesh->eptr[mesh->nelm_local], &mesh->local_ghost_nods, &mesh->nnods_local_ghost);
 
   return 0;
 }
@@ -302,61 +302,6 @@ int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
       c++;
     }
   }
-
-  return 0;
-}
-
-
-int clean_vector_qsort(int n, int *input, int **output, int *n_notrep){
-
-  int  swi, val_o, *aux = NULL;
-
-  if(n == 0) return 0;
-  if(*output) return 1;
-
-  aux = malloc(n*sizeof(int));
-  for(int i = 0 ; i < n ; i++){
-    aux[i] = input[i];
-  }
-
-  qsort(aux, n, sizeof(int), mesh_cmpfunc);
-
-  val_o = aux[0];
-  int c = 1;
-  for(int i = 1 ; i < n ; i++){
-    swi = 1;
-    if(aux[i] == val_o){
-      swi = 0;
-    }
-    else{
-      val_o = aux[i];
-      swi = 1;
-    }
-    if(swi==1){
-      c++;
-    }
-  }
-  (*output) = malloc(c*sizeof(int));
-
-  val_o = aux[0];
-  (*output)[0] = aux[0];
-  c = 1;
-  for(int i = 1 ; i < n ; i++){
-    swi = 1;
-    if(aux[i] == val_o){
-      swi = 0;
-    }
-    else{
-      val_o = aux[i];
-      swi = 1;
-    }
-    if(swi==1){
-      (*output)[c] = aux[i];
-      c ++;
-    }
-  }
-  free(aux);
-  *n_notrep = c;
 
   return 0;
 }
@@ -510,7 +455,7 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
   }
 
   int *rep_array_clean = NULL, nreptot_clean = 0;
-  ierr = clean_vector_qsort(nreptot, rep_array, &rep_array_clean, &nreptot_clean);
+  ierr = util_clean_and_sort_vector(rep_array, nreptot, &rep_array_clean, &nreptot_clean);
   free(rep_array);
 
   int rep_count = 0, remote_rank;
@@ -692,27 +637,27 @@ int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, in
 }
 
 
-int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z){
+int mesh_get_bounding_box(mesh_t *mesh, double *x, double *y, double *z){
 
-  if( n == 0 ) return 0;
+  if(mesh->nnods_total == 0) return 0;
 
-  int i=0;
-  x[0] = coord[i*dim+0]; x[1] = coord[i*dim+0];
-  y[0] = coord[i*dim+1]; y[1] = coord[i*dim+1];
-  if(dim==2){
+  x[0] = mesh->coord_local[0*mesh->dim+0]; x[1] = mesh->coord_local[0*mesh->dim+0];
+  y[0] = mesh->coord_local[0*mesh->dim+1]; y[1] = mesh->coord_local[0*mesh->dim+1];
+  if(mesh->dim == 2){
     z[0] = 0.0; z[1] = 0.0;
   }
-  else if(dim==3){
-    z[0] = coord[i*dim+2]; z[1] = coord[i*dim+2];
+  else if(mesh->dim == 3){
+    z[0] = mesh->coord_local[0*mesh->dim+2]; z[1] = mesh->coord_local[0*mesh->dim+2];
   }
-  for(i=1;i<n;i++){
-    if( coord[i*dim+0] < x[0] ) x[0] = coord[i*dim+0];
-    if( coord[i*dim+0] > x[1] ) x[1] = coord[i*dim+0];
-    if( coord[i*dim+1] < y[0] ) y[0] = coord[i*dim+1];
-    if( coord[i*dim+1] > y[1] ) y[1] = coord[i*dim+1];
-    if(dim==3){
-      if( coord[i*dim+2] < z[0] ) z[0] = coord[i*dim+2];
-      if( coord[i*dim+2] > z[1] ) z[1] = coord[i*dim+2];
+
+  for(int i = 1 ; i < mesh->nnods_local_ghost ; i++){
+    if(mesh->coord_local[i*mesh->dim+0] < x[0] ) x[0] = mesh->coord_local[i*mesh->dim+0];
+    if(mesh->coord_local[i*mesh->dim+0] > x[1] ) x[1] = mesh->coord_local[i*mesh->dim+0];
+    if(mesh->coord_local[i*mesh->dim+1] < y[0] ) y[0] = mesh->coord_local[i*mesh->dim+1];
+    if(mesh->coord_local[i*mesh->dim+1] > y[1] ) y[1] = mesh->coord_local[i*mesh->dim+1];
+    if(mesh->dim == 3){
+      if(mesh->coord_local[i*mesh->dim+2] < z[0]) z[0] = mesh->coord_local[i*mesh->dim+2];
+      if(mesh->coord_local[i*mesh->dim+2] > z[1]) z[1] = mesh->coord_local[i*mesh->dim+2];
     }
   }
 
@@ -720,65 +665,68 @@ int get_bbox_local_limits(double *coord, int n, double *x, double *y, double *z)
 }
 
 
-int get_domain_center(MPI_Comm PROBLEM_COMM, double *coord, int n, double center[3])
-{
-  int    rank, nproc, ierr, i;
-  double x[2],y[2],z[2],x_abs[2],y_abs[2],z_abs[2],*x_all,*y_all,*z_all;
+int mesh_get_domain_center(MPI_Comm COMM, mesh_t *mesh, double center[3]){
 
-  MPI_Comm_size(PROBLEM_COMM, &nproc);
-  MPI_Comm_rank(PROBLEM_COMM, &rank);
+  double x[2] ,y[2] ,z[2] ,x_abs[2] ,y_abs[2] ,z_abs[2];
 
-  x_all = malloc(nproc*2*sizeof(double));
-  y_all = malloc(nproc*2*sizeof(double));
-  z_all = malloc(nproc*2*sizeof(double));
+  int rank, nproc;
+  MPI_Comm_size(COMM, &nproc);
+  MPI_Comm_rank(COMM, &rank);
 
-  ierr = get_bbox_local_limits(coord, n, x, y, z);CHKERRQ(ierr);
+  int *x_all = malloc(nproc*2*sizeof(double));
+  int *y_all = malloc(nproc*2*sizeof(double));
+  int *z_all = malloc(nproc*2*sizeof(double));
 
-  ierr = MPI_Allgather(x, 2, MPI_DOUBLE, x_all, 2, MPI_DOUBLE, PROBLEM_COMM);CHKERRQ(ierr);
-  ierr = MPI_Allgather(y, 2, MPI_DOUBLE, y_all, 2, MPI_DOUBLE, PROBLEM_COMM);CHKERRQ(ierr);
-  ierr = MPI_Allgather(z, 2, MPI_DOUBLE, z_all, 2, MPI_DOUBLE, PROBLEM_COMM);CHKERRQ(ierr);
+  int ierr = mesh_get_bounding_box(mesh, x, y, z);
 
-  x_abs[0]=x_all[0]; x_abs[1]=x_all[1];
-  y_abs[0]=y_all[0]; y_abs[1]=y_all[1];
-  z_abs[0]=z_all[0]; z_abs[1]=z_all[1];
-  for(i=1;i<nproc;i++){
-    if( x_all[2*i+0] < x_abs[0] ) x_abs[0] = x_all[2*i+0];
-    if( x_all[2*i+1] > x_abs[1] ) x_abs[1] = x_all[2*i+1];
-    if( y_all[2*i+0] < y_abs[0] ) y_abs[0] = y_all[2*i+0];
-    if( y_all[2*i+1] > y_abs[1] ) y_abs[1] = y_all[2*i+1];
-    if( z_all[2*i+0] < z_abs[0] ) z_abs[0] = z_all[2*i+0];
-    if( z_all[2*i+1] > z_abs[1] ) z_abs[1] = z_all[2*i+1];
+  ierr = MPI_Allgather(x, 2, MPI_DOUBLE, x_all, 2, MPI_DOUBLE, COMM);
+  ierr = MPI_Allgather(y, 2, MPI_DOUBLE, y_all, 2, MPI_DOUBLE, COMM);
+  ierr = MPI_Allgather(z, 2, MPI_DOUBLE, z_all, 2, MPI_DOUBLE, COMM);
+
+  x_abs[0] = x_all[0]; x_abs[1] = x_all[1];
+  y_abs[0] = y_all[0]; y_abs[1] = y_all[1];
+  z_abs[0] = z_all[0]; z_abs[1] = z_all[1];
+
+  for(int i = 1 ; i < nproc ; i++){
+    if(x_all[2*i+0] < x_abs[0]) x_abs[0] = x_all[2*i+0];
+    if(x_all[2*i+1] > x_abs[1]) x_abs[1] = x_all[2*i+1];
+    if(y_all[2*i+0] < y_abs[0]) y_abs[0] = y_all[2*i+0];
+    if(y_all[2*i+1] > y_abs[1]) y_abs[1] = y_all[2*i+1];
+    if(z_all[2*i+0] < z_abs[0]) z_abs[0] = z_all[2*i+0];
+    if(z_all[2*i+1] > z_abs[1]) z_abs[1] = z_all[2*i+1];
   }
 
-  center[0] = (x_abs[1] + x_abs[0])/ 2;
-  center[1] = (y_abs[1] + y_abs[0]) /2;
-  center[2] = (z_abs[1] + z_abs[0]) /2;
-  return 0;
+  center[0] = (x_abs[1] + x_abs[0])/2;
+  center[1] = (y_abs[1] + y_abs[0])/2;
+  center[2] = (z_abs[1] + z_abs[0])/2;
+
+  return ierr;
 }
 
 
-int get_bbox_limit_lengths(MPI_Comm PROBLEM_COMM, double *coord, int n, double *lx, double *ly, double *lz){
+int get_bbox_limit_lengths(MPI_Comm COMM, mesh_t *mesh, double *lx, double *ly, double *lz){
 
-  int rank, nproc, ierr, i;
-  double x[2],y[2],z[2],x_abs[2],y_abs[2],z_abs[2],*x_all,*y_all,*z_all;
+  int rank, nproc;
+  double x[2] ,y[2] ,z[2] ,x_abs[2] ,y_abs[2] ,z_abs[2];
 
-  MPI_Comm_size(PROBLEM_COMM, &nproc);
-  MPI_Comm_rank(PROBLEM_COMM, &rank);
+  MPI_Comm_size(COMM, &nproc);
+  MPI_Comm_rank(COMM, &rank);
 
-  x_all = malloc(nproc*2*sizeof(double));
-  y_all = malloc(nproc*2*sizeof(double));
-  z_all = malloc(nproc*2*sizeof(double));
+  int *x_all = malloc(nproc*2*sizeof(double));
+  int *y_all = malloc(nproc*2*sizeof(double));
+  int *z_all = malloc(nproc*2*sizeof(double));
 
-  ierr = get_bbox_local_limits(coord, n, x, y, z);CHKERRQ(ierr);
+  int ierr = mesh_get_bounding_box(mesh, x, y, z);
 
-  ierr = MPI_Allgather(x, 2, MPI_DOUBLE, x_all, 2, MPI_DOUBLE, PROBLEM_COMM);CHKERRQ(ierr);
-  ierr = MPI_Allgather(y, 2, MPI_DOUBLE, y_all, 2, MPI_DOUBLE, PROBLEM_COMM);CHKERRQ(ierr);
-  ierr = MPI_Allgather(z, 2, MPI_DOUBLE, z_all, 2, MPI_DOUBLE, PROBLEM_COMM);CHKERRQ(ierr);
+  ierr = MPI_Allgather(x, 2, MPI_DOUBLE, x_all, 2, MPI_DOUBLE, COMM);
+  ierr = MPI_Allgather(y, 2, MPI_DOUBLE, y_all, 2, MPI_DOUBLE, COMM);
+  ierr = MPI_Allgather(z, 2, MPI_DOUBLE, z_all, 2, MPI_DOUBLE, COMM);
 
   x_abs[0]=x_all[0]; x_abs[1]=x_all[1];
   y_abs[0]=y_all[0]; y_abs[1]=y_all[1];
   z_abs[0]=z_all[0]; z_abs[1]=z_all[1];
-  for(i=1;i<nproc;i++){
+
+  for(int i = 1 ; i < nproc ; i++){
     if( x_all[2*i+0] < x_abs[0] ) x_abs[0] = x_all[2*i+0];
     if( x_all[2*i+1] > x_abs[1] ) x_abs[1] = x_all[2*i+1];
     if( y_all[2*i+0] < y_abs[0] ) y_abs[0] = y_all[2*i+0];
@@ -794,7 +742,8 @@ int get_bbox_limit_lengths(MPI_Comm PROBLEM_COMM, double *coord, int n, double *
   free(x_all);
   free(y_all);
   free(z_all);
-  return 0;
+
+  return ierr;
 }
 
 
@@ -883,12 +832,11 @@ int get_element_structured_2d(double centroid[2], double limit[4], int nx, int n
 
 int mesh_cmpfunc(const void * a, const void * b){
 
-  return (*(int*)a - *(int*)b);
+  return *(int*)a - *(int*)b;
 }
 
 
-int cmpfunc_for_list (void * a, void * b){
+int cmpfunc_for_list(void * a, void * b){
 
-  return ( *(int*)a - *(int*)b );
-
+  return *(int*)a - *(int*)b;
 }

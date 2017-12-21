@@ -16,11 +16,8 @@ solver_t solver;
 gmsh_mesh_t gmsh_mesh;
 mesh_t mesh;
 comm_t comm;
-
-#define CHECK_AND_GOTO(error){\
-  if(error){\
-    myio_printf(MACRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);\
-    goto end;}}
+list_t physical_list;
+list_t boundary_list;
 
 #define CHECK_FOUND_GOTO(message){\
   if(found == false){\
@@ -128,11 +125,14 @@ int main(int argc, char **argv){
 
   myio_comm_line_get_double(&command_line, "-nl_min_norm_tol", &params.non_linear_min_norm_tol, &found);
 
-  ierr = function_fill_list_from_command_line(&command_line, &function_list); CHECK_AND_GOTO(ierr);
+  ierr = function_fill_list_from_command_line(&command_line, &function_list);
+  CHECK_ERROR_GOTO(ierr, RED "error parsing functions from command line" NORMAL "\n");
 
-  ierr = mesh_fill_boundary_list_from_command_line(&command_line, &boundary_list); CHECK_AND_GOTO(ierr);
+  ierr = mesh_fill_boundary_list_from_command_line(&command_line, &boundary_list, &mesh);
+  CHECK_ERROR_GOTO(ierr, RED "error parsing boundaries from command line" NORMAL "\n");
 
-  ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr);
+  ierr = material_fill_list_from_command_line(&command_line, &material_list);
+  CHECK_ERROR_GOTO(ierr, RED "error parsing materials from command line" NORMAL "\n");
 
   mesh.partition = PARMETIS_GEOM;
   myio_comm_line_search_option(&command_line, "-part_kway", &found);
@@ -361,7 +361,7 @@ int read_bc(void){
     for(int i = 0 ; i < n ; i++){
 
       int da = 0;
-      int *p = bsearch(&ix[i], mesh.local_nods, mesh.nnods_local, sizeof(int), cmpfunc);
+      int *p = bsearch(&ix[i], mesh.local_nods, mesh.nnods_local, sizeof(int), mesh_cmpfunc);
 
       for(int d = 0 ; d < dim ; d++){
 	if(bou->kind & (1<<d)){
