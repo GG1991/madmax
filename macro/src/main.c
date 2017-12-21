@@ -37,16 +37,7 @@ int main(int argc, char **argv){
   int ierr;
   bool found;
 
-  myname = strdup("macro");
-
   myio_comm_line_init(argc, argv, &command_line);
-
-  WORLD_COMM = MPI_COMM_WORLD;
-  MACRO_COMM = MPI_COMM_WORLD;
-
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(WORLD_COMM, &nproc_wor);
-  MPI_Comm_rank(WORLD_COMM, &rank_wor);
 
   init_variables();
 
