@@ -3,16 +3,16 @@
 
 int gmsh_get_node_index(const char *mesh_n, const char * bou_name, int nmynods, int *mynods, int dim, int *n, int **ix){
 
-  FILE         *fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
-  int          flag = 0;
-  int          ntag;
-  int          id_s, id;
-  int          ns, *nf;
-  char         buf[NBUF_GMSH], *data;
-  list_t       nod_list;
-  node_list_t  *pn;
+  FILE *fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
+  int flag = 0;
+  int ntag;
+  int id_s, id;
+  int ns, *nf;
+  char buf[NBUF_GMSH], *data;
+  list_t nod_list;
+  node_list_t *pn;
 
-  list_init( &nod_list, sizeof(int), &gmsh_funcmp_int_a );
+  list_init(&nod_list, sizeof(int), &gmsh_funcmp_int_a);
 
   id_s = gmsh_which_id( mesh_n, bou_name ); if( id_s < 0 ) return 1;
 
@@ -22,21 +22,21 @@ int gmsh_get_node_index(const char *mesh_n, const char * bou_name, int nmynods, 
     if(flag == 0){
 
       if(strcmp(data,"$Elements") == 0){
-	fgets( buf, NBUF_GMSH, fm );
-	flag  = 1;
+	fgets(buf, NBUF_GMSH, fm);
+	flag = 1;
       }
 
     }else{
 
-      data = strtok( NULL, " \n" );
+      data = strtok(NULL, " \n");
 
       if(gmsh_is_surf(atoi(data), dim) != 0){
 
-	int npe  = gmsh_npe(atoi(data));
+	int npe = gmsh_npe(atoi(data));
 	data = strtok(NULL," \n");
 	ntag = atoi(data);
 	data = strtok(NULL," \n");
-	id   = atoi(data);
+	id = atoi(data);
 
 	if(id == id_s){
 
@@ -62,10 +62,10 @@ int gmsh_get_node_index(const char *mesh_n, const char * bou_name, int nmynods, 
 	pn  = nod_list.head;
 	int i = 0;
 	while(pn != NULL){
-	  (*ix)[i++] = *( int * ) pn->data;
+	  (*ix)[i++] = *(int *)pn->data;
 	  pn = pn->next;
 	}
-	list_clear( &nod_list );
+	list_clear(&nod_list);
 	fclose(fm);
 	return 0;
       }
@@ -120,7 +120,7 @@ int gmsh_get_physical_list(char *mesh_n, list_t *physical_list){
 
   physical_t physical;
 
-  fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
+  fm = fopen(mesh_n,"r"); if(fm == NULL) return 1;
 
   while(fgets(buf,NBUF_GMSH,fm) != NULL){
 
@@ -184,31 +184,31 @@ int gmsh_read_mesh(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh)
   fgets(buf, NBUF_GMSH, fm);
   fgets(buf, NBUF_GMSH, fm);
 
-  int nelm = 0, nelm_surf = 0;
+  int nelm_total = 0, nelm_surf = 0;
 
   while(fgets(buf, NBUF_GMSH, fm) != NULL){
     char *str_token = strtok(buf, " \n");
     if(strcmp(str_token, "$EndElements") == 0) break;
     str_token = strtok(NULL, " \n");
     if(gmsh_is_vol_elm(gmsh_mesh->dim, atoi(str_token)) != 0)
-      nelm ++;
+      nelm_total ++;
     else
       nelm_surf ++;
   }
 
-  gmsh_mesh->nelm = nelm;
+  gmsh_mesh->nelm_total = nelm_total;
   gmsh_mesh->nelm_surf = nelm_surf;
   gmsh_mesh->elem_per_proc = malloc(nproc*sizeof(int));
-  gmsh_mesh->elem_dist = malloc((nproc + 1)*sizeof(int));
+  gmsh_mesh->nelm_dist = malloc((nproc + 1)*sizeof(int));
 
   for(int i = 0 ; i < nproc ; i++)
-    gmsh_mesh->elem_per_proc[i] = nelm/nproc + ((i < nelm % nproc) ? 1 : 0);
+    gmsh_mesh->elem_per_proc[i] = gmsh_mesh->nelm_total/nproc + ((i < gmsh_mesh->nelm_total % nproc) ? 1 : 0);
 
   gmsh_mesh->nelm_local = gmsh_mesh->elem_per_proc[rank];
 
-  gmsh_mesh->elem_dist[0] = 0;
+  gmsh_mesh->nelm_dist[0] = 0;
   for(int i = 1 ; i < nproc + 1 ; i++)
-    gmsh_mesh->elem_dist[i] = gmsh_mesh->elem_dist[i-1] + gmsh_mesh->elem_per_proc[i-1];
+    gmsh_mesh->nelm_dist[i] = gmsh_mesh->nelm_dist[i-1] + gmsh_mesh->elem_per_proc[i-1];
 
   gmsh_mesh->eptr = malloc((gmsh_mesh->nelm_local + 1)*sizeof(int));
   gmsh_mesh->elem_centroid = malloc(gmsh_mesh->nelm_local * gmsh_mesh->dim * sizeof(double));
@@ -221,7 +221,7 @@ int gmsh_read_mesh(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh)
   for(int i = 0 ; i < gmsh_mesh->nelm_surf ; i++)
     fgets(buf, NBUF_GMSH, fm);
 
-  for(int i = 0 ; i < gmsh_mesh->elem_dist[rank] ; i++)
+  for(int i = 0 ; i < gmsh_mesh->nelm_dist[rank] ; i++)
     fgets(buf, NBUF_GMSH, fm);
 
   gmsh_mesh->eptr[0] = 0;
@@ -242,7 +242,7 @@ int gmsh_read_mesh(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh)
   for(int i = 0 ; i < gmsh_mesh->nelm_surf ; i++)
     fgets(buf, NBUF_GMSH, fm);
 
-  for(int i = 0 ; i < gmsh_mesh->elem_dist[rank] ; i++)
+  for(int i = 0 ; i < gmsh_mesh->nelm_dist[rank] ; i++)
     fgets(buf, NBUF_GMSH, fm);
 
   int start_eind = 0;

@@ -25,16 +25,17 @@ typedef struct {
 
     int dim;
     int nelm_surf;
-    int nelm;
+    int nelm_total;
     int nelm_local;
     int *elem_per_proc;
-    int *elem_dist;
+    int *nelm_dist;
     int *elem_centroid;
     int *elem_id;
     int *eptr;
     int *eind;
     char *name;
     int nnods;
+
     double *coord;
 
 }gmsh_mesh_t;
