@@ -143,31 +143,28 @@ int main(int argc, char **argv){
 
   ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr);
 
-  partition_algorithm = PARMETIS_GEOM;
+  mesh.partition = PARMETIS_GEOM;
   myio_comm_line_search_option(&command_line, "-part_kway", &found);
-  if(found) partition_algorithm = PARMETIS_MESHKWAY;
+  if(found == true) mesh.partition = PARMETIS_MESHKWAY;
 
   myio_comm_line_search_option(&command_line, "-part_geom", &found);
-  if(found) partition_algorithm = PARMETIS_GEOM;
-
-  ierr = read_mesh_elmv(MACRO_COMM, myname, mesh_n, mesh_f); CHECK_AND_GOTO(ierr);
+  if(found == true) mesh.partition = PARMETIS_GEOM;
 
   gmsh_mesh.dim = dim;
   ierr = gmsh_read_mesh(MACRO_COMM, mesh_n, &gmsh_mesh);
   CHECK_ERROR_GOTO(ierr, RED "error reading gmsh mesh" NORMAL "\n")
   copy_gmsh_to_mesh(&gmsh_mesh, &mesh);
 
-  ierr = part_mesh(MACRO_COMM, myname, NULL);
-  CHECK_ERROR_GOTO(ierr, RED "error partitioning mesh" NORMAL "\n")
+  if(nproc_mac > 1){
+    ierr = mesh_do_partition(MACRO_COMM, &mesh);
+    CHECK_ERROR_GOTO(ierr, RED "error partitioning mesh" NORMAL "\n")
+  }
 
-  ierr = calc_local_and_ghost(MACRO_COMM, nallnods, allnods, &ntotnod, &nmynods, &mynods, &nghost, &ghost);
+  ierr = mesh_calc_local_and_ghost(MACRO_COMM, &mesh);
   CHECK_ERROR_GOTO(ierr, RED "error calculating ghost nodes" NORMAL "\n")
 
-  ierr = reenumerate_PETSc(MACRO_COMM);
+  ierr = mesh_reenumerate(MACRO_COMM, &mesh);
   CHECK_ERROR_GOTO(ierr, RED "error reenumbering nodes" NORMAL "\n")
-
-  ierr = read_coord(mesh_n, nmynods, mynods, nghost, ghost, &coord);
-  CHECK_ERROR_GOTO(ierr, RED "error reading coordinates" NORMAL "\n")
 
   ierr = read_bc();
   CHECK_ERROR_GOTO(ierr, RED "error reading boundaries from mesh" NORMAL "\n")
@@ -326,19 +323,27 @@ end_no_message:
 
 int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
 
-  int nelm_local = gmsh_mesh->nelm_local;
-  mesh->nelm_local = nelm_local;
+  mesh->nelm_local = gmsh_mesh->nelm_local;
+  mesh->nelm_total = gmsh_mesh->nelm_total;
 
-  mesh->eptr = malloc((nelm_local+1)*sizeof(int));
-  ARRAY_COPY(mesh->eptr, gmsh_mesh->eptr, nelm_local + 1)
+  mesh->eptr = malloc((mesh->nelm_local+1)*sizeof(int));
+  ARRAY_COPY(mesh->eptr, gmsh_mesh->eptr, mesh->nelm_local + 1);
 
-  mesh->eind = malloc(mesh->eptr[nelm_local]*sizeof(int));
-  ARRAY_COPY(mesh->eind, gmsh_mesh->eind, mesh->eptr[nelm_local])
+  mesh->npe = malloc(mesh->nelm_local*sizeof(int));
+  for(int i = 0 ; i < mesh->nelm_local ; i++)
+    mesh->npe[i] = mesh->eptr[i+1] - mesh->eptr[i];
 
-  int dim = gmsh_mesh->dim;
-  int nnods = gmsh_mesh->nnods;
-  mesh->coord = malloc(nnods*dim*sizeof(double));
-  ARRAY_COPY(mesh->coord, gmsh_mesh->coord, nnods*dim)
+  mesh->eind = malloc(mesh->eptr[mesh->nelm_local]*sizeof(int));
+  ARRAY_COPY(mesh->eind, gmsh_mesh->eind, mesh->eptr[mesh->nelm_local]);
+
+  mesh->nelm_dist = malloc(nproc_mac*sizeof(int));
+  ARRAY_COPY(mesh->nelm_dist, gmsh_mesh->nelm_dist, nproc_mac);
+
+  mesh->dim = gmsh_mesh->dim;
+  mesh->nnods_total = gmsh_mesh->nnods;
+
+  mesh->coord = malloc(mesh->nnods_total*dim*sizeof(double));
+  ARRAY_COPY(mesh->coord, gmsh_mesh->coord, mesh->nnods_total*dim)
 
   return 0;
 }
@@ -379,16 +384,6 @@ int read_bc(void){
     free(ix);
     pn = pn->next;
   }
-
-  return ierr;
-}
-
-
-int read_coord(char *mesh_n, int nmynods, int *mynods, int nghost , int *ghost, double **coord){
-
-  (*coord) = malloc( ( nmynods + nghost )*dim * sizeof(double));
-
-  int ierr = gmsh_read_coord_parall(mesh_n, dim, nmynods, mynods, nghost , ghost, *coord);
 
   return ierr;
 }

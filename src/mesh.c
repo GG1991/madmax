@@ -54,6 +54,8 @@ int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh){
   MPI_Comm_size(COMM, &nproc);
   MPI_Comm_rank(COMM, &rank);
 
+  if(nproc == 1) return 0;
+
   int *part = malloc(mesh->nelm_local * sizeof(int));
 
   if(mesh->partition == PARMETIS_GEOM || mesh->partition == PARMETIS_MESHKWAY){

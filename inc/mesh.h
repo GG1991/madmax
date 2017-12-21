@@ -86,10 +86,8 @@ typedef struct{
 extern mesh_struct_t mesh_struct;
 
 int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh);
-int reenumerate_PETSc(MPI_Comm COMM);
-
-int calc_local_and_ghost( MPI_Comm COMM, int nallnods, int *allnods,
-    int *ntotnod, int *nmynods, int **mynods, int *nghost , int **ghost );
+int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh);
+int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh);
 
 int ownership_selec_rule( MPI_Comm COMM, int **repeated, int *nrep, int node, int *remoterank );
 int swap_vectors_SCR( int *swap, int nproc, int n,  int *npe,
