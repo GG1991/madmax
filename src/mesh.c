@@ -208,7 +208,7 @@ int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh){
 }
 
 
-int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts ){
+int swap_vector(int *swap, int n, int *vector, int *new_vector, int *cuts){
 
   /*
      swap       = [ 0 1 0 0 1 2 2 ]
@@ -236,12 +236,11 @@ int swap_vector( int *swap, int n, int *vector, int *new_vector, int *cuts ){
 	int aux = vector[i];
 	aux_vector[i] = vector[j];
 	aux_vector[j] = aux;
-	j ++;
+	j++;
 	cuts[p] ++;
       }
     }
   }
-
   return 0;
 }
 
@@ -312,21 +311,21 @@ int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
 
 int clean_vector_qsort(int n, int *input, int **output, int *n_notrep){
 
-  int  i, c, swi, val_o, *aux = NULL;
+  int  swi, val_o, *aux = NULL;
 
-  if(n==0) return 0;
+  if(n == 0) return 0;
   if(*output) return 1;
 
   aux = malloc(n*sizeof(int));
-  for(i=0;i<n;i++){
+  for(int i = 0 ; i < n ; i++){
     aux[i] = input[i];
   }
 
   qsort(aux, n, sizeof(int), cmpfunc);
 
   val_o = aux[0];
-  c = 1;
-  for(i=1;i<n;i++){
+  int c = 1;
+  for(int i = 1 ; i < n ; i++){
     swi = 1;
     if(aux[i] == val_o){
       swi = 0;
@@ -344,7 +343,7 @@ int clean_vector_qsort(int n, int *input, int **output, int *n_notrep){
   val_o = aux[0];
   (*output)[0] = aux[0];
   c = 1;
-  for(i=1;i<n;i++){
+  for(int i = 1 ; i < n ; i++){
     swi = 1;
     if(aux[i] == val_o){
       swi = 0;
@@ -419,7 +418,7 @@ int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int *
 }
 
 
-int give_inter_sort( MPI_Comm COMM, int *array1, int n1, int *array2, int n2, int **reps, int *nreps){
+int vector_intersection(int *array1, int n1, int *array2, int n2, int **reps, int *nreps){
 
   int i, j, c;
 
@@ -459,151 +458,133 @@ int give_inter_sort( MPI_Comm COMM, int *array1, int n1, int *array2, int n2, in
 }
 
 
-int calc_local_and_ghost( MPI_Comm COMM, int nallnods, int *allnods,
-    int *ntotnod, int *nmynods, int **mynods, int *nghost , int **ghost )
-{
+int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
 
-  int   i, j, c, g;
-  int   ierr;
+  int ierr;
 
-  int   *peer_sizes, mysize, *peer_nod_glo;    // here we save the values <nallnods> coming from all the processes
-  int   **repeated, *nrep;
+  int *peer_sizes, mysize, *peer_nod_glo;
+  int **rep_matrix, *nrep;
 
-  MPI_Request  *request;
+  MPI_Request *request;
 
   int  rank, nproc;
   MPI_Comm_rank( COMM, &rank);
   MPI_Comm_size( COMM, &nproc);
 
-  mysize     = nallnods;
-  (*nghost)  = -1;
+  mysize = mesh->nnods_local_ghost;
   peer_sizes = NULL;
 
-  peer_sizes = malloc( nproc * sizeof(int) );
-  request    = malloc( nproc * sizeof(MPI_Request) );
-  repeated   = calloc( nproc,sizeof(int*) );
-  nrep       = calloc( nproc,sizeof(int) );
+  peer_sizes = malloc(nproc*sizeof(int));
+  request = malloc(nproc*sizeof(MPI_Request));
+  rep_matrix = calloc(nproc,sizeof(int*) );
+  nrep = calloc(nproc,sizeof(int) );
 
-  ierr = MPI_Allgather(&mysize, 1, MPI_INT, peer_sizes, 1, MPI_INT, COMM );
+  ierr = MPI_Allgather(&mysize, 1, MPI_INT, peer_sizes, 1, MPI_INT, COMM);
 
-  for( i = 0 ; i < nproc ; i++ ){
-    if( i != rank ){
-      ierr = MPI_Isend( allnods, mysize, MPI_INT, i, 0, COMM, &request[i] );
-      if( ierr ) return 1;
+  for(int i = 0 ; i < nproc ; i++){
+    if(i != rank){
+      ierr = MPI_Isend(mesh->local_ghost_nods, mesh->nnods_local_ghost, MPI_INT, i, 0, COMM, &request[i]); 
+      if(ierr != 0) return 1;
     }
   }
-  for( i = 0 ; i < nproc ; i++ ){
-    if( i != rank ){
+  for(int i = 0 ; i < nproc ; i++){
+    if(i != rank){
       peer_nod_glo = malloc(peer_sizes[i]*sizeof(int));
-      ierr = MPI_Recv( peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE );
-      give_inter_sort( COMM, allnods, mysize, peer_nod_glo, peer_sizes[i], &repeated[i], &nrep[i] );
-      free( peer_nod_glo );
+      ierr = MPI_Recv(peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE );
+      vector_intersection(mesh->local_ghost_nods, mesh->nnods_local_ghost, peer_nod_glo, peer_sizes[i], &rep_matrix[i], &nrep[i]);
+      free(peer_nod_glo);
     }
   }
 
-  // condensamos en 1 vector todo lo que hay en repeated
-  int *rep_array = NULL, nreptot = 0, *rep_array_clean = NULL, nreptot_clean = 0;
-
-  for( i = 0 ; i < nproc ; i++ ){
-    if( i != rank )
+  int nreptot = 0;
+  for(int i = 0 ; i < nproc ; i++){
+    if(i != rank)
       nreptot += nrep[i];
   }
-  rep_array = malloc(nreptot * sizeof(int));
-  c = 0;
-  for( i = 0 ; i < nproc ; i++ ){
-    if( i != rank ){
-      for( j = 0 ; j < nrep[i] ; j++ ){
-	rep_array[c] = repeated[i][j];
-	c ++;
-      }
+  int *rep_array = malloc(nreptot*sizeof(int));
+
+  int c = 0;
+  for(int i = 0 ; i < nproc ; i++){
+    if(int i != rank){
+      for(int j = 0 ; j < nrep[i] ; j++)
+	rep_array[c++] = rep_matrix[i][j];
     }
   }
 
-  ierr = clean_vector_qsort( nreptot, rep_array, &rep_array_clean, &nreptot_clean );
-
+  int *rep_array_clean = NULL, nreptot_clean = 0;
+  ierr = clean_vector_qsort(nreptot, rep_array, &rep_array_clean, &nreptot_clean);
   free(rep_array);
 
-  // calculamos la cantidad de puntos dentro de <allnods> que me pertenecen
+  int rep_count = 0, remote_rank;
 
-  int ismine, r, remoterank;
+  if(nreptot_clean != 0){
 
-  if( nreptot_clean != 0 )
-  {
-    (*nmynods) = (*nghost) = r = 0;
-    for( i = 0 ; i < nallnods ; i++ )
-    {
-      if( r < nreptot_clean )
-      {
-	if( allnods[i] == rep_array_clean[r] )
-	{
-	  ismine = ownership_selec_rule( COMM, repeated, nrep, allnods[i], &remoterank);
-	  r++;
-	  if( ismine )
-	    (*nmynods) ++;
+    mesh->nnods_local = 0;
+    mesh->nnods_ghost = 0;
+    for(int i = 0 ; i < mesh->nnods_local_ghost ; i++){
+
+      if(rep_count < nreptot_clean){
+
+	if(mesh->local_ghost_nods[i] == rep_array_clean[rep_count]){
+
+	  int ismine = ownership_selec_rule(COMM, rep_matrix, nrep, allnods[i], &remote_rank);
+	  if(ismine != 1)
+	    mesh->nnods_local++;
 	  else
-	    (*nghost) ++;
-	}
-	else
-	  (*nmynods) ++;
+	    mesh->nnods_ghost++;
+
+	  rep_count++;
+
+	}else
+	  mesh->nnods_local++;
       }
       else
-	(*nmynods) ++;
+	mesh->nnods_local++;
     }
+  }else{
+    mesh->nnods_local = mesh->nnods_local_ghost;
+    mesh->nnods_ghost = 0;
   }
-  else{
-    (*nmynods) = nallnods;
-    (*nghost) = 0;
-  }
 
-  /* determine ntotnods */
-  ierr = MPI_Allreduce( nmynods, ntotnod, 1, MPI_INT, MPI_SUM, COMM );
-  if( ierr ) return 1;
+  mesh->local_nods = malloc(mesh->nnods_local*sizeof(int));
+  mesh->ghost_nods = malloc(mesh->nnods_ghost*sizeof(int));
 
+  int local_count = 0; int ghost_count = 0; rep_count = 0;
+  if(nreptot_clean != 0){
 
-  *mynods = malloc( (*nmynods) * sizeof(int) );
-  *ghost  = malloc( (*nghost)  * sizeof(int) );
+    for(int i = 0 ; i < mesh->nnods_local_ghost ; i++){
 
-  c = r = g = 0;
-  if( nreptot_clean != 0 )
-  {
-    for( i = 0 ; i < nallnods ; i++ )
-    {
-      // podria ser un nodo que le pertenece a otro proceso
-      if( r < nreptot_clean ){
-	if( allnods[i] == rep_array_clean[r] ){
-	  ismine = ownership_selec_rule( COMM, repeated, nrep, allnods[i], &remoterank );
-	  r++;
-	  if(ismine){
-	    (*mynods)[c] = allnods[i];
-	    c ++;
-	  }
-	  else{
-	    (*ghost)[g] = allnods[i];
-	    g ++;
-	  }
-	}
-	else{
-	  // no está en la lista de repetidos
-	  (*mynods)[c] = allnods[i];
-	  c ++;
-	}
-      }else{
-	(*mynods)[c] = allnods[i];
-	c ++;
-      }
+      if(rep_count < nreptot_clean){
+
+	if(mesh->local_ghost_nods[i] == rep_array_clean[rep_count]){
+
+	  int ismine = ownership_selec_rule(COMM, rep_matrix, nrep, mesh->local_ghost_nods[i], &remote_rank);
+
+	  if(ismine)
+	    mesh->local_nods[local_count+] = mesh->local_ghost_nods[i];
+	  else
+	    mesh->ghost_nods[ghost_count++] = mesh->local_ghost_nods[i];
+
+	  rep_count++;
+
+	}else
+	  mesh->local_nods[local_count++] = mesh->local_ghost_nods[i];
+
+      }else
+	mesh->local_nods[local_count++] = mesh->local_ghost_nods[i];
     }
-  }
-  else{
-    // no hay repetidos entonces es nuestro
-    for( i = 0 ;i < nallnods ; i++ )
-      (*mynods)[i] = allnods[i];
+
+  }else{
+    for(int i = 0 ;i < nallnods ; i++)
+      mesh->local_nods[i] = mesh->local_ghost_nods[i];
   }
 
-  for( i = 0 ; i < nproc ; i++ ){
-    if( i != rank )
-      free(repeated[i]);
+
+  for(int i = 0 ; i < nproc ; i++ ){
+    if(i != rank)
+      free(rep_matrix[i]);
   }
-  free(repeated);
+  free(rep_matrix);
   free(nrep);
   free(request);
   free(peer_sizes);
@@ -621,7 +602,7 @@ int reenumerate_PETSc(MPI_Comm COMM){
   MPI_Comm_rank( COMM, &rank );
   MPI_Comm_size( COMM, &nproc );
 
-  int *rem_nnod  = malloc( nproc * sizeof(int) ); // buffers' sizes with nmynodsOrig from every process
+  int *rem_nnod  = malloc( nproc * sizeof(int) );
   int *disp_nods = malloc( nproc * sizeof(int) );
   ierr = MPI_Allgather( &nmynods, 1, MPI_INT, rem_nnod, 1, MPI_INT, COMM ); if( ierr ) return 1;
 
@@ -711,22 +692,22 @@ int reenumerate_PETSc(MPI_Comm COMM){
 }
 
 
-int ownership_selec_rule(MPI_Comm COMM, int **repeated, int *nrep, int node, int *remoterank){
+int ownership_selec_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node, int *remote_rank){
 
   /*
-      Function for determine the ownership of a repeated
+      Function for determine the ownership of a rep_matrix
       node on different processors.
 
       Input
 
-      repeated > list of nodes that each process have in common with me
-      nrep     > number of elements in each <repeated> element
+      rep_matrix > list of nodes that each process have in common with me
+      nrep     > number of elements in each <rep_matrix> element
       node     > node numeration in order to know if this process owns it
 
       Notes>
       -> all process should return the same if <node> is the same
       -> the selection criteria calculates rankp = node % nproc as root
-      if the rankp in repeated contains <node> in <rankp> position
+      if the rankp in rep_matrix contains <node> in <rankp> position
       then this is the ownership of it. If <rankp> = <rank> at any
       part of the search then this node is of this process.
    */
@@ -747,13 +728,13 @@ int ownership_selec_rule(MPI_Comm COMM, int **repeated, int *nrep, int node, int
     //tenemos un guess nuevo de rankp
     if(rankp == rank){
       // si justo nos cayo entonces este <node> es nuestro
-      *remoterank = rankp;
+      *remote_rank = rankp;
       return 1;
     }
     else{
-      if(is_in_vector( node, &repeated[rankp][0], nrep[rankp])){
+      if(is_in_vector( node, &rep_matrix[rankp][0], nrep[rankp])){
 	// lo encontramos pero está en otro rank
-	*remoterank = rankp;
+	*remote_rank = rankp;
 	return 0;
       }
       else{
