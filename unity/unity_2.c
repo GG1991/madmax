@@ -40,7 +40,7 @@ int main(void){
   } 
 
   gmsh_mesh.dim = 2;
-  gmsh_read_vol_elms_csr_format_parall(MPI_COMM_WORLD, file_name, &gmsh_mesh);
+  gmsh_read_mesh(MPI_COMM_WORLD, file_name, &gmsh_mesh);
 
   bool flag_pass = true;
   if(rank == 0){
@@ -48,34 +48,34 @@ int main(void){
     switch(nproc){
 
       case 1:
-	printf(NRM "test 1 %s" NRM "\n", (gmsh_mesh.num_vol_elems == 81) ? GRN"OK" : RED"FAIL");
-	printf(NRM "test 2 %s" NRM "\n", (gmsh_mesh.num_vol_elems_local == 81) ? GRN"OK" : RED"FAIL");
-	printf(NRM "test 3 %s" NRM "\n", (gmsh_mesh.num_surf_elems == 39) ? GRN"OK" : RED"FAIL");
+	printf(NRM "test 1 %s" NRM "\n", (gmsh_mesh.nelm_total == 81) ? GRN"OK" : RED"FAIL");
+	printf(NRM "test 2 %s" NRM "\n", (gmsh_mesh.nelm_local == 81) ? GRN"OK" : RED"FAIL");
+	printf(NRM "test 3 %s" NRM "\n", (gmsh_mesh.nelm_surf == 39) ? GRN"OK" : RED"FAIL");
 	printf(NRM "test 4 %s" NRM "\n", (gmsh_mesh.eptr[1] - gmsh_mesh.eptr[0] == 4) ? GRN"OK" : RED"FAIL");
 	for(int i = 0 ; i < 4 ; i++)
-	  if(gmsh_mesh.eind[gmsh_mesh.eptr[gmsh_mesh.num_vol_elems_local-1] + i] != array_test_5_1proc[i])
+	  if(gmsh_mesh.eind[gmsh_mesh.eptr[gmsh_mesh.nelm_local-1] + i] != array_test_5_1proc[i])
 	    flag_pass = false;
 	printf(NRM "test 5 %s" NRM "\n", (flag_pass == true) ? GRN"OK" : RED"FAIL");
 	break;
 
       case 2:
-	printf(NRM "test 1 %s" NRM "\n", (gmsh_mesh.num_vol_elems == 81) ? GRN"OK" : RED"FAIL");
-	printf(NRM "test 2 %s" NRM "\n", (gmsh_mesh.num_vol_elems_local == 41) ? GRN"OK" : RED"FAIL");
-	printf(NRM "test 3 %s" NRM "\n", (gmsh_mesh.num_surf_elems == 39) ? GRN"OK" : RED"FAIL");
+	printf(NRM "test 1 %s" NRM "\n", (gmsh_mesh.nelm_total == 81) ? GRN"OK" : RED"FAIL");
+	printf(NRM "test 2 %s" NRM "\n", (gmsh_mesh.nelm_local == 41) ? GRN"OK" : RED"FAIL");
+	printf(NRM "test 3 %s" NRM "\n", (gmsh_mesh.nelm_surf == 39) ? GRN"OK" : RED"FAIL");
 	printf(NRM "test 4 %s" NRM "\n", (gmsh_mesh.eptr[1] - gmsh_mesh.eptr[0] == 4) ? GRN"OK" : RED"FAIL");
 	for(int i = 0 ; i < 4 ; i++)
-	  if(gmsh_mesh.eind[gmsh_mesh.eptr[gmsh_mesh.num_vol_elems_local-1] + i] != array_test_5_2proc[i])
+	  if(gmsh_mesh.eind[gmsh_mesh.eptr[gmsh_mesh.nelm_local-1] + i] != array_test_5_2proc[i])
 	    flag_pass = false;
 	printf(NRM "test 5 %s" NRM "\n", (flag_pass == true) ? GRN"OK" : RED"FAIL");
 	break;
 
       case 3:
-	printf(NRM "test 1 %s" NRM "\n", (gmsh_mesh.num_vol_elems == 81) ? GRN"OK" : RED"FAIL");
-	printf(NRM "test 2 %s" NRM "\n", (gmsh_mesh.num_vol_elems_local == 27) ? GRN"OK" : RED"FAIL");
-	printf(NRM "test 3 %s" NRM "\n", (gmsh_mesh.num_surf_elems == 39) ? GRN"OK" : RED"FAIL");
+	printf(NRM "test 1 %s" NRM "\n", (gmsh_mesh.nelm_total == 81) ? GRN"OK" : RED"FAIL");
+	printf(NRM "test 2 %s" NRM "\n", (gmsh_mesh.nelm_local == 27) ? GRN"OK" : RED"FAIL");
+	printf(NRM "test 3 %s" NRM "\n", (gmsh_mesh.nelm_surf == 39) ? GRN"OK" : RED"FAIL");
 	printf(NRM "test 4 %s" NRM "\n", (gmsh_mesh.eptr[1] - gmsh_mesh.eptr[0] == 4) ? GRN"OK" : RED"FAIL");
 	for(int i = 0 ; i < 4 ; i++)
-	  if(gmsh_mesh.eind[gmsh_mesh.eptr[gmsh_mesh.num_vol_elems_local-1] + i] != array_test_5_3proc[i])
+	  if(gmsh_mesh.eind[gmsh_mesh.eptr[gmsh_mesh.nelm_local-1] + i] != array_test_5_3proc[i])
 	    flag_pass = false;
 	printf(NRM "test 5 %s" NRM "\n", (flag_pass == true) ? GRN"OK" : RED"FAIL");
 	break;
