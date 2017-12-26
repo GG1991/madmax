@@ -7,11 +7,12 @@
 
 #ifdef PARMETIS
 #include "parmetis.h"
+#endif
+
 #define PARMETIS_GEOMKWAY   1
 #define PARMETIS_GEOM       2
 #define PARMETIS_KWAY       3
 #define PARMETIS_MESHKWAY   4
-#endif
 
 #define MAX_ADJ_NODES 30
 #define MAX_NUM_OF_BOUNDARIES 4
@@ -57,8 +58,8 @@ typedef struct{
   int *npe;
 
   int *nelm_dist;
-
   int *elm_id;
+  double *elm_centroid;
 
   int partition;
 

@@ -2,9 +2,10 @@
 # Makefile utilities
 # make --quite : prints only "echos" instruction
 #
-#
 
-PWD:= $(shell pwd)
+PETSC = 1
+SLEPC = 1
+PARMETIS = 1
 
 SRC_DIR= ./src
 OBJ_DIR= ./obj
@@ -138,7 +139,6 @@ ${MIC_OBJ_DIR}/%.o: ${MIC_SRC_DIR}/%.c ${DEPS_MIC}
 vars:
 	@echo "DEPS     = " ${DEPS}
 	@echo "INC_FLAG = " ${INC_FLAG}
-	@echo "PWD      = " ${PWD}
 	@echo "HOME     = " ${HOME}
 	@echo "LDFLAG   = " ${LDFLAG}
 	@echo "PETSC_COMPILE = " ${PETSC_COMPILE}

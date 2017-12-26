@@ -171,9 +171,7 @@ int main(int argc, char **argv){
   if(params.calc_mode == CALC_MODE_EIGEN){
 
     EPS eps;
-
     VecZeroEntries(x);
-
     VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
@@ -216,12 +214,8 @@ int main(int argc, char **argv){
   else if(params.calc_mode == CALC_MODE_NORMAL){
 
     KSP ksp;
-
     KSPCreate(MACRO_COMM, &ksp);
     KSPSetFromOptions( ksp );
-
-    params.t = 0.0;
-    params.ts = 0;
 
     VecZeroEntries(x);
     VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
@@ -314,6 +308,7 @@ end_no_message:
 
 int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
 
+  mesh->dim = gmsh_mesh->dim;
   mesh->nelm_local = gmsh_mesh->nelm_local;
   mesh->nelm_total = gmsh_mesh->nelm_total;
 
