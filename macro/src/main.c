@@ -104,6 +104,8 @@ int main(int argc, char **argv){
     myio_printf(MACRO_COMM,"-dim not given on command line.\n");
     goto end;
   }
+  mesh.dim = dim;
+  gmsh_mesh.dim = dim;
 
   nvoi = (dim == 2) ? 3 : 6;
   npe_max = (dim == 2) ? 4 : 8;
@@ -141,7 +143,6 @@ int main(int argc, char **argv){
   myio_comm_line_search_option(&command_line, "-part_geom", &found);
   if(found == true) mesh.partition = PARMETIS_GEOM;
 
-  gmsh_mesh.dim = dim;
   ierr = gmsh_read_mesh(MACRO_COMM, mesh_n, &gmsh_mesh);
   CHECK_ERROR_GOTO(ierr, RED "error reading gmsh mesh" NORMAL "\n")
   copy_gmsh_to_mesh(&gmsh_mesh, &mesh);
@@ -308,7 +309,6 @@ end_no_message:
 
 int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
 
-  mesh->dim = gmsh_mesh->dim;
   mesh->nelm_local = gmsh_mesh->nelm_local;
   mesh->nelm_total = gmsh_mesh->nelm_total;
 

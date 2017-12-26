@@ -145,13 +145,15 @@ int macro_pvtu(char *name){
   fprintf(fm, "</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for(int e = 0 ; e < mesh.nelm_local ; e++)
-    for(int v = 0 ; v < nvoi ; v++) fprintf( fm, "% 01.6e ", elem_strain[e*nvoi + v]); fprintf(fm,"\n");
+  for(int e = 0 ; e < mesh.nelm_local ; e++){
+    for(int v = 0 ; v < nvoi ; v++) fprintf(fm, "% 01.6e ", elem_strain[e*nvoi + v]); fprintf(fm,"\n");
+  }
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for(int e = 0; e < mesh.nelm_local ; e++)
+  for(int e = 0; e < mesh.nelm_local ; e++){
     for(int v = 0 ; v < nvoi ; v++) fprintf(fm, "% 01.6e ", elem_stress[e*nvoi + v]); fprintf(fm,"\n");
+  }
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"elem_type\" NumberOfComponents=\"1\" format=\"ascii\">\n");
