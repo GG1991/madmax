@@ -304,46 +304,6 @@ int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
 }
 
 
-int vector_intersection(int *array1, int n1, int *array2, int n2, int **reps, int *nreps){
-
-  int i, j, c;
-
-  i = j = *nreps = 0;
-  while( i < n2 && j < n1  ){
-    if( array1[j] < array2[i] ){
-      j ++;
-    }
-    else if( array1[j] > array2[i] ){
-      i ++;
-    }
-    else if( array1[j] == array2[i] ){
-      j ++;
-      i ++;
-      (*nreps) ++;
-    }
-  }
-  *reps = malloc((*nreps) * sizeof(int));
-
-  i = j = c = 0;
-  while( i < n2 && j < n1  ){
-    if( array1[j] < array2[i] ){
-      j ++;
-    }
-    else if( array1[j] > array2[i] ){
-      i ++;
-    }
-    else if( array1[j] == array2[i] ){
-      (*reps)[c] = array2[i];
-      j ++;
-      i ++;
-      c ++;
-    }
-  }
-
-  return 0;
-}
-
-
 int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
 
   int ierr;
@@ -379,7 +339,7 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
     if(i != rank){
       peer_nod_glo = malloc(peer_sizes[i]*sizeof(int));
       ierr = MPI_Recv(peer_nod_glo, peer_sizes[i], MPI_INT, i, 0, COMM, MPI_STATUS_IGNORE );
-      vector_intersection(mesh->local_ghost_nods, mesh->nnods_local_ghost, peer_nod_glo, peer_sizes[i], &rep_matrix[i], &nrep[i]);
+      util_sort_vector_intersec(mesh->local_ghost_nods, mesh->nnods_local_ghost, peer_nod_glo, peer_sizes[i], &rep_matrix[i], &nrep[i]);
       free(peer_nod_glo);
     }
   }

@@ -107,6 +107,43 @@ int util_clean_and_sort_vector(int *in_vector, int n_in, int **out_vector, int *
 }
 
 
+int util_sort_vector_intersec(int *array_1, int n1, int *array_2, int n2, int **inter_arr, int *n_inter){
+
+  int index_1 = 0, index_2 = 0, n_inter_aux = 0;
+
+  while(index_1 < n2 && index_2 < n1){
+    if(array_1[index_2] < array_2[index_1])
+      index_2 ++;
+    else if(array_1[index_2] > array_2[index_1])
+      index_1 ++;
+    else if(array_1[index_2] == array_2[index_1]){
+      index_2 ++;
+      index_1 ++;
+      n_inter_aux ++;
+    }
+  }
+
+  *n_inter = n_inter_aux;
+  *inter_arr = malloc(n_inter_aux*sizeof(int));
+
+  index_1 = index_2 = n_inter_aux = 0;
+  while(index_1 < n2 && index_2 < n1){
+    if(array_1[index_2] < array_2[index_1])
+      index_2 ++;
+    else if(array_1[index_2] > array_2[index_1])
+      index_1 ++;
+    else if(array_1[index_2] == array_2[index_1]){
+      (*inter_arr)[n_inter_aux] = array_2[index_1];
+      index_2 ++;
+      index_1 ++;
+      n_inter_aux ++;
+    }
+  }
+
+  return 0;
+}
+
+
 int util_cmpfunc(const void * a, const void * b){
 
   return (*(int*)a - *(int*)b);
