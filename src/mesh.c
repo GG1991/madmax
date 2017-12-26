@@ -437,11 +437,11 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
   mesh->coord_local = malloc(mesh->nnods_local_ghost*mesh->dim*sizeof(double));
   for(int i = 0 ; i < mesh->nnods_local ; i++){
     for(int d = 0 ; d < mesh->dim ; d++)
-      mesh->coord_local[i*mesh->dim + d] = mesh->coord[(mesh->local_nods[i]-1)*mesh->dim + d];
+      mesh->coord_local[i*mesh->dim + d] = mesh->coord[mesh->local_nods[i]*mesh->dim + d];
   }
   for(int i = 0 ; i < mesh->nnods_ghost ; i++){
     for(int d = 0 ; d < mesh->dim ; d++)
-      mesh->coord_local[(i + mesh->nnods_local)*mesh->dim + d] = mesh->coord[(mesh->ghost_nods[i]-1)*mesh->dim + d];
+      mesh->coord_local[(i + mesh->nnods_local)*mesh->dim + d] = mesh->coord[mesh->ghost_nods[i]*mesh->dim + d];
   }
 
   return 0;

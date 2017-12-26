@@ -323,7 +323,8 @@ int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
     mesh->npe[i] = mesh->eptr[i+1] - mesh->eptr[i];
 
   mesh->eind = malloc(mesh->eptr[mesh->nelm_local]*sizeof(int));
-  ARRAY_COPY(mesh->eind, gmsh_mesh->eind, mesh->eptr[mesh->nelm_local]);
+  for(int i = 0 ; i < mesh->eptr[mesh->nelm_local] ; i++)
+    mesh->eind[i] = gmsh_mesh->eind[i] - 1;
 
   mesh->nelm_dist = malloc(nproc_mac*sizeof(int));
   ARRAY_COPY(mesh->nelm_dist, gmsh_mesh->nelm_dist, nproc_mac);
