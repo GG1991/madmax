@@ -4,7 +4,7 @@ SRC_DIR= ../src
 OBJ_DIR= ../obj
 HEA_DIR= ../inc
 
-all: unity_1 unity_2 unity_3
+all: unity_1 unity_2 unity_3 unity_4
 
 unity_1: unity_1.o $(OBJ_DIR)/myio.o  
 	$(MPICC) -o unity_1 $^
@@ -18,6 +18,10 @@ unity_3: unity_3.o $(OBJ_DIR)/util.o
 	$(MPICC) -o unity_3 $^ -lm
 	@echo "unity_3 generated..." 
 
+unity_4: unity_4.o $(OBJ_DIR)/mesh.o $(OBJ_DIR)/list.o $(OBJ_DIR)/myio.o $(OBJ_DIR)/util.o
+	$(MPICC) -o unity_4 $^ -lm
+	@echo "unity_4 generated..." 
+
 unity_1.o: unity_1.c $(HEA_DIR)/myio.h
 	$(MPICC) -c -g -o $@ $< -I$(HEA_DIR) -std=gnu11
 
@@ -25,6 +29,9 @@ unity_2.o: unity_2.c $(HEA_DIR)/gmsh.h
 	$(MPICC) -c -g -o $@ $< -I$(HEA_DIR) -std=gnu11
 
 unity_3.o: unity_3.c $(HEA_DIR)/util.h
+	$(MPICC) -c -g -o $@ $< -I$(HEA_DIR) -std=gnu11
+
+unity_4.o: unity_4.c $(HEA_DIR)/mesh.h
 	$(MPICC) -c -g -o $@ $< -I$(HEA_DIR) -std=gnu11
 
 $(OBJ_DIR)/myio.o: ../src/myio.c $(HEA_DIR)/myio.h
