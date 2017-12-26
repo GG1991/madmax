@@ -212,7 +212,7 @@ int gmsh_read_mesh(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh)
 
   gmsh_mesh->eptr = malloc((gmsh_mesh->nelm_local + 1)*sizeof(int));
   gmsh_mesh->elem_centroid = malloc(gmsh_mesh->nelm_local * gmsh_mesh->dim * sizeof(double));
-  gmsh_mesh->elem_id = malloc(gmsh_mesh->nelm_local*sizeof(int));
+  gmsh_mesh->elm_id = malloc(gmsh_mesh->nelm_local*sizeof(int));
 
   fseek(fm, offset, SEEK_SET);
   fgets(buf, NBUF_GMSH, fm);
@@ -257,7 +257,7 @@ int gmsh_read_mesh(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh)
     int ntag = atoi(str_token);
 
     str_token = strtok(NULL, " \n");
-    gmsh_mesh->elem_id[i] = atoi(str_token);
+    gmsh_mesh->elm_id[i] = atoi(str_token);
 
     for(int j = 0 ; j < ntag - 1 ; j++)
       str_token = strtok(NULL, " \n");
@@ -276,15 +276,15 @@ int gmsh_read_mesh(MPI_Comm COMM, const char *gmsh_file, gmsh_mesh_t *gmsh_mesh)
 
 
 int gmsh_funcmp_int_a(void *a, void *b){
-     if( *(int*)a > *(int*)b ) return  1;
-     if( *(int*)a < *(int*)b ) return -1;
+     if(*(int*)a > *(int*)b) return  1;
+     if(*(int*)a < *(int*)b) return -1;
      return 0;
 }
 
 
 int gmsh_funcmp_int_b(const void *a, const void *b){
-     if( *(int*)a > *(int*)b ) return  1;
-     if( *(int*)a < *(int*)b ) return -1;
+     if(*(int*)a > *(int*)b) return  1;
+     if(*(int*)a < *(int*)b) return -1;
      return 0;
 }
 

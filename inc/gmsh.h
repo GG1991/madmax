@@ -32,7 +32,7 @@ typedef struct {
     int *elem_per_proc;
     int *nelm_dist;
     int *elem_centroid;
-    int *elem_id;
+    int *elm_id;
     int *eptr;
     int *eind;
     char *name;

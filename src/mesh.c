@@ -428,14 +428,21 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
   }
 
 
-  for(int i = 0 ; i < nproc ; i++){
-    if(i != rank)
-      free(rep_matrix[i]);
-  }
+  for(int i = 0 ; i < nproc ; i++) if(i != rank) free(rep_matrix[i]);
   free(rep_matrix);
   free(nrep);
   free(request);
   free(peer_sizes);
+
+  mesh->coord_local = malloc(mesh->nnods_local_ghost*sizeof(double));
+  for(int i = 0 ; i < mesh->nnods_local ; i++){
+    for(int d = 0 ; i < mesh->dim ; i++)
+      mesh->coord_local[i*mesh->dim + d] = mesh->coord[mesh->local_nods[i]*mesh->dim + d];
+  }
+  for(int i = 0 ; i < mesh->nnods_ghost ; i++){
+    for(int d = 0 ; i < mesh->dim ; i++)
+      mesh->coord_local[(i + mesh->nnods_local)*mesh->dim + d] = mesh->coord[mesh->ghost_nods[i]*mesh->dim + d];
+  }
 
   return 0;
 }
