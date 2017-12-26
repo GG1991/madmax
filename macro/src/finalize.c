@@ -17,38 +17,41 @@ int finalize(void){
     }
   }
 
-  free(loc_elem_index);
-  free(glo_elem_index);
-  free(elem_disp);
-  free(stress_gp);
-  free(strain_gp);
-  free(elem_strain);
-  free(elem_stress);
-  free(elem_energy);
-  free(elem_type);
+  if(flags.allocated == true){
 
-  for(int i = 0 ; i < nvoi ; i++){
-    for(int j = 0 ; j < npe_max*dim ; j++)
-      free(bmat[i][j]);
-    free(bmat[i]);
-  }
-  free(bmat);
+    free(loc_elem_index);
+    free(glo_elem_index);
+    free(elem_disp);
+    free(stress_gp);
+    free(strain_gp);
+    free(elem_strain);
+    free(elem_stress);
+    free(elem_energy);
+    free(elem_type);
 
-  for(int i = 0 ; i < npe_max ; i++){
-    for(int j = 0 ; j < dim ; j++)
-      free(dsh[i][j]);
-    free(dsh[i]);
-  }
-  free(dsh);
+    for(int i = 0 ; i < nvoi ; i++){
+      for(int j = 0 ; j < npe_max*dim ; j++)
+	free(bmat[i][j]);
+      free(bmat[i]);
+    }
+    free(bmat);
 
-  list_clear(&material_list);
-  list_clear(&physical_list);
-  list_clear(&function_list);
+    for(int i = 0 ; i < npe_max ; i++){
+      for(int j = 0 ; j < dim ; j++)
+	free(dsh[i][j]);
+      free(dsh[i]);
+    }
+    free(dsh);
 
-  if(solver.type == SOLVER_PETSC){
-    MatDestroy(&A);
-    VecDestroy(&x);
-    VecDestroy(&b);
+    list_clear(&material_list);
+    list_clear(&physical_list);
+    list_clear(&function_list);
+
+    if(solver.type == SOLVER_PETSC){
+      MatDestroy(&A);
+      VecDestroy(&x);
+      VecDestroy(&b);
+    }
   }
 
   comm_finalize_message();
