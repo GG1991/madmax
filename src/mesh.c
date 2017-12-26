@@ -1,6 +1,5 @@
 #include "mesh.h"
 
-#define NBUF 256
 
 int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list_t *boundary_list, mesh_t *mesh){
 
@@ -200,8 +199,6 @@ int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh){
   free(rdispls);
   free(elm_id_swi);
 
-  util_clean_and_sort_vector(mesh->eind, mesh->eptr[mesh->nelm_local], &mesh->local_ghost_nods, &mesh->nnods_local_ghost);
-
   return 0;
 }
 
@@ -227,9 +224,9 @@ int swap_vector(int *swap, int n, int *vector, int *new_vector, int *cuts){
     aux_vector = new_vector;
 
   int j = 0;
-  for(int p = 0 ; p < n ; p++ ){
+  for(int p = 0 ; p < n ; p++){
     cuts[p] = 0;
-    for(int i = 0 ; i < n ; i++ ){
+    for(int i = 0 ; i < n ; i++){
       if(swap[i] == p){
 	int aux = vector[i];
 	aux_vector[i] = vector[j];
@@ -307,60 +304,6 @@ int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
 }
 
 
-int give_repvector_qsort(MPI_Comm * comm, char *myname, int n, int *input, int **output, int *nrep){
-
-  int   i, c, swi, val_o;
-  int   *aux;
-  int   rank;
-
-  MPI_Comm_rank(*comm, &rank);
-
-  (*nrep) = 0;
-
-  aux = malloc(n*sizeof(int));
-  memcpy(aux, input, n*sizeof(int));
-
-  qsort(aux, n, sizeof(int), mesh_cmpfunc);
-
-  val_o = aux[0];
-  swi = 1;
-  for(i=1;i<n;i++){
-    if(aux[i] == val_o){
-      if(swi == 1){
-	(*nrep) ++;
-	swi = 0;
-      }
-    }
-    else if(aux[i] != val_o){
-      swi = 1;
-    }
-    val_o = aux[i];
-  }
-  (*output) = malloc( (*nrep) * sizeof(int));
-
-  c = 0;
-  val_o = aux[0];
-  swi = 1;
-  for(i=1;i<n;i++){
-    if(aux[i] == val_o){
-      if(swi == 1){
-	(*output)[c] = val_o;
-	c ++;
-	swi = 0;
-      }
-    }
-    else if(aux[i] != val_o){
-      swi = 1;
-    }
-    val_o = aux[i];
-  }
-
-  free(aux);
-
-  return 0;
-}
-
-
 int vector_intersection(int *array1, int n1, int *array2, int n2, int **reps, int *nreps){
 
   int i, j, c;
@@ -411,8 +354,10 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh){
   MPI_Request *request;
 
   int  rank, nproc;
-  MPI_Comm_rank( COMM, &rank);
-  MPI_Comm_size( COMM, &nproc);
+  MPI_Comm_rank(COMM, &rank);
+  MPI_Comm_size(COMM, &nproc);
+
+  util_clean_and_sort_vector(mesh->eind, mesh->eptr[mesh->nelm_local], &mesh->local_ghost_nods, &mesh->nnods_local_ghost);
 
   mysize = mesh->nnods_local_ghost;
   peer_sizes = NULL;

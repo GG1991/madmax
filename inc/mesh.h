@@ -14,6 +14,8 @@
 #define PARMETIS_KWAY       3
 #define PARMETIS_MESHKWAY   4
 
+#define NBUF 256
+
 #define MAX_ADJ_NODES 30
 #define MAX_NUM_OF_BOUNDARIES 4
 
