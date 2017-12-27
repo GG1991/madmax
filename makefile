@@ -70,6 +70,7 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/main.o \
            $(MAC_OBJ_DIR)/output.o \
            $(MAC_OBJ_DIR)/boundary.o \
            $(SPU_OBJ_DIR)/material.o \
+           $(SPU_OBJ_DIR)/solvers.o \
            $(SPU_OBJ_DIR)/gmsh.o \
            $(SPU_OBJ_DIR)/comm.o \
            $(SPU_OBJ_DIR)/util.o \

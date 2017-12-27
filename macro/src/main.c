@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
 
 	KSPSetOperators(ksp, A, A);
 	KSPSolve(ksp, b, dx);
-	print_petsc_ksp_info( MACRO_COMM, ksp);
+	solvers_print_petsc_ksp_info( MACRO_COMM, ksp);
 	myio_printf(MACRO_COMM, "\n");
 
 	VecAXPY(x, 1.0, dx);

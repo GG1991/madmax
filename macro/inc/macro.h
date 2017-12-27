@@ -11,9 +11,6 @@
 #include "fem.h"
 #include "solvers.h"
 #include "material.h"
-#include "slepceps.h"
-#include "petscksp.h"
-
 
 #define GREEN "\x1B[32m"
 #define RED "\x1B[31m"
