@@ -98,7 +98,6 @@ int read_bc(void);
 int assembly_A_petsc(void);
 int assembly_b_petsc(void);
 int assembly_AM_petsc(void);
-int update_bound(double t);
 int get_global_elem_index(int e, int *glo_elem_index);
 int get_local_elem_index(int e, int *loc_elem_index);
 int get_elem_properties(void);
@@ -121,6 +120,9 @@ int finalize(void);
 int alloc_memory(void);
 
 int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh);
+
+int boundary_update(double time);
+int boundary_setx(void);
 
 #ifdef SLEPC
 

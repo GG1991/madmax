@@ -188,12 +188,12 @@ int main(int argc, char **argv){
 
     EPSSolve(eps);
     EPSGetConverged(eps, &nconv);
-    myio_printf(MACRO_COMM,"Number of converged eigenpairs: %d\n",nconv);
+    myio_printf(MACRO_COMM, "Number of converged eigenpairs: %d\n", nconv);
 
     for(int i = 0 ; i < params.num_eigen_vals ; i++){
 
-      EPSGetEigenpair( eps, i, &params.eigen_vals[i], NULL, x, NULL );
-      EPSComputeError( eps, i, EPS_ERROR_RELATIVE, &error );
+      EPSGetEigenpair(eps, i, &params.eigen_vals[i], NULL, x, NULL);
+      EPSComputeError(eps, i, EPS_ERROR_RELATIVE, &error);
       myio_printf(MACRO_COMM, "omega %d = %e   error = %e\n", i, params.eigen_vals[i], error);
 
       if(flags.print_pvtu == true){
@@ -207,8 +207,7 @@ int main(int argc, char **argv){
 
     EPSDestroy(&eps);
 
-  }
-  else if(params.calc_mode == CALC_MODE_NORMAL){
+  }else if(params.calc_mode == CALC_MODE_NORMAL){
 
     KSP ksp;
     KSPCreate(MACRO_COMM, &ksp);
@@ -223,26 +222,9 @@ int main(int argc, char **argv){
 
       myio_printf(MACRO_COMM,"\ntime step %-3d %-e seg\n", params.ts, params.t);
 
-      update_boundary(params.t, &function_list, &boundary_list);
+      boundary_update(params.t);
 
-      Vec x_loc;
-      double *x_arr;
-      VecGhostGetLocalForm(x, &x_loc);
-      VecGetArray(x_loc, &x_arr);
-
-      node_list_t * pn = boundary_list.head;
-      while(pn != NULL){
-	mesh_boundary_t *bou = (mesh_boundary_t *)pn->data;
-	for(int i = 0 ; i < bou->ndirix ; i++)
-	  x_arr[bou->dir_loc_ixs[i]] = bou->dir_val[i];
-	pn = pn->next;
-      }
-
-      VecRestoreArray(x_loc, &x_arr);
-      VecGhostRestoreLocalForm(x, &x_loc);
-
-      VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-      VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+      boundary_setx();
 
       params.non_linear_its = 0; params.residual_norm = 2*params.non_linear_min_norm_tol;
 
@@ -663,27 +645,6 @@ int get_elem_properties(void){
     if(pn == NULL) return 1;
 
     elem_type[e] = type;
-  }
-
-  return 0;
-}
-
-
-int update_boundary(double t, list_t *function_list, list_t *boundary_list){
-
-  node_list_t * pn = boundary_list->head;
-  while(pn != NULL){
-
-    mesh_boundary_t * bou = ( mesh_boundary_t * ) pn->data;
-    function_t   * function = NULL;
-    for(int d = 0 ; d < dim ; d++){
-      function_get_from_list(bou->fnum[d], function_list, &function);
-      double val;
-      function_eval(t, function, &val);
-      for(int i = 0 ; i < bou->ndir ; i++)
-	bou->dir_val[i*(bou->ndirpn) + d] = val;
-    }
-    pn = pn->next;
   }
 
   return 0;
