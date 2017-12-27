@@ -11,6 +11,9 @@
 #include "fem.h"
 #include "solvers.h"
 #include "material.h"
+#include "slepceps.h"
+#include "petscksp.h"
+
 
 #define GREEN "\x1B[32m"
 #define RED "\x1B[31m"
@@ -95,9 +98,11 @@ extern params_t params;
 extern flags_t flags;
 
 int read_bc(void);
-int assembly_A_petsc(void);
-int assembly_b_petsc(void);
-int assembly_AM_petsc(void);
+
+int assembly_A(void);
+int assembly_b(double *norm);
+int assembly_AM(void);
+
 int get_global_elem_index(int e, int *glo_elem_index);
 int get_local_elem_index(int e, int *loc_elem_index);
 int get_elem_properties(void);
@@ -124,24 +129,9 @@ int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh);
 int boundary_update(double time);
 int boundary_setx(void);
 
-#ifdef SLEPC
-
-#include "slepceps.h"
-
-#endif
-
-#ifdef PETSC
-
-#include "petscksp.h"
-
-int assembly_b_petsc(void);
-int assembly_AM_petsc(void);
-int assembly_A_petsc(void);
-
 Mat A;
 Mat M;
 Vec x, dx, b;
 
-#endif
 
 #endif

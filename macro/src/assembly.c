@@ -2,7 +2,7 @@
 
 #ifdef PETSC
 
-int assembly_b_petsc(void){
+int assembly_b(double *norm){
 
   double *wp;
   double *b_arr;
@@ -78,11 +78,13 @@ int assembly_b_petsc(void){
     PetscViewerASCIIOpen(MACRO_COMM, "b.dat", &viewer); VecView(b ,viewer);
   }
 
+  VecNorm(b, NORM_2, norm);
+
   return ierr;
 }
 
 
-int assembly_AM_petsc(void){
+int assembly_AM(void){
 
   MatZeroEntries(A);
   MatZeroEntries(M);
@@ -165,7 +167,7 @@ int assembly_AM_petsc(void){
 }
 
 
-int assembly_A_petsc(void){
+int assembly_A(void){
 
   MatZeroEntries(A);
 

@@ -172,7 +172,7 @@ int main(int argc, char **argv){
     VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
     VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
-    ierr = assembly_AM_petsc();
+    ierr = assembly_AM();
     CHECK_ERROR_GOTO(ierr, "problem during matrix assembly\n")
 
     int nconv;
@@ -230,14 +230,13 @@ int main(int argc, char **argv){
 
       while(params.non_linear_its < params.non_linear_max_its && params.residual_norm > params.non_linear_min_norm_tol){
 
-	assembly_b_petsc();
-	VecNorm(b, NORM_2, &params.residual_norm);
+	assembly_b(&params.residual_norm);
 	myio_printf(MACRO_COMM, GREEN "|b| = %e" NORMAL " ", params.residual_norm);
 
 	if(params.residual_norm < params.non_linear_min_norm_tol)
 	  break;
 
-	assembly_A_petsc();
+	assembly_A();
 
 	KSPSetOperators(ksp, A, A);
 	KSPSolve(ksp, b, dx);
