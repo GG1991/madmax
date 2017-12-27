@@ -3,7 +3,7 @@
 
 #include "micro.h"
 
-int finalize(void){
+int finalize(void) {
 
   int ierr;
 
@@ -17,8 +17,8 @@ int finalize(void){
   free(elem_energy);
   free(elem_type);
 
-  for(int i = 0 ; i < nvoi  ; i++){
-    for(int j = 0 ; j < npe*dim ; j++)
+  for (int i = 0 ; i < nvoi  ; i++) {
+    for (int j = 0 ; j < npe*dim ; j++)
       free(struct_bmat[i][j]);
     free(struct_bmat[i]);
   }

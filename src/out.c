@@ -30,7 +30,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
   MPI_Comm_rank(*comm, &rank);
 
   vtkfl = fopen(vtkfile_n,"w");
-  if(!vtkfl){
+  if (!vtkfl) {
     return 1;
   }
 
@@ -43,28 +43,28 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
   fprintf(vtkfl, "DATASET UNSTRUCTURED_GRID\n");
   fprintf(vtkfl, "POINTS %d double\n", nallnods);
 
-  for (n=0;n<nallnods;n++){
-    for(d=0;d<3;d++){
+  for (n=0;n<nallnods;n++) {
+    for (d=0;d<3;d++) {
       fprintf(vtkfl, "%lf ", coord[n*3 + d]);
     }
     fprintf(vtkfl, "\n");
   }
 
   count=0;
-  for(e=0;e<nelm;e++){
+  for (e=0;e<nelm;e++) {
     count += eptr[e+1] - eptr[e] + 1;
   }
   fprintf(vtkfl, "CELLS %d %d\n", nelm, count);
-  for (e=0;e<nelm;e++){
+  for (e=0;e<nelm;e++) {
     fprintf(vtkfl, "%d ", eptr[e+1] - eptr[e]);
-    for (n=0;n<(eptr[e+1] - eptr[e]);n++){
+    for (n=0;n<(eptr[e+1] - eptr[e]);n++) {
       fprintf(vtkfl, "%d ", eind[eptr[e] + n]);
     }
     fprintf(vtkfl, "\n");
   }
 
   fprintf(vtkfl, "CELL_TYPES %i\n", nelm);
-  for (e=0;e<nelm;e++){
+  for (e=0;e<nelm;e++) {
     fprintf(vtkfl, "%d\n",vtkcode(dim,eptr[e+1] - eptr[e]));
   }
 
@@ -72,7 +72,7 @@ int spu_vtk_partition( char *vtkfile_n, MPI_Comm *comm )
 
   fprintf(vtkfl, "SCALARS part FLOAT\n");
   fprintf(vtkfl, "LOOKUP_TABLE default\n");
-  for (e=0;e<nelm;e++){
+  for (e=0;e<nelm;e++) {
     fprintf(vtkfl, "%lf\n",rank*1.0);
   }
 
@@ -110,7 +110,7 @@ int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strai
   ierr = VecGhostGetLocalForm(*Displa,&xlocal);
 
   vtkfl = fopen(vtkfile_n,"w");
-  if(!vtkfl){
+  if (!vtkfl) {
     return 1;
   }
 
@@ -123,28 +123,28 @@ int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strai
   fprintf(vtkfl, "DATASET UNSTRUCTURED_GRID\n");
   fprintf(vtkfl, "POINTS %d double\n", nallnods);
 
-  for (n=0;n<nallnods;n++){
-    for(d=0;d<3;d++){
+  for (n=0;n<nallnods;n++) {
+    for (d=0;d<3;d++) {
       fprintf(vtkfl, "%lf ", coord[n*3 + d]);
     }
     fprintf(vtkfl, "\n");
   }
 
   count=0;
-  for(e=0;e<nelm;e++){
+  for (e=0;e<nelm;e++) {
     count += eptr[e+1] - eptr[e] + 1;
   }
   fprintf(vtkfl, "CELLS %d %d\n", nelm, count);
-  for (e=0;e<nelm;e++){
+  for (e=0;e<nelm;e++) {
     fprintf(vtkfl, "%d ", eptr[e+1] - eptr[e]);
-    for (n=0;n<(eptr[e+1] - eptr[e]);n++){
+    for (n=0;n<(eptr[e+1] - eptr[e]);n++) {
       fprintf(vtkfl, "%d ", eind[eptr[e] + n]);
     }
     fprintf(vtkfl, "\n");
   }
 
   fprintf(vtkfl, "CELL_TYPES %i\n", nelm);
-  for (e=0;e<nelm;e++){
+  for (e=0;e<nelm;e++) {
     fprintf(vtkfl, "%d\n",vtkcode(dim,eptr[e+1] - eptr[e]));
   }
 
@@ -153,8 +153,8 @@ int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strai
   fprintf(vtkfl, "VECTORS Displa FLOAT\n");
 //  fprintf(vtkfl, "LOOKUP_TABLE default\n");
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
-  for (n=0;n<nallnods;n++){
-    for (d=0;d<3;d++){
+  for (n=0;n<nallnods;n++) {
+    for (d=0;d<3;d++) {
       fprintf(vtkfl, "%lf ", xvalues[n*3+d]);
     }
     fprintf(vtkfl,"\n");
@@ -165,7 +165,7 @@ int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strai
 
   fprintf(vtkfl, "TENSORS Strain FLOAT\n");
 //  fprintf(vtkfl, "LOOKUP_TABLE default\n");
-  for (e=0;e<nelm;e++){
+  for (e=0;e<nelm;e++) {
     fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+0],Strain[e*6+3],Strain[e*6+5]);
     fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+3],Strain[e*6+1],Strain[e*6+4]);
     fprintf(vtkfl, "%lf %lf %lf\n", Strain[e*6+5],Strain[e*6+4],Strain[e*6+2]);
@@ -174,7 +174,7 @@ int write_vtk(MPI_Comm PROBLEM_COMM, char *vtkfile_n, Vec *Displa, double *Strai
 
   fprintf(vtkfl, "TENSORS Stress FLOAT\n");
 //  fprintf(vtkfl, "LOOKUP_TABLE default\n");
-  for (e=0;e<nelm;e++){
+  for (e=0;e<nelm;e++) {
     fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+0],Stress[e*6+3],Stress[e*6+5]);
     fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+3],Stress[e*6+1],Stress[e*6+4]);
     fprintf(vtkfl, "%lf %lf %lf\n", Stress[e*6+5],Stress[e*6+4],Stress[e*6+2]);
@@ -199,7 +199,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   MPI_Comm_size(PROBLEM_COMM, &nproc);
   MPI_Comm_rank(PROBLEM_COMM, &rank);
 
-  switch(dim){
+  switch(dim) {
     case 2:
       ns = 4;
       break;
@@ -213,11 +213,11 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   /*
      rank 0 writes the .pvtu file first
    */
-  if(!rank){
+  if (!rank) {
 
     strcpy(file_name,name);
     strcat(file_name,".pvtu");
-    fm = fopen(file_name,"w"); if(!fm)SETERRQ1(PROBLEM_COMM,1,"file %s could not be opened",file_name);
+    fm = fopen(file_name,"w"); if (!fm)SETERRQ1(PROBLEM_COMM,1,"file %s could not be opened",file_name);
 
     fprintf(fm, "<?xml version=\"1.0\"?>\n"
 	"<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
@@ -247,13 +247,13 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 	  "<PDataArray type=\"Int32\" Name=\"elm_id\" NumberOfComponents=\"1\"/>\n");
     fprintf(fm,
 	"<PDataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\"/>\n");
-    if(energy_interp!=NULL){
+    if (energy_interp!=NULL) {
       fprintf(fm,
 	  "<PDataArray type=\"Float64\" Name=\"energy_interp\" NumberOfComponents=\"1\"/>\n");
     }
     fprintf(fm,
 	"</PCellData>\n");
-    for(i=0;i<nproc;i++){
+    for (i=0;i<nproc;i++) {
       sprintf(file_name,"%s_%d",name,i);
       fprintf(fm,	"<Piece Source=\"%s.vtu\"/>\n",file_name);
     }
@@ -266,7 +266,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 
   sprintf(file_name,"%s_%d.vtu",name,rank);
   fm = fopen(file_name,"w");
-  if(!fm){
+  if (!fm) {
     PetscPrintf(PETSC_COMM_WORLD,"Problem trying to opening file %s for writing\n", file_name);
     return 1;
   }
@@ -278,11 +278,11 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   fprintf(fm,"<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", nallnods, nelm);
   fprintf(fm,"<Points>\n");
   fprintf(fm,"<DataArray type=\"Float32\" Name=\"Position\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-  for(i=0;i<nallnods;i++){
-    for(d=0;d<dim;d++){
+  for (i=0;i<nallnods;i++) {
+    for (d=0;d<dim;d++) {
       fprintf(fm,"%e ",coord[i*dim+d]);
     }
-    for(d=dim;d<3;d++){
+    for (d=dim;d<3;d++) {
       fprintf(fm,"%e ",0.0);
     }
     fprintf(fm,"\n ");
@@ -292,8 +292,8 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   fprintf(fm,"<Cells>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for (i=0;i<nelm;i++){
-    for (d=0;d<(eptr[i+1] - eptr[i]);d++){
+  for (i=0;i<nelm;i++) {
+    for (d=0;d<(eptr[i+1] - eptr[i]);d++) {
       fprintf(fm,"%d ",eind[eptr[i] + d]);
     }
     fprintf(fm,"\n");
@@ -301,14 +301,14 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"offsets\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for (i=1;i<nelm+1;i++){
+  for (i=1;i<nelm+1;i++) {
     fprintf(fm,"%d ",eptr[i]);
   }
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for (i=0;i<nelm;i++){
+  for (i=0;i<nelm;i++) {
     fprintf(fm, "%d ",vtkcode(dim,eptr[i+1] - eptr[i]));
   }
   fprintf(fm,"\n");
@@ -326,11 +326,11 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   ierr = VecGhostGetLocalForm(*x,&xlocal);
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
-  for(i=0;i<nallnods;i++){
-    for(d=0;d<dim;d++){
+  for (i=0;i<nallnods;i++) {
+    for (d=0;d<dim;d++) {
       fprintf(fm, "%lf ", xvalues[i*dim+d]);
     }
-    for(d=dim;d<3;d++){
+    for (d=dim;d<3;d++) {
       fprintf(fm,"%lf ",0.0);
     }
     fprintf(fm,"\n");
@@ -344,11 +344,11 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   ierr = VecGhostGetLocalForm(*b,&xlocal);
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   ierr = VecGetArray(xlocal, &xvalues); CHKERRQ(ierr);
-  for(i=0;i<nallnods;i++){
-    for(d=0;d<dim;d++){
+  for (i=0;i<nallnods;i++) {
+    for (d=0;d<dim;d++) {
       fprintf(fm, "%lf ", xvalues[i*dim+d]);
     }
-    for(d=dim;d<3;d++){
+    for (d=dim;d<3;d++) {
       fprintf(fm, "%lf ", 0.0);
     }
     fprintf(fm,"\n");
@@ -358,11 +358,11 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 
   /* <bc_kinds> */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"bc_kinds\" NumberOfComponents=\"1\" format=\"ascii\" >\n");
-  for(i=0;i<nmynods;i++){
+  for (i=0;i<nmynods;i++) {
     //    fprintf(fm, "%d ", bc_kinds[i]);
     fprintf(fm, "%d ", -1);
   }
-  for(i=0;i<nghost;i++){
+  for (i=0;i<nghost;i++) {
     fprintf(fm, "%d ", -1);
   }
   fprintf(fm,"\n");
@@ -373,24 +373,24 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 
   /* <part> */
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for (i=0;i<nelm;i++){
+  for (i=0;i<nelm;i++) {
     fprintf(fm,"%d ",rank);
   }
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
   /* <strain> */
-  if(dim==2){
+  if (dim==2) {
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"4\" format=\"ascii\">\n");
-    for (i=0;i<nelm;i++){
+    for (i=0;i<nelm;i++) {
       fprintf(fm, "%lf %lf ", strain[i*3+0],strain[i*3+2]);
       fprintf(fm, "%lf %lf ", strain[i*3+2],strain[i*3+1]);
     }
     fprintf(fm,"\n");
   }
-  else if(dim==3){
+  else if (dim==3) {
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"9\" format=\"ascii\">\n");
-    for (i=0;i<nelm;i++){
+    for (i=0;i<nelm;i++) {
       fprintf(fm, "%lf %lf %lf ", strain[i*6+0],strain[i*6+3],strain[i*6+5]);
       fprintf(fm, "%lf %lf %lf ", strain[i*6+3],strain[i*6+1],strain[i*6+4]);
       fprintf(fm, "%lf %lf %lf ", strain[i*6+5],strain[i*6+4],strain[i*6+2]);
@@ -400,17 +400,17 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   fprintf(fm,"</DataArray>\n");
 
   /* <stress> */
-  if(dim==2){
+  if (dim==2) {
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"4\" format=\"ascii\">\n");
-    for (i=0;i<nelm;i++){
+    for (i=0;i<nelm;i++) {
       fprintf(fm, "%lf %lf ", stress[i*3+0],stress[i*3+2]);
       fprintf(fm, "%lf %lf ", stress[i*3+2],stress[i*3+1]);
     }
     fprintf(fm,"\n");
   }
-  else if(dim==3){
+  else if (dim==3) {
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"9\" format=\"ascii\">\n");
-    for (i=0;i<nelm;i++){
+    for (i=0;i<nelm;i++) {
       fprintf(fm, "%lf %lf %lf ", stress[i*6+0],stress[i*6+3],stress[i*6+5]);
       fprintf(fm, "%lf %lf %lf ", stress[i*6+3],stress[i*6+1],stress[i*6+4]);
       fprintf(fm, "%lf %lf %lf ", stress[i*6+5],stress[i*6+4],stress[i*6+2]);
@@ -422,7 +422,7 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
   /* <elm_id> */
   fprintf(fm,
       "<DataArray type=\"Int32\" Name=\"elm_id\" NumberOfComponents=\"1\" >\n");
-  for (i=0;i<nelm;i++){
+  for (i=0;i<nelm;i++) {
     fprintf(fm, "%d ", elm_id[i]);
   }
   fprintf(fm,"\n");
@@ -430,16 +430,16 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 
   /* <energy> */
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for (i=0;i<nelm;i++){
+  for (i=0;i<nelm;i++) {
     fprintf(fm, "%lf ", energy[i]);
   }
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
 
   /* <energy_interp> */
-  if(energy_interp!=NULL){
+  if (energy_interp!=NULL) {
     fprintf(fm,"<DataArray type=\"Float64\" Name=\"energy_interp\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-    for (i=0;i<nelm;i++){
+    for (i=0;i<nelm;i++) {
       fprintf(fm, "%lf ", energy_interp[i]);
     }
     fprintf(fm,"\n");
@@ -459,16 +459,16 @@ int write_vtu(MPI_Comm PROBLEM_COMM, char *name, Vec *x, Vec *b, double *strain,
 int vtkcode(int dim,int npe)
 {
 
-  switch(dim){
+  switch(dim) {
     case 1:
-      switch(npe){
+      switch(npe) {
         case 2 :
           return VTK_LINE;
         default:
           return -1;
       }
     case 2:
-      switch(npe){
+      switch(npe) {
         case 3 :
           return VTK_TRIANGLE;
         case 4 :
@@ -477,7 +477,7 @@ int vtkcode(int dim,int npe)
           return -1;
       }
     case 3:
-      switch(npe){
+      switch(npe) {
         case 4 :
           return VTK_TETRAHEDRON;
         case 6 :
@@ -492,15 +492,15 @@ int vtkcode(int dim,int npe)
   }
 }
 /****************************************************************************************************/
-//  if(outfile!=NULL){
+//  if (outfile!=NULL) {
 //    // queremos escribir algo
-//    if(rank==0){
+//    if (rank==0) {
 //      fprintf(outfile,"boundary_list\n");
 //      pBound = boundary_list.head;
-//      while(pBound){
+//      while (pBound) {
 //	fprintf(outfile,"name: %-8s NNod: %6d\n",
 //	    ((boundary_t*)pBound->data)->name,((boundary_t*)pBound->data)->NNods);
-//	for(i=0;i<((boundary_t*)pBound->data)->NNods;i++){
+//	for (i=0;i<((boundary_t*)pBound->data)->NNods;i++) {
 //	  fprintf(outfile,"%6d ", ((boundary_t*)pBound->data)->Nods[i]);
 //	}
 //	fprintf(outfile,"\n");

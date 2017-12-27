@@ -19,17 +19,17 @@ comm_t comm;
 list_t physical_list;
 list_t boundary_list;
 
-#define CHECK_FOUND_GOTO(message){\
-  if(found == false){\
+#define CHECK_FOUND_GOTO(message) {\
+  if (found == false) {\
     myio_printf(MACRO_COMM, "%s\n", message);\
     goto end;}}
 
-#define CHECK_ERROR_GOTO(ierr, message){\
-  if(ierr != 0){\
+#define CHECK_ERROR_GOTO(ierr, message) {\
+  if (ierr != 0) {\
     myio_printf(MACRO_COMM, "%s\n", message);\
     goto end;}}
 
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
 
   int ierr;
   bool found;
@@ -39,12 +39,12 @@ int main(int argc, char **argv){
   init_variables();
 
   myio_comm_line_search_option(&command_line, "-coupl", &found);
-  if(found == true) flags.coupled = true;
+  if (found == true) flags.coupled = true;
 
-  if(flags.coupled == true){
+  if (flags.coupled == true) {
     comm.color = COLOR_MACRO;
     ierr = comm_coloring(WORLD_COMM, &comm, &MACRO_COMM);
-    if(ierr != 0){
+    if (ierr != 0) {
       flags.coupled = false;
       myio_printf(MACRO_COMM, RED "error in coloring" NORMAL "\n");
       goto end_no_message;
@@ -60,13 +60,13 @@ int main(int argc, char **argv){
       "--------------------------------------------------" NORMAL "\n\n");
 
   myio_comm_line_search_option(&command_line, "-help", &found);
-  if(found == true){
+  if (found == true) {
     myio_printf(MACRO_COMM, "%s", help);
     goto end;
   }
 
   myio_comm_line_search_option(&command_line, "-normal", &found);
-  if(found == true){
+  if (found == true) {
     params.calc_mode = CALC_MODE_NORMAL;
 
     myio_comm_line_get_double(&command_line, "-tf", &params.tf, &found);
@@ -77,30 +77,30 @@ int main(int argc, char **argv){
   }
 
   myio_comm_line_search_option(&command_line, "-testcomm", &found);
-  if(found == true){
+  if (found == true) {
     params.calc_mode = CALC_MODE_TEST;
   }
 
   myio_comm_line_search_option(&command_line, "-eigen", &found);
-  if(found == true){
+  if (found == true) {
     params.calc_mode = CALC_MODE_EIGEN;
     myio_comm_line_get_double(&command_line, "-energy_stored", &params.energy_stored, &found);
   }
 
   myio_comm_line_get_string(&command_line, "-mesh", mesh_n, &found);
-  if(found == false){
+  if (found == false) {
     myio_printf(MACRO_COMM,"mesh file not given on command line.\n");
     goto end;
   }
 
   FILE *fm = fopen(mesh_n, "r");
-  if(fm == NULL){
+  if (fm == NULL) {
     myio_printf(MACRO_COMM,"mesh file not found.\n");
     goto end;
   }
 
   myio_comm_line_get_int(&command_line, "-dim", &dim, &found);
-  if(found == false){
+  if (found == false) {
     myio_printf(MACRO_COMM,"-dim not given on command line.\n");
     goto end;
   }
@@ -112,13 +112,13 @@ int main(int argc, char **argv){
   ngp_max = npe_max;
 
   myio_comm_line_search_option(&command_line, "-print_matrices", &found);
-  if(found == true) flags.print_matrices = true;
+  if (found == true) flags.print_matrices = true;
 
   myio_comm_line_search_option(&command_line, "-print_vectors", &found);
-  if(found == true) flags.print_vectors = true;
+  if (found == true) flags.print_vectors = true;
 
   myio_comm_line_search_option(&command_line, "-print_pvtu", &found);
-  if(found == true) flags.print_pvtu = true;
+  if (found == true) flags.print_pvtu = true;
 
   myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
 
@@ -134,16 +134,16 @@ int main(int argc, char **argv){
   CHECK_ERROR_GOTO(ierr, RED "error parsing materials from command line" NORMAL "\n");
 
   myio_comm_line_search_option(&command_line, "-part_kway", &found);
-  if(found == true) mesh.partition = PARMETIS_MESHKWAY;
+  if (found == true) mesh.partition = PARMETIS_MESHKWAY;
 
   myio_comm_line_search_option(&command_line, "-part_geom", &found);
-  if(found == true) mesh.partition = PARMETIS_GEOM;
+  if (found == true) mesh.partition = PARMETIS_GEOM;
 
   ierr = gmsh_read_mesh(MACRO_COMM, mesh_n, &gmsh_mesh);
   CHECK_ERROR_GOTO(ierr, RED "error reading gmsh mesh" NORMAL "\n")
   copy_gmsh_to_mesh(&gmsh_mesh, &mesh);
 
-  if(nproc_mac > 1){
+  if (nproc_mac > 1) {
     ierr = mesh_do_partition(MACRO_COMM, &mesh);
     CHECK_ERROR_GOTO(ierr, RED "error partitioning mesh" NORMAL "\n")
   }
@@ -165,7 +165,7 @@ int main(int argc, char **argv){
 
   ierr = fem_init();
 
-  if(params.calc_mode == CALC_MODE_EIGEN){
+  if (params.calc_mode == CALC_MODE_EIGEN) {
 
     EPS eps;
     VecZeroEntries(x);
@@ -190,13 +190,13 @@ int main(int argc, char **argv){
     EPSGetConverged(eps, &nconv);
     myio_printf(MACRO_COMM, "Number of converged eigenpairs: %d\n", nconv);
 
-    for(int i = 0 ; i < params.num_eigen_vals ; i++){
+    for (int i = 0 ; i < params.num_eigen_vals ; i++) {
 
       EPSGetEigenpair(eps, i, &params.eigen_vals[i], NULL, x, NULL);
       EPSComputeError(eps, i, EPS_ERROR_RELATIVE, &error);
       myio_printf(MACRO_COMM, "omega %d = %e   error = %e\n", i, params.eigen_vals[i], error);
 
-      if(flags.print_pvtu == true){
+      if (flags.print_pvtu == true) {
 	get_elem_properties();
 	char filename[64];
 	sprintf(filename, "macro_eigen_%d", i);
@@ -207,7 +207,7 @@ int main(int argc, char **argv){
 
     EPSDestroy(&eps);
 
-  }else if(params.calc_mode == CALC_MODE_NORMAL){
+  }else if (params.calc_mode == CALC_MODE_NORMAL) {
 
     KSP ksp;
     KSPCreate(MACRO_COMM, &ksp);
@@ -218,7 +218,7 @@ int main(int argc, char **argv){
     VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
     myio_printf(MACRO_COMM, "\n");
 
-    while(params.t < (params.tf + 1.0e-10)){
+    while (params.t < (params.tf + 1.0e-10)) {
 
       myio_printf(MACRO_COMM,"\ntime step %-3d %-e seg\n", params.ts, params.t);
 
@@ -228,12 +228,12 @@ int main(int argc, char **argv){
 
       params.non_linear_its = 0; params.residual_norm = 2*params.non_linear_min_norm_tol;
 
-      while(params.non_linear_its < params.non_linear_max_its && params.residual_norm > params.non_linear_min_norm_tol){
+      while (params.non_linear_its < params.non_linear_max_its && params.residual_norm > params.non_linear_min_norm_tol) {
 
 	assembly_b(&params.residual_norm);
 	myio_printf(MACRO_COMM, GREEN "|b| = %e" NORMAL " ", params.residual_norm);
 
-	if(params.residual_norm < params.non_linear_min_norm_tol)
+	if (params.residual_norm < params.non_linear_min_norm_tol)
 	  break;
 
 	assembly_A();
@@ -251,7 +251,7 @@ int main(int argc, char **argv){
       }
       myio_printf(MACRO_COMM, "\n");
 
-      if(flags.print_pvtu == true){
+      if (flags.print_pvtu == true) {
 	get_elem_properties();
 	char filename[64];
 	sprintf(filename, "macro_t_%d", params.ts);
@@ -263,7 +263,7 @@ int main(int argc, char **argv){
     }
     KSPDestroy(&ksp);
 
-  }else if(params.calc_mode == CALC_MODE_TEST){
+  }else if (params.calc_mode == CALC_MODE_TEST) {
 
 
   }
@@ -284,7 +284,7 @@ end_no_message:
 }
 
 
-int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
+int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh) {
 
   mesh->nelm_local = gmsh_mesh->nelm_local;
   mesh->nelm_total = gmsh_mesh->nelm_total;
@@ -296,11 +296,11 @@ int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
   ARRAY_COPY(mesh->elm_id, gmsh_mesh->elm_id, mesh->nelm_local);
 
   mesh->npe = malloc(mesh->nelm_local*sizeof(int));
-  for(int i = 0 ; i < mesh->nelm_local ; i++)
+  for (int i = 0 ; i < mesh->nelm_local ; i++)
     mesh->npe[i] = mesh->eptr[i+1] - mesh->eptr[i];
 
   mesh->eind = malloc(mesh->eptr[mesh->nelm_local]*sizeof(int));
-  for(int i = 0 ; i < mesh->eptr[mesh->nelm_local] ; i++)
+  for (int i = 0 ; i < mesh->eptr[mesh->nelm_local] ; i++)
     mesh->eind[i] = gmsh_mesh->eind[i] - 1;
 
   mesh->nelm_dist = malloc(nproc_mac*sizeof(int));
@@ -316,7 +316,7 @@ int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
 }
 
 
-int get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat, double *strain_gp){
+int get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat, double *strain_gp) {
 
   double  *x_arr;
   Vec      x_loc;
@@ -324,15 +324,15 @@ int get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double **
   VecGetArray(x_loc, &x_arr);
 
   int  npe = mesh.eptr[e+1] - mesh.eptr[e];
-  for(int i = 0 ; i < npe*dim ; i++)
+  for (int i = 0 ; i < npe*dim ; i++)
     elem_disp[i] = x_arr[loc_elem_index[i]];
 
   VecRestoreArray(x_loc , &x_arr);
   VecGhostRestoreLocalForm(x, &x_loc);
 
-  for(int v = 0; v < nvoi ; v++ ){
+  for (int v = 0; v < nvoi ; v++ ) {
     strain_gp[v] = 0.0;
-    for(int i = 0 ; i < npe*dim ; i++ )
+    for (int i = 0 ; i < npe*dim ; i++ )
       strain_gp[v] += bmat[v][i][gp] * elem_disp[i];
     strain_gp[v] = ( fabs(strain_gp[v]) < 1.0e-6 ) ? 0.0 : strain_gp[v];
   }
@@ -341,24 +341,24 @@ int get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double **
 }
 
 
-int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
+int get_stress(int e, int gp, double *strain_gp, double *stress_gp) {
 
   char        name_s[64];
   material_t  *mat_p;
   get_mat_name(mesh.elm_id[e], name_s);
 
   node_list_t *pn = material_list.head;
-  while(pn != NULL){
+  while (pn != NULL) {
     mat_p = (material_t *)pn->data;
-    if(strcmp(name_s, mat_p->name) == 0) break;
+    if (strcmp(name_s, mat_p->name) == 0) break;
     pn = pn->next;
   }
-  if(pn == NULL){
+  if (pn == NULL) {
     myio_printf(MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e);
     return 1;
   }
 
-  if(mat_p->type_id == MAT_MICRO){
+  if (mat_p->type_id == MAT_MICRO) {
 
     message.action = ACTION_MICRO_CALC_STRESS;
 
@@ -377,24 +377,24 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp){
 }
 
 
-int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan){
+int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan) {
 
   char name_s[64];
   material_t *mat_p;
   get_mat_name(mesh.elm_id[e], name_s);
 
   node_list_t *pn = material_list.head;
-  while(pn != NULL){
+  while (pn != NULL) {
     mat_p = (material_t *)pn->data;
-    if(strcmp(name_s, mat_p->name) == 0) break;
+    if (strcmp(name_s, mat_p->name) == 0) break;
     pn = pn->next;
   }
-  if(pn == NULL){
+  if (pn == NULL) {
     myio_printf(MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
     return 1;
   }
 
-  if(mat_p->type_id == MAT_MICRO){
+  if (mat_p->type_id == MAT_MICRO) {
 
     message.action = ACTION_MICRO_CALC_C_TANGENT;
 
@@ -413,7 +413,7 @@ int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 }
 
 
-int get_rho(const char *name, int e, double *rho){
+int get_rho(const char *name, int e, double *rho) {
 
   char name_s[64];
   int ierr;
@@ -422,17 +422,17 @@ int get_rho(const char *name, int e, double *rho){
 
   material_t *mat_p;
   node_list_t *pn = material_list.head;
-  while(pn != NULL){
+  while (pn != NULL) {
     mat_p = (material_t *)pn->data;
-    if(strcmp(name_s, mat_p->name) == 0) break;
+    if (strcmp(name_s, mat_p->name) == 0) break;
     pn = pn->next;
   }
-  if(pn == NULL){
+  if (pn == NULL) {
     myio_printf(MACRO_COMM, "Material %s corresponding to element %d not found on material list\n", name_s, e );
     return 1;
   }
 
-  if(mat_p->type_id == MAT_MICRO){
+  if (mat_p->type_id == MAT_MICRO) {
 
     message.action = ACTION_MICRO_CALC_RHO;
 
@@ -448,18 +448,18 @@ int get_rho(const char *name, int e, double *rho){
 }
 
 
-int get_mat_name(int id, char *name_s){
+int get_mat_name(int id, char *name_s) {
 
   node_list_t *pn;
   physical_t  *phy_p;
 
   pn = physical_list.head;
-  while(pn != NULL){
+  while (pn != NULL) {
     phy_p = ( physical_t * )pn->data;
-    if( id == phy_p->id ) break;
+    if ( id == phy_p->id ) break;
     pn = pn->next;
   }
-  if(pn == NULL) return 1;
+  if (pn == NULL) return 1;
 
   strcpy(name_s, phy_p->name);
 
@@ -467,42 +467,42 @@ int get_mat_name(int id, char *name_s){
 }
 
 
-int get_global_elem_index(int e, int *glo_elem_index){
+int get_global_elem_index(int e, int *glo_elem_index) {
 
   int  npe = mesh.eptr[e+1] - mesh.eptr[e];
 
-  for(int n = 0 ; n < npe ; n++){
-    for(int d = 0 ; d < dim ; d++)
+  for (int n = 0 ; n < npe ; n++) {
+    for (int d = 0 ; d < dim ; d++)
       glo_elem_index[n*dim + d] = mesh.local_to_global[mesh.eind[mesh.eptr[e] + n]]*dim + d;
   }
   return 0;
 }
 
 
-int get_local_elem_index(int e, int *loc_elem_index){
+int get_local_elem_index(int e, int *loc_elem_index) {
 
   int  npe = mesh.eptr[e+1] - mesh.eptr[e];
 
-  for(int n = 0 ; n < npe ; n++){
-    for(int d = 0 ; d < dim ; d++)
+  for (int n = 0 ; n < npe ; n++) {
+    for (int d = 0 ; d < dim ; d++)
       loc_elem_index[n*dim + d] = mesh.eind[mesh.eptr[e] + n]*dim + d;
   }
   return 0;
 }
 
 
-int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj){
+int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj) {
 
   double ***dsh_master;
   int npe = mesh.eptr[e+1] - mesh.eptr[e];
   int ngp = npe;
 
-  for(int i = 0 ; i < npe*dim ; i++)
+  for (int i = 0 ; i < npe*dim ; i++)
     elem_coor[i] = mesh.coord_local[loc_elem_index[i]];
 
   fem_get_dsh_master(npe, dim, &dsh_master);
 
-  for(int gp = 0; gp < ngp ; gp++){
+  for (int gp = 0; gp < ngp ; gp++) {
     fem_calc_jac(dim, npe, gp, elem_coor, dsh_master, jac);
     fem_invjac(dim, jac, jac_inv, &detj[gp]);
     fem_trans_dsh(dim, npe, gp, jac_inv, dsh_master, dsh);
@@ -512,14 +512,14 @@ int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj){
 }
 
 
-int get_bmat(int e, double ***dsh, double ***bmat){
+int get_bmat(int e, double ***dsh, double ***bmat) {
 
   int npe = mesh.eptr[e+1] - mesh.eptr[e];
   int ngp = npe;
 
-  if(dim == 2){
-    for(int i = 0 ; i < npe ; i++){
-      for(int gp = 0; gp < ngp ; gp++){
+  if (dim == 2) {
+    for (int i = 0 ; i < npe ; i++) {
+      for (int gp = 0; gp < ngp ; gp++) {
 	bmat[0][i*dim + 0][gp] = dsh[i][0][gp];
 	bmat[0][i*dim + 1][gp] = 0             ;
 	bmat[1][i*dim + 0][gp] = 0             ;
@@ -534,31 +534,31 @@ int get_bmat(int e, double ***dsh, double ***bmat){
 }
 
 
-int get_sh(int dim, int npe, double ***sh){
+int get_sh(int dim, int npe, double ***sh) {
 
   return fem_get_sh(npe, dim, sh);
 }
 
 
-int get_wp(int dim, int npe, double **wp){
+int get_wp(int dim, int npe, double **wp) {
 
   return fem_get_wp(npe, dim, wp);
 }
 
 
-int get_elem_properties(void){
+int get_elem_properties(void) {
 
   double *strain_aux = malloc(nvoi*sizeof(double));
   double *stress_aux = malloc(nvoi*sizeof(double));
   double *wp;
 
-  for(int e = 0 ; e < mesh.nelm_local ; e++){
+  for (int e = 0 ; e < mesh.nelm_local ; e++) {
 
     int npe = mesh.eptr[e+1] - mesh.eptr[e];
     int ngp = npe;
     double vol_elem = 0.0;
 
-    for(int v = 0 ; v < nvoi ; v++)
+    for (int v = 0 ; v < nvoi ; v++)
       strain_aux[v] = stress_aux[v] = 0.0;
 
     get_local_elem_index(e, loc_elem_index);
@@ -567,41 +567,41 @@ int get_elem_properties(void){
     get_bmat(e, dsh, bmat);
     get_wp(dim, npe, &wp);
 
-    for(int gp = 0 ; gp < ngp ; gp++){
+    for (int gp = 0 ; gp < ngp ; gp++) {
 
       detj[gp] = fabs(detj[gp]);
 
       get_strain(e, gp, loc_elem_index, dsh, bmat, strain_gp);
       get_stress(e, gp, strain_gp, stress_gp);
-      for(int v = 0 ; v < nvoi ; v++){
+      for (int v = 0 ; v < nvoi ; v++) {
 	strain_aux[v] += strain_gp[v] * detj[gp] * wp[gp];
 	stress_aux[v] += stress_gp[v] * detj[gp] * wp[gp];
       }
       vol_elem += detj[gp] * wp[gp];
     }
-    for(int v = 0 ; v < nvoi ; v++){
+    for (int v = 0 ; v < nvoi ; v++) {
       elem_strain[e*nvoi + v] = strain_aux[v] / vol_elem;
       elem_stress[e*nvoi + v] = stress_aux[v] / vol_elem;
     }
 
     physical_t * phy;
     node_list_t * pn = physical_list.head;
-    while(pn != NULL){
+    while (pn != NULL) {
       phy = pn->data;
-      if(phy->id == mesh.elm_id[e]) break;
+      if (phy->id == mesh.elm_id[e]) break;
       pn = pn->next;
     }
-    if(pn == NULL) return 1;
+    if (pn == NULL) return 1;
 
     int type = 0;
     pn = material_list.head;
-    while(pn != NULL){
+    while (pn != NULL) {
       material_t *mat = pn->data;
-      if(strcmp(phy->name, mat->name) == 0) break;
+      if (strcmp(phy->name, mat->name) == 0) break;
       pn = pn->next;
       type ++;
     }
-    if(pn == NULL) return 1;
+    if (pn == NULL) return 1;
 
     elem_type[e] = type;
   }

@@ -5,16 +5,16 @@
 int vtkcode( int dim, int npe )
 {
 
-  switch(dim){
+  switch(dim) {
     case 1:
-      switch(npe){
+      switch(npe) {
         case 2 :
           return VTK_LINE;
         default:
           return -1;
       }
     case 2:
-      switch(npe){
+      switch(npe) {
         case 3 :
           return VTK_TRIANGLE;
         case 4 :
@@ -23,7 +23,7 @@ int vtkcode( int dim, int npe )
           return -1;
       }
     case 3:
-      switch(npe){
+      switch(npe) {
         case 4 :
           return VTK_TETRAHEDRON;
         case 6 :

@@ -7,7 +7,7 @@ int boundary_read(void)
   mesh_boundary_t *bou;
   node_list_t *pn = boundary_list.head;
 
-  while(pn != NULL){
+  while (pn != NULL) {
 
     int *ix, n;
     bou = (mesh_boundary_t *)pn->data;
@@ -19,13 +19,13 @@ int boundary_read(void)
     bou->dir_loc_ixs = malloc(bou->ndirix * sizeof(int));
     bou->dir_glo_ixs = malloc(bou->ndirix * sizeof(int));
 
-    for(int i = 0; i < n; i++){
+    for (int i = 0; i < n; i++) {
 
       int da = 0;
       int *p = bsearch(&ix[i], mesh.local_nods, mesh.nnods_local, sizeof(int), mesh_cmpfunc);
 
-      for(int d = 0; d < dim; d++){
-	if(bou->kind & (1<<d)){
+      for (int d = 0; d < dim; d++) {
+	if (bou->kind & (1<<d)) {
 	  bou->dir_loc_ixs[i*(bou->ndirpn) + da] = (p - mesh.local_nods) * dim + d;
 	  bou->dir_glo_ixs[i*(bou->ndirpn) + da] = mesh.local_to_global[(p - mesh.local_nods)] * dim + d;
 	  da++;

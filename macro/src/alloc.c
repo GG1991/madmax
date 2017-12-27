@@ -1,10 +1,10 @@
 #include "macro.h"
 
-int alloc_memory(void){
+int alloc_memory(void) {
 
   int ierr;
 
-  if(solver.type == SOLVER_PETSC){
+  if (solver.type == SOLVER_PETSC) {
 
 #ifdef SLEPC
     PETSC_COMM_WORLD = MACRO_COMM;
@@ -16,7 +16,7 @@ int alloc_memory(void){
     return 1;
 #endif
 
-    if(params.calc_mode == CALC_MODE_EIGEN || params.calc_mode == CALC_MODE_NORMAL){
+    if (params.calc_mode == CALC_MODE_EIGEN || params.calc_mode == CALC_MODE_NORMAL) {
 
       int nnz = dim * MAX_ADJ_NODES;
 
@@ -32,14 +32,14 @@ int alloc_memory(void){
 
       int *ghost_index = malloc(mesh.nnods_ghost * dim *sizeof(int));
 
-      for(int i = 0 ; i < mesh.nnods_ghost ; i++){
-	for(int d = 0 ; d < dim ; d++)
+      for (int i = 0 ; i < mesh.nnods_ghost ; i++) {
+	for (int d = 0 ; d < dim ; d++)
 	  ghost_index[i*dim + d] = mesh.local_to_global[mesh.nnods_local + i]*dim + d;
       }
 
       ierr = VecCreateGhost(MACRO_COMM, dim*mesh.nnods_local, dim*mesh.nnods_total, dim*mesh.nnods_ghost, ghost_index, &x);
 
-      if(params.calc_mode == CALC_MODE_EIGEN){
+      if (params.calc_mode == CALC_MODE_EIGEN) {
 
 	ierr = MatCreate(MACRO_COMM, &M);
 	ierr = MatSetSizes(M, dim*mesh.nnods_local, dim*dim*mesh.nnods_local, dim*mesh.nnods_total, dim*mesh.nnods_total);
@@ -52,7 +52,7 @@ int alloc_memory(void){
 	ierr = MatAssemblyEnd(M, MAT_FINAL_ASSEMBLY);
 
       }
-      else if(params.calc_mode == CALC_MODE_NORMAL){
+      else if (params.calc_mode == CALC_MODE_NORMAL) {
 
 	ierr = VecDuplicate(x, &dx);
 	ierr = VecDuplicate(x, &b);
@@ -78,30 +78,30 @@ int alloc_memory(void){
   flag_neg_detj  = 0;
 
   bmat = malloc(nvoi*sizeof(double**));
-  for(int i = 0 ; i < nvoi  ; i++){
+  for (int i = 0 ; i < nvoi  ; i++) {
     bmat[i] = malloc(npe_max*dim*sizeof(double*));
-    for(int j = 0 ; j < npe_max*dim ; j++)
+    for (int j = 0 ; j < npe_max*dim ; j++)
       bmat[i][j] = malloc(ngp_max*sizeof(double));
   }
 
   dsh = malloc(npe_max*sizeof(double**));
-  for(int i = 0 ; i < npe_max ; i++){
+  for (int i = 0 ; i < npe_max ; i++) {
     dsh[i] = malloc( dim * sizeof(double*));
-    for(int j = 0 ; j < dim ; j++)
+    for (int j = 0 ; j < dim ; j++)
       dsh[i][j] = malloc( ngp_max * sizeof(double));
   }
 
   jac = malloc(dim*sizeof(double*));
-  for(int k = 0 ; k < dim ; k++)
+  for (int k = 0 ; k < dim ; k++)
     jac[k] = malloc( dim * sizeof(double));
 
   jac_inv = malloc(dim*sizeof(double*));
-  for(int i = 0 ; i < dim ; i++)
+  for (int i = 0 ; i < dim ; i++)
     jac_inv[i] = malloc( dim * sizeof(double));
 
   detj = malloc(ngp_max*sizeof(double));
 
-  if(ierr == 0) flags.allocated = true;
+  if (ierr == 0) flags.allocated = true;
 
   return ierr;
 }

@@ -1,6 +1,6 @@
 #include "macro.h"
 
-void init_variables(void){
+void init_variables(void) {
 
   MPI_Init(&command_line.argc, &command_line.argv);
 

@@ -1,6 +1,6 @@
 #include "micro.h"
 
-void init_variables(void){
+void init_variables(void) {
 
   params.homog_method = HOMOG_METHOD_NULL;
   params.non_linear_max_its = 2;

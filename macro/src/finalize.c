@@ -3,21 +3,21 @@
 
 #include "macro.h"
 
-int finalize(void){
+int finalize(void) {
 
   int ierr;
 
-  if(flags.coupled == true){
+  if (flags.coupled == true) {
 
     message.action = ACTION_MICRO_END;
     ierr = comm_macro_send(&message, &comm);
-    if(ierr != 0){
+    if (ierr != 0) {
       myio_printf(MACRO_COMM, "macro: problem sending MIC_END to micro\n");
       return 1;
     }
   }
 
-  if(flags.allocated == true){
+  if (flags.allocated == true) {
 
     free(loc_elem_index);
     free(glo_elem_index);
@@ -29,15 +29,15 @@ int finalize(void){
     free(elem_energy);
     free(elem_type);
 
-    for(int i = 0 ; i < nvoi ; i++){
-      for(int j = 0 ; j < npe_max*dim ; j++)
+    for (int i = 0 ; i < nvoi ; i++) {
+      for (int j = 0 ; j < npe_max*dim ; j++)
 	free(bmat[i][j]);
       free(bmat[i]);
     }
     free(bmat);
 
-    for(int i = 0 ; i < npe_max ; i++){
-      for(int j = 0 ; j < dim ; j++)
+    for (int i = 0 ; i < npe_max ; i++) {
+      for (int j = 0 ; j < dim ; j++)
 	free(dsh[i][j]);
       free(dsh[i]);
     }
@@ -47,7 +47,7 @@ int finalize(void){
     list_clear(&physical_list);
     list_clear(&function_list);
 
-    if(solver.type == SOLVER_PETSC){
+    if (solver.type == SOLVER_PETSC) {
       MatDestroy(&A);
       VecDestroy(&x);
       VecDestroy(&b);

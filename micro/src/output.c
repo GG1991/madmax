@@ -1,12 +1,12 @@
 #include "micro.h"
 
 
-int micro_print_info(void){
+int micro_print_info(void) {
 
   FILE *fm = fopen("micro_info.dat","w");
   int *i_data;
 
-  if(rank_mic == 0){
+  if (rank_mic == 0) {
     fprintf(fm,"-----------\n");
     fprintf(fm,"nproc %d\n", nproc_mic);
     fprintf(fm,"-----------\n");
@@ -21,85 +21,85 @@ int micro_print_info(void){
     fprintf(fm,"-----------\n");
   }
 
-  if(rank_mic == 0){
+  if (rank_mic == 0) {
     i_data = malloc( nproc_mic * sizeof(double));
     fprintf(fm,"%-20s","rank ");
-    for(int i = 0 ; i < nproc_mic ; i++)
+    for (int i = 0 ; i < nproc_mic ; i++)
       fprintf(fm,"%d ", i);
     fprintf(fm,"\n");
     fprintf(fm,"%-20s","");
-    for(int i = 0 ; i < nproc_mic ; i++)
+    for (int i = 0 ; i < nproc_mic ; i++)
       fprintf(fm,"--");
     fprintf(fm,"\n");
   }
 
   int ierr = MPI_Gather(&nelm, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
-  if(ierr) return 1;
+  if (ierr) return 1;
 
-  if(rank_mic == 0){
+  if (rank_mic == 0) {
     fprintf(fm,"%-20s","nelm");
-    for(int i = 0 ; i < nproc_mic ; i++)
+    for (int i = 0 ; i < nproc_mic ; i++)
       fprintf(fm,"%d ", i_data[i]);
     fprintf(fm,"\n");
   }
 
   ierr = MPI_Gather(&ney, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
-  if(ierr) return 1;
+  if (ierr) return 1;
 
-  if(rank_mic == 0){
+  if (rank_mic == 0) {
     fprintf(fm,"%-20s","eyl");
-    for(int i = 0 ; i < nproc_mic ; i++)
+    for (int i = 0 ; i < nproc_mic ; i++)
       fprintf(fm,"%d ", i_data[i]);
     fprintf(fm,"\n");
   }
 
   ierr = MPI_Gather(&nyl, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
-  if(ierr != 0) return 1;
+  if (ierr != 0) return 1;
 
-  if(rank_mic == 0){
+  if (rank_mic == 0) {
     fprintf(fm,"%-20s","nyl");
-    for(int i = 0 ; i < nproc_mic ; i++)
+    for (int i = 0 ; i < nproc_mic ; i++)
       fprintf(fm,"%d ", i_data[i]);
     fprintf(fm,"\n");
   }
 
   ierr = MPI_Gather(&ny_inf, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
-  if(ierr) return 1;
+  if (ierr) return 1;
 
-  if(rank_mic == 0){
+  if (rank_mic == 0) {
     fprintf(fm,"%-20s","ny_inf");
-    for(int i = 0 ; i < nproc_mic ; i++)
+    for (int i = 0 ; i < nproc_mic ; i++)
       fprintf(fm,"%d ", i_data[i]);
     fprintf(fm,"\n");
   }
 
   ierr = MPI_Gather(&ngho, 1, MPI_INT, (!rank_mic)?i_data:NULL, 1, MPI_INT, 0, MICRO_COMM);
-  if(ierr) return 1;
+  if (ierr) return 1;
 
-  if(rank_mic == 0){
+  if (rank_mic == 0) {
     fprintf(fm,"%-20s","ngho");
-    for(int i = 0 ; i < nproc_mic ; i++)
+    for (int i = 0 ; i < nproc_mic ; i++)
       fprintf(fm,"%d ", i_data[i]);
     fprintf(fm,"\n");
   }
 
   double norm;
 
-  if(b != NULL){
+  if (b != NULL) {
     VecNorm( b, NORM_2, &norm );
-    if( rank_mic == 0 )
+    if ( rank_mic == 0 )
       fprintf(fm,"|b| = %lf \n", norm);
   }
 
-  if(x != NULL){
+  if (x != NULL) {
     VecNorm(x, NORM_2, &norm);
-    if(rank_mic == 0)
+    if (rank_mic == 0)
       fprintf(fm,"|x| = %lf \n", norm);
   }
 
-  if(A != NULL){
+  if (A != NULL) {
     MatNorm(A, NORM_FROBENIUS, &norm);
-    if(rank_mic == 0)
+    if (rank_mic == 0)
       fprintf(fm,"|A| = %lf \n",norm);
   }
 
@@ -107,14 +107,14 @@ int micro_print_info(void){
   return 0;
 }
 
-int micro_pvtu(char *name){
+int micro_pvtu(char *name) {
 
   FILE    *fm;
   char     file_name[NBUF];
   double  *xvalues;
   Vec      xlocal;
 
-  if(rank_mic == 0){
+  if (rank_mic == 0) {
 
     strcpy(file_name,name);
     strcat(file_name,".pvtu");
@@ -144,7 +144,7 @@ int micro_pvtu(char *name){
 	"<PDataArray type=\"Int32\"   Name=\"elem_type\" NumberOfComponents=\"1\"/>\n"
 	"</PCellData>\n" , nvoi , nvoi);
 
-    for(int i = 0 ; i < nproc_mic ; i++ ){
+    for (int i = 0 ; i < nproc_mic ; i++ ) {
       sprintf(file_name,"%s_%d",name,i);
       fprintf(fm,	"<Piece Source=\"%s.vtu\"/>\n",file_name);
     }
@@ -157,7 +157,7 @@ int micro_pvtu(char *name){
 
   sprintf(file_name,"%s_%d.vtu",name,rank_mic);
   fm = fopen(file_name,"w");
-  if(!fm){
+  if (!fm) {
     myio_printf(MICRO_COMM,"Problem trying to opening file %s for writing\n", file_name);
     return 1;
   }
@@ -172,19 +172,19 @@ int micro_pvtu(char *name){
 
   double *coord = malloc( dim * sizeof(double));
 
-  for(int n = 0 ; n < nl ; n++){
+  for (int n = 0 ; n < nl ; n++) {
     get_node_local_coor( n , coord);
-    for(int d = 0 ; d < dim ; d++)
+    for (int d = 0 ; d < dim ; d++)
       fprintf(fm,"%e ",  coord[d]);
-    for(int d = dim ; d < 3 ; d++)
+    for (int d = dim ; d < 3 ; d++)
       fprintf(fm,"%e ",0.0);
     fprintf(fm,"\n");
   }
-  for(int n = 0 ; n < ngho ; n++ ){
+  for (int n = 0 ; n < ngho ; n++ ) {
     get_node_ghost_coor( n , coord );
-    for(int d = 0 ; d < dim ; d++ )
+    for (int d = 0 ; d < dim ; d++ )
       fprintf(fm,"%e ",  coord[d] );
-    for(int d = dim ; d < 3 ; d++ )
+    for (int d = dim ; d < 3 ; d++ )
       fprintf(fm,"%e ",0.0);
     fprintf(fm,"\n");
   }
@@ -193,9 +193,9 @@ int micro_pvtu(char *name){
   fprintf(fm,"<Cells>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"connectivity\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for(int e = 0 ; e < nelm ; e++){
+  for (int e = 0 ; e < nelm ; e++) {
     get_local_elem_node( e , loc_elem_index );
-    for(int n = 0 ; n < npe ; n++)
+    for (int n = 0 ; n < npe ; n++)
       fprintf(fm,"%d ", loc_elem_index[n]);
     fprintf(fm,"\n");
   }
@@ -203,7 +203,7 @@ int micro_pvtu(char *name){
 
   int ce = npe;
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"offsets\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for(int e = 0 ; e < nelm ; e++){
+  for (int e = 0 ; e < nelm ; e++) {
     fprintf(fm,"%d ", ce);
     ce += npe;
   }
@@ -211,7 +211,7 @@ int micro_pvtu(char *name){
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for(int e = 0 ; e < nelm ; e++)
+  for (int e = 0 ; e < nelm ; e++)
     fprintf(fm, "%d ",vtkcode(dim, npe));
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");
@@ -226,10 +226,10 @@ int micro_pvtu(char *name){
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   VecGetArray( xlocal , &xvalues );
-  for(int n = 0 ; n < (nl + ngho) ; n++){
-    for(int d = 0 ; d < dim ; d++)
+  for (int n = 0 ; n < (nl + ngho) ; n++) {
+    for (int d = 0 ; d < dim ; d++)
       fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
-    for(int d = dim ; d < 3 ; d++)
+    for (int d = dim ; d < 3 ; d++)
       fprintf(fm,"%lf ",0.0);
     fprintf(fm,"\n");
   }
@@ -242,10 +242,10 @@ int micro_pvtu(char *name){
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   VecGetArray(xlocal, &xvalues);
-  for(int n = 0 ; n < (nl + ngho) ; n++){
-    for(int d = 0 ; d < dim ; d++)
+  for (int n = 0 ; n < (nl + ngho) ; n++) {
+    for (int d = 0 ; d < dim ; d++)
       fprintf(fm, "%lf ", xvalues[ n * dim + d ]);
-    for(int d = dim ; d < 3 ; d++)
+    for (int d = dim ; d < 3 ; d++)
       fprintf(fm, "%lf ", 0.0);
     fprintf(fm,"\n");
   }
@@ -256,29 +256,29 @@ int micro_pvtu(char *name){
   fprintf(fm,"<CellData>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for(int e = 0; e < nelm ; e++ )
+  for (int e = 0; e < nelm ; e++ )
     fprintf( fm, "%d ", rank_mic );
   fprintf( fm, "\n");
   fprintf( fm, "</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"strain\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for(int e = 0; e < nelm ; e++){
-    for(int v = 0 ; v < nvoi ; v++)
+  for (int e = 0; e < nelm ; e++) {
+    for (int v = 0 ; v < nvoi ; v++)
       fprintf(fm, "%lf ", elem_strain[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"stress\" NumberOfComponents=\"%d\" format=\"ascii\">\n",nvoi);
-  for(int e = 0; e < nelm ; e++){
-    for(int v = 0 ; v < nvoi ; v++)
+  for (int e = 0; e < nelm ; e++) {
+    for (int v = 0 ; v < nvoi ; v++)
       fprintf(fm, "%lf ", elem_stress[ e*nvoi + v ]);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"elem_type\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-  for(int e = 0; e < nelm ; e++)
+  for (int e = 0; e < nelm ; e++)
     fprintf(fm, "%d ", elem_type[e]);
   fprintf(fm,"\n");
   fprintf(fm,"</DataArray>\n");

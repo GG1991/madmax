@@ -1,7 +1,7 @@
 #include "comm.h"
 
 
-int comm_init_message(message_t *message){
+int comm_init_message(message_t *message) {
 
   message->action = ACTION_NULL;
 
@@ -25,37 +25,37 @@ int comm_init_message(message_t *message){
 }
 
 
-int comm_finalize_message(void){
+int comm_finalize_message(void) {
 
   return MPI_Type_free(&mpi_message_t);
 }
 
 
-int comm_macro_send(message_t *message, comm_t *comm){
+int comm_macro_send(message_t *message, comm_t *comm) {
 
   return MPI_Ssend(message, 1, mpi_message_t, comm->micro_slave, 0, WORLD_COMM);
 }
 
 
-int comm_macro_recv(message_t *message, comm_t *comm){
+int comm_macro_recv(message_t *message, comm_t *comm) {
 
   return MPI_Recv(message, 1, mpi_message_t, comm->micro_slave, 0, WORLD_COMM, MPI_STATUS_IGNORE);
 }
 
 
-int comm_micro_send(message_t *message, comm_t *comm){
+int comm_micro_send(message_t *message, comm_t *comm) {
 
   return MPI_Ssend(message, 1, mpi_message_t, comm->macro_leader, 0, WORLD_COMM);
 }
 
 
-int comm_micro_recv(message_t *message, comm_t *comm){
+int comm_micro_recv(message_t *message, comm_t *comm) {
 
   return MPI_Recv(message, 1, mpi_message_t, comm->macro_leader, 0, WORLD_COMM, MPI_STATUS_IGNORE);
 }
 
 
-int comm_coloring(MPI_Comm WORLD_COMM, comm_t *comm, MPI_Comm *LOCAL_COMM){
+int comm_coloring(MPI_Comm WORLD_COMM, comm_t *comm, MPI_Comm *LOCAL_COMM) {
 
   int  nproc_world, rank_world;
   MPI_Comm_size(WORLD_COMM, &nproc_world);
@@ -65,29 +65,29 @@ int comm_coloring(MPI_Comm WORLD_COMM, comm_t *comm, MPI_Comm *LOCAL_COMM){
   int ierr = MPI_Allgather(&comm->color, 1, MPI_INT, id_vec, 1, MPI_INT, WORLD_COMM);
 
   int nproc_macro = 0;  int nproc_micro = 0;
-  for(int i = 0 ; i < nproc_world ; i++){
-    if(id_vec[i] == COLOR_MACRO)
+  for (int i = 0 ; i < nproc_world ; i++) {
+    if (id_vec[i] == COLOR_MACRO)
       nproc_macro++;
-    else if(id_vec[i] == COLOR_MICRO)
+    else if (id_vec[i] == COLOR_MICRO)
       nproc_micro++;
     else
       return 1;
   }
 
-  if(nproc_micro != nproc_macro) return 1;
+  if (nproc_micro != nproc_macro) return 1;
 
-  if(comm->color == COLOR_MICRO){
+  if (comm->color == COLOR_MICRO) {
 
     int micro_position = 0;
-    for(int i = 0 ; i < rank_world ; i++)
-      if(id_vec[i] == COLOR_MICRO) micro_position++;
+    for (int i = 0 ; i < rank_world ; i++)
+      if (id_vec[i] == COLOR_MICRO) micro_position++;
     comm->color += micro_position;
 
     int macro_count = 0; int macro_leader = 0;
-    while(macro_leader < nproc_world){
+    while (macro_leader < nproc_world) {
 
-      if(id_vec[macro_leader] == COLOR_MACRO){
-	if(macro_count == micro_position) break;
+      if (id_vec[macro_leader] == COLOR_MACRO) {
+	if (macro_count == micro_position) break;
 	macro_count++;
       }
       macro_leader++;
@@ -97,14 +97,14 @@ int comm_coloring(MPI_Comm WORLD_COMM, comm_t *comm, MPI_Comm *LOCAL_COMM){
   }else{
 
     int macro_position = 0;
-    for(int i = 0 ; i < rank_world ; i++)
-      if(id_vec[i] == COLOR_MACRO) macro_position++;
+    for (int i = 0 ; i < rank_world ; i++)
+      if (id_vec[i] == COLOR_MACRO) macro_position++;
 
     int micro_count = 0; int micro_slave = 0;
-    while(micro_slave < nproc_world){
+    while (micro_slave < nproc_world) {
 
-      if(id_vec[micro_slave] == COLOR_MICRO){
-	if(micro_count == macro_position) break;
+      if (id_vec[micro_slave] == COLOR_MICRO) {
+	if (micro_count == macro_position) break;
 	micro_count++;
       }
       micro_slave++;

@@ -16,24 +16,24 @@ flags_t flags;
 solver_t solver;
 comm_t comm;
 
-#define CHECK_AND_GOTO(error){\
-if(error){\
+#define CHECK_AND_GOTO(error) {\
+if (error) {\
   myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);\
   goto end;}}
 
-#define CHECK_INST_ELSE_GOTO(cond, instr){\
-  if(cond){\
+#define CHECK_INST_ELSE_GOTO(cond, instr) {\
+  if (cond) {\
     instr\
   }else{\
     myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);\
     goto end;}}
 
-#define CHECK_ERROR_GOTO(message){\
-  if(ierr != 0){\
+#define CHECK_ERROR_GOTO(message) {\
+  if (ierr != 0) {\
     myio_printf(MICRO_COMM, "%s\n", message);\
     goto end;}}
 
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
 
   int ierr;
   int values_i[10];
@@ -46,16 +46,16 @@ int main(int argc, char **argv){
   init_variables();
 
   myio_comm_line_search_option(&command_line, "-help", &found);
-  if(found == true){
+  if (found == true) {
     myio_printf(MACRO_COMM, "%s", help);
     goto end;
   }
 
   myio_comm_line_search_option(&command_line, "-coupl", &found);
-  if(found == true) flags.coupled = true;
+  if (found == true) flags.coupled = true;
 
   comm.color = COLOR_MICRO; /* color changes */
-  if(flags.coupled == true){
+  if (flags.coupled == true) {
     ierr = comm_coloring(WORLD_COMM, &comm, &MICRO_COMM); CHECK_AND_GOTO(ierr);
   }
 
@@ -77,13 +77,13 @@ int main(int argc, char **argv){
   ly = micro_struct.size[1];
   lz = (dim == 3) ? micro_struct.size[2] : -1;
 
-  if(dim == 2) nval_expect = 2;
-  if(dim == 3) nval_expect = 3;
+  if (dim == 2) nval_expect = 2;
+  if (dim == 3) nval_expect = 3;
 
   myio_comm_line_get_int_array(&command_line, "-struct_n", values_i, nval_expect, &nval_found, &found);
-  if(found){
+  if (found) {
 
-    if(nval_found != nval_expect){
+    if (nval_found != nval_expect) {
       myio_printf(MICRO_COMM,"-struct_n should include %d arguments\n", nval_expect);
       goto end;
     }
@@ -105,15 +105,15 @@ int main(int argc, char **argv){
     hz   = (dim == 3) ? (lz/nez) : -1;
 
     int *nyl_arr = malloc(nproc_mic * sizeof(int));
-    ierr = MPI_Allgather(&nyl, 1, MPI_INT, nyl_arr, 1, MPI_INT, MICRO_COMM); if(ierr) return 1;
+    ierr = MPI_Allgather(&nyl, 1, MPI_INT, nyl_arr, 1, MPI_INT, MICRO_COMM); if (ierr) return 1;
     ny_inf = 0;
-    for(int i = 0 ; i < rank_mic ; i++)
+    for (int i = 0 ; i < rank_mic ; i++)
       ny_inf += nyl_arr[i];
     free(nyl_arr);
 
     npe  = (dim == 2) ? 4 : 8;
     ngp  = (dim == 2) ? 4 : 8;
-    if(ny < nproc_mic){
+    if (ny < nproc_mic) {
       myio_printf(MICRO_COMM, "ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
       goto end;
     }
@@ -125,7 +125,7 @@ int main(int argc, char **argv){
   }
 
   center_coor = malloc(dim*sizeof(double));
-  if(dim == 2){
+  if (dim == 2) {
     center_coor[0] = lx / 2;
     center_coor[1] = ly / 2;
     vol_elem = hx*hy;
@@ -144,27 +144,27 @@ int main(int argc, char **argv){
   ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr)
 
   myio_comm_line_search_option(&command_line, "-homo_us", &found);
-  if(found) params.homog_method = HOMOG_METHOD_UNIF_STRAINS;
+  if (found) params.homog_method = HOMOG_METHOD_UNIF_STRAINS;
 
   myio_comm_line_search_option(&command_line, "-homo_tp", &found);
-  if(found) params.homog_method = HOMOG_METHOD_TAYLOR_PARALLEL;
+  if (found) params.homog_method = HOMOG_METHOD_TAYLOR_PARALLEL;
 
   myio_comm_line_search_option(&command_line, "-homo_ts", &found);
-  if(found) params.homog_method = HOMOG_METHOD_TAYLOR_SERIAL;
+  if (found) params.homog_method = HOMOG_METHOD_TAYLOR_SERIAL;
 
   myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
   myio_comm_line_get_int(&command_line, "-nl_min_norm_tol", &params.non_linear_max_its, &found);
 
   myio_comm_line_search_option(&command_line, "-print_matrices", &found);
-  if(found == true)
+  if (found == true)
     flags.print_matrices = true;
 
   myio_comm_line_search_option(&command_line, "-print_vectors", &found);
-  if(found == true)
+  if (found == true)
     flags.print_vectors = true;
 
   myio_comm_line_search_option(&command_line, "-print_pvtu", &found);
-  if(found == true &&
+  if (found == true &&
       params.homog_method != HOMOG_METHOD_TAYLOR_PARALLEL &&
       params.homog_method != HOMOG_METHOD_TAYLOR_SERIAL)
     flags.print_pvtu = true;
@@ -185,9 +185,9 @@ int main(int argc, char **argv){
 
   init_shapes(&struct_sh, &struct_dsh, &struct_wp);
 
-  for(int gp = 0; gp < ngp ; gp++){
-    for(int is = 0; is < npe ; is++){
-      if(dim == 2){
+  for (int gp = 0; gp < ngp ; gp++) {
+    for (int is = 0; is < npe ; is++) {
+      if (dim == 2) {
 	struct_bmat[0][is*dim + 0][gp] = struct_dsh[is][0][gp];
 	struct_bmat[0][is*dim + 1][gp] = 0;
 	struct_bmat[1][is*dim + 0][gp] = 0;
@@ -209,13 +209,13 @@ int main(int argc, char **argv){
 
   double *c_tangent_ave = malloc(36*sizeof(double));
 
-  if(flags.coupled == true){
+  if (flags.coupled == true) {
 
-    while(message.action != ACTION_MICRO_END){
+    while (message.action != ACTION_MICRO_END) {
 
       ierr = comm_micro_recv(&message, &comm);
 
-      switch(message.action){
+      switch(message.action) {
 
 	case ACTION_MICRO_CALC_STRESS:
 
@@ -245,15 +245,15 @@ int main(int argc, char **argv){
 
       }
 
-      if(message.action != ACTION_MICRO_END)
+      if (message.action != ACTION_MICRO_END)
 	ierr = comm_micro_send(&message, &comm);
     }
   }
   else{
 
     myio_printf(MICRO_COMM,"\nConstitutive Average Tensor\n");
-    for(int i = 0 ; i < nvoi ; i++){
-      for(int j = 0 ; j < nvoi ; j++)
+    for (int i = 0 ; i < nvoi ; i++) {
+      for (int j = 0 ; j < nvoi ; j++)
 	myio_printf(MICRO_COMM, "%e ", (fabs(params.c_tangent_linear[i*nvoi+j])>1.0) ? params.c_tangent_linear[i*nvoi+j] : 0.0);
       myio_printf(MICRO_COMM, "\n");
     }
@@ -278,13 +278,13 @@ end:
 }
 
 
-int micro_check_material_and_elem_type(list_t *material_list, int *elem_type, int nelm){
+int micro_check_material_and_elem_type(list_t *material_list, int *elem_type, int nelm) {
 
   char *word_to_search;
 
-  for(int e ; e < nelm ; e++ ){
+  for (int e ; e < nelm ; e++ ) {
 
-    switch(elem_type[e]){
+    switch(elem_type[e]) {
 
       case ID_FIBER:
 	word_to_search = strdup("FIBER");
@@ -301,13 +301,13 @@ int micro_check_material_and_elem_type(list_t *material_list, int *elem_type, in
     material_t  *mat_p;
     node_list_t *pm = material_list->head;
 
-    while(pm != NULL){
+    while (pm != NULL) {
       mat_p = (material_t *)pm->data;
-      if(strcmp(mat_p->name, word_to_search) == 0) break;
+      if (strcmp(mat_p->name, word_to_search) == 0) break;
       pm = pm->next;
     }
 
-    if(pm == NULL) return 1;
+    if (pm == NULL) return 1;
   }
 
   return 0;

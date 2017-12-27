@@ -11,7 +11,7 @@
 #include "list.h"
 
 
-int list_init(list_t * list, int sizedata, fcmp cmp){
+int list_init(list_t * list, int sizedata, fcmp cmp) {
 
     list->head     = NULL;
     list->tail     = NULL;
@@ -23,7 +23,7 @@ int list_init(list_t * list, int sizedata, fcmp cmp){
 
 }
 
-int list_insert_se(list_t * list, void *data){
+int list_insert_se(list_t * list, void *data) {
 
     /* Insert sort exclusive an element
      *
@@ -37,50 +37,50 @@ int list_insert_se(list_t * list, void *data){
     node_list_t * node, *onode;
     void * aux;
 
-    if(!list)
+    if (!list)
         return 1;
     node = (node_list_t *)malloc(sizeof(node_list_t));
-    if(!node)
+    if (!node)
         return -1;
-    if (list->sizedata){
+    if (list->sizedata) {
         node->data = (void*)malloc(list->sizedata);
-        if(!node->data)
+        if (!node->data)
             return 1;
         memcpy(node->data,data,list->sizedata);
     }else{
         node->data = data;
     }
     node->next=NULL;
-    if(!list->cmp)
+    if (!list->cmp)
         return -1;
-    if(list->sizelist==0){
+    if (list->sizelist==0) {
         list->sizelist ++;
         list->head = list->tail = node;
         return 0;
     }
     onode = list->head;
-    while((*list->cmp)(onode->data,data)<0 && onode->next!=NULL){
+    while ((*list->cmp)(onode->data,data)<0 && onode->next!=NULL) {
         onode = onode->next;
     }
-    if((*list->cmp)(onode->data,data)==0){
+    if ((*list->cmp)(onode->data,data)==0) {
         free(node);
         return 1;
     }
     list->sizelist ++;
     node->next = onode->next;
     onode->next = node;
-    if((*list->cmp)(onode->data,data)>0){
+    if ((*list->cmp)(onode->data,data)>0) {
         aux = onode->data;
         onode->data = node->data;
         node->data = aux;
     }
-    if(onode==list->tail)
+    if (onode==list->tail)
         list->tail=node;
     return 0;
 
 }
 
-int list_insertlast(list_t * list, void *data){
+int list_insertlast(list_t * list, void *data) {
 
     /* Insert sort exclusive an element
      *
@@ -90,21 +90,21 @@ int list_insertlast(list_t * list, void *data){
 
     node_list_t * node;
 
-    if(!list)
+    if (!list)
         return 1;
     node = (node_list_t *)malloc(sizeof(node_list_t));
-    if(!node)
+    if (!node)
         return 1;
-    if(list->sizedata){
+    if (list->sizedata) {
         node->data = (void*)malloc(list->sizedata);
-        if(!node->data)
+        if (!node->data)
             return 1;
         memcpy(node->data,data,list->sizedata);
     }else{
         node->data = data;
     }
     node->next=NULL;
-    if(list->sizelist==0){
+    if (list->sizelist==0) {
         list->sizelist ++;
         list->head = list->tail = node;
         return 0;
@@ -116,7 +116,7 @@ int list_insertlast(list_t * list, void *data){
 
 }
 
-int list_delfirst(list_t * list){
+int list_delfirst(list_t * list) {
 
     /* Deletes the first element in the list
      *
@@ -125,67 +125,67 @@ int list_delfirst(list_t * list){
      */
 
     node_list_t *aux;
-    if(!list)
+    if (!list)
         return 1;
-    if(!list->head)
+    if (!list->head)
         return 1;
     aux = list->head;
     list->head = aux->next;
-    if(aux->data)
+    if (aux->data)
       free(aux->data);
     free(aux);
-    if(list->sizelist == 1)
+    if (list->sizelist == 1)
       list->tail=NULL;
     list->sizelist--;
     return 0;
 }
 
-int list_del(list_t *list, node_list_t* pNod){
+int list_del(list_t *list, node_list_t* pNod) {
 
     /* Removes the element if
      * exists
      */
 
     node_list_t *pNodA;
-    if(!list)
+    if (!list)
         return 1;
-    if(!pNod)
+    if (!pNod)
         return 1;
-    if(!list->sizelist)
+    if (!list->sizelist)
         return 0;
     pNodA=list->head;
-    if(pNodA==pNod){
+    if (pNodA==pNod) {
         list->sizelist--;
         list->head=pNod->next;
-        if(list->sizelist==0){
+        if (list->sizelist==0) {
             list->tail=NULL;
         }
         free(pNod);
         return 0;
     }
-    while(pNodA->next){
-        if(pNodA->next==pNod)
+    while (pNodA->next) {
+        if (pNodA->next==pNod)
             break;
         pNodA=pNodA->next;
     }
-    if(!pNodA->next)
+    if (!pNodA->next)
         return 0;
     list->sizelist--;
     pNodA->next=pNod->next;
-    if(!pNod->next)
+    if (!pNod->next)
         list->tail=pNodA;
     free(pNod);
     return 0;
 }
 
-int list_clear(list_t *list){
+int list_clear(list_t *list) {
 
     /* Frees the memory allocated in all the list
     */
 
-    if(!list)
+    if (!list)
         return 0;
-    while(list->sizelist){
+    while (list->sizelist) {
         list_delfirst(list);
     }
     return 0;
