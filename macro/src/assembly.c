@@ -118,21 +118,16 @@ int assembly_AM(void) {
       ierr = assembly_get_c_tan(NULL, e, gp, strain_gp, c); if (ierr != 0) return 1;
       ierr = assembly_get_rho(NULL, e, &rho_gp); if (ierr != 0) return 1;
 
-      for (int i = 0 ; i < npe*dim ; i++) {
-	for (int j = 0 ; j < npe*dim ; j++) {
-	  for (int k = 0; k < nvoi ; k++) {
+      for (int i = 0 ; i < npe*dim ; i++)
+	for (int j = 0 ; j < npe*dim ; j++)
+	  for (int k = 0; k < nvoi ; k++)
 	    for (int h = 0; h < nvoi ; h++)
 	      k_elem[i*npe*dim + j] += bmat[h][i][gp]*c[h*nvoi + k]*bmat[k][j][gp]*wp[gp]*detj[gp];
-	  }
-	}
-      }
 
-      for (int d = 0 ; d < dim ; d++) {
-	for (int i = 0 ; i < npe; i++) {
+      for (int d = 0 ; d < dim ; d++)
+	for (int i = 0 ; i < npe; i++)
 	  for (int j = 0 ; j < npe; j++)
 	    m_elem[(i*dim)*(npe*dim) + j*dim + (d*dim*npe + d)] += rho_gp*sh[i][gp]*sh[j][gp]*wp[gp]*detj[gp];
-	}
-      }
 
     }
     MatSetValues(A, npe*dim, glo_elem_index, npe*dim, glo_elem_index, k_elem, ADD_VALUES);
@@ -196,18 +191,14 @@ int assembly_A(void) {
 
       ierr = assembly_get_c_tan(NULL , e , gp , strain_gp , c); if (ierr != 0) return ierr;
 
-      for (int i = 0 ; i < npe*dim ; i++) {
-	for (int j = 0 ; j < npe*dim ; j++) {
-	  for (int k = 0; k < nvoi ; k++) {
+      for (int i = 0 ; i < npe*dim ; i++)
+	for (int j = 0 ; j < npe*dim ; j++)
+	  for (int k = 0; k < nvoi ; k++)
 	    for (int h = 0; h < nvoi ; h++)
 	      k_elem[ i*npe*dim + j] += bmat[h][i][gp]*c[h*nvoi + k]*bmat[k][j][gp]*wp[gp]*detj[gp];
-	  }
-	}
-      }
 
     }
     MatSetValues(A, npe*dim, glo_elem_index, npe*dim, glo_elem_index, k_elem, ADD_VALUES);
-
   }
 
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
