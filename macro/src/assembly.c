@@ -16,23 +16,23 @@ int assembly_b(double *norm) {
 
   for (int e = 0 ; e < mesh.nelm_local ; e++) {
 
-    get_local_elem_index(e, loc_elem_index);
+    assembly_get_local_elem_index(e, loc_elem_index);
     int npe = mesh.eptr[e+1] - mesh.eptr[e];
     int ngp = npe;
 
     ARRAY_SET_TO_ZERO(res_elem, npe*dim)
 
-    ierr = get_dsh(e, loc_elem_index, dsh, detj);
-    ierr = get_bmat(e, dsh, bmat);
-    ierr = get_wp(dim, npe, &wp);
+    ierr = assembly_get_dsh(e, loc_elem_index, dsh, detj);
+    ierr = assembly_get_bmat(e, dsh, bmat);
+    ierr = assembly_get_wp(dim, npe, &wp);
 
     for (int gp = 0; gp < ngp ; gp++) {
 
       if (detj[gp] < 0.0) flag_neg_detj = 1;
       detj[gp] = fabs(detj[gp]);
 
-      get_strain(e, gp, loc_elem_index, dsh, bmat, strain_gp);
-      get_stress(e, gp, strain_gp, stress_gp);
+      assembly_get_strain(e, gp, loc_elem_index, dsh, bmat, strain_gp);
+      assembly_get_stress(e, gp, strain_gp, stress_gp);
 
       for (int i = 0 ; i < npe*dim ; i++) {
 	for (int j = 0; j < nvoi ; j++)
@@ -102,21 +102,21 @@ int assembly_AM(void) {
     ARRAY_SET_TO_ZERO(k_elem, npe*dim*npe*dim);
     ARRAY_SET_TO_ZERO(m_elem, npe*dim*npe*dim);
 
-    get_local_elem_index ( e, loc_elem_index );
-    get_global_elem_index( e, glo_elem_index );
+    assembly_get_local_elem_index(e, loc_elem_index);
+    assembly_get_global_elem_index(e, glo_elem_index);
 
-    get_sh( dim, npe, &sh );
-    get_dsh( e, loc_elem_index, dsh, detj);
-    get_bmat( e, dsh, bmat );
-    get_wp( dim, npe, &wp );
+    assembly_get_sh(dim, npe, &sh);
+    assembly_get_dsh(e, loc_elem_index, dsh, detj);
+    assembly_get_bmat(e, dsh, bmat);
+    assembly_get_wp(dim, npe, &wp);
 
     for (int gp = 0; gp < ngp ; gp++) {
 
       detj[gp] = fabs(detj[gp]);
 
-      ierr = get_strain(e , gp, loc_elem_index, dsh, bmat, strain_gp);
-      ierr = get_c_tan(NULL, e, gp, strain_gp, c); if (ierr != 0) return 1;
-      ierr = get_rho(NULL, e, &rho_gp); if (ierr != 0) return 1;
+      ierr = assembly_get_strain(e , gp, loc_elem_index, dsh, bmat, strain_gp);
+      ierr = assembly_get_c_tan(NULL, e, gp, strain_gp, c); if (ierr != 0) return 1;
+      ierr = assembly_get_rho(NULL, e, &rho_gp); if (ierr != 0) return 1;
 
       for (int i = 0 ; i < npe*dim ; i++) {
 	for (int j = 0 ; j < npe*dim ; j++) {
@@ -181,20 +181,20 @@ int assembly_A(void) {
 
     ARRAY_SET_TO_ZERO(k_elem, npe*dim*npe*dim);
 
-    get_local_elem_index (e, loc_elem_index);
-    get_global_elem_index(e, glo_elem_index);
+    assembly_get_local_elem_index (e, loc_elem_index);
+    assembly_get_global_elem_index(e, glo_elem_index);
 
-    get_dsh(e, loc_elem_index, dsh, detj);
-    get_bmat(e, dsh, bmat);
-    get_wp(dim, npe, &wp);
+    assembly_get_dsh(e, loc_elem_index, dsh, detj);
+    assembly_get_bmat(e, dsh, bmat);
+    assembly_get_wp(dim, npe, &wp);
 
     for (int gp = 0; gp < ngp ; gp++) {
 
       detj[gp] = fabs(detj[gp]);
 
-      get_strain(e, gp, loc_elem_index, dsh, bmat, strain_gp);
+      assembly_get_strain(e, gp, loc_elem_index, dsh, bmat, strain_gp);
 
-      ierr = get_c_tan(NULL , e , gp , strain_gp , c); if (ierr != 0) return ierr;
+      ierr = assembly_get_c_tan(NULL , e , gp , strain_gp , c); if (ierr != 0) return ierr;
 
       for (int i = 0 ; i < npe*dim ; i++) {
 	for (int j = 0 ; j < npe*dim ; j++) {
@@ -233,7 +233,7 @@ int assembly_A(void) {
 #endif
 
 
-int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj)
+int assembly_get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj)
 {
   double ***dsh_master;
   int npe = mesh.eptr[e+1] - mesh.eptr[e];
@@ -254,7 +254,7 @@ int get_dsh(int e, int *loc_elem_index, double ***dsh, double *detj)
 }
 
 
-int get_bmat(int e, double ***dsh, double ***bmat)
+int assembly_get_bmat(int e, double ***dsh, double ***bmat)
 {
   int npe = mesh.eptr[e+1] - mesh.eptr[e];
   int ngp = npe;
@@ -276,19 +276,19 @@ int get_bmat(int e, double ***dsh, double ***bmat)
 }
 
 
-int get_sh(int dim, int npe, double ***sh)
+int assembly_get_sh(int dim, int npe, double ***sh)
 {
   return fem_get_sh(npe, dim, sh);
 }
 
 
-int get_wp(int dim, int npe, double **wp)
+int assembly_get_wp(int dim, int npe, double **wp)
 {
   return fem_get_wp(npe, dim, wp);
 }
 
 
-int get_global_elem_index(int e, int *glo_elem_index)
+int assembly_get_global_elem_index(int e, int *glo_elem_index)
 {
   int  npe = mesh.eptr[e+1] - mesh.eptr[e];
   for (int n = 0 ; n < npe ; n++)
@@ -298,7 +298,7 @@ int get_global_elem_index(int e, int *glo_elem_index)
 }
 
 
-int get_local_elem_index(int e, int *loc_elem_index)
+int assembly_get_local_elem_index(int e, int *loc_elem_index)
 {
   int  npe = mesh.eptr[e+1] - mesh.eptr[e];
   for (int n = 0 ; n < npe ; n++)
@@ -308,10 +308,9 @@ int get_local_elem_index(int e, int *loc_elem_index)
 }
 
 
-int get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat, double *strain_gp)
+int assembly_get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double ***bmat, double *strain_gp)
 {
-  double  *x_arr;
-  Vec      x_loc;
+  double *x_arr; Vec x_loc;
   VecGhostGetLocalForm(x, &x_loc);
   VecGetArray(x_loc, &x_arr);
 
@@ -333,11 +332,11 @@ int get_strain(int e , int gp, int *loc_elem_index, double ***dsh_gp,  double **
 }
 
 
-int get_stress(int e, int gp, double *strain_gp, double *stress_gp)
+int assembly_get_stress(int e, int gp, double *strain_gp, double *stress_gp)
 {
-  char        name_s[64];
-  material_t  *mat_p;
-  get_mat_name(mesh.elm_id[e], name_s);
+  char name_s[64];
+  material_t *mat_p;
+  assembly_get_mat_name(mesh.elm_id[e], name_s);
 
   node_list_t *pn = material_list.head;
   while (pn != NULL) {
@@ -353,12 +352,10 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp)
   if (mat_p->type_id == MAT_MICRO) {
 
     message.action = ACTION_MICRO_CALC_STRESS;
-
     ARRAY_COPY(message.strain_mac, strain_gp, nvoi);
-
     comm_macro_send(&message, &comm);
-    comm_macro_recv(&message, &comm);
 
+    comm_macro_recv(&message, &comm);
     ARRAY_COPY(stress_gp, message.stress_ave, nvoi);
 
   }
@@ -369,11 +366,11 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp)
 }
 
 
-int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
+int assembly_get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 {
   char name_s[64];
   material_t *mat_p;
-  get_mat_name(mesh.elm_id[e], name_s);
+  assembly_get_mat_name(mesh.elm_id[e], name_s);
 
   node_list_t *pn = material_list.head;
   while (pn != NULL) {
@@ -405,12 +402,12 @@ int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 }
 
 
-int get_rho(const char *name, int e, double *rho)
+int assembly_get_rho(const char *name, int e, double *rho)
 {
   char name_s[64];
   int ierr;
 
-  get_mat_name(mesh.elm_id[e], name_s);
+  assembly_get_mat_name(mesh.elm_id[e], name_s);
 
   material_t *mat_p;
   node_list_t *pn = material_list.head;
@@ -427,10 +424,9 @@ int get_rho(const char *name, int e, double *rho)
   if (mat_p->type_id == MAT_MICRO) {
 
     message.action = ACTION_MICRO_CALC_RHO;
-
     ierr = comm_macro_send(&message, &comm);
-    ierr = comm_macro_recv(&message, &comm);
 
+    ierr = comm_macro_recv(&message, &comm);
     *rho = message.rho;
   }
   else
@@ -440,12 +436,10 @@ int get_rho(const char *name, int e, double *rho)
 }
 
 
-int get_mat_name(int id, char *name_s)
+int assembly_get_mat_name(int id, char *name_s)
 {
-  node_list_t *pn;
-  physical_t  *phy_p;
-
-  pn = physical_list.head;
+  physical_t *phy_p;
+  node_list_t *pn = physical_list.head;
   while (pn != NULL) {
     phy_p = ( physical_t * )pn->data;
     if ( id == phy_p->id ) break;
@@ -459,7 +453,7 @@ int get_mat_name(int id, char *name_s)
 }
 
 
-int get_elem_properties(void)
+int assembly_get_elem_properties(void)
 {
   double *strain_aux = malloc(nvoi*sizeof(double));
   double *stress_aux = malloc(nvoi*sizeof(double));
@@ -474,18 +468,18 @@ int get_elem_properties(void)
     for (int v = 0 ; v < nvoi ; v++)
       strain_aux[v] = stress_aux[v] = 0.0;
 
-    get_local_elem_index(e, loc_elem_index);
+    assembly_get_local_elem_index(e, loc_elem_index);
 
-    get_dsh(e, loc_elem_index, dsh, detj);
-    get_bmat(e, dsh, bmat);
-    get_wp(dim, npe, &wp);
+    assembly_get_dsh(e, loc_elem_index, dsh, detj);
+    assembly_get_bmat(e, dsh, bmat);
+    assembly_get_wp(dim, npe, &wp);
 
     for (int gp = 0 ; gp < ngp ; gp++) {
 
       detj[gp] = fabs(detj[gp]);
 
-      get_strain(e, gp, loc_elem_index, dsh, bmat, strain_gp);
-      get_stress(e, gp, strain_gp, stress_gp);
+     assembly_get_strain(e, gp, loc_elem_index, dsh, bmat, strain_gp);
+     assembly_get_stress(e, gp, strain_gp, stress_gp);
       for (int v = 0 ; v < nvoi ; v++) {
 	strain_aux[v] += strain_gp[v] * detj[gp] * wp[gp];
 	stress_aux[v] += stress_gp[v] * detj[gp] * wp[gp];

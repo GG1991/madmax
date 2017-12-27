@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
       myio_printf(MACRO_COMM, "omega %d = %e   error = %e\n", i, params.eigen_vals[i], error);
 
       if (flags.print_pvtu == true) {
-	get_elem_properties();
+	assembly_get_elem_properties();
 	char filename[64];
 	sprintf(filename, "macro_eigen_%d", i);
 	macro_pvtu(filename);
@@ -252,7 +252,7 @@ int main(int argc, char **argv) {
       myio_printf(MACRO_COMM, "\n");
 
       if (flags.print_pvtu == true) {
-	get_elem_properties();
+	assembly_get_elem_properties();
 	char filename[64];
 	sprintf(filename, "macro_t_%d", params.ts);
 	macro_pvtu(filename);
