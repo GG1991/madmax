@@ -97,8 +97,6 @@ typedef struct{
 extern params_t params;
 extern flags_t flags;
 
-int read_bc(void);
-
 int assembly_A(void);
 int assembly_b(double *norm);
 int assembly_AM(void);
@@ -126,6 +124,7 @@ int alloc_memory(void);
 
 int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh);
 
+int boundary_read(void);
 int boundary_update(double time);
 int boundary_setx(void);
 

@@ -154,7 +154,7 @@ int main(int argc, char **argv){
   ierr = mesh_reenumerate(MACRO_COMM, &mesh);
   CHECK_ERROR_GOTO(ierr, RED "error reenumbering nodes" NORMAL "\n")
 
-  ierr = read_bc();
+  ierr = boundary_read();
   CHECK_ERROR_GOTO(ierr, RED "error reading boundaries from mesh" NORMAL "\n")
 
   list_init(&physical_list, sizeof(physical_t), NULL );
@@ -313,46 +313,6 @@ int copy_gmsh_to_mesh(gmsh_mesh_t *gmsh_mesh, mesh_t *mesh){
   ARRAY_COPY(mesh->coord, gmsh_mesh->coord, mesh->nnods_total*dim)
 
   return 0;
-}
-
-
-int read_bc(void){
-
-  int ierr;
-  mesh_boundary_t *bou;
-  node_list_t *pn = boundary_list.head;
-
-  while(pn != NULL){
-
-    int *ix, n;
-    bou = (mesh_boundary_t *)pn->data;
-    ierr = gmsh_get_node_index(mesh_n, bou->name, mesh.nnods_local, mesh.local_nods, dim, &n, &ix);
-
-    bou->ndir = n;
-    bou->ndirix = bou->ndir * bou->ndirpn;
-    bou->dir_val = malloc(bou->ndirix * sizeof(double));
-    bou->dir_loc_ixs = malloc(bou->ndirix * sizeof(int));
-    bou->dir_glo_ixs = malloc(bou->ndirix * sizeof(int));
-
-    for(int i = 0 ; i < n ; i++){
-
-      int da = 0;
-      int *p = bsearch(&ix[i], mesh.local_nods, mesh.nnods_local, sizeof(int), mesh_cmpfunc);
-
-      for(int d = 0 ; d < dim ; d++){
-	if(bou->kind & (1<<d)){
-	  bou->dir_loc_ixs[i*(bou->ndirpn) + da] = (p - mesh.local_nods) * dim + d;
-	  bou->dir_glo_ixs[i*(bou->ndirpn) + da] = mesh.local_to_global[(p - mesh.local_nods)] * dim + d;
-	  da++;
-	}
-      }
-    }
-
-    free(ix);
-    pn = pn->next;
-  }
-
-  return ierr;
 }
 
 
