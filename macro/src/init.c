@@ -28,6 +28,8 @@ void init_variables(void){
   flags.print_vectors = false;
   flags.print_matrices = false;
 
+  mesh.partition = PARMETIS_GEOM;
+
   comm_init_message(&message);
 
   A = NULL;

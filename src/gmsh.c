@@ -1,24 +1,20 @@
 #include "gmsh.h"
 
 
-int gmsh_get_node_index(const char *mesh_n, const char * bou_name, int nmynods, int *mynods, int dim, int *n, int **ix){
+int gmsh_get_node_index(const char *mesh_n, const char *bou_name, int nnods, int *nods_arr, int dim, int *n, int **ix){
 
-  FILE *fm = fopen(mesh_n,"r"); if( fm == NULL ) return 1;
-  int flag = 0;
-  int ntag;
-  int id_s, id;
-  int ns, *nf;
-  char buf[NBUF_GMSH], *data;
+  FILE *fm = fopen(mesh_n,"r"); if(fm == NULL) return 1;
+
   list_t nod_list;
-  node_list_t *pn;
-
   list_init(&nod_list, sizeof(int), &gmsh_funcmp_int_a);
 
-  id_s = gmsh_which_id( mesh_n, bou_name ); if( id_s < 0 ) return 1;
+  int id_s = gmsh_which_id(mesh_n, bou_name); if(id_s < 0) return 1;
+  int flag = 0;
+  char buf[NBUF_GMSH];
 
   while(fgets(buf, NBUF_GMSH, fm) != NULL){
 
-    data = strtok(buf," \n");
+    char *data = strtok(buf," \n");
     if(flag == 0){
 
       if(strcmp(data,"$Elements") == 0){
@@ -34,9 +30,9 @@ int gmsh_get_node_index(const char *mesh_n, const char * bou_name, int nmynods, 
 
 	int npe = gmsh_npe(atoi(data));
 	data = strtok(NULL," \n");
-	ntag = atoi(data);
+	int ntag = atoi(data);
 	data = strtok(NULL," \n");
-	id = atoi(data);
+	int id = atoi(data);
 
 	if(id == id_s){
 
@@ -48,18 +44,20 @@ int gmsh_get_node_index(const char *mesh_n, const char * bou_name, int nmynods, 
 	  int i = 0;
 	  while(i < npe){
 	    data = strtok(NULL, " \n");
-	    ns = atoi(data);
-	    nf = bsearch(&ns, mynods, nmynods, sizeof(int), &gmsh_funcmp_int_b);
-	    if(nf)
-	      list_insert_se( &nod_list, nf );
+	    int ns = atoi(data) - 1;
+	    int *nf = bsearch(&ns, nods_arr, nnods, sizeof(int), &gmsh_funcmp_int_b);
+	    if(nf != NULL)
+	      list_insert_se(&nod_list, nf);
 	    i++;
 	  }
 	}
 
       }else{
-	*n  = nod_list.sizelist;
+
+	*n = nod_list.sizelist;
 	*ix = malloc( *n * sizeof(int));
-	pn  = nod_list.head;
+
+	node_list_t *pn = nod_list.head;
 	int i = 0;
 	while(pn != NULL){
 	  (*ix)[i++] = *(int *)pn->data;

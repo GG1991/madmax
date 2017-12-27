@@ -112,16 +112,13 @@ int main(int argc, char **argv){
   ngp_max = npe_max;
 
   myio_comm_line_search_option(&command_line, "-print_matrices", &found);
-  if(found == true)
-    flags.print_matrices = true;
+  if(found == true) flags.print_matrices = true;
 
   myio_comm_line_search_option(&command_line, "-print_vectors", &found);
-  if(found == true)
-    flags.print_vectors = true;
+  if(found == true) flags.print_vectors = true;
 
   myio_comm_line_search_option(&command_line, "-print_pvtu", &found);
-  if(found == true)
-    flags.print_pvtu = true;
+  if(found == true) flags.print_pvtu = true;
 
   myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
 
@@ -136,7 +133,6 @@ int main(int argc, char **argv){
   ierr = material_fill_list_from_command_line(&command_line, &material_list);
   CHECK_ERROR_GOTO(ierr, RED "error parsing materials from command line" NORMAL "\n");
 
-  mesh.partition = PARMETIS_GEOM;
   myio_comm_line_search_option(&command_line, "-part_kway", &found);
   if(found == true) mesh.partition = PARMETIS_MESHKWAY;
 
