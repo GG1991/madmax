@@ -18,6 +18,7 @@
 #include "homogenize.h"
 #include "micro_struct.h"
 #include "solvers.h"
+#include "mesh.h"
 
 #define GREEN "\x1B[32m"
 #define RED "\x1B[31m"
@@ -37,40 +38,19 @@ int nproc_mic;
 int dim;
 int nvoi;
 
-int nx, ny, nz, nn;
-int nl;
-int nelm;
-int nex , ney , nez;
-int nyl;
-int ny_inf;
-double lx, ly, lz;
-double hx, hy, hz;
-double vol_tot;
-double vol_loc;
-double vol_elem;
-int npe;
 int ngp;
-int ngho;
 double **struct_sh;
 double ***struct_dsh;
 double *struct_wp;
 double ***struct_bmat;
 double *elem_disp;
-int *loc_elem_index;
-int *glo_elem_index;
-int istart, iend;
-int nstart, nend;
-int *dir_ix_loc;
-int *dir_ix_glo;
-int ndir_ix;
-double *coor_dir;
+int *elem_index;
 double *strain_gp;
 double *stress_gp;
 int *elem_type;
 double *elem_strain;
 double *elem_stress;
 double *elem_energy;
-double *center_coor;
 
 double vi;
 double vm;
