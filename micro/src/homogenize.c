@@ -1,32 +1,26 @@
 #include "micro.h"
 
 
-int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave) {
+int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave)
+{
+  double *c_i = malloc(nvoi*nvoi * sizeof(double));
+  double *c_m = malloc(nvoi*nvoi * sizeof(double));
+  double *c = malloc(nvoi*nvoi * sizeof(double));
+  double vol_i = 0.0, vol_m = 0.0;
 
-  int ierr;
   int ne_i = 0, ne_m = 0;
-  double *c_i = malloc( nvoi*nvoi * sizeof(double));
-  double *c_m = malloc( nvoi*nvoi * sizeof(double));
-  double *c   = malloc( nvoi*nvoi * sizeof(double));
-  double vol_i = 0.0, vol_ia = 0.0;
-  double vol_m = 0.0, vol_ma = 0.0;
-
-  for (int e = 0 ; e < nelm ; e++) {
+  for (int e = 0; e < mesh_struct.nelm; e++) {
     if (elem_type[e] == ID_FIBER) {
-      vol_ia += vol_elem;
+      vol_i += mesh_struct.vol_elm;
       ne_i++;
-    }
-    else{
-      vol_ma += vol_elem;
+    } else {
+      vol_m += mesh_struct.vol_elm;
       ne_m++;
     }
   }
 
-  ierr = MPI_Allreduce( &vol_ia, &vol_i, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if (ierr) return 1;
-  ierr = MPI_Allreduce( &vol_ma, &vol_m, 1, MPI_DOUBLE, MPI_SUM, MICRO_COMM); if (ierr) return 1;
-
-  vi = vol_i / vol_tot;
-  vm = vol_m / vol_tot;
+  vi = vol_i / mesh_struct.vol;
+  vm = vol_m / mesh_struct.vol;
   PRINTF2("vi = %lf \n", vi);
   PRINTF2("vm = %lf \n", vm);
 
@@ -35,46 +29,43 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
 
   if (params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL) {
 
-    for (int i = 0 ; i < nvoi ; i++) {
-      for (int j = 0 ; j < nvoi ; j++)
+    for (int i = 0; i < nvoi; i++) {
+      for (int j = 0; j < nvoi; j++)
 	c[i*nvoi + j] = vi * c_i[i*nvoi + j] + vm * c_m[i*nvoi + j];
     }
 
-  }
-  else if (params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL) {
+  } else if (params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL) {
 
-    int s;
     double *c_mi = malloc(nvoi*nvoi*sizeof(double));
     double *c_ii = malloc(nvoi*nvoi*sizeof(double));
     gsl_matrix_view  gsl_c_m , gsl_c_i ;
     gsl_matrix_view  gsl_c_mi, gsl_c_ii;
 
-    gsl_permutation  *p;
+    gsl_permutation *p = gsl_permutation_alloc(nvoi);
 
-    p  = gsl_permutation_alloc(nvoi);
+    gsl_c_i = gsl_matrix_view_array(c_i , nvoi, nvoi);
+    gsl_c_m = gsl_matrix_view_array(c_m , nvoi, nvoi);
+    gsl_c_ii = gsl_matrix_view_array(c_ii, nvoi, nvoi);
+    gsl_c_mi = gsl_matrix_view_array(c_mi, nvoi, nvoi);
 
-    gsl_c_i  = gsl_matrix_view_array( c_i , nvoi, nvoi );
-    gsl_c_m  = gsl_matrix_view_array( c_m , nvoi, nvoi );
-    gsl_c_ii = gsl_matrix_view_array( c_ii, nvoi, nvoi );
-    gsl_c_mi = gsl_matrix_view_array( c_mi, nvoi, nvoi );
+    int s;
+    gsl_linalg_LU_decomp(&gsl_c_m.matrix, p, &s);
+    gsl_linalg_LU_invert(&gsl_c_m.matrix, p, &gsl_c_mi.matrix);
+    gsl_linalg_LU_decomp(&gsl_c_i.matrix, p, &s);
+    gsl_linalg_LU_invert(&gsl_c_i.matrix, p, &gsl_c_ii.matrix);
 
-    gsl_linalg_LU_decomp (&gsl_c_m.matrix, p, &s);
-    gsl_linalg_LU_invert (&gsl_c_m.matrix, p, &gsl_c_mi.matrix);
-    gsl_linalg_LU_decomp (&gsl_c_i.matrix, p, &s);
-    gsl_linalg_LU_invert (&gsl_c_i.matrix, p, &gsl_c_ii.matrix);
+    for (int i = 0; i < nvoi*nvoi; i++)
+      c_i[i] = vi*c_ii[i] + vm*c_mi[i];
 
-    for (int i = 0; i < nvoi*nvoi ; i++)
-      c_i[i] = vi * c_ii[i] + vm * c_mi[i];
-
-    gsl_linalg_LU_decomp (&gsl_c_i.matrix, p, &s);
-    gsl_linalg_LU_invert (&gsl_c_i.matrix, p, &gsl_c_mi.matrix);
+    gsl_linalg_LU_decomp(&gsl_c_i.matrix, p, &s);
+    gsl_linalg_LU_invert(&gsl_c_i.matrix, p, &gsl_c_mi.matrix);
 
     for (int i = 0; i < nvoi; i++) {
       for (int j = 0; j < nvoi; j++)
 	c[i*nvoi + j] = gsl_matrix_get( &gsl_c_mi.matrix, i, j );
     }
 
-    gsl_permutation_free (p);
+    gsl_permutation_free(p);
     free(c_mi);
     free(c_ii);
   }
@@ -90,8 +81,8 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
 }
 
 
-int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave) {
-
+int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
+{
   VecZeroEntries(x);
   VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
@@ -105,10 +96,10 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave) {
 
     double  displ[2]; // (ux,uy) displacement
 
-    for (int n = 0 ; n < ndir_ix/dim ; n++ ) {
-      strain_x_coord(strain_mac, &coor_dir[n*dim], displ);
-      for (int d = 0 ; d < dim ; d++)
-	x_arr[dir_ix_loc[n*dim + d]] = displ[d];
+    for (int n = 0; n < mesh_struct.nnods_boundary ; n++ ) {
+      strain_x_coord(strain_mac, &mesh_struct.boundary_coord[n*dim], displ);
+      for (int d = 0; d < dim ; d++)
+	x_arr[mesh_struct.boundary_indeces[n*dim + d]] = displ[d];
     }
   }
 
@@ -128,7 +119,7 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave) {
 
     save_event(MICRO_COMM, "ass_0");
 
-    assembly_b();
+    assembly_b_petsc();
 
     VecGetArray(b, &b_arr);
     for (int i = 0; i < ndir_ix ; i++)
@@ -145,7 +136,7 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave) {
 
     VecScale( b, -1.0 );
 
-    assembly_A();
+    assembly_A_petsc();
 
     MatZeroRowsColumns(A, ndir_ix, dir_ix_glo, 1.0, NULL, NULL);
     save_event(MICRO_COMM, "ass_1");
@@ -311,51 +302,47 @@ int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent) {
 }
 
 
-int strain_x_coord( double *strain , double *coord , double *u ) {
-
+int strain_x_coord(double *strain, double *coord, double *u)
+{
   if (dim == 2) {
     u[0] = strain[0]   * coord[0] + strain[2]/2 * coord[1] ;
     u[1] = strain[2]/2 * coord[0] + strain[1]   * coord[1] ;
   }
-
   return 0;
 }
 
 
-int assembly_b(void) {
-
+int assembly_b_petsc(void)
+{
   VecZeroEntries(b);
   VecGhostUpdateBegin(b ,INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd(b ,INSERT_VALUES, SCATTER_FORWARD);
 
-  Vec b_loc;
-  double *b_arr;
-
+  Vec b_loc; double *b_arr;
   VecGhostGetLocalForm(b, &b_loc);
   VecGetArray(b_loc, &b_arr);
 
-  double *res_elem  = malloc(dim*npe*sizeof(double));
+  double *res_elem = malloc(mesh_struct.dim*mesh_struct.npe*sizeof(double));
 
   for (int e = 0 ; e < nelm ; e++) {
 
-    ARRAY_SET_TO_ZERO(res_elem, npe*dim)
+    ARRAY_SET_TO_ZERO(res_elem, mesh_struct.npe*mesh_struct.dim)
+    get_local_elem_index(e, elem_index);
 
-    get_local_elem_index(e, loc_elem_index);
-
-    for (int gp = 0; gp < ngp ; gp++) {
+    for (int gp = 0; gp < ngp; gp++) {
 
       get_strain(e, gp, strain_gp);
       get_stress(e, gp, strain_gp, stress_gp);
 
-      for (int i = 0 ; i < npe*dim ; i++) {
-	for (int j = 0; j < nvoi ; j++)
+      for (int i = 0; i < npe*dim; i++) {
+	for (int j = 0; j < nvoi; j++)
 	  res_elem[i] += struct_bmat[j][i][gp] * stress_gp[j] * struct_wp[gp];
       }
 
     }
 
-    for (int i = 0 ; i < npe*dim ; i++ )
-      b_arr[loc_elem_index[i]] += res_elem[i];
+    for (int i = 0; i < mesh_struct.npe*mesh_struct.dim; i++ )
+      b_arr[elem_index[i]] += res_elem[i];
 
   }
 
@@ -371,100 +358,75 @@ int assembly_b(void) {
 }
 
 
-int assembly_A(void) {
-
+int assembly_A_petsc(void)
+{
   MatZeroEntries(A);
 
-  int    e, gp;
-  double *k_elem    = malloc( dim*npe*dim*npe * sizeof(double));
-  double *c         = malloc( nvoi*nvoi       * sizeof(double));
-  int    i, j, k, h;
+  double *k_elem = malloc(mesh_struct.dim*mesh_struct.npe*mesh_struct.dim*mesh_struct.npe*sizeof(double));
+  double *c = malloc(nvoi*nvoi * sizeof(double));
 
-  for ( e = 0 ; e < nelm ; e++ ) {
+  for (int e = 0; e < mesh_struct.nelm; e++) {
 
-    /* set to 0 res_elem */
-    for ( i = 0 ; i < npe*dim*npe*dim ; i++ )
-      k_elem[i] = 0.0;
+    ARRAY_SET_TO_ZERO(k_elem, mesh_struct.npe*mesh_struct.dim*mesh_struct.npe*mesh_struct.dim)
+    get_global_elem_index(e, elem_index);
 
-    get_global_elem_index(e, glo_elem_index);
+    for (int gp = 0; gp < ngp; gp++) {
 
-    for ( gp = 0; gp < ngp ; gp++ ) {
+      get_strain(e, gp, strain_gp);
+      get_c_tan(NULL, e, gp, strain_gp, c);
 
-      get_strain( e , gp, strain_gp );
-      get_c_tan( NULL , e , gp , strain_gp , c );
-
-      for ( i = 0 ; i < npe*dim ; i++ ) {
-	for ( j = 0 ; j < npe*dim ; j++ ) {
-	  for ( k = 0; k < nvoi ; k++ ) {
-	    for ( h = 0; h < nvoi ; h++ )
-	      k_elem[ i*npe*dim + j] += \
-	      struct_bmat[h][i][gp] * c[ h*nvoi + k ] * struct_bmat[k][j][gp] * struct_wp[gp];
-	  }
-	}
-      }
+      for (int i = 0 ; i < mesh_struct.npe*dim; i++)
+	for (int j = 0 ; j < mesh_struct.npe*dim; j++)
+	  for (int k = 0; k < nvoi ; k++)
+	    for (int h = 0; h < nvoi; h++)
+	      k_elem[ i*npe*dim + j] += struct_bmat[h][i][gp]*c[h*nvoi + k]*struct_bmat[k][j][gp]*struct_wp[gp];
 
     }
-    MatSetValues( A, npe*dim, glo_elem_index, npe*dim, glo_elem_index, k_elem, ADD_VALUES );
-
+    MatSetValues(A, npe*dim, glo_elem_index, npe*dim, glo_elem_index, k_elem, ADD_VALUES);
   }
 
-  MatAssemblyBegin( A , MAT_FINAL_ASSEMBLY );
-  MatAssemblyEnd(   A , MAT_FINAL_ASSEMBLY );
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
   return 0;
 }
 
 
-int get_averages(double *strain_ave, double *stress_ave) {
+int get_averages(double *strain_ave, double *stress_ave)
+{
+  ARRAY_SET_TO_ZERO(strain_ave, nvoi);
+  ARRAY_SET_TO_ZERO(stress_ave, nvoi);
 
-  int    i, e, gp;
-  int    ierr;
+  for (int e = 0 ; e < mesh_struct.nelm ; e++) {
 
-  double * strain_part = malloc( nvoi * sizeof(double) );
-  double * stress_part = malloc( nvoi * sizeof(double) );
+    for (int gp = 0; gp < ngp; gp++) {
 
-  for ( i = 0 ; i < nvoi ; i++ )
-    strain_part[i] = stress_part[i] = 0.0;
+      get_strain(e, gp, strain_gp);
+      get_stress(e, gp, strain_gp, stress_gp);
 
-  for ( e = 0 ; e < nelm ; e++ )
-  {
-    for ( gp = 0; gp < ngp ; gp++ )
-    {
-
-      /* calc strain gp */
-      get_strain( e , gp, strain_gp );
-
-      /* we get stress = f(strain) */
-      get_stress( e , gp , strain_gp , stress_gp );
-
-      for ( i = 0; i < nvoi ; i++ )
-      {
-	stress_part[i] += stress_gp[i] * struct_wp[gp];
-	strain_part[i] += strain_gp[i] * struct_wp[gp];
+      for (int i = 0; i < nvoi; i++) {
+	stress_ave[i] += stress_gp[i] * struct_wp[gp];
+	strain_ave[i] += strain_gp[i] * struct_wp[gp];
       }
     }
   }
 
-  ierr = MPI_Allreduce( stress_part, stress_ave, nvoi, MPI_DOUBLE, MPI_SUM, MICRO_COMM );
-  ierr = MPI_Allreduce( strain_part, strain_ave, nvoi, MPI_DOUBLE, MPI_SUM, MICRO_COMM );
-
-  for ( i = 0; i < nvoi ; i++ )
-  {
-    stress_ave[i] /= vol_tot;
-    strain_ave[i] /= vol_tot;
+  for (int i = 0; i < nvoi; i++) {
+    stress_ave[i] /= mesh_struct.vol;
+    strain_ave[i] /= mesh_struct.vol;
   }
-  return ierr;
+  return 0;
 }
 
 
-int get_elem_properties(void) {
-
-  for (int e = 0 ; e < nelm ; e++) {
+int get_elem_properties(void)
+{
+  for (int e = 0; e < mesh_struct.nelm; e++) {
 
     double strain_aux[MAX_NVOIGT];
     double stress_aux[MAX_NVOIGT];
-    for (int v = 0 ; v < nvoi ; v++)
-      strain_aux[v] = stress_aux[v] = 0.0;
+    ARRAY_SET_TO_ZERO(strain_aux, nvoi);
+    ARRAY_SET_TO_ZERO(stress_aux, nvoi);
 
     for (int gp = 0 ; gp < ngp ; gp++) {
 
@@ -480,31 +442,25 @@ int get_elem_properties(void) {
       elem_strain[ e*nvoi + v ] = strain_aux[v] / vol_elem;
       elem_stress[ e*nvoi + v ] = stress_aux[v] / vol_elem;
     }
-
   }
-
   return 0;
 }
 
 
-int get_strain(int e, int gp, double *strain_gp) {
+int get_strain(int e, int gp, double *strain_gp)
+{
+  Vec x_loc; double *x_arr;
+  VecGhostGetLocalForm(x, &x_loc);
+  VecGetArray(x_loc, &x_arr);
 
-  Vec     x_loc;
-  double  *x_arr;
+  get_local_elem_index(e, elem_index);
 
-  VecGhostGetLocalForm( x    , &x_loc );
-  VecGetArray         ( x_loc, &x_arr );
+  for (int i = 0; i < mesh_struct.npe*dim; i++)
+    elem_disp[i] = x_arr[elem_index[i]];
 
-  int    i , v;
-
-  get_local_elem_index(e, loc_elem_index);
-
-  for ( i = 0 ; i < npe*dim ; i++ )
-    elem_disp[i] = x_arr[loc_elem_index[i]];
-
-  for ( v = 0; v < nvoi ; v++ ) {
+  for (int v = 0; v < nvoi; v++) {
     strain_gp[v] = 0.0;
-    for ( i = 0 ; i < npe*dim ; i++ )
+    for (int i = 0; i < mesh_struct.npe*dim; i++)
       strain_gp[v] += struct_bmat[v][i][gp] * elem_disp[i];
   }
 
@@ -512,11 +468,11 @@ int get_strain(int e, int gp, double *strain_gp) {
 }
 
 
-int get_stress(int e, int gp, double *strain_gp, double *stress_gp) {
-
+int get_stress(int e, int gp, double *strain_gp, double *stress_gp)
+{
   char *word_to_search;
 
-  switch(elem_type[e]) {
+  switch (elem_type[e]) {
 
     case ID_FIBER:
       word_to_search = strdup("FIBER");
@@ -547,195 +503,85 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp) {
 }
 
 
-int get_c_tan( const char *name, int e , int gp, double *strain_gp , double *c_tan )
+int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 {
-
   char *word_to_search;
 
-  if (name != NULL) {
+  if (name != NULL)
     word_to_search = strdup(name);
-  }
   else if ( elem_type[e] == ID_FIBER )
-  {
     word_to_search = strdup("FIBER");
-  }
   else if ( elem_type[e] == ID_MATRIX )
-  {
     word_to_search = strdup("MATRIX");
-  }
 
   material_t  *mat_p;
   node_list_t *pm = material_list.head;
 
-  while ( pm )
-  {
+  while (pm != NULL){
     mat_p = (material_t *)pm->data;
-    if ( strcmp ( mat_p->name , word_to_search ) == 0 ) break;
+    if (strcmp(mat_p->name, word_to_search) == 0) break;
     pm = pm->next;
   }
-  if (!pm) return 1;
+  if (pm == NULL) return 1;
 
-  material_get_c_tang( mat_p, dim, strain_gp, c_tan );
-
-  return 0;
-}
-
-
-int get_elem_centroid(int e, int dim, double *centroid) {
-
-  if (dim == 2) {
-    if ( rank_mic == 0 ) {
-      centroid[0] = ( e%nex + 0.5 )*hx;
-      centroid[1] = ( e/nex + 0.5 )*hy;
-    }
-    else{
-      centroid[0] = ( e%nex + 0.5              )*hx;
-      centroid[1] = ( e/nex + 0.5 + ny_inf - 1 )*hy;
-    }
-  }
+  material_get_c_tang(mat_p, dim, strain_gp, c_tan);
 
   return 0;
 }
 
 
-int get_local_elem_index(int e, int *loc_elem_index) {
-
-  if (dim == 2) {
-    if (  rank_mic == 0 ) {
-      for (int d = 0 ; d < dim ; d++) {
-	int n0 = (e%nex) + (e/nex)*nx;
-	loc_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
-	loc_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
-	loc_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
-	loc_elem_index[ 3*dim + d ] = ( n0 + nx + 0 ) * dim + d ;
-      }
-    }
-    else if (e >= nex ) {
-      for (int d = 0 ; d < dim ; d++) {
-	int n0 = (e%nex) + (e/nex-1)*nx;
-	loc_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
-	loc_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
-	loc_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
-	loc_elem_index[ 3*dim + d ] = ( n0 + nx     ) * dim + d ;
-      }
-
-    }
-    else{
-      for (int d = 0 ; d < dim ; d++) {
-	int n0 = (e%nex) + (e/nex)*nx;
-	loc_elem_index[ 0*dim + d ] = ( n0 + nl     ) * dim + d ; // is a ghost
-	loc_elem_index[ 1*dim + d ] = ( n0 + nl + 1 ) * dim + d ; // is a ghost
-	loc_elem_index[ 2*dim + d ] = ( n0 + 1      ) * dim + d ;
-	loc_elem_index[ 3*dim + d ] = ( n0          ) * dim + d ;
-      }
-    }
-  }
-  return 0;
-}
-
-
-int get_local_elem_node(int e , int *n_loc) {
-
-  if (dim == 2) {
-    if (rank_mic == 0) {
-      int n0 = (e%nex) + (e/nex)*nx;
-      n_loc[0] = n0          ;
-      n_loc[1] = n0 + 1      ;
-      n_loc[2] = n0 + nx + 1 ;
-      n_loc[3] = n0 + nx     ;
-    }
-    else if (e >= nex ) {
-      int n0 = (e%nex) + (e/nex-1)*nx;
-      n_loc[0] = n0          ;
-      n_loc[1] = n0 + 1      ;
-      n_loc[2] = n0 + nx + 1 ;
-      n_loc[3] = n0 + nx     ;
-    }
-    else{
-      int n0 = (e%nex) + (e/nex)*nx;
-      n_loc[0] = n0 + nl     ; // is a ghost
-      n_loc[1] = n0 + nl + 1 ; // is a ghost
-      n_loc[2] = n0 + 1      ;
-      n_loc[3] = n0          ;
-    }
-  }
-  return 0;
-}
-
-
-int get_global_elem_index(int e, int *glo_elem_index) {
-
-  if (dim == 2) {
-    if (rank_mic == 0) {
-      for (int d = 0 ; d < dim ; d++ ) {
-	int n0 = (e%nex) + (e/nex)*nx;
-	glo_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
-	glo_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
-	glo_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
-	glo_elem_index[ 3*dim + d ] = ( n0 + nx     ) * dim + d ;
-      }
-    }
-    else{
-      for (int d = 0 ; d < dim ; d++) {
-	int n0 = (e%nex) + (e/nex)*nx + (ny_inf-1)*nx;
-	glo_elem_index[ 0*dim + d ] = ( n0          ) * dim + d ;
-	glo_elem_index[ 1*dim + d ] = ( n0 + 1      ) * dim + d ;
-	glo_elem_index[ 2*dim + d ] = ( n0 + nx + 1 ) * dim + d ;
-	glo_elem_index[ 3*dim + d ] = ( n0 + nx     ) * dim + d ;
-      }
-    }
-  }
-
-  return 0;
-}
-
-
-int local_to_global_index( int local )
-{
-
-  if ( rank_mic == 0 ) return local;
-
-  if ( dim == 2 ) {
-
-    return ny_inf * nx * dim + local;
-
-  }
-
-  return 0;
-}
-
-
-int get_node_local_coor( int n , double * coord )
+int get_elem_centroid(int e, int dim, double *centroid)
 {
   if (dim == 2) {
-    if ( rank_mic == 0 ) {
-      coord[0] = (n % nx)*hx;
-      coord[1] = (n / nx)*hy;
-    }
-    else{
-      coord[0] = (n % nx)*hx;
-      coord[1] = (n / nx + ny_inf)*hy;
+    centroid[0] = (e%nex + 0.5)*hx;
+    centroid[1] = (e/nex + 0.5)*hy;
+  }
+  return 0;
+}
+
+
+int get_elem_index(int e, int *elem_index)
+{
+  if (dim == 2) {
+    for (int d = 0; d < dim; d++) {
+      int n0 = (e % nex) + (e / nex)*nx;
+      elem_index[0*dim + d] = (n0         )*dim + d;
+      elem_index[1*dim + d] = (n0 + 1     )*dim + d;
+      elem_index[2*dim + d] = (n0 + nx + 1)*dim + d;
+      elem_index[3*dim + d] = (n0 + nx + 0)*dim + d;
     }
   }
   return 0;
 }
 
 
-int get_node_ghost_coor( int n , double * coord )
+int get_elem_node(int e, int *elem_node)
 {
-  if ( dim == 2 ) {
+  if (dim == 2) {
+    int n0 = (e%nex) + (e/nex)*nx;
+    elem_node[0] = n0;
+    elem_node[1] = n0 + 1;
+    elem_node[2] = n0 + nx + 1;
+    elem_node[3] = n0 + nx;
+  }
+  return 0;
+}
+
+
+int get_node_local_coor(int n, double *coord)
+{
+  if (dim == 2) {
     coord[0] = (n % nx)*hx;
-    coord[1] = (ny_inf + n / nx - 1)*hy;
+    coord[1] = (n / nx)*hy;
   }
   return 0;
 }
 
 
-int init_shapes(double ***sh, double ****dsh, double **wp) {
-
+int init_shapes(double ***sh, double ****dsh, double **wp)
+{
   int nsh = (dim == 2) ? 4 : 8;
-  int gp;
-  double *xp = malloc( ngp*dim * sizeof(double));
+  double *xp = malloc(ngp*dim*sizeof(double));
 
   if (dim == 2) {
     xp[0] = -0.577350269189626;   xp[1]= -0.577350269189626;
@@ -744,34 +590,30 @@ int init_shapes(double ***sh, double ****dsh, double **wp) {
     xp[6] = -0.577350269189626;   xp[7]= +0.577350269189626;
   }
 
-  int is, d;
-
-  *sh = malloc( nsh * sizeof(double*));
-  for ( is = 0 ; is < nsh ; is++ ) {
+  *sh = malloc(nsh*sizeof(double*));
+  for (int is = 0; is < nsh; is++) {
     (*sh)[is] = malloc( ngp * sizeof(double));
   }
 
-  *dsh  = malloc( nsh * sizeof(double**));
-  for ( is = 0 ; is < nsh ; is++ ) {
-    (*dsh)[is] = malloc( dim * sizeof(double*));
-    for ( d = 0 ; d < dim ; d++ ) {
+  *dsh  = malloc(nsh*sizeof(double**));
+  for (int is = 0; is < nsh; is++ ) {
+    (*dsh)[is] = malloc(dim * sizeof(double*));
+    for (int d = 0; d < dim; d++) {
       (*dsh)[is][d] = malloc( ngp * sizeof(double));
     }
   }
+  *wp= malloc(ngp*sizeof(double));
 
-  *wp   = malloc( ngp * sizeof(double));
+  if (dim == 2){
 
-  if ( dim == 2 )
-  {
-
-    for ( gp = 0 ; gp < ngp ; gp++ ) {
+    for (int gp = 0; gp < ngp; gp++) {
       (*sh)[0][gp] = (1 - xp[2*gp]) * (1 - xp[2*gp+1])/4;
       (*sh)[1][gp] = (1 + xp[2*gp]) * (1 - xp[2*gp+1])/4;
       (*sh)[2][gp] = (1 + xp[2*gp]) * (1 + xp[2*gp+1])/4;
       (*sh)[3][gp] = (1 - xp[2*gp]) * (1 + xp[2*gp+1])/4;
     }
 
-    for ( gp = 0 ; gp < ngp ; gp++ ) {
+    for (int gp = 0; gp < ngp; gp++) {
       (*dsh)[0][0][gp] = -1 * (1 - xp[2*gp+1]) /4 * 2/hx; // d phi / d x
       (*dsh)[1][0][gp] = +1 * (1 - xp[2*gp+1]) /4 * 2/hx;
       (*dsh)[2][0][gp] = +1 * (1 + xp[2*gp+1]) /4 * 2/hx;
@@ -782,8 +624,8 @@ int init_shapes(double ***sh, double ****dsh, double **wp) {
       (*dsh)[3][1][gp] = +1 * (1 - xp[2*gp+0]) /4 * 2/hy;
     }
 
-    for ( gp = 0 ; gp < ngp ; gp++ )
-      (*wp)[gp] = vol_elem / ngp;
+    for (int gp = 0 ; gp < ngp ; gp++)
+      (*wp)[gp] = mesh_struct.vol_elm / ngp;
 
   }
 

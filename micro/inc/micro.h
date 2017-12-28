@@ -100,8 +100,8 @@ int micro_check_material_and_elem_type(list_t *material_list, int *elem_type, in
 
 int get_local_elem_index(int e, int *loc_index);
 int get_global_elem_index(int e, int *glo_elem_index);
-int assembly_b(void);
-int assembly_A(void);
+int assembly_b_petsc(void);
+int assembly_A_petsc(void);
 int get_stress(int e , int gp, double *strain_gp, double *stress_gp);
 int get_strain(int e , int gp, double *strain_gp);
 int get_c_tan(const char * name, int e, int gp, double *strain_gp, double *c_tan);
