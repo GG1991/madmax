@@ -118,13 +118,12 @@ int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_st
     for (int d = 0; d < mesh_struct->dim; d++)
       mesh_struct->boundary_indeces[i*mesh_struct->dim + d] = mesh_struct->boundary_nods[i]*mesh_struct->dim + d;
 
-
   return 0;
 }
 
 
-int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh) {
-
+int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh)
+{
   int rank, nproc, ierr;
   MPI_Comm_size(COMM, &nproc);
   MPI_Comm_rank(COMM, &rank);
@@ -281,8 +280,8 @@ int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh) {
 }
 
 
-int swap_vector(int *swap, int n, int *vector, int *new_vector, int *cuts) {
-
+int swap_vector(int *swap, int n, int *vector, int *new_vector, int *cuts)
+{
   /*
      swap       = [ 0 1 0 0 1 2 2 ]
      vector     = [ 0 1 2 3 4 5 6 ]
@@ -321,7 +320,8 @@ int swap_vector(int *swap, int n, int *vector, int *new_vector, int *cuts) {
 int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,
-    int *npe_size, int *eind_size) {
+    int *npe_size, int *eind_size)
+{
 
   /*
      swap        = [ 0 2 1 0 ] (swap will be generally the "part" array)
@@ -382,8 +382,8 @@ int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
 }
 
 
-int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh) {
-
+int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh)
+{
   int ierr;
 
   int *peer_sizes, mysize, *peer_nod_glo;
@@ -526,8 +526,8 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh) {
 }
 
 
-int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh) {
-
+int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh)
+{
   int rank, nproc;
   MPI_Comm_rank(COMM, &rank);
   MPI_Comm_size(COMM, &nproc);
@@ -595,8 +595,8 @@ int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh) {
 }
 
 
-int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node_guess, int *owner_rank) {
-
+int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node_guess, int *owner_rank)
+{
   int nproc, rank;
   MPI_Comm_rank(COMM, &rank);
   MPI_Comm_size(COMM, &nproc);
@@ -627,8 +627,8 @@ int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, in
 }
 
 
-int mesh_get_bounding_box(mesh_t *mesh, double *x, double *y, double *z) {
-
+int mesh_get_bounding_box(mesh_t *mesh, double *x, double *y, double *z)
+{
   if (mesh->nnods_total == 0) return 0;
 
   x[0] = mesh->coord_local[0*mesh->dim+0]; x[1] = mesh->coord_local[0*mesh->dim+0];
@@ -655,8 +655,8 @@ int mesh_get_bounding_box(mesh_t *mesh, double *x, double *y, double *z) {
 }
 
 
-int mesh_get_domain_center(MPI_Comm COMM, mesh_t *mesh, double center[3]) {
-
+int mesh_get_domain_center(MPI_Comm COMM, mesh_t *mesh, double center[3])
+{
   double x[2] ,y[2] ,z[2] ,x_abs[2] ,y_abs[2] ,z_abs[2];
 
   int rank, nproc;
@@ -694,8 +694,8 @@ int mesh_get_domain_center(MPI_Comm COMM, mesh_t *mesh, double center[3]) {
 }
 
 
-int get_bbox_limit_lengths(MPI_Comm COMM, mesh_t *mesh, double *lx, double *ly, double *lz) {
-
+int get_bbox_limit_lengths(MPI_Comm COMM, mesh_t *mesh, double *lx, double *ly, double *lz)
+{
   int rank, nproc;
   double x[2] ,y[2] ,z[2] ,x_abs[2] ,y_abs[2] ,z_abs[2];
 
@@ -737,8 +737,8 @@ int get_bbox_limit_lengths(MPI_Comm COMM, mesh_t *mesh, double *lx, double *ly, 
 }
 
 
-int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], int nx, int ny) {
-
+int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], int nx, int ny)
+{
   double   x0 = limit[0];
   double   x1 = limit[1];
   double   y0 = limit[2];
@@ -779,8 +779,8 @@ int build_structured_2d(int **eind, int **eptr, double **coor, double limit[4], 
 }
 
 
-int get_element_structured_2d(double centroid[2], double limit[4], int nx, int ny, int *es) {
-
+int get_element_structured_2d(double centroid[2], double limit[4], int nx, int ny, int *es)
+{
   double   x0 = limit[0];
   double   x1 = limit[1];
   double   y0 = limit[2];
@@ -820,13 +820,13 @@ int get_element_structured_2d(double centroid[2], double limit[4], int nx, int n
 }
 
 
-int mesh_cmpfunc(const void * a, const void * b) {
-
+int mesh_cmpfunc(const void *a, const void *b)
+{
   return *(int*)a - *(int*)b;
 }
 
 
-int cmpfunc_for_list(void * a, void * b) {
-
+int cmpfunc_for_list(void *a, void *b)
+{
   return *(int*)a - *(int*)b;
 }
