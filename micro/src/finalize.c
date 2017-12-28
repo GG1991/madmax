@@ -17,15 +17,21 @@ int finalize(void) {
   free(elem_energy);
   free(elem_type);
 
-  for (int i = 0 ; i < nvoi  ; i++) {
-    for (int j = 0 ; j < npe*dim ; j++)
+  for (int i = 0; i < nvoi; i++) {
+    for (int j = 0; j < npe*dim; j++)
       free(struct_bmat[i][j]);
     free(struct_bmat[i]);
   }
   free(struct_bmat);
 
+ 
+  if (flags.allocated == true) {
 
-  ierr = PetscFinalize();
+    if (solver.type == SOLVER_PETSC) {
+
+      ierr = PetscFinalize();
+    }
+  }
 
   comm_finalize_message();
 

@@ -21,13 +21,6 @@ if (error) {\
   myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);\
   goto end;}}
 
-#define CHECK_INST_ELSE_GOTO(cond, instr) {\
-  if (cond) {\
-    instr\
-  }else{\
-    myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);\
-    goto end;}}
-
 #define CHECK_ERROR_GOTO(message) {\
   if (ierr != 0) {\
     myio_printf(MICRO_COMM, "%s\n", message);\
@@ -61,6 +54,11 @@ int main(int argc, char **argv) {
 
   MPI_Comm_size(MICRO_COMM, &nproc_mic);
   MPI_Comm_rank(MICRO_COMM, &rank_mic);
+
+  if(nproc_mic != 1){
+    myio_printf(MICRO_COMM, RED "error during coloring, more than one process detected in micro\n" NORMAL);
+    goto end_no_message;
+  }
 
   nx = ny = nz = -1;
   hx = hy = hz = -1;
@@ -271,6 +269,8 @@ end:
       "--------------------------------------------------\n"
       "  MICRO: FINISH\n"
       "--------------------------------------------------" NORMAL "\n");
+
+end_no_message:
 
   ierr = finalize();
 
