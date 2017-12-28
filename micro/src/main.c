@@ -109,8 +109,8 @@ int main(int argc, char **argv) {
       ny_inf += nyl_arr[i];
     free(nyl_arr);
 
-    npe  = (dim == 2) ? 4 : 8;
-    ngp  = (dim == 2) ? 4 : 8;
+    npe = (dim == 2) ? 4 : 8;
+    ngp = (dim == 2) ? 4 : 8;
     if (ny < nproc_mic) {
       myio_printf(MICRO_COMM, "ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
       goto end;

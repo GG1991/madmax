@@ -23,10 +23,10 @@ void init_variables(void) {
 
   comm_init_message(&message);
 
-  A   = NULL;
-  b   = NULL;
-  x   = NULL;
-  dx  = NULL;
+  A = NULL;
+  b = NULL;
+  x = NULL;
+  dx = NULL;
 
   return;
 }
