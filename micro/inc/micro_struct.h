@@ -13,13 +13,9 @@
 #define ID_MATRIX 0
 #define ID_FIBER  1
 
-/* Represents a square with a circular fibers in the middle
- *
- * note : for 2d and 3d
- */
+// Represents a square with a circular fibers in the middle (for 2d and 3d)
 
-typedef struct _fiber_cilin_t
-{
+typedef struct {
 
   double  *desv;         // desviation of the fiber from the center
   double   radio;        // radius of the fiber
@@ -28,14 +24,9 @@ typedef struct _fiber_cilin_t
 
 }fiber_cilin_t;
 
+// Represents a square with a linear fibers (only for 2d)
 
-/* Represents a square with a linear fibers
- *
- * note : only for 2d
- */
-
-typedef struct _fiber_line_t
-{
+typedef struct {
 
   int      ntype;        // number of types
   int     *nfib;         // fiber number               (for each type)
@@ -46,11 +37,9 @@ typedef struct _fiber_line_t
 
 }fiber_line_t;
 
+// Main micro-structure for representing the arrange of material on the domain
 
-/* Main micro-structure for representing the arrange of material on the domain */
-
-typedef struct _micro_struct_t
-{
+typedef struct {
 
   int      type;         // micro structure type
   double  *size;         // size of the rve
@@ -60,20 +49,11 @@ typedef struct _micro_struct_t
 
 micro_struct_t micro_struct;
 
-int micro_struct_init(
-    const int dim,
-    const char *string,
-    micro_struct_t *micro_struct );
 
-int micro_struct_get_elem_id(
-    const int dim,
-    const micro_struct_t *micro_struct,
-    const double *elem_centroid,
-    int *elem_id );
+int micro_struct_init(const int dim, const char *string, micro_struct_t *micro_struct );
 
-int micro_struct_init_elem_type( micro_struct_t *micro_struct,
-    int dim, int nelm,
-    int (*get_centroid)( int e, int dim, double *elem_centroid ),
-    int *elem_type );
+int micro_struct_get_elem_id(const int dim, const micro_struct_t *micro_struct, const double *elem_centroid, int *elem_id);
+
+int micro_struct_init_elem_type( micro_struct_t *micro_struct, int dim, int nelm, int (*get_centroid)( int e, int dim, double *elem_centroid ), int *elem_type );
 
 #endif
