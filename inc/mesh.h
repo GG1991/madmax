@@ -66,9 +66,12 @@ typedef struct{
   int nx, ny, nz;
   int nex, ney, nez;
   int nelm;
-  int nnods;
+  int nn;
+  int npe;
   double lx, ly, lz;
   double hx, hy, hz;
+  double vol;
+  double vol_elm;
 
 }mesh_struct_t;
 
@@ -82,6 +85,8 @@ int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh);
 int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh);
 int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node_guess, int *owner_rank);
 int mesh_cmpfunc(const void * a, const void * b);
+
+int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_struct);
 
 int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
     int *eptr, int *eind, int *elm_id,

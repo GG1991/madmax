@@ -1,8 +1,8 @@
 #include "mesh.h"
 
 
-int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list_t *boundary_list, mesh_t *mesh) {
-
+int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list_t *boundary_list, mesh_t *mesh)
+{
   bool found;
   int num_string_found;
   char string_arr[MAX_NUM_OF_BOUNDARIES][128];
@@ -40,6 +40,36 @@ int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list
     bou.dir_val = NULL;
     list_insertlast(boundary_list, &bou);
   }
+
+  return 0;
+}
+
+
+int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_struct)
+{
+  mesh_struct->dim = dim;
+
+  mesh_struct->lx = length[0];
+  mesh_struct->ly = length[1];
+  mesh_struct->lz = (dim == 3) ? length[2] : 1;
+  mesh_struct->nx = sizes[0];
+  mesh_struct->ny = sizes[1];
+  mesh_struct->nz = (mesh_struct->dim == 3) ? sizes[2] : 1;
+  mesh_struct->nn = mesh_struct->nx * mesh_struct->ny * mesh_struct->nz;
+
+  mesh_struct->nex = (mesh_struct->nx - 1);
+  mesh_struct->ney = (mesh_struct->ny - 1);
+  mesh_struct->nez = (mesh_struct->dim == 3) ? (mesh_struct->nz - 1) : 1;
+  mesh_struct->nelm = mesh_struct->nex * mesh_struct->ney * mesh_struct->nez;
+
+  mesh_struct->hx = mesh_struct->lx / mesh_struct->nex;
+  mesh_struct->hy = mesh_struct->ly / mesh_struct->ney;
+  mesh_struct->hz = (mesh_struct->dim == 2) ? -1 : (mesh_struct->lz / mesh_struct->nez);
+
+  mesh_struct->vol = mesh_struct->lx * mesh_struct->ly * mesh_struct->lz;
+  mesh_struct->vol_elm = mesh_struct->hx * mesh_struct->hy * mesh_struct->hz;
+
+  mesh_struct->npe = (mesh_struct->dim == 2) ? 4 : 8;
 
   return 0;
 }
