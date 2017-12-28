@@ -15,6 +15,7 @@ params_t params;
 flags_t flags;
 solver_t solver;
 comm_t comm;
+mesh_struct_t mesh_struct;
 
 #define CHECK_AND_GOTO(error) {\
 if (error) {\
@@ -26,18 +27,15 @@ if (error) {\
     myio_printf(MICRO_COMM, "%s\n", message);\
     goto end;}}
 
-int main(int argc, char **argv) {
-
+int main(int argc, char **argv)
+{
   int ierr;
-  int values_i[10];
-  char string_buf[NBUF];
-  int nval_expect, nval_found;
-  bool found;
 
   myio_comm_line_init(argc, argv, &command_line);
 
   init_variables();
 
+  bool found;
   myio_comm_line_search_option(&command_line, "-help", &found);
   if (found == true) {
     myio_printf(MACRO_COMM, "%s", help);
@@ -60,84 +58,35 @@ int main(int argc, char **argv) {
     goto end_no_message;
   }
 
-  nx = ny = nz = -1;
-  hx = hy = hz = -1;
-  lx = ly = lz = -1;
-
-  ierr = myio_comm_line_get_int(&command_line, "-dim", &dim, &found); CHECK_AND_GOTO(ierr)
-
-  nvoi = (dim == 2) ? 3 : 6;
-
-  ierr = myio_comm_line_get_string(&command_line, "-micro_struct", string_buf, &found); CHECK_AND_GOTO(ierr)
-  micro_struct_init(dim, string_buf, &micro_struct);
-
-  lx = micro_struct.size[0];
-  ly = micro_struct.size[1];
-  lz = (dim == 3) ? micro_struct.size[2] : -1;
-
-  if (dim == 2) nval_expect = 2;
-  if (dim == 3) nval_expect = 3;
-
-  myio_comm_line_get_int_array(&command_line, "-struct_n", values_i, nval_expect, &nval_found, &found);
-  if (found) {
-
-    if (nval_found != nval_expect) {
-      myio_printf(MICRO_COMM,"-struct_n should include %d arguments\n", nval_expect);
-      goto end;
-    }
-    nx   = values_i[0];
-    ny   = values_i[1];
-    nz   = (dim == 3) ? values_i[2] : 1;
-
-    nn   = nx*ny*nz;
-    nex  = (nx-1);
-
-    ney  = (ny-1)/nproc_mic + (((ny-1) % nproc_mic > rank_mic) ? 1:0);
-    nez  = (nz-1);
-    nelm = (dim == 2) ? nex*ney : nex*ney*nez;
-    nyl  = (rank_mic == 0) ? ney+1 : ney;
-    nl   = (dim == 2) ? nyl*nx : nyl*nx*nz;
-
-    hx   = lx/nex;
-    hy   = ly/(ny-1);
-    hz   = (dim == 3) ? (lz/nez) : -1;
-
-    int *nyl_arr = malloc(nproc_mic * sizeof(int));
-    ierr = MPI_Allgather(&nyl, 1, MPI_INT, nyl_arr, 1, MPI_INT, MICRO_COMM); if (ierr) return 1;
-    ny_inf = 0;
-    for (int i = 0 ; i < rank_mic ; i++)
-      ny_inf += nyl_arr[i];
-    free(nyl_arr);
-
-    npe = (dim == 2) ? 4 : 8;
-    ngp = (dim == 2) ? 4 : 8;
-    if (ny < nproc_mic) {
-      myio_printf(MICRO_COMM, "ny %d not large enough to be executed with %d processes\n", ny, nproc_mic);
-      goto end;
-    }
-
-  }
-  else{
-    myio_printf(MICRO_COMM,"-struct_n is request\n");
+  ierr = myio_comm_line_get_int(&command_line, "-dim", &dim, &found);
+  if (found == false) {
+    myio_printf(MICRO_COMM,"-dim not given on command line.\n");
     goto end;
   }
 
-  center_coor = malloc(dim*sizeof(double));
-  if (dim == 2) {
-    center_coor[0] = lx / 2;
-    center_coor[1] = ly / 2;
-    vol_elem = hx*hy;
-    vol_tot  = lx * ly;
-    vol_loc  = lx * (hy*ney);
+  nvoi = (dim == 2) ? 3 : 6;
+
+  char string_buf[NBUF];
+  ierr = myio_comm_line_get_string(&command_line, "-micro_struct", string_buf, &found); CHECK_AND_GOTO(ierr)
+  micro_struct_init(dim, string_buf, &micro_struct);
+
+  int nval_found, nval_expect = (dim == 2) ? 2 : 3;
+  int values_int[3];
+  myio_comm_line_get_int_array(&command_line, "-struct_n", values_int, nval_expect, &nval_found, &found);
+
+  if (found == true) {
+    if (nval_found != nval_expect) {
+      myio_printf(MICRO_COMM, RED "-struct_n should include %d arguments\n" NORMAL, nval_expect);
+      return 1;
+    }
+  }else{
+    myio_printf(MICRO_COMM, RED "-struct_n is request\n" NORMAL, nval_expect);
+    return 1;
   }
-  else{
-    center_coor[0] = lx / 2;
-    center_coor[1] = ly / 2;
-    center_coor[2] = lz / 2;
-    vol_elem = hx*hy*hz;
-    vol_tot  = lx * ly       * lz;
-    vol_loc  = lx * (hy*ney) * lz;
-  }
+
+  mesh_struct_init(dim, values_int, micro_struct.size, &mesh_struct);
+
+  ngp = (dim == 2) ? 4 : 8;
 
   ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr)
 
@@ -173,18 +122,17 @@ int main(int argc, char **argv) {
       "  MICRO: START\n"
       "--------------------------------------------------" NORMAL "\n\n");
 
-  PRINTF1("allocating...\n")
   ierr = alloc_memory();
 
-  ierr = micro_struct_init_elem_type(&micro_struct, dim, nelm, &get_elem_centroid, elem_type); CHECK_AND_GOTO(ierr)
+  ierr = micro_struct_init_elem_type(&micro_struct, dim, mesh_struct.nelm, &get_elem_centroid, elem_type); CHECK_AND_GOTO(ierr)
 
-  ierr = micro_check_material_and_elem_type(&material_list, elem_type, nelm);
+  ierr = micro_check_material_and_elem_type(&material_list, elem_type, mesh_struct.nelm);
   CHECK_ERROR_GOTO("error checking elem_type and material_list");
 
   init_shapes(&struct_sh, &struct_dsh, &struct_wp);
 
   for (int gp = 0; gp < ngp ; gp++) {
-    for (int is = 0; is < npe ; is++) {
+    for (int is = 0; is < mesh_struct.npe ; is++) {
       if (dim == 2) {
 	struct_bmat[0][is*dim + 0][gp] = struct_dsh[is][0][gp];
 	struct_bmat[0][is*dim + 1][gp] = 0;
