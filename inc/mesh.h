@@ -34,8 +34,6 @@ typedef struct{
 
 }mesh_boundary_t;
 
-extern list_t boundary_list;
-
 typedef struct{
 
   int dim;
@@ -62,9 +60,6 @@ typedef struct{
 
 }mesh_t;
 
-extern mesh_t mesh;
-
-
 typedef struct{
 
   int dim;
@@ -77,7 +72,10 @@ typedef struct{
 
 }mesh_struct_t;
 
+extern mesh_t mesh;
 extern mesh_struct_t mesh_struct;
+extern list_t boundary_list;
+
 
 int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh);
 int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh);
