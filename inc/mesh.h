@@ -39,32 +39,24 @@ extern list_t boundary_list;
 typedef struct{
 
   int dim;
-
   int nnods_total;
   int nnods_local;
   int nnods_ghost;
   int nnods_local_ghost;
-
   int *local_nods;
   int *ghost_nods;
   int *local_ghost_nods;
   int *local_to_global;
-
   int nelm_total;
   int nelm_local;
-
   int *eptr;
   int *eind;
-
   int **elements;
   int *npe;
-
   int *nelm_dist;
   int *elm_id;
   double *elm_centroid;
-
   int partition;
-
   double *coord;
   double *coord_local;
 
@@ -80,12 +72,8 @@ typedef struct{
   int nex, ney, nez;
   int nelm;
   int nnods;
-  int *eptr;
-  int *eind;
-  int **elements;
   double lx, ly, lz;
   double hx, hy, hz;
-  double *coord;
 
 }mesh_struct_t;
 
