@@ -68,6 +68,10 @@ typedef struct{
   int nelm;
   int nn;
   int npe;
+  int nnods_boundary;
+  int *boundary_nods;
+  int *boundary_indeces;
+  double *boundary_coord;
   double lx, ly, lz;
   double hx, hy, hz;
   double vol;
