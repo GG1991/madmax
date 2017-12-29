@@ -88,6 +88,8 @@ MIC_OBJ  = ${MIC_OBJ_DIR}/main.o \
            ${MIC_OBJ_DIR}/finalize.o \
            ${MIC_OBJ_DIR}/alloc.o \
            ${MIC_OBJ_DIR}/output.o \
+           ${SPU_OBJ_DIR}/util.o \
+           ${SPU_OBJ_DIR}/mesh.o \
            $(SPU_OBJ_DIR)/comm.o \
            $(SPU_OBJ_DIR)/trace.o \
            $(SPU_OBJ_DIR)/material.o \
