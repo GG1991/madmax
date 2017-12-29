@@ -740,6 +740,8 @@ int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_st
     mesh_struct->nnods_boundary = 2*mesh_struct->nx + 2*(mesh_struct->ny - 2);
   }
   mesh_struct->boundary_nods = malloc(mesh_struct->nnods_boundary * sizeof(int));
+  mesh_struct->boundary_coord = malloc(mesh_struct->nnods_boundary * mesh_struct->dim * sizeof(double));
+  mesh_struct->boundary_indeces = malloc(mesh_struct->nnods_boundary * mesh_struct->dim * sizeof(int));
 
   if (dim == 2) {
 
