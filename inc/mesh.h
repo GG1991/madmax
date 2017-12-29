@@ -91,6 +91,9 @@ int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, in
 int mesh_cmpfunc(const void * a, const void * b);
 
 int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_struct);
+int mesh_struct_get_node_coord(mesh_struct_t *mesh_struct, int node, double *coord);
+int mesh_struct_get_elem_nods(mesh_struct_t *mesh_struct, int e, int *elem_nods);
+int mesh_struct_get_elem_indeces(mesh_struct_t *mesh_struct, int e, int *elem_indeces);
 
 int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
     int *eptr, int *eind, int *elm_id,

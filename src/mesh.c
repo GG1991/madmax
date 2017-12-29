@@ -44,84 +44,6 @@ int mesh_fill_boundary_list_from_command_line(command_line_t *command_line, list
   return 0;
 }
 
-
-int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_struct)
-{
-  mesh_struct->dim = dim;
-
-  mesh_struct->lx = length[0];
-  mesh_struct->ly = length[1];
-  mesh_struct->lz = (dim == 3) ? length[2] : 1;
-  mesh_struct->nx = sizes[0];
-  mesh_struct->ny = sizes[1];
-  mesh_struct->nz = (mesh_struct->dim == 3) ? sizes[2] : 1;
-  mesh_struct->nn = mesh_struct->nx * mesh_struct->ny * mesh_struct->nz;
-
-  mesh_struct->nex = (mesh_struct->nx - 1);
-  mesh_struct->ney = (mesh_struct->ny - 1);
-  mesh_struct->nez = (mesh_struct->dim == 3) ? (mesh_struct->nz - 1) : 1;
-  mesh_struct->nelm = mesh_struct->nex * mesh_struct->ney * mesh_struct->nez;
-
-  mesh_struct->hx = mesh_struct->lx / mesh_struct->nex;
-  mesh_struct->hy = mesh_struct->ly / mesh_struct->ney;
-  mesh_struct->hz = (mesh_struct->dim == 2) ? -1 : (mesh_struct->lz / mesh_struct->nez);
-
-  mesh_struct->vol = mesh_struct->lx * mesh_struct->ly * mesh_struct->lz;
-  mesh_struct->vol_elm = mesh_struct->hx * mesh_struct->hy * mesh_struct->hz;
-
-  mesh_struct->npe = (mesh_struct->dim == 2) ? 4 : 8;
-
-  if (dim == 2) {
-    mesh_struct->nnods_boundary = 2*mesh_struct->nx + 2*(mesh_struct->ny - 2);
-  }
-  mesh_struct->boundary_nods = malloc(mesh_struct->nnods_boundary * sizeof(int));
-
-  if (dim == 2) {
-
-    /*  ________
-     *  |   2   |
-     *  |3     4|
-     *  |___1___|
-     */
-
-    int node_count = 0;
-    for (int n = 0; n < mesh_struct->nx; n++) { // y = 0
-      mesh_struct->boundary_nods[node_count] = n;
-      mesh_struct->boundary_coord[node_count*dim + 0] = n * mesh_struct->hx;
-      mesh_struct->boundary_coord[node_count*dim + 1] = 0.0;
-      node_count++;
-    }
-
-    for (int n = 0; n < mesh_struct->nx; n++) { // y = ly
-      mesh_struct->boundary_nods[node_count] = (mesh_struct->ny * mesh_struct->nx + n);
-      mesh_struct->boundary_coord[node_count*dim + 0] = n * mesh_struct->hx;
-      mesh_struct->boundary_coord[node_count*dim + 1] = mesh_struct->ly;
-      node_count++;
-    }
-
-    for (int n = 0; n < (mesh_struct->ny - 2); n++) { // x = 0
-      mesh_struct->boundary_nods[node_count] = (n + 1) * mesh_struct->nx;
-      mesh_struct->boundary_coord[node_count*dim + 0] = 0.0;
-      mesh_struct->boundary_coord[node_count*dim + 1] = (n + 1)*mesh_struct->hy;
-      node_count++;
-    }
-
-    for (int n = 0; n < (mesh_struct->ny - 2); n++) { // x = lx
-      mesh_struct->boundary_nods[node_count] = (n + 2) * mesh_struct->nx - 1;
-      mesh_struct->boundary_coord[node_count*dim + 0] = mesh_struct->lx;
-      mesh_struct->boundary_coord[node_count*dim + 1] = (n + 1)*mesh_struct->hy;
-      node_count++;
-    }
-  }
-
-  for (int i = 0; i < mesh_struct->nnods_boundary ; i++)
-    for (int d = 0; d < mesh_struct->dim; d++)
-      mesh_struct->boundary_indeces[i*mesh_struct->dim + d] = mesh_struct->boundary_nods[i]*mesh_struct->dim + d;
-
-  return 0;
-}
-
-
 int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh)
 {
   int rank, nproc, ierr;
@@ -279,44 +201,6 @@ int mesh_do_partition(MPI_Comm COMM, mesh_t *mesh)
   return 0;
 }
 
-
-int swap_vector(int *swap, int n, int *vector, int *new_vector, int *cuts)
-{
-  /*
-     swap       = [ 0 1 0 0 1 2 2 ]
-     vector     = [ 0 1 2 3 4 5 6 ]
-     new_vector = [ 0 2 3 1 4 5 6 ]
-     cut        = [ 3 2 2 ]
-   */
-
-  int *aux_vector;
-
-  if (n == 0) return 0;
-
-  if (vector == NULL || cuts == NULL) return 1;
-
-  if (new_vector == NULL)
-    aux_vector = vector;
-  else
-    aux_vector = new_vector;
-
-  int j = 0;
-  for (int p = 0 ; p < n ; p++) {
-    cuts[p] = 0;
-    for (int i = 0 ; i < n ; i++) {
-      if (swap[i] == p) {
-	int aux = vector[i];
-	aux_vector[i] = vector[j];
-	aux_vector[j] = aux;
-	j++;
-	cuts[p] ++;
-      }
-    }
-  }
-  return 0;
-}
-
-
 int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
     int *eptr, int *eind, int *elm_id,
     int *npe_swi, int *eind_swi, int *elm_id_swi,
@@ -380,7 +264,6 @@ int swap_vectors_SCR(int *swap, int nproc, int n,  int *npe,
 
   return 0;
 }
-
 
 int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh)
 {
@@ -525,7 +408,6 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh)
   return 0;
 }
 
-
 int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh)
 {
   int rank, nproc;
@@ -594,7 +476,6 @@ int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh)
   return 0;
 }
 
-
 int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node_guess, int *owner_rank)
 {
   int nproc, rank;
@@ -626,7 +507,6 @@ int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, in
   return -1;	
 }
 
-
 int mesh_get_bounding_box(mesh_t *mesh, double *x, double *y, double *z)
 {
   if (mesh->nnods_total == 0) return 0;
@@ -653,7 +533,6 @@ int mesh_get_bounding_box(mesh_t *mesh, double *x, double *y, double *z)
 
   return 0;
 }
-
 
 int mesh_get_domain_center(MPI_Comm COMM, mesh_t *mesh, double center[3])
 {
@@ -829,4 +708,115 @@ int mesh_cmpfunc(const void *a, const void *b)
 int cmpfunc_for_list(void *a, void *b)
 {
   return *(int*)a - *(int*)b;
+}
+
+int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_struct)
+{
+  mesh_struct->dim = dim;
+
+  mesh_struct->lx = length[0];
+  mesh_struct->ly = length[1];
+  mesh_struct->lz = (dim == 3) ? length[2] : 1;
+  mesh_struct->nx = sizes[0];
+  mesh_struct->ny = sizes[1];
+  mesh_struct->nz = (mesh_struct->dim == 3) ? sizes[2] : 1;
+  mesh_struct->nn = mesh_struct->nx * mesh_struct->ny * mesh_struct->nz;
+
+  mesh_struct->nex = (mesh_struct->nx - 1);
+  mesh_struct->ney = (mesh_struct->ny - 1);
+  mesh_struct->nez = (mesh_struct->dim == 3) ? (mesh_struct->nz - 1) : 1;
+  mesh_struct->nelm = mesh_struct->nex * mesh_struct->ney * mesh_struct->nez;
+
+  mesh_struct->hx = mesh_struct->lx / mesh_struct->nex;
+  mesh_struct->hy = mesh_struct->ly / mesh_struct->ney;
+  mesh_struct->hz = (mesh_struct->dim == 2) ? -1 : (mesh_struct->lz / mesh_struct->nez);
+
+  mesh_struct->vol = mesh_struct->lx * mesh_struct->ly * mesh_struct->lz;
+  mesh_struct->vol_elm = mesh_struct->hx * mesh_struct->hy * mesh_struct->hz;
+
+  mesh_struct->npe = (mesh_struct->dim == 2) ? 4 : 8;
+
+  if (dim == 2) {
+    mesh_struct->nnods_boundary = 2*mesh_struct->nx + 2*(mesh_struct->ny - 2);
+  }
+  mesh_struct->boundary_nods = malloc(mesh_struct->nnods_boundary * sizeof(int));
+
+  if (dim == 2) {
+
+    /*  ________
+     *  |   2   |
+     *  |3     4|
+     *  |___1___|
+     */
+
+    int node_count = 0;
+    for (int n = 0; n < mesh_struct->nx; n++) { // y = 0
+      mesh_struct->boundary_nods[node_count] = n;
+      mesh_struct->boundary_coord[node_count*dim + 0] = n * mesh_struct->hx;
+      mesh_struct->boundary_coord[node_count*dim + 1] = 0.0;
+      node_count++;
+    }
+
+    for (int n = 0; n < mesh_struct->nx; n++) { // y = ly
+      mesh_struct->boundary_nods[node_count] = (mesh_struct->ny * mesh_struct->nx + n);
+      mesh_struct->boundary_coord[node_count*dim + 0] = n * mesh_struct->hx;
+      mesh_struct->boundary_coord[node_count*dim + 1] = mesh_struct->ly;
+      node_count++;
+    }
+
+    for (int n = 0; n < (mesh_struct->ny - 2); n++) { // x = 0
+      mesh_struct->boundary_nods[node_count] = (n + 1) * mesh_struct->nx;
+      mesh_struct->boundary_coord[node_count*dim + 0] = 0.0;
+      mesh_struct->boundary_coord[node_count*dim + 1] = (n + 1)*mesh_struct->hy;
+      node_count++;
+    }
+
+    for (int n = 0; n < (mesh_struct->ny - 2); n++) { // x = lx
+      mesh_struct->boundary_nods[node_count] = (n + 2) * mesh_struct->nx - 1;
+      mesh_struct->boundary_coord[node_count*dim + 0] = mesh_struct->lx;
+      mesh_struct->boundary_coord[node_count*dim + 1] = (n + 1)*mesh_struct->hy;
+      node_count++;
+    }
+  }
+
+  for (int i = 0; i < mesh_struct->nnods_boundary ; i++)
+    for (int d = 0; d < mesh_struct->dim; d++)
+      mesh_struct->boundary_indeces[i*mesh_struct->dim + d] = mesh_struct->boundary_nods[i]*mesh_struct->dim + d;
+
+  return 0;
+}
+
+int mesh_struct_get_node_coord(mesh_struct_t *mesh_struct, int node, double *coord)
+{
+  if (mesh_struct->dim == 2) {
+    coord[0] = (node % mesh_struct->nx) * mesh_struct->hx;
+    coord[1] = (node / mesh_struct->nx) * mesh_struct->hy;
+  }
+  return 0;
+}
+
+int mesh_struct_get_elem_nods(mesh_struct_t *mesh_struct, int e, int *elem_nods)
+{
+  if (mesh_struct->dim == 2) {
+    int n0 = (e % mesh_struct->nex) + (e / mesh_struct->nex) * mesh_struct->nx;
+    elem_nods[0] = n0;
+    elem_nods[1] = n0 + 1;
+    elem_nods[2] = n0 + mesh_struct->nx + 1;
+    elem_nods[3] = n0 + mesh_struct->nx;
+  }
+  return 0;
+}
+
+int mesh_struct_get_elem_indeces(mesh_struct_t *mesh_struct, int e, int *elem_indeces)
+{
+  if (mesh_struct->dim == 2) {
+    for (int d = 0; d < mesh_struct->dim; d++) {
+      int n0 = (e % mesh_struct->nex) + (e / mesh_struct->nex) * mesh_struct->nx;
+      elem_indeces[0*mesh_struct->dim + d] = (n0) * mesh_struct->dim + d;
+      elem_indeces[1*mesh_struct->dim + d] = (n0 + 1) * mesh_struct->dim + d;
+      elem_indeces[2*mesh_struct->dim + d] = (n0 + mesh_struct->nx + 1) * mesh_struct->dim + d;
+      elem_indeces[3*mesh_struct->dim + d] = (n0 + mesh_struct->nx) * mesh_struct->dim + d;
+    }
+  }
+  return 0;
 }
