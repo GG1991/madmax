@@ -31,6 +31,7 @@ int alloc_memory(void) {
   }
 
   elem_index = malloc(dim*mesh_struct.npe*sizeof(int));
+  elem_nods = malloc(mesh_struct.npe*sizeof(int));
   elem_disp = malloc(dim*mesh_struct.npe*sizeof(double));
   stress_gp = malloc(nvoi*sizeof(double));
   strain_gp = malloc(nvoi*sizeof(double));

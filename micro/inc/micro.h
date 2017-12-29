@@ -45,6 +45,7 @@ double *struct_wp;
 double ***struct_bmat;
 double *elem_disp;
 int *elem_index;
+int *elem_nods;
 double *strain_gp;
 double *stress_gp;
 int *elem_type;
