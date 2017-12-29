@@ -13,20 +13,16 @@
 #define ID_MATRIX 0
 #define ID_FIBER  1
 
-// Represents a square with a circular fibers in the middle (for 2d and 3d)
-
-typedef struct {
+typedef struct { // square with a circular fibers in the middle (for 2d and 3d)
 
   double  *desv;         // desviation of the fiber from the center
   double   radio;        // radius of the fiber
   int      nx_fib;       // number of fibers in x
   int      ny_fib;       // number of fibers in y
 
-}fiber_cilin_t;
+}fiber_cilin_t; 
 
-// Represents a square with a linear fibers (only for 2d)
-
-typedef struct {
+typedef struct { // square with a linear fibers (only for 2d)
 
   int      ntype;        // number of types
   int     *nfib;         // fiber number               (for each type)
@@ -36,8 +32,6 @@ typedef struct {
   double  *desv;         // fiber central desviation   (for each type)
 
 }fiber_line_t;
-
-// Main micro-structure for representing the arrange of material on the domain
 
 typedef struct {
 
@@ -49,11 +43,8 @@ typedef struct {
 
 micro_struct_t micro_struct;
 
-
-int micro_struct_init(const int dim, const char *string, micro_struct_t *micro_struct );
-
-int micro_struct_get_elem_id(const int dim, const micro_struct_t *micro_struct, const double *elem_centroid, int *elem_id);
-
-int micro_struct_init_elem_type( micro_struct_t *micro_struct, int dim, int nelm, int (*get_centroid)( int e, int dim, double *elem_centroid ), int *elem_type );
+int micro_struct_init(int dim, char *string, micro_struct_t *micro_struct);
+int micro_struct_get_elem_id(int dim, micro_struct_t *micro_struct, double *elem_centroid, int *elem_id);
+int micro_struct_init_elem_type(micro_struct_t *micro_struct, int dim, int nelm, int (*get_centroid)(int e, int dim, double *elem_centroid), int *elem_type);
 
 #endif

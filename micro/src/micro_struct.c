@@ -1,10 +1,10 @@
 #include "micro_struct.h"
 
-int micro_struct_init(const int dim, const char *string, micro_struct_t *micro_struct) {
+int micro_struct_init(int dim, char *string, micro_struct_t *micro_struct) {
 
-  char   *stra = strdup( string );
-  char   *data = strtok( stra, " \n" );
-  double *size = malloc( dim * sizeof(double) );
+  char *stra = strdup(string );
+  char *data = strtok(stra, " \n" );
+  double *size = malloc(dim * sizeof(double) );
 
   if (strcmp(data, "fiber_cilin") == 0) {
 
@@ -107,7 +107,7 @@ int micro_struct_init(const int dim, const char *string, micro_struct_t *micro_s
 }
 
 
-int micro_struct_get_elem_id(const int dim, const micro_struct_t *micro_struct, const double *elem_centroid, int *elem_id) {
+int micro_struct_get_elem_id(int dim, micro_struct_t *micro_struct, double *elem_centroid, int *elem_id) {
 
   double lx = micro_struct->size[0];
   double ly = micro_struct->size[1];
@@ -140,8 +140,7 @@ int micro_struct_get_elem_id(const int dim, const micro_struct_t *micro_struct, 
 	}
       }
 
-  }
-  else if (micro_struct->type == FIBER_LINE) {
+  }else if (micro_struct->type == FIBER_LINE) {
 
     fiber_line_t * fiber_line = (fiber_line_t *)micro_struct->data;
 
@@ -150,7 +149,7 @@ int micro_struct_get_elem_id(const int dim, const micro_struct_t *micro_struct, 
     double  p_line[2];
     double  n_line[2];
     int     side_1, side_2;
-    const double *point = elem_centroid;
+    double *point = elem_centroid;
 
 
     for (int i = 0 ; i < fiber_line->ntype ; i++) {
@@ -164,16 +163,16 @@ int micro_struct_get_elem_id(const int dim, const micro_struct_t *micro_struct, 
 	p_line[0] = lx/2;
 	p_line[1] = ly/2 + fiber_line->sep[i]*(j-fiber_line->nfib[i]/2) \
 		    + fiber_line->desv[i] + fiber_line->width[i]/2;
-	side_1 = geom_2d_line_side( n_line, p_line, point );
+	side_1 = geom_2d_line_side(n_line, p_line, point);
 
 	/* line 1 (upper) p_line = ( 0 , ly/2 + fiber_line->sep[i] + desv[i] + width[i]/2 ) */
 	p_line[0] = lx/2;
 	p_line[1] = ly/2 + fiber_line->sep[i]*(j-fiber_line->nfib[i]/2) \
 		    + fiber_line->desv[i] - fiber_line->width[i]/2;
-	side_2 = geom_2d_line_side( n_line, p_line, point );
+	side_2 = geom_2d_line_side(n_line, p_line, point);
 
-	if ( side_1 == 0 || side_2 == 0 || (side_1*side_2) == -1 ) {
-	    *elem_id = ID_FIBER ;
+	if (side_1 == 0 || side_2 == 0 || (side_1*side_2) == -1) {
+	    *elem_id = ID_FIBER;
 	    return 0;
 	}
 
@@ -186,17 +185,13 @@ int micro_struct_get_elem_id(const int dim, const micro_struct_t *micro_struct, 
 }
 
 
-int micro_struct_init_elem_type(micro_struct_t *micro_struct, int dim, int nelm,
-    int (*get_centroid)( int e, int dim, double *elem_centroid ), int *elem_type ) {
-
+int micro_struct_init_elem_type(micro_struct_t *micro_struct, int dim, int nelm, int (*get_centroid)(int e, int dim, double *elem_centroid), int *elem_type)
+{
   double *elem_centroid = malloc(dim*sizeof(double));
 
   for (int e = 0 ; e < nelm ; e++) {
-
-    get_centroid( e, dim, elem_centroid );
-    micro_struct_get_elem_id( dim, micro_struct, elem_centroid,	&elem_type[e]);
-
+    get_centroid(e, dim, elem_centroid);
+    micro_struct_get_elem_id(dim, micro_struct, elem_centroid, &elem_type[e]);
   }
-
   return 0;
 }
