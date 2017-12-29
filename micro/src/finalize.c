@@ -7,8 +7,8 @@ int finalize(void) {
 
   int ierr;
 
-  free(loc_elem_index);
-  free(glo_elem_index);
+  free(elem_index);
+  free(elem_nods);
   free(elem_disp);
   free(stress_gp);
   free(strain_gp);
@@ -18,7 +18,7 @@ int finalize(void) {
   free(elem_type);
 
   for (int i = 0; i < nvoi; i++) {
-    for (int j = 0; j < npe*dim; j++)
+    for (int j = 0; j < mesh_struct.npe*dim; j++)
       free(struct_bmat[i][j]);
     free(struct_bmat[i]);
   }

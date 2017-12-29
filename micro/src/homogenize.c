@@ -122,8 +122,8 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
     assembly_b_petsc();
 
     VecGetArray(b, &b_arr);
-    for (int i = 0; i < ndir_ix ; i++)
-      b_arr[dir_ix_loc[i]] = 0.0;
+    for (int i = 0; i < mesh_struct.nnods_boundary * mesh_struct.dim; i++)
+      b_arr[mesh_struct.boundary_indeces[i]] = 0.0;
 
     VecRestoreArray(b, &b_arr);
     VecGhostUpdateBegin(b, INSERT_VALUES, SCATTER_FORWARD);
@@ -134,11 +134,11 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
 
     if (norm < params.non_linear_min_norm_tol) break;
 
-    VecScale( b, -1.0 );
+    VecScale(b, -1.0);
 
     assembly_A_petsc();
 
-    MatZeroRowsColumns(A, ndir_ix, dir_ix_glo, 1.0, NULL, NULL);
+    MatZeroRowsColumns(A, mesh_struct.nnods_boundary * mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
     save_event(MICRO_COMM, "ass_1");
 
     save_event(MICRO_COMM, "sol_0");
@@ -218,14 +218,11 @@ int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_a
 
   int ierr = 0;
 
-  if (params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL || params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL) {
-
+  if (params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL || params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL)
     ierr = mic_homogenize_taylor(strain_mac, strain_ave, stress_ave);
-  }
-  else if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
 
+  else if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS)
     ierr = mic_homog_us(strain_mac, strain_ave, stress_ave);
-  }
 
   return ierr;
 }
@@ -235,16 +232,13 @@ int homogenize_get_c_tangent(double *strain_mac, double **c_tangent) {
 
   int ierr = 0;
 
-  if (flags.linear_materials == true && flags.linear_materials == true) {
-
+  if (flags.linear_materials == true && flags.linear_materials == true)
     (*c_tangent) = params.c_tangent_linear;
 
-  }
   else if (flags.linear_materials == false) {
 
     ierr = homogenize_calculate_c_tangent(strain_mac, params.c_tangent);
     (*c_tangent) = params.c_tangent;
-
   }
 
   return ierr;
@@ -314,20 +308,18 @@ int strain_x_coord(double *strain, double *coord, double *u)
 
 int assembly_b_petsc(void)
 {
+  double *b_arr;
   VecZeroEntries(b);
-  VecGhostUpdateBegin(b ,INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd(b ,INSERT_VALUES, SCATTER_FORWARD);
+  VecGetArray(b, &b_arr);
 
-  Vec b_loc; double *b_arr;
-  VecGhostGetLocalForm(b, &b_loc);
-  VecGetArray(b_loc, &b_arr);
+  int npe = mesh_struct.npe;
+  int dim = mesh_struct.dim;
+  double *res_elem = malloc(dim*npe*sizeof(double));
 
-  double *res_elem = malloc(mesh_struct.dim*mesh_struct.npe*sizeof(double));
+  for (int e = 0 ; e < mesh_struct.nelm ; e++) {
 
-  for (int e = 0 ; e < nelm ; e++) {
-
-    ARRAY_SET_TO_ZERO(res_elem, mesh_struct.npe*mesh_struct.dim)
-    get_local_elem_index(e, elem_index);
+    ARRAY_SET_TO_ZERO(res_elem, npe*dim);
+    mesh_struct_get_elem_indeces(&mesh_struct, e, elem_index);
 
     for (int gp = 0; gp < ngp; gp++) {
 
@@ -341,18 +333,10 @@ int assembly_b_petsc(void)
 
     }
 
-    for (int i = 0; i < mesh_struct.npe*mesh_struct.dim; i++ )
+    for (int i = 0; i < npe*dim; i++ )
       b_arr[elem_index[i]] += res_elem[i];
-
   }
-
-  VecRestoreArray(b_loc, &b_arr);
-  VecGhostRestoreLocalForm(b, &b_loc);
-
-  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateBegin(b, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd(b, INSERT_VALUES, SCATTER_FORWARD);
+  VecRestoreArray(b, &b_arr);
 
   return 0;
 }
@@ -362,27 +346,29 @@ int assembly_A_petsc(void)
 {
   MatZeroEntries(A);
 
-  double *k_elem = malloc(mesh_struct.dim*mesh_struct.npe*mesh_struct.dim*mesh_struct.npe*sizeof(double));
-  double *c = malloc(nvoi*nvoi * sizeof(double));
+  int npe = mesh_struct.npe;
+  int dim = mesh_struct.dim;
+  double *k_elem = malloc(dim*npe*dim*npe*sizeof(double));
+  double *c = malloc(nvoi*nvoi*sizeof(double));
 
   for (int e = 0; e < mesh_struct.nelm; e++) {
 
-    ARRAY_SET_TO_ZERO(k_elem, mesh_struct.npe*mesh_struct.dim*mesh_struct.npe*mesh_struct.dim)
-    get_global_elem_index(e, elem_index);
+    ARRAY_SET_TO_ZERO(k_elem, npe*dim*npe*dim)
+    mesh_struct_get_elem_indeces(&mesh_struct, e, elem_index);
 
     for (int gp = 0; gp < ngp; gp++) {
 
       get_strain(e, gp, strain_gp);
       get_c_tan(NULL, e, gp, strain_gp, c);
 
-      for (int i = 0 ; i < mesh_struct.npe*dim; i++)
-	for (int j = 0 ; j < mesh_struct.npe*dim; j++)
+      for (int i = 0 ; i < npe*dim; i++)
+	for (int j = 0 ; j < npe*dim; j++)
 	  for (int k = 0; k < nvoi ; k++)
 	    for (int h = 0; h < nvoi; h++)
 	      k_elem[ i*npe*dim + j] += struct_bmat[h][i][gp]*c[h*nvoi + k]*struct_bmat[k][j][gp]*struct_wp[gp];
 
     }
-    MatSetValues(A, npe*dim, glo_elem_index, npe*dim, glo_elem_index, k_elem, ADD_VALUES);
+    MatSetValues(A, npe*dim, elem_index, npe*dim, elem_index, k_elem, ADD_VALUES);
   }
 
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
@@ -439,8 +425,8 @@ int get_elem_properties(void)
 
     }
     for (int v = 0 ; v < nvoi ; v++) {
-      elem_strain[ e*nvoi + v ] = strain_aux[v] / vol_elem;
-      elem_stress[ e*nvoi + v ] = stress_aux[v] / vol_elem;
+      elem_strain[ e*nvoi + v ] = strain_aux[v] / mesh_struct.vol_elm;
+      elem_stress[ e*nvoi + v ] = stress_aux[v] / mesh_struct.vol_elm;
     }
   }
   return 0;
@@ -449,13 +435,12 @@ int get_elem_properties(void)
 
 int get_strain(int e, int gp, double *strain_gp)
 {
-  Vec x_loc; double *x_arr;
-  VecGhostGetLocalForm(x, &x_loc);
-  VecGetArray(x_loc, &x_arr);
+  double *x_arr;
+  VecGetArray(x, &x_arr);
 
-  get_local_elem_index(e, elem_index);
+  mesh_struct_get_elem_indeces(&mesh_struct, e, elem_index);
 
-  for (int i = 0; i < mesh_struct.npe*dim; i++)
+  for (int i = 0; i < mesh_struct.npe * mesh_struct.dim; i++)
     elem_disp[i] = x_arr[elem_index[i]];
 
   for (int v = 0; v < nvoi; v++) {
@@ -533,46 +518,8 @@ int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 int get_elem_centroid(int e, int dim, double *centroid)
 {
   if (dim == 2) {
-    centroid[0] = (e%nex + 0.5)*hx;
-    centroid[1] = (e/nex + 0.5)*hy;
-  }
-  return 0;
-}
-
-
-int get_elem_index(int e, int *elem_index)
-{
-  if (dim == 2) {
-    for (int d = 0; d < dim; d++) {
-      int n0 = (e % nex) + (e / nex)*nx;
-      elem_index[0*dim + d] = (n0         )*dim + d;
-      elem_index[1*dim + d] = (n0 + 1     )*dim + d;
-      elem_index[2*dim + d] = (n0 + nx + 1)*dim + d;
-      elem_index[3*dim + d] = (n0 + nx + 0)*dim + d;
-    }
-  }
-  return 0;
-}
-
-
-int get_elem_node(int e, int *elem_node)
-{
-  if (dim == 2) {
-    int n0 = (e%nex) + (e/nex)*nx;
-    elem_node[0] = n0;
-    elem_node[1] = n0 + 1;
-    elem_node[2] = n0 + nx + 1;
-    elem_node[3] = n0 + nx;
-  }
-  return 0;
-}
-
-
-int get_node_local_coor(int n, double *coord)
-{
-  if (dim == 2) {
-    coord[0] = (n % nx)*hx;
-    coord[1] = (n / nx)*hy;
+    centroid[0] = (e % mesh_struct.nex + 0.5) * mesh_struct.hx;
+    centroid[1] = (e / mesh_struct.nex + 0.5) * mesh_struct.hy;
   }
   return 0;
 }
@@ -583,7 +530,7 @@ int init_shapes(double ***sh, double ****dsh, double **wp)
   int nsh = (dim == 2) ? 4 : 8;
   double *xp = malloc(ngp*dim*sizeof(double));
 
-  if (dim == 2) {
+  if (mesh_struct.dim == 2) {
     xp[0] = -0.577350269189626;   xp[1]= -0.577350269189626;
     xp[2] = +0.577350269189626;   xp[3]= -0.577350269189626;
     xp[4] = +0.577350269189626;   xp[5]= +0.577350269189626;
@@ -606,6 +553,8 @@ int init_shapes(double ***sh, double ****dsh, double **wp)
 
   if (dim == 2){
 
+    double hx = mesh_struct.hx;
+    double hy = mesh_struct.hy;
     for (int gp = 0; gp < ngp; gp++) {
       (*sh)[0][gp] = (1 - xp[2*gp]) * (1 - xp[2*gp+1])/4;
       (*sh)[1][gp] = (1 + xp[2*gp]) * (1 - xp[2*gp+1])/4;
@@ -623,6 +572,7 @@ int init_shapes(double ***sh, double ****dsh, double **wp)
       (*dsh)[2][1][gp] = +1 * (1 + xp[2*gp+0]) /4 * 2/hy;
       (*dsh)[3][1][gp] = +1 * (1 - xp[2*gp+0]) /4 * 2/hy;
     }
+
 
     for (int gp = 0 ; gp < ngp ; gp++)
       (*wp)[gp] = mesh_struct.vol_elm / ngp;
