@@ -21,6 +21,7 @@ int alloc_memory(void) {
 
     VecCreate(MICRO_COMM, &x);
     VecSetSizes(x, PETSC_DECIDE, mesh_struct.nn * mesh_struct.dim);
+    VecSetFromOptions(x);
     VecDuplicate(x, &dx);
     VecDuplicate(x, &b);
 
