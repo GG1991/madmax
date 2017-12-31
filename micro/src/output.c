@@ -22,7 +22,7 @@ int micro_print_info(void)
   double norm;
 
   if (b != NULL) {
-    VecNorm( b, NORM_2, &norm );
+    VecNorm(b, NORM_2, &norm);
     fprintf(fm,"|b| = %lf \n", norm);
   }
 
