@@ -487,19 +487,17 @@ int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, in
   for (int i = 0 ; i < nproc ; i++) {
 
     if (rank_guess == rank) {
-
       *owner_rank = rank_guess; return 1;
-
     }else{
 
       if (util_is_in_vector(node_guess, &rep_matrix[rank_guess][0], nrep[rank_guess]) == 1) {
-
 	*owner_rank = rank_guess; return 0;
 
       }else{
 
-	rank_guess ++; if (rank_guess == nproc) rank_guess = 0;
-
+	rank_guess ++;
+	if (rank_guess == nproc) 
+	  rank_guess = 0;
       }
     }
   }
@@ -729,7 +727,7 @@ int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_st
 
   mesh_struct->hx = mesh_struct->lx / mesh_struct->nex;
   mesh_struct->hy = mesh_struct->ly / mesh_struct->ney;
-  mesh_struct->hz = (mesh_struct->dim == 2) ? -1 : (mesh_struct->lz / mesh_struct->nez);
+  mesh_struct->hz = (mesh_struct->dim == 2) ? 1 : (mesh_struct->lz / mesh_struct->nez);
 
   mesh_struct->vol = mesh_struct->lx * mesh_struct->ly * mesh_struct->lz;
   mesh_struct->vol_elm = mesh_struct->hx * mesh_struct->hy * mesh_struct->hz;
