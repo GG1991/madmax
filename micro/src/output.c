@@ -75,14 +75,12 @@ int micro_pvtu(char *name)
       "</PCellData>\n" , nvoi , nvoi);
 
   sprintf(file_name,"%s_0",name);
-  fprintf(fm, "<Piece Source=\"%s.vtu\"/>\n",file_name);
-  fprintf(fm, "</PUnstructuredGrid>\n</VTKFile>\n");
-
+  fprintf(fm, "<Piece Source=\"%s.vtu\"/>\n</PUnstructuredGrid>\n</VTKFile>\n",file_name);
   fclose(fm);
 
   sprintf(file_name, "%s_%d.vtu", name, rank_mic);
   fm = fopen(file_name, "w");
-  if (!fm) {
+  if (fm == NULL) {
     myio_printf(MICRO_COMM,"Problem trying to opening file %s for writing\n", file_name);
     return 1;
   }
@@ -97,12 +95,12 @@ int micro_pvtu(char *name)
 
   double *coord = malloc(dim*sizeof(double));
   int npe = mesh_struct.npe;
-  int dim = mesh_struct.npe;
+  int dim = mesh_struct.dim;
 
   for (int n = 0; n < mesh_struct.nn; n++) {
     mesh_struct_get_node_coord(&mesh_struct, n, coord);
     for (int d = 0 ; d < 3 ; d++)
-      fprintf(fm,"%e ",(d < mesh_struct.dim) ? coord[d] : 0.0);
+      fprintf(fm,"%e ",(d < dim) ? coord[d] : 0.0);
     fprintf(fm,"\n");
   }
   fprintf(fm,"</DataArray>\n</Points>\n<Cells>\n");
@@ -128,11 +126,9 @@ int micro_pvtu(char *name)
   for (int e = 0 ; e < mesh_struct.nelm ; e++)
     fprintf(fm, "%d ", vtkcode(dim, npe));
   fprintf(fm,"\n</DataArray>\n");
-
   fprintf(fm,"</Cells>\n");
 
   fprintf(fm,"<PointData Vectors=\"displ\">\n"); // Vectors inside is a filter we should not use this here
-
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
   VecGetArray(x, &xvalues);
   for (int n = 0 ; n < mesh_struct.nn ; n++) {

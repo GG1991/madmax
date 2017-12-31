@@ -10,6 +10,8 @@ $MPIEXEC -np 1  ../../micro/micro \
     -micro_struct "fiber_cilin 3.0 3.0 1 1 0.75 0.0 0.0" \
     -pc_type jacobi \
     -ksp_type cg \
+    -ksp_atol 1.0e-12 \
+    -ksp_rtol 1.0e-12 \
     -homo_us \
     -print_pvtu
 
