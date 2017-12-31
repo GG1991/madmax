@@ -20,6 +20,13 @@
 #include "solvers.h"
 #include "mesh.h"
 
+#define HOMOG_METHOD_NULL 0
+#define HOMOG_METHOD_TAYLOR_SERIAL 1
+#define HOMOG_METHOD_TAYLOR_PARALLEL 2
+#define HOMOG_METHOD_UNIF_STRAINS 3
+
+#define HOMOGENIZE_DELTA_STRAIN 0.005
+
 #define GREEN "\x1B[32m"
 #define RED "\x1B[31m"
 #define NORMAL "\x1B[0m"
@@ -68,10 +75,13 @@ typedef struct{
 
   int homog_method;
   int non_linear_max_its;
-  double non_linear_min_norm_tol;
   double c_tangent_linear[MAX_NVOIGT*MAX_NVOIGT];
   double c_tangent[MAX_NVOIGT*MAX_NVOIGT];
   double rho;
+
+  int non_linear_its;
+  double residual_norm;
+  double non_linear_min_norm_tol;
 
 }params_t;
 
@@ -101,8 +111,6 @@ int micro_check_material_and_elem_type(list_t *material_list, int *elem_type, in
 
 int get_local_elem_index(int e, int *loc_index);
 int get_global_elem_index(int e, int *glo_elem_index);
-int assembly_b_petsc(void);
-int assembly_A_petsc(void);
 int get_stress(int e , int gp, double *strain_gp, double *stress_gp);
 int get_strain(int e , int gp, double *strain_gp);
 int get_c_tan(const char * name, int e, int gp, double *strain_gp, double *c_tan);
@@ -119,9 +127,22 @@ int init_shapes(double ***sh, double ****dsh, double **wp);
 
 void homogenize_check_linear_material(void);
 
+int assembly_b_petsc(double *norm);
+int assembly_A_petsc(void);
+
 void init_variables(void);
 int finalize(void);
 
 int alloc_memory(void);
+
+int homogenize_init(void);
+int homogenize_get_c_tangent(double *strain_mac, double **c_tangent);
+int homogenize_get_rho(double *rho);
+int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent);
+int homogenize_calculate_c_tangent_around_zero(double *c_tangent);
+int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave);
+int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave);
+int homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave);
+int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *stress_ave);
 
 #endif
