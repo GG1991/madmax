@@ -2,14 +2,8 @@
 
 MPIEXEC="/home/guido/libs/openmpi-install/bin/mpiexec" 
 
-if [ $# -eq 0 ]; then
-  NP=1;
-else
-  NP=$1;
-fi
-
-#$MPIEXEC -np $NP xterm -e gdb -x file.gdb --args ../../micro/micro \
-$MPIEXEC -np $NP  ../../micro/micro \
+#$MPIEXEC -np 1 xterm -e gdb -x file.gdb --args ../../micro/micro \
+$MPIEXEC -np 1  ../../micro/micro \
     -struct_n 75,75 \
     -dim 2 \
     -material "MATRIX MAT_ELASTIC 1.0e7 1.0e6 0.3","FIBER MAT_ELASTIC 1.0e7 1.0e7 0.3" \
