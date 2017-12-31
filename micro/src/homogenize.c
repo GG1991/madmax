@@ -83,19 +83,13 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
 
 int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
 {
-  VecZeroEntries(x);
-  VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
-
-  Vec x_loc;
   double *x_arr;
-  VecGhostGetLocalForm(x, &x_loc);
-  VecGetArray(x_loc, &x_arr);
+  VecZeroEntries(x);
+  VecGetArray(x, &x_arr);
 
   if (dim == 2) {
 
-    double  displ[2]; // (ux,uy) displacement
-
+    double displ[2];
     for (int n = 0; n < mesh_struct.nnods_boundary ; n++ ) {
       strain_x_coord(strain_mac, &mesh_struct.boundary_coord[n*dim], displ);
       for (int d = 0; d < dim ; d++)
@@ -103,16 +97,13 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
     }
   }
 
-  VecRestoreArray(x_loc, &x_arr);
-  VecGhostRestoreLocalForm(x, &x_loc);
-  VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+  VecRestoreArray(x, &x_arr);
 
   int nr_its = 0;
   double *b_arr;
-  double norm = params.non_linear_min_norm_tol*10;
+  double norm = params.non_linear_min_norm_tol * 10;
 
-  VecNorm( x , NORM_2 , &norm );
+  VecNorm(x, NORM_2, &norm);
   PRINTF2("|x| = %lf\n", norm);
 
   while (nr_its < params.non_linear_max_its && norm > params.non_linear_min_norm_tol) {
@@ -126,8 +117,6 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
       b_arr[mesh_struct.boundary_indeces[i]] = 0.0;
 
     VecRestoreArray(b, &b_arr);
-    VecGhostUpdateBegin(b, INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(b, INSERT_VALUES, SCATTER_FORWARD);
 
     VecNorm(b, NORM_2, &norm);
     PRINTF2("|b| = %lf \n", norm);
@@ -147,8 +136,6 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
     save_event(MICRO_COMM, "sol_1");
 
     VecAXPY(x, 1.0, dx);
-    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
 
     nr_its ++;
   }
