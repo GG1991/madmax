@@ -146,9 +146,6 @@ int main(int argc, char **argv)
 
   init_trace(MICRO_COMM, "micro_trace.dat");
 
-  ierr = KSPCreate(PETSC_COMM_WORLD, &ksp); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-
   homogenize_init();
 
   double strain_mac[6], strain_ave[6], stress_ave[6];
