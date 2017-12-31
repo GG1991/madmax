@@ -1,6 +1,5 @@
 #include "micro.h"
 
-
 int homogenize_init(void)
 {
   if (material_are_all_linear(&material_list) == true)
@@ -16,7 +15,6 @@ int homogenize_init(void)
   }
   return ierr;
 }
-
 
 int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave)
 {
@@ -38,7 +36,6 @@ int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double 
   return 0;
 }
 
-
 int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   int ierr = 0;
@@ -51,7 +48,6 @@ int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_a
 
   return ierr;
 }
-
 
 int homogenize_get_c_tangent(double *strain_mac, double **c_tangent)
 {
@@ -69,7 +65,6 @@ int homogenize_get_c_tangent(double *strain_mac, double **c_tangent)
   return ierr;
 }
 
-
 int homogenize_calculate_c_tangent_around_zero(double *c_tangent)
 {
   double strain_zero[MAX_NVOIGT];
@@ -77,7 +72,6 @@ int homogenize_calculate_c_tangent_around_zero(double *c_tangent)
 
   return homogenize_calculate_c_tangent(strain_zero, c_tangent);
 }
-
 
 int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent)
 {
@@ -112,11 +106,9 @@ int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent)
 	return ierr;
       }
     }
-
   }
   return ierr;
 }
-
 
 int homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave)
 {
@@ -197,7 +189,6 @@ int homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave
   return 0;
 }
 
-
 int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   double *x_arr;
@@ -246,21 +237,8 @@ int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *s
 
   get_averages(strain_ave, stress_ave);
 
-  if (flags.print_vectors == true) {
-    PetscViewer viewer;
-    PetscViewerASCIIOpen(MICRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
-    PetscViewerASCIIOpen(MICRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
-    PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
-  }
-
-  if (flags.print_matrices == true) {
-    PetscViewer viewer;
-    PetscViewerASCIIOpen(MICRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
-  }
-
   return 0;
 }
-
 
 int strain_x_coord(double *strain, double *coord, double *u)
 {
@@ -308,9 +286,16 @@ int assembly_b_petsc(double *norm)
 
   VecRestoreArray(b, &b_arr);
   VecNorm(b, NORM_2, norm);
+
+  if (flags.print_vectors == true) {
+    PetscViewer viewer;
+    PetscViewerASCIIOpen(MICRO_COMM,"b.dat" ,&viewer); VecView(b ,viewer);
+    PetscViewerASCIIOpen(MICRO_COMM,"x.dat" ,&viewer); VecView(x ,viewer);
+    PetscViewerASCIIOpen(MICRO_COMM,"dx.dat",&viewer); VecView(dx,viewer);
+  }
+
   return 0;
 }
-
 
 int assembly_A_petsc(void)
 {
@@ -346,9 +331,13 @@ int assembly_A_petsc(void)
   MatZeroRowsColumns(A, mesh_struct.nnods_boundary * mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+
+  if (flags.print_matrices == true) {
+    PetscViewer viewer;
+    PetscViewerASCIIOpen(MICRO_COMM,"A.dat" ,&viewer); MatView(A ,viewer);
+  }
   return 0;
 }
-
 
 int get_averages(double *strain_ave, double *stress_ave)
 {
@@ -376,7 +365,6 @@ int get_averages(double *strain_ave, double *stress_ave)
   return 0;
 }
 
-
 int get_elem_properties(void)
 {
   for (int e = 0; e < mesh_struct.nelm; e++) {
@@ -403,7 +391,6 @@ int get_elem_properties(void)
   }
   return 0;
 }
-
 
 int get_strain(int e, int gp, double *strain_gp)
 {
@@ -454,11 +441,8 @@ int get_stress(int e, int gp, double *strain_gp, double *stress_gp)
 
   if (pm == NULL) return 1;
 
-  int ierr = material_get_stress(mat_p, dim, strain_gp, stress_gp);
-
-  return ierr;
+  return material_get_stress(mat_p, dim, strain_gp, stress_gp);
 }
-
 
 int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
 {
@@ -481,11 +465,8 @@ int get_c_tan(const char *name, int e, int gp, double *strain_gp, double *c_tan)
   }
   if (pm == NULL) return 1;
 
-  material_get_c_tang(mat_p, dim, strain_gp, c_tan);
-
-  return 0;
+  return material_get_c_tang(mat_p, dim, strain_gp, c_tan);
 }
-
 
 int get_elem_centroid(int e, int dim, double *centroid)
 {
@@ -548,10 +529,8 @@ int init_shapes(double ***sh, double ****dsh, double **wp)
 
     for (int gp = 0 ; gp < ngp ; gp++)
       (*wp)[gp] = mesh_struct.vol_elm / ngp;
-
   }
 
   free(xp);
-
   return 0;
 }
