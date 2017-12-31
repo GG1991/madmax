@@ -15,7 +15,6 @@
 #include "trace.h"
 #include "myio.h"
 #include "vtk.h"
-#include "homogenize.h"
 #include "micro_struct.h"
 #include "solvers.h"
 #include "mesh.h"

@@ -44,10 +44,10 @@ int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_a
   int ierr = 0;
 
   if (params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL || params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL)
-    ierr = mic_homogenize_taylor(strain_mac, strain_ave, stress_ave);
+    ierr = homogenize_taylor(strain_mac, strain_ave, stress_ave);
 
   else if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS)
-    ierr = mic_homog_us(strain_mac, strain_ave, stress_ave);
+    ierr = homogenize_uniform_strains(strain_mac, strain_ave, stress_ave);
 
   return ierr;
 }
@@ -118,7 +118,7 @@ int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent)
 }
 
 
-int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave)
+int homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   double *c_i = malloc(nvoi*nvoi * sizeof(double));
   double *c_m = malloc(nvoi*nvoi * sizeof(double));
@@ -198,7 +198,7 @@ int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress
 }
 
 
-int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
+int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   double *x_arr;
   VecZeroEntries(x);
