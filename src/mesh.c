@@ -760,7 +760,7 @@ int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_st
     }
 
     for (int n = 0; n < mesh_struct->nx; n++) { // y = ly
-      mesh_struct->boundary_nods[node_count] = (mesh_struct->ny * mesh_struct->nx + n);
+      mesh_struct->boundary_nods[node_count] = (mesh_struct->ny - 1) * mesh_struct->nx + n;
       mesh_struct->boundary_coord[node_count*dim + 0] = n * mesh_struct->hx;
       mesh_struct->boundary_coord[node_count*dim + 1] = mesh_struct->ly;
       node_count++;
@@ -783,7 +783,7 @@ int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_st
 
   for (int i = 0; i < mesh_struct->nnods_boundary ; i++)
     for (int d = 0; d < mesh_struct->dim; d++)
-      mesh_struct->boundary_indeces[i*mesh_struct->dim + d] = mesh_struct->boundary_nods[i]*mesh_struct->dim + d;
+      mesh_struct->boundary_indeces[i*mesh_struct->dim + d] = mesh_struct->boundary_nods[i] * mesh_struct->dim + d;
 
   return 0;
 }
