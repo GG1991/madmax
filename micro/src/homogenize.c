@@ -1,6 +1,123 @@
 #include "micro.h"
 
 
+int homogenize_init(void)
+{
+  if (material_are_all_linear(&material_list) == true)
+    flags.linear_materials = true;
+
+  int ierr = 0;
+
+  if (flags.linear_materials == true) {
+
+    PRINTF1("calculating c tangent arround zero...\n")
+    ierr = homogenize_calculate_c_tangent_around_zero(params.c_tangent_linear);
+    flags.c_linear_calculated = true;
+  }
+  return ierr;
+}
+
+
+int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave)
+{
+  int ierr;
+
+  if (flags.linear_materials == true && flags.c_linear_calculated == true) {
+
+    for (int i = 0 ; i < nvoi ; i++) {
+      strain_ave[i] = strain_mac[i];
+      stress_ave[i] = 0.0;
+      for (int j = 0 ; j < nvoi ; j++)
+	stress_ave[i] += params.c_tangent_linear[i*nvoi + j] * strain_mac[j];
+    }
+  }else{
+
+    ierr = homogenize_get_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
+    if (ierr) return 1;
+  }
+  return 0;
+}
+
+
+int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave)
+{
+  int ierr = 0;
+
+  if (params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL || params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL)
+    ierr = mic_homogenize_taylor(strain_mac, strain_ave, stress_ave);
+
+  else if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS)
+    ierr = mic_homog_us(strain_mac, strain_ave, stress_ave);
+
+  return ierr;
+}
+
+
+int homogenize_get_c_tangent(double *strain_mac, double **c_tangent)
+{
+  int ierr = 0;
+
+  if (flags.linear_materials == true && flags.linear_materials == true)
+    (*c_tangent) = params.c_tangent_linear;
+
+  else if (flags.linear_materials == false) {
+
+    ierr = homogenize_calculate_c_tangent(strain_mac, params.c_tangent);
+    (*c_tangent) = params.c_tangent;
+  }
+
+  return ierr;
+}
+
+
+int homogenize_calculate_c_tangent_around_zero(double *c_tangent)
+{
+  double strain_zero[MAX_NVOIGT];
+  ARRAY_SET_TO_ZERO(strain_zero, nvoi);
+
+  return homogenize_calculate_c_tangent(strain_zero, c_tangent);
+}
+
+
+int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent)
+{
+  double strain_1[MAX_NVOIGT], strain_2[MAX_NVOIGT];
+  double stress_1[MAX_NVOIGT], stress_2[MAX_NVOIGT];
+  double strain_aux[MAX_NVOIGT];
+
+  PRINTF1("calc stress in ") PRINT_ARRAY("strain", strain_1, nvoi)
+  ARRAY_COPY(strain_1, strain_mac, nvoi);
+
+  int ierr = homogenize_get_strain_stress(strain_1, strain_aux, stress_1);
+
+  for (int i = 0 ; i < nvoi ; i++) {
+
+    PRINTF2("exp %d\n", i)
+    ARRAY_COPY(strain_2, strain_mac, nvoi);
+
+    strain_2[i] = strain_2[i] + HOMOGENIZE_DELTA_STRAIN;
+
+    ierr = homogenize_get_strain_stress(strain_2, strain_aux, stress_2);
+
+    for (int j = 0 ; j < nvoi ; j++)
+      c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[i] - strain_1[i]);
+
+    if (flags.print_pvtu == true) {
+      get_elem_properties();
+      char filename[64];
+      sprintf(filename,"micro_exp%d",i);
+      ierr = micro_pvtu(filename);
+      if (ierr != 0) {
+	myio_printf(MICRO_COMM,"Problem writing vtu file\n");
+	return ierr;
+      }
+    }
+
+  }
+  return ierr;
+}
+
+
 int mic_homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   double *c_i = malloc(nvoi*nvoi * sizeof(double));
@@ -119,7 +236,7 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
     VecRestoreArray(b, &b_arr);
 
     VecNorm(b, NORM_2, &norm);
-    PRINTF2("|b| = %lf \n", norm);
+    PRINTF2(GREEN "|b| = %lf" NORMAL "\n", norm);
 
     if (norm < params.non_linear_min_norm_tol) break;
 
@@ -156,130 +273,6 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
   }
 
   return 0;
-}
-
-
-int homogenize_init(void) {
-
-  if (material_are_all_linear(&material_list) == true)
-    flags.linear_materials = true;
-
-  int ierr = 0;
-
-  if (flags.linear_materials == true) {
-
-    PRINTF1("calculating c tangent arround zero...\n")
-    ierr = homogenize_calculate_c_tangent_around_zero(params.c_tangent_linear);
-
-    flags.c_linear_calculated = true;
-
-  }
-
-  return ierr;
-}
-
-
-int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave) {
-
-  if (flags.linear_materials == true && flags.c_linear_calculated == true) {
-
-    for (int i = 0 ; i < nvoi ; i++) {
-      strain_ave[i] = strain_mac[i];
-      stress_ave[i] = 0.0;
-      for (int j = 0 ; j < nvoi ; j++)
-	stress_ave[i] += params.c_tangent_linear[i*nvoi + j] * strain_mac[j];
-    }
-
-  }
-  else{
-
-    int ierr = homogenize_get_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
-    if (ierr) return 1;
-
-  }
-  return 0;
-}
-
-
-int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave) {
-
-  int ierr = 0;
-
-  if (params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL || params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL)
-    ierr = mic_homogenize_taylor(strain_mac, strain_ave, stress_ave);
-
-  else if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS)
-    ierr = mic_homog_us(strain_mac, strain_ave, stress_ave);
-
-  return ierr;
-}
-
-
-int homogenize_get_c_tangent(double *strain_mac, double **c_tangent) {
-
-  int ierr = 0;
-
-  if (flags.linear_materials == true && flags.linear_materials == true)
-    (*c_tangent) = params.c_tangent_linear;
-
-  else if (flags.linear_materials == false) {
-
-    ierr = homogenize_calculate_c_tangent(strain_mac, params.c_tangent);
-    (*c_tangent) = params.c_tangent;
-  }
-
-  return ierr;
-}
-
-
-int homogenize_calculate_c_tangent_around_zero(double *c_tangent) {
-
-  double strain_zero[MAX_NVOIGT];
-  ARRAY_SET_TO_ZERO(strain_zero, nvoi);
-
-  int ierr = homogenize_calculate_c_tangent(strain_zero, c_tangent);
-
-  return ierr;
-}
-
-
-int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent) {
-
-  double strain_1[MAX_NVOIGT], strain_2[MAX_NVOIGT];
-  double stress_1[MAX_NVOIGT], stress_2[MAX_NVOIGT];
-  double strain_aux[MAX_NVOIGT];
-
-  PRINTF1("calc stress in ") PRINT_ARRAY("strain", strain_1, nvoi)
-  ARRAY_COPY(strain_1, strain_mac, nvoi);
-
-  int ierr = homogenize_get_strain_stress(strain_1, strain_aux, stress_1);
-
-  for (int i = 0 ; i < nvoi ; i++) {
-
-    PRINTF2("exp %d\n", i)
-    ARRAY_COPY(strain_2, strain_mac, nvoi);
-
-    strain_2[i] = strain_2[i] + HOMOGENIZE_DELTA_STRAIN;
-
-    ierr = homogenize_get_strain_stress(strain_2, strain_aux, stress_2);
-
-    for (int j = 0 ; j < nvoi ; j++)
-      c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[i] - strain_1[i]);
-
-    if (flags.print_pvtu == true) {
-      get_elem_properties();
-      char filename[64];
-      sprintf(filename,"micro_exp%d",i);
-      ierr = micro_pvtu(filename);
-      if (ierr != 0) {
-	myio_printf(MICRO_COMM,"Problem writing vtu file\n");
-	return ierr;
-      }
-    }
-
-  }
-
-  return ierr;
 }
 
 
@@ -357,7 +350,6 @@ int assembly_A_petsc(void)
     }
     MatSetValues(A, npe*dim, elem_index, npe*dim, elem_index, k_elem, ADD_VALUES);
   }
-
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
