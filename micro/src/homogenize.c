@@ -216,35 +216,21 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
 
   VecRestoreArray(x, &x_arr);
 
-  int nr_its = 0;
-  double *b_arr;
-  double norm = params.non_linear_min_norm_tol * 10;
-
-  VecNorm(x, NORM_2, &norm);
-  PRINTF2("|x| = %lf\n", norm);
-
-  while (nr_its < params.non_linear_max_its && norm > params.non_linear_min_norm_tol) {
+  params.non_linear_its = 0;
+  params.residual_norm = params.non_linear_min_norm_tol * 10;
+  while (params.non_linear_its < params.non_linear_max_its && params.residual_norm > params.non_linear_min_norm_tol) {
 
     save_event(MICRO_COMM, "ass_0");
 
-    assembly_b_petsc();
+    assembly_b_petsc(&params.residual_norm);
+    PRINTF2(GREEN "|b| = %lf" NORMAL "\n", params.residual_norm);
 
-    VecGetArray(b, &b_arr);
-    for (int i = 0; i < mesh_struct.nnods_boundary * mesh_struct.dim; i++)
-      b_arr[mesh_struct.boundary_indeces[i]] = 0.0;
-
-    VecRestoreArray(b, &b_arr);
-
-    VecNorm(b, NORM_2, &norm);
-    PRINTF2(GREEN "|b| = %lf" NORMAL "\n", norm);
-
-    if (norm < params.non_linear_min_norm_tol) break;
+    if (params.residual_norm < params.non_linear_min_norm_tol) break;
 
     VecScale(b, -1.0);
 
     assembly_A_petsc();
 
-    MatZeroRowsColumns(A, mesh_struct.nnods_boundary * mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
     save_event(MICRO_COMM, "ass_1");
 
     save_event(MICRO_COMM, "sol_0");
@@ -254,7 +240,7 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
 
     VecAXPY(x, 1.0, dx);
 
-    nr_its ++;
+    params.non_linear_its ++;
   }
   save_event(MICRO_COMM, "ass_1");
 
@@ -279,14 +265,14 @@ int mic_homog_us(double *strain_mac, double *strain_ave, double *stress_ave)
 int strain_x_coord(double *strain, double *coord, double *u)
 {
   if (dim == 2) {
-    u[0] = strain[0]   * coord[0] + strain[2]/2 * coord[1] ;
-    u[1] = strain[2]/2 * coord[0] + strain[1]   * coord[1] ;
+    u[0] = strain[0]   * coord[0] + strain[2]/2 * coord[1];
+    u[1] = strain[2]/2 * coord[0] + strain[1]   * coord[1];
   }
   return 0;
 }
 
 
-int assembly_b_petsc(void)
+int assembly_b_petsc(double *norm)
 {
   double *b_arr;
   VecZeroEntries(b);
@@ -316,8 +302,12 @@ int assembly_b_petsc(void)
     for (int i = 0; i < npe*dim; i++ )
       b_arr[elem_index[i]] += res_elem[i];
   }
-  VecRestoreArray(b, &b_arr);
 
+  for (int i = 0; i < mesh_struct.nnods_boundary * dim; i++)
+    b_arr[mesh_struct.boundary_indeces[i]] = 0.0;
+
+  VecRestoreArray(b, &b_arr);
+  VecNorm(b, NORM_2, norm);
   return 0;
 }
 
@@ -353,6 +343,9 @@ int assembly_A_petsc(void)
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
+  MatZeroRowsColumns(A, mesh_struct.nnods_boundary * mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
   return 0;
 }
 
