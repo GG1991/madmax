@@ -408,6 +408,50 @@ int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh)
   return 0;
 }
 
+int mesh_check_connectivity(mesh_t *mesh)
+{
+  double coords[MAX_NPE * MAX_DIM];
+  int *nods;
+  for (int e = 0; e < mesh->nelm_local; e++) {
+    for (int n = 0; n < mesh->npe[e]; n++) {
+      nods = &mesh->eind[mesh->eptr[e]];
+      for (int d = 0; d < mesh->dim; d++)
+	coords[n*mesh->dim + d] = mesh->coord_local[nods[n] * mesh->dim + d];
+    }
+
+    if ( mesh->npe[e] == 3 )
+      mesh_check_connectivity_tria(nods, coords);
+    else if ( mesh->npe[e] == 4 )
+      mesh_check_connectivity_quad(nods, coords);
+  }
+  return 0;
+}
+
+int mesh_check_connectivity_tria(int *nods, double coords[MAX_NPE * MAX_DIM])
+{
+  int node_aux;
+  double point_1[2], point_2[2], point_3[2];
+  point_1[0] = coords[0]; point_1[1] = coords[1];
+  point_2[0] = coords[2]; point_2[1] = coords[3];
+  point_3[0] = coords[4]; point_3[1] = coords[5];
+
+  double n_line[2];
+  n_line[0] = -(point_2[1] - point_1[1]);
+  n_line[1] = (point_2[0] - point_1[0]);
+
+  if ( geometry_2d_line_side(n_line, point_1, point_3) > 0 ) {
+    node_aux = nods[2];
+    nods[2] = nods[1];
+    nods[1] = node_aux;
+  }
+  return 0;
+}
+
+int mesh_check_connectivity_quad(int *nods, double coords[MAX_NPE * MAX_DIM])
+{
+  return 0;
+}
+
 int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh)
 {
   int rank, nproc;

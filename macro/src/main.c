@@ -154,6 +154,8 @@ int main(int argc, char **argv) {
   ierr = mesh_reenumerate(MACRO_COMM, &mesh);
   CHECK_ERROR_GOTO(ierr, RED "error reenumbering nodes" NORMAL "\n")
 
+  mesh_check_connectivity(&mesh);
+
   ierr = boundary_read();
   CHECK_ERROR_GOTO(ierr, RED "error reading boundaries from mesh" NORMAL "\n")
 
@@ -183,7 +185,7 @@ int main(int argc, char **argv) {
     EPSSetProblemType(eps, EPS_GHEP);
     EPSSetFromOptions(eps);
     EPSGetDimensions(eps, &params.num_eigen_vals, NULL, NULL);
-    params.eigen_vals = malloc( params.num_eigen_vals*sizeof(double));
+    params.eigen_vals = malloc(params.num_eigen_vals*sizeof(double));
     myio_printf(MACRO_COMM,"Number of requested eigenvalues: %d\n", params.num_eigen_vals);
 
     EPSSolve(eps);

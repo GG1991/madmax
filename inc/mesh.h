@@ -4,6 +4,7 @@
 #include "list.h"
 #include "util.h"
 #include "myio.h"
+#include "geometry.h"
 
 #ifdef PARMETIS
 #include "parmetis.h"
@@ -18,6 +19,8 @@
 
 #define MAX_ADJ_NODES 30
 #define MAX_NUM_OF_BOUNDARIES 4
+#define MAX_NPE 8
+#define MAX_DIM 3
 
 typedef struct{
 
@@ -89,6 +92,9 @@ int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh);
 int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh);
 int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node_guess, int *owner_rank);
 int mesh_cmpfunc(const void * a, const void * b);
+int mesh_check_connectivity(mesh_t *mesh);
+int mesh_check_connectivity_tria(int *nods, double coords[MAX_NPE * MAX_DIM]);
+int mesh_check_connectivity_quad(int *nods, double coords[MAX_NPE * MAX_DIM]);
 
 int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_struct);
 int mesh_struct_get_node_coord(mesh_struct_t *mesh_struct, int node, double *coord);
