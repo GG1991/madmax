@@ -152,9 +152,9 @@ int main(int argc, char **argv) {
   CHECK_ERROR_GOTO(ierr, RED "error calculating ghost nodes" NORMAL "\n")
 
   ierr = mesh_reenumerate(MACRO_COMM, &mesh);
-  CHECK_ERROR_GOTO(ierr, RED "error reenumbering nodes" NORMAL "\n")
+  CHECK_ERROR_GOTO(ierr, RED "error reenumbering nodes" NORMAL "\n");
 
-  mesh_check_connectivity(&mesh);
+  mesh_check_orientation(&mesh);
 
   ierr = boundary_read();
   CHECK_ERROR_GOTO(ierr, RED "error reading boundaries from mesh" NORMAL "\n")

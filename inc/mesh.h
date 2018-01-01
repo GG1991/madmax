@@ -92,9 +92,9 @@ int mesh_reenumerate(MPI_Comm COMM, mesh_t *mesh);
 int mesh_calc_local_and_ghost(MPI_Comm COMM, mesh_t *mesh);
 int mesh_ownership_selection_rule(MPI_Comm COMM, int **rep_matrix, int *nrep, int node_guess, int *owner_rank);
 int mesh_cmpfunc(const void * a, const void * b);
-int mesh_check_connectivity(mesh_t *mesh);
-int mesh_check_connectivity_tria(int *nods, double coords[MAX_NPE * MAX_DIM]);
-int mesh_check_connectivity_quad(int *nods, double coords[MAX_NPE * MAX_DIM]);
+int mesh_check_orientation(mesh_t *mesh);
+int mesh_check_orientation_tria(int *nods, double *coords);
+int mesh_check_orientation_quad(int *nods, double *coords);
 
 int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_struct);
 int mesh_struct_get_node_coord(mesh_struct_t *mesh_struct, int node, double *coord);
