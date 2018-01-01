@@ -163,13 +163,13 @@ int micro_struct_get_elem_id(int dim, micro_struct_t *micro_struct, double *elem
 	p_line[0] = lx/2;
 	p_line[1] = ly/2 + fiber_line->sep[i]*(j-fiber_line->nfib[i]/2) \
 		    + fiber_line->desv[i] + fiber_line->width[i]/2;
-	side_1 = geom_2d_line_side(n_line, p_line, point);
+	side_1 = geometry_2d_line_side(n_line, p_line, point);
 
 	/* line 1 (upper) p_line = ( 0 , ly/2 + fiber_line->sep[i] + desv[i] + width[i]/2 ) */
 	p_line[0] = lx/2;
 	p_line[1] = ly/2 + fiber_line->sep[i]*(j-fiber_line->nfib[i]/2) \
 		    + fiber_line->desv[i] - fiber_line->width[i]/2;
-	side_2 = geom_2d_line_side(n_line, p_line, point);
+	side_2 = geometry_2d_line_side(n_line, p_line, point);
 
 	if (side_1 == 0 || side_2 == 0 || (side_1*side_2) == -1) {
 	    *elem_id = ID_FIBER;
