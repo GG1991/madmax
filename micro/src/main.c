@@ -67,8 +67,8 @@ int main(int argc, char **argv)
   nvoi = (dim == 2) ? 3 : 6;
 
   char string_buf[NBUF];
-  ierr = myio_comm_line_get_string(&command_line, "-micro_struct", string_buf, &found); CHECK_AND_GOTO(ierr)
-  micro_struct_init(dim, string_buf, &micro_struct);
+  ierr = myio_comm_line_get_string(&command_line, "-micro_struct", string_buf, &found);
+  ierr = micro_struct_init(dim, string_buf, &micro_struct);
 
   int nval_found, nval_expect = (dim == 2) ? 2 : 3;
   int values_int[3];

@@ -3,8 +3,8 @@
 int micro_struct_init(int dim, char *string, micro_struct_t *micro_struct) {
 
   char *stra = strdup(string );
-  char *data = strtok(stra, " \n" );
-  double *size = malloc(dim * sizeof(double) );
+  char *data = strtok(stra, " \n");
+  double *size = malloc(dim * sizeof(double));
 
   if (strcmp(data, "fiber_cilin") == 0) {
 
@@ -15,27 +15,22 @@ int micro_struct_init(int dim, char *string, micro_struct_t *micro_struct) {
     fiber_cilin->desv = malloc(dim*sizeof(double));
 
     for (int d = 0 ; d < dim ; d++) {
-      data = strtok( NULL, " \n" );
-      if (!data) return 2;
-      size[d] = atof( data );
+      data = strtok(NULL, " \n"); if (data == NULL) return 2;
+      size[d] = atof(data);
     }
 
-    data = strtok( NULL, " \n" );
-    if (!data) return 2;
-    fiber_cilin->nx_fib = atoi( data );
+    data = strtok(NULL, " \n"); if (data == NULL) return 2;
+    fiber_cilin->nx_fib = atoi(data);
 
-    data = strtok( NULL, " \n" );
-    if (!data) return 2;
-    fiber_cilin->ny_fib = atoi( data );
+    data = strtok(NULL, " \n"); if (data == NULL) return 2;
+    fiber_cilin->ny_fib = atoi(data);
 
-    data = strtok( NULL, " \n" );
-    if (!data) return 2;
-    fiber_cilin->radio = atof( data );
+    data = strtok(NULL, " \n"); if (data == NULL) return 2;
+    fiber_cilin->radio = atof(data);
 
     for (int d = 0 ; d < dim ; d++) {
-      data = strtok( NULL, " \n" );
-      if (!data) return 2;
-      fiber_cilin->desv[d] = atof( data );
+      data = strtok(NULL, " \n"); if (data == NULL) return 2;
+      fiber_cilin->desv[d] = atof(data);
     }
 
     micro_struct->type = FIBER_CILIN;
@@ -50,14 +45,12 @@ int micro_struct_init(int dim, char *string, micro_struct_t *micro_struct) {
     fiber_line_t *fiber_line = malloc(sizeof(fiber_line_t));
 
     for (int d = 0 ; d < dim ; d++) {
-      data = strtok( NULL, " \n" );
-      if (!data) return 2;
-      size[d] = atof( data );
+      data = strtok(NULL, " \n"); if (data == NULL) return 2;
+      size[d] = atof(data);
     }
 
-    data = strtok( NULL, " \n" );
-    if (!data) return 2;
-    fiber_line->ntype = ntype = atoi( data );
+    data = strtok(NULL, " \n"); if (data == NULL) return 2;
+    fiber_line->ntype = ntype = atoi(data);
 
     fiber_line->theta = malloc(ntype*sizeof(double));
     fiber_line->sep   = malloc(ntype*sizeof(double));
@@ -65,34 +58,29 @@ int micro_struct_init(int dim, char *string, micro_struct_t *micro_struct) {
     fiber_line->desv  = malloc(ntype*sizeof(double));
     fiber_line->nfib  = malloc(ntype*sizeof(double));
 
-    for (int d = 0 ; d < dim ; d++) {
-      data = strtok( NULL, " \n" );
-      if (!data) return 2;
-      fiber_line->nfib[d] = atoi( data );
+    for (int d = 0 ; d < ntype ; d++) {
+      data = strtok(NULL, " \n"); if (data == NULL) return 2;
+      fiber_line->nfib[d] = atoi(data);
     }
 
-    for (int d = 0 ; d < dim ; d++) {
-      data = strtok( NULL, " \n" );
-      if (!data) return 2;
-      fiber_line->theta[d] = atof( data );
+    for (int d = 0 ; d < ntype ; d++) {
+      data = strtok(NULL, " \n"); if (data == NULL) return 2;
+      fiber_line->theta[d] = atof(data);
     }
 
-    for (int d = 0 ; d < dim ; d++) {
-      data = strtok( NULL, " \n" );
-      if (!data) return 2;
-      fiber_line->sep[d] = atof( data );
+    for (int d = 0 ; d < ntype ; d++) {
+      data = strtok(NULL, " \n"); if (data == NULL) return 2;
+      fiber_line->sep[d] = atof(data);
     }
 
-    for (int d = 0 ; d < dim ; d++) {
-      data = strtok( NULL, " \n" );
-      if (!data) return 2;
-      fiber_line->width[d] = atof( data );
+    for (int d = 0 ; d < ntype ; d++) {
+      data = strtok(NULL, " \n"); if (data == NULL) return 2;
+      fiber_line->width[d] = atof(data);
     }
 
-    for (int d = 0 ; d < dim ; d++) {
-      data = strtok( NULL, " \n" );
-      if (!data) return 2;
-      fiber_line->desv[d] = atof( data );
+    for (int d = 0 ; d < ntype ; d++) {
+      data = strtok(NULL, " \n"); if (data == NULL) return 2;
+      fiber_line->desv[d] = atof(data);
     }
 
     micro_struct->type = FIBER_LINE;
