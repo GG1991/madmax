@@ -1,20 +1,20 @@
 #include "comm.h"
 
-
-int comm_init_message(message_t *message) {
-
+int comm_init_message(message_t *message)
+{
   message->action = ACTION_NULL;
 
-  const int nitems = 5;
-  int block_lengths[5] = {1, 1, MAX_VOIGT, MAX_VOIGT, MAX_VOIGT*MAX_VOIGT};
-  MPI_Datatype types[5] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
-  MPI_Aint offsets[5];
+  const int nitems = 6;
+  int block_lengths[6] = {1, 1, MAX_VOIGT, MAX_VOIGT, MAX_VOIGT*MAX_VOIGT, 1};
+  MPI_Datatype types[6] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
+  MPI_Aint offsets[6];
 
   offsets[0] = offsetof(message_t, action);
   offsets[1] = offsetof(message_t, num_voigt);
   offsets[2] = offsetof(message_t, strain_mac);
   offsets[3] = offsetof(message_t, stress_ave);
   offsets[4] = offsetof(message_t, c_tangent_ave);
+  offsets[5] = offsetof(message_t, rho);
 
 
   int ierr = 0;
@@ -24,39 +24,33 @@ int comm_init_message(message_t *message) {
   return ierr;
 }
 
-
-int comm_finalize_message(void) {
-
+int comm_finalize_message(void)
+{
   return MPI_Type_free(&mpi_message_t);
 }
 
-
-int comm_macro_send(message_t *message, comm_t *comm) {
-
+int comm_macro_send(message_t *message, comm_t *comm)
+{
   return MPI_Ssend(message, 1, mpi_message_t, comm->micro_slave, 0, WORLD_COMM);
 }
 
-
-int comm_macro_recv(message_t *message, comm_t *comm) {
-
+int comm_macro_recv(message_t *message, comm_t *comm)
+{
   return MPI_Recv(message, 1, mpi_message_t, comm->micro_slave, 0, WORLD_COMM, MPI_STATUS_IGNORE);
 }
 
-
-int comm_micro_send(message_t *message, comm_t *comm) {
-
+int comm_micro_send(message_t *message, comm_t *comm)
+{
   return MPI_Ssend(message, 1, mpi_message_t, comm->macro_leader, 0, WORLD_COMM);
 }
 
-
-int comm_micro_recv(message_t *message, comm_t *comm) {
-
+int comm_micro_recv(message_t *message, comm_t *comm)
+{
   return MPI_Recv(message, 1, mpi_message_t, comm->macro_leader, 0, WORLD_COMM, MPI_STATUS_IGNORE);
 }
 
-
-int comm_coloring(MPI_Comm WORLD_COMM, comm_t *comm, MPI_Comm *LOCAL_COMM) {
-
+int comm_coloring(MPI_Comm WORLD_COMM, comm_t *comm, MPI_Comm *LOCAL_COMM)
+{
   int  nproc_world, rank_world;
   MPI_Comm_size(WORLD_COMM, &nproc_world);
   MPI_Comm_rank(WORLD_COMM, &rank_world);

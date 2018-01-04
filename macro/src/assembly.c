@@ -421,7 +421,7 @@ int assembly_get_rho(const char *name, int e, double *rho)
     *rho = message.rho;
   }
   else
-    material_get_rho( mat_p, dim, rho );
+    material_get_rho(mat_p, dim, rho);
 
   return ierr;
 }

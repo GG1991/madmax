@@ -21,7 +21,7 @@ int alloc_memory(void) {
       int nnz = dim * MAX_ADJ_NODES;
 
       ierr = MatCreate(MACRO_COMM, &A);
-      ierr = MatSetSizes(A, dim*mesh.nnods_local, dim*mesh.nnods_local, dim*mesh.nnods_total, dim*mesh.nnods_total);
+      ierr = MatSetSizes(A, dim * mesh.nnods_local, dim * mesh.nnods_local, dim * mesh.nnods_total, dim * mesh.nnods_total);
       ierr = MatSetType(A, MATAIJ);
       ierr = MatSeqAIJSetPreallocation(A, nnz, NULL);
       ierr = MatMPIAIJSetPreallocation(A, nnz, NULL, nnz, NULL);
@@ -42,7 +42,7 @@ int alloc_memory(void) {
       if (params.calc_mode == CALC_MODE_EIGEN) {
 
 	ierr = MatCreate(MACRO_COMM, &M);
-	ierr = MatSetSizes(M, dim*mesh.nnods_local, dim*dim*mesh.nnods_local, dim*mesh.nnods_total, dim*mesh.nnods_total);
+	ierr = MatSetSizes(M, dim * mesh.nnods_local, dim * mesh.nnods_local, dim * mesh.nnods_total, dim * mesh.nnods_total);
 	ierr = MatSetType(M, MATAIJ);
 	ierr = MatSeqAIJSetPreallocation(M, nnz, NULL);
 	ierr = MatMPIAIJSetPreallocation(M, nnz, NULL, nnz, NULL);
