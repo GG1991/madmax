@@ -134,6 +134,8 @@ int finalize(void);
 
 int alloc_memory(void);
 
+int comm_line_set_flags(void);
+
 int homogenize_init(void);
 int homogenize_get_c_tangent(double *strain_mac, double **c_tangent);
 int homogenize_get_rho(double *rho);

@@ -30,20 +30,19 @@ if (error) {\
 int main(int argc, char **argv)
 {
   int ierr;
+  bool found;
 
   myio_comm_line_init(argc, argv, &command_line);
 
   init_variables();
 
-  bool found;
   myio_comm_line_search_option(&command_line, "-help", &found);
   if (found == true) {
     myio_printf(MACRO_COMM, "%s", help);
     goto end;
   }
 
-  myio_comm_line_search_option(&command_line, "-coupl", &found);
-  if (found == true) flags.coupled = true;
+  ierr = comm_line_set_flags();
 
   comm.color = COLOR_MICRO; /* color changes */
   if (flags.coupled == true) {
@@ -101,21 +100,6 @@ int main(int argc, char **argv)
 
   myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
   myio_comm_line_get_int(&command_line, "-nl_min_norm_tol", &params.non_linear_max_its, &found);
-
-  myio_comm_line_search_option(&command_line, "-print_matrices", &found);
-  if (found == true)
-    flags.print_matrices = true;
-
-  myio_comm_line_search_option(&command_line, "-print_vectors", &found);
-  if (found == true)
-    flags.print_vectors = true;
-
-  myio_comm_line_search_option(&command_line, "-print_pvtu", &found);
-  if (found == true &&
-      params.homog_method != HOMOG_METHOD_TAYLOR_PARALLEL &&
-      params.homog_method != HOMOG_METHOD_TAYLOR_SERIAL)
-    flags.print_pvtu = true;
-
 
   PRINTF1(GREEN
       "--------------------------------------------------\n"
