@@ -38,8 +38,7 @@ int main(int argc, char **argv) {
 
   init_variables();
 
-  myio_comm_line_search_option(&command_line, "-coupl", &found);
-  if (found == true) flags.coupled = true;
+  ierr = set_comm_line_flags();
 
   if (flags.coupled == true) {
     comm.color = COLOR_MACRO;
@@ -111,15 +110,6 @@ int main(int argc, char **argv) {
   npe_max = (dim == 2) ? 4 : 8;
   ngp_max = npe_max;
 
-  myio_comm_line_search_option(&command_line, "-print_matrices", &found);
-  if (found == true) flags.print_matrices = true;
-
-  myio_comm_line_search_option(&command_line, "-print_vectors", &found);
-  if (found == true) flags.print_vectors = true;
-
-  myio_comm_line_search_option(&command_line, "-print_pvtu", &found);
-  if (found == true) flags.print_pvtu = true;
-
   myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
 
   myio_comm_line_get_double(&command_line, "-nl_min_norm_tol", &params.non_linear_min_norm_tol, &found);
@@ -185,11 +175,11 @@ int main(int argc, char **argv) {
     EPSSetProblemType(eps, EPS_GHEP);
     EPSSetFromOptions(eps);
     EPSGetDimensions(eps, &params.num_eigen_vals, NULL, NULL);
-    params.eigen_vals = malloc(params.num_eigen_vals * sizeof(double));
-    myio_printf(MACRO_COMM,"Number of requested eigenvalues: %d\n", params.num_eigen_vals);
-
     EPSSolve(eps);
     EPSGetConverged(eps, &nconv);
+
+    params.eigen_vals = malloc(params.num_eigen_vals * sizeof(double));
+    myio_printf(MACRO_COMM,"Number of requested eigenvalues: %d\n", params.num_eigen_vals);
     myio_printf(MACRO_COMM, "Number of converged eigenpairs: %d\n", nconv);
 
     for (int i = 0 ; i < params.num_eigen_vals ; i++) {

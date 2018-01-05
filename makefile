@@ -68,6 +68,7 @@ MAC_OBJ  = ${MAC_OBJ_DIR}/main.o \
            $(MAC_OBJ_DIR)/finalize.o \
            $(MAC_OBJ_DIR)/output.o \
            $(MAC_OBJ_DIR)/boundary.o \
+           $(MAC_OBJ_DIR)/comm_line.o \
            $(SPU_OBJ_DIR)/geometry.o \
            $(SPU_OBJ_DIR)/material.o \
            $(SPU_OBJ_DIR)/solvers.o \
