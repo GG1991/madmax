@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
   init_variables();
 
-  ierr = set_comm_line_flags();
+  ierr = comm_line_set_flags();
 
   if (flags.coupled == true) {
     comm.color = COLOR_MACRO;

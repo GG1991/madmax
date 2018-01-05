@@ -125,7 +125,7 @@ int boundary_read(void);
 int boundary_update(double time);
 int boundary_setx(void);
 
-int set_comm_line_flags(void);
+int comm_line_set_flags(void);
 
 Mat A;
 Mat M;

@@ -1,6 +1,6 @@
 #include "macro.h"
 
-int set_comm_line_flags(void)
+int comm_line_set_flags(void)
 {
   bool found;
   int ierr;
