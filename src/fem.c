@@ -1,17 +1,16 @@
 #include "fem.h"
 
-
-int fem_init_struct(double ***sh, double ****dsh, double **wp, double *h, int dim) {
-
+int fem_init_struct(double ***sh, double ****dsh, double **wp, double *h, int dim)
+{
   int nsh = ( dim == 2 ) ? 4 : 8;
   int ngp = ( dim == 2 ) ? 4 : 8;
-  double *xp = malloc( ngp*dim * sizeof(double));
+  double *xp = malloc(ngp*dim * sizeof(double));
 
   if (dim == 2) {
-    xp[0] = -0.577350269189626;   xp[1]= -0.577350269189626;
-    xp[2] = +0.577350269189626;   xp[3]= -0.577350269189626;
-    xp[4] = +0.577350269189626;   xp[5]= +0.577350269189626;
-    xp[6] = -0.577350269189626;   xp[7]= +0.577350269189626;
+    xp[0] = -0.577350269189626; xp[1] = -0.577350269189626;
+    xp[2] = +0.577350269189626; xp[3] = -0.577350269189626;
+    xp[4] = +0.577350269189626; xp[5] = +0.577350269189626;
+    xp[6] = -0.577350269189626; xp[7] = +0.577350269189626;
   }
 
   *sh = malloc( nsh * sizeof(double*));
@@ -55,15 +54,12 @@ int fem_init_struct(double ***sh, double ****dsh, double **wp, double *h, int di
       (*wp)[gp] = vol / ngp;
 
   }
-
   free(xp);
-
   return 0;
 }
 
-
-int fem_init(void) {
-
+int fem_init(void)
+{
     xp_segm_2 = calloc(2,sizeof(double*));
     wp_segm_2 = calloc(2,sizeof(double));
     sh_segm_2 = calloc(2,sizeof(double*));
@@ -412,8 +408,8 @@ int fem_init(void) {
 }
 
 
-int fem_calc_jac(int dim, int npe, int gp, double * coor, double *** dsh, double ** jac) {
-
+int fem_calc_jac(int dim, int npe, int gp, double *coor, double ***dsh, double **jac)
+{
   if (jac == NULL || coor == NULL || dsh == NULL)
     return 1;
 
@@ -427,55 +423,41 @@ int fem_calc_jac(int dim, int npe, int gp, double * coor, double *** dsh, double
   return 0;
 }
 
-
-int fem_invjac(int dim, double **jac, double **ijac, double *det) {
-
+int fem_invjac(int dim, double **jac, double **ijac, double *det)
+{
   double c00, c01, c02, c10, c11, c12, c20, c21, c22;
 
   if (jac == NULL || ijac == NULL)
     return 1;
 
   if (dim == 2) {
-    c00 = +jac[1][1];
-    c01 = -jac[1][0];
-    c10 = -jac[0][1];
-    c11 = +jac[0][0];
+
+    c00 = +jac[1][1]; c01 = -jac[1][0];
+    c10 = -jac[0][1]; c11 = +jac[0][0];
 
     (*det) = jac[0][0]*c00 + jac[0][1]*c01;
-    ijac[0][0] = c00/(*det);
-    ijac[0][1] = c10/(*det);
-    ijac[1][0] = c01/(*det);
-    ijac[1][1] = c11/(*det);
+
+    ijac[0][0] = c00/(*det); ijac[0][1] = c10/(*det);
+    ijac[1][0] = c01/(*det); ijac[1][1] = c11/(*det);
 
   }else if (dim == 3) {
-    c00 = +jac[1][1]*jac[2][2]-jac[2][1]*jac[1][2];
-    c01 = -jac[1][0]*jac[2][2]+jac[2][0]*jac[1][2];
-    c02 = +jac[1][0]*jac[2][1]-jac[2][0]*jac[1][1];
-    c10 = -jac[0][1]*jac[2][2]+jac[2][1]*jac[0][2];
-    c11 = +jac[0][0]*jac[2][2]-jac[2][0]*jac[0][2];
-    c12 = -jac[0][0]*jac[2][1]+jac[2][0]*jac[0][1];
-    c20 = +jac[0][1]*jac[1][2]-jac[1][1]*jac[0][2];
-    c21 = -jac[0][0]*jac[1][2]+jac[1][0]*jac[0][2];
-    c22 = +jac[0][0]*jac[1][1]-jac[1][0]*jac[0][1];
+
+    c00 = +jac[1][1]*jac[2][2]-jac[2][1]*jac[1][2]; c01 = -jac[1][0]*jac[2][2]+jac[2][0]*jac[1][2]; c02 = +jac[1][0]*jac[2][1]-jac[2][0]*jac[1][1];
+    c10 = -jac[0][1]*jac[2][2]+jac[2][1]*jac[0][2]; c11 = +jac[0][0]*jac[2][2]-jac[2][0]*jac[0][2]; c12 = -jac[0][0]*jac[2][1]+jac[2][0]*jac[0][1];
+    c20 = +jac[0][1]*jac[1][2]-jac[1][1]*jac[0][2]; c21 = -jac[0][0]*jac[1][2]+jac[1][0]*jac[0][2]; c22 = +jac[0][0]*jac[1][1]-jac[1][0]*jac[0][1];
 
     (*det) = jac[0][0]*c00 + jac[0][1]*c01 + jac[0][2]*c02;
-    ijac[0][0] = c00/(*det);
-    ijac[0][1] = c10/(*det);
-    ijac[0][2] = c20/(*det);
-    ijac[1][0] = c01/(*det);
-    ijac[1][1] = c11/(*det);
-    ijac[1][2] = c21/(*det);
-    ijac[2][0] = c02/(*det);
-    ijac[2][1] = c12/(*det);
-    ijac[2][2] = c22/(*det);
+
+    ijac[0][0] = c00/(*det); ijac[0][1] = c10/(*det); ijac[0][2] = c20/(*det);
+    ijac[1][0] = c01/(*det); ijac[1][1] = c11/(*det); ijac[1][2] = c21/(*det);
+    ijac[2][0] = c02/(*det); ijac[2][1] = c12/(*det); ijac[2][2] = c22/(*det);
   }
 
   return 0;
 }
 
-
-int fem_trans_dsh(int dim, int nsh, int gp, double **ijac, double ***dsh_master, double ***dsh) {
-
+int fem_trans_dsh(int dim, int nsh, int gp, double **ijac, double ***dsh_master, double ***dsh)
+{
   if (ijac == NULL || dsh_master == NULL || dsh == NULL) return 1;
 
   for (int sh = 0 ; sh < nsh ; sh++) {
@@ -488,10 +470,9 @@ int fem_trans_dsh(int dim, int nsh, int gp, double **ijac, double ***dsh_master,
   return 0;
 }
 
-
-int fem_get_dsh_master(int npe, int dim, double ****dsh) {
-
-  switch(dim) {
+int fem_get_dsh_master(int npe, int dim, double ****dsh)
+{
+  switch (dim) {
 
     case 2:
 
@@ -539,9 +520,9 @@ int fem_get_dsh_master(int npe, int dim, double ****dsh) {
 }
 
 
-int fem_get_sh(int npe, int dim, double ***sh) {
-
-  switch(dim) {
+int fem_get_sh(int npe, int dim, double ***sh)
+{
+  switch (dim) {
 
     case 2:
 
@@ -589,9 +570,9 @@ int fem_get_sh(int npe, int dim, double ***sh) {
 }
 
 
-int fem_get_wp(int npe, int dim, double **wp) {
-
-  switch(dim) {
+int fem_get_wp(int npe, int dim, double **wp)
+{
+  switch (dim) {
 
     case 2:
 
