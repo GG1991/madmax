@@ -191,6 +191,8 @@ int homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave
 
 int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *stress_ave)
 {
+  clock_t start, end;
+  double time_ass_b = 0.0, time_ass_A = 0.0, time_sol = 0.0;
   double *x_arr;
   VecZeroEntries(x);
   VecGetArray(x, &x_arr);
@@ -213,20 +215,29 @@ int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *s
 
     save_event(MICRO_COMM, "ass_0");
 
+    start = clock();
     assembly_b_petsc(&params.residual_norm);
+    end = clock();
+    time_ass_b = ((double) (end - start)) / CLOCKS_PER_SEC;
     PRINTF2(GREEN "|b| = %lf" NORMAL "\n", params.residual_norm);
 
     if (params.residual_norm < params.non_linear_min_norm_tol) break;
 
     VecScale(b, -1.0);
 
+    start = clock();
     assembly_A_petsc();
+    end = clock();
+    time_ass_A = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     save_event(MICRO_COMM, "ass_1");
 
     save_event(MICRO_COMM, "sol_0");
+    start = clock();
     KSPSetOperators(ksp, A, A);
     KSPSolve(ksp, b, dx);
+    end = clock();
+    time_sol = ((double) (end - start)) / CLOCKS_PER_SEC;
     save_event(MICRO_COMM, "sol_1");
 
     VecAXPY(x, 1.0, dx);
@@ -234,6 +245,10 @@ int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *s
     params.non_linear_its ++;
   }
   save_event(MICRO_COMM, "ass_1");
+
+  PRINTF2(BLUE "time ass_b = %lf" NORMAL "\n", time_ass_b);
+  PRINTF2(BLUE "time ass_A = %lf" NORMAL "\n", time_ass_A);
+  PRINTF2(BLUE "time sol = %lf" NORMAL "\n", time_sol);
 
   get_averages(strain_ave, stress_ave);
 

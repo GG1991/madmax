@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <gsl/gsl_linalg.h>
 #include "petscksp.h"
 #include "petscsys.h"
@@ -29,6 +30,7 @@
 
 #define GREEN "\x1B[32m"
 #define RED "\x1B[31m"
+#define BLUE "\x1b[34m"
 #define NORMAL "\x1B[0m"
 
 #define PRINT_ALWAYS 0
