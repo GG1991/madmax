@@ -22,6 +22,7 @@ $MPIEXEC -np 1  ../../micro/micro \
 #-ksp_type cg \
 #-ksp_atol 1.0e-12 \
 #-ksp_rtol 1.0e-12 \
+#-ksp_view \
 #
 #-micro_struct  "size"[dim]     \
 #               "nx_fib"        \
