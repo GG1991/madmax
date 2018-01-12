@@ -18,6 +18,7 @@
 #include "micro_struct.h"
 #include "solvers.h"
 #include "mesh.h"
+#include "fem.h"
 
 #define HOMOG_METHOD_NULL 0
 #define HOMOG_METHOD_TAYLOR_SERIAL 1
@@ -122,9 +123,7 @@ int local_to_global_index(int local);
 int get_averages(double * strain_ave, double *stress_ave);
 int get_elem_type(int e, int *type);
 int get_elem_properties(void);
-int init_shapes(double ***sh, double ****dsh, double **wp);
 
-void homogenize_check_linear_material(void);
 
 int assembly_b_petsc(double *norm);
 int assembly_A_petsc(void);

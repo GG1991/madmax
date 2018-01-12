@@ -101,7 +101,9 @@ int main(int argc, char **argv)
   ierr = micro_check_material_and_elem_type(&material_list, elem_type, mesh_struct.nelm);
   CHECK_ERROR_GOTO("error checking elem_type and material_list");
 
-  init_shapes(&struct_sh, &struct_dsh, &struct_wp);
+  double h[3]; h[0] = mesh_struct.hx; h[1] = mesh_struct.hy; h[2] = mesh_struct.hz;
+  fem_init();
+  fem_init_struct(&struct_sh, &struct_dsh, &struct_wp, h, mesh_struct.dim);
 
   for (int gp = 0; gp < ngp ; gp++) {
     for (int is = 0; is < mesh_struct.npe ; is++) {

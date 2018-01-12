@@ -98,6 +98,7 @@ MIC_OBJ  = ${MIC_OBJ_DIR}/main.o \
            $(SPU_OBJ_DIR)/vtk.o \
            $(SPU_OBJ_DIR)/myio.o \
            $(SPU_OBJ_DIR)/geometry.o \
+           ${SPU_OBJ_DIR}/fem.o \
            $(SPU_OBJ_DIR)/list.o
 
 ##############################
