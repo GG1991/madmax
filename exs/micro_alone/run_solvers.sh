@@ -22,6 +22,11 @@ echo $sol, $siz, ${solvers[$sol]}
 done
 done
 
+rm -f sizes.dat
+for siz in $(seq 1 ${#sizes[@]}); do
+  echo ${sizes[$((siz-1))]}" " >> sizes.dat
+done
+
 rm -f times_sol_0.dat times_sol_1.dat times_sol_2.dat
 
 for sol in $(seq 0 2); do
@@ -32,3 +37,7 @@ for siz in $(seq 0 6); do
 done
 cut -c1-8 "times_sol_"$sol".dat" > "times_sol_"$sol"_cut.dat"
 done
+
+paste sizes.dat times_sol_0_cut.dat > times_sol_cg_jp.dat
+paste sizes.dat times_sol_1_cut.dat > times_sol_cg.dat
+paste sizes.dat times_sol_2_cut.dat > times_sol_lu.dat
