@@ -248,7 +248,7 @@ int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *s
 
   PRINTF2(BLUE "time ass_b = %lf" NORMAL "\n", time_ass_b);
   PRINTF2(BLUE "time ass_A = %lf" NORMAL "\n", time_ass_A);
-  PRINTF2(BLUE "time sol = %lf" NORMAL "\n", time_sol);
+  PRINTF2(BLUE "time sol   = %lf" NORMAL "\n", time_sol);
 
   get_averages(strain_ave, stress_ave);
 

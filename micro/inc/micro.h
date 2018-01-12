@@ -30,7 +30,7 @@
 
 #define GREEN "\x1B[32m"
 #define RED "\x1B[31m"
-#define BLUE "\x1b[34m"
+#define BLUE "\x1B[34m"
 #define NORMAL "\x1B[0m"
 
 #define PRINT_ALWAYS 0

@@ -8,10 +8,10 @@ $MPIEXEC -np 1  ../../micro/micro \
     -dim 2 \
     -material "MATRIX MAT_ELASTIC 1.0e7 1.0e6 0.3","FIBER MAT_ELASTIC 1.0e7 1.0e7 0.3" \
     -micro_struct "fiber_cilin 3.0 3.0 1 1 0.75 0.0 0.0" \
-    -pc_type jacobi \
     -ksp_type cg \
-    -ksp_atol 1.0e-12 \
-    -ksp_rtol 1.0e-12 \
+    -pc_type  jacobi \
+    -ksp_atol 1.0e-9 \
+    -ksp_rtol 1.0e-9 \
     -homo_us \
     -print_pvtu
 
@@ -20,7 +20,8 @@ $MPIEXEC -np 1  ../../micro/micro \
 #-pc_type lu \
 #-pc_type  jacobi \
 #-ksp_type cg \
-#-ksp_atol 1.0e-22 \
+#-ksp_atol 1.0e-12 \
+#-ksp_rtol 1.0e-12 \
 #
 #-micro_struct  "size"[dim]     \
 #               "nx_fib"        \
