@@ -89,18 +89,6 @@ int main(int argc, char **argv)
 
   ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr)
 
-  myio_comm_line_search_option(&command_line, "-homo_us", &found);
-  if (found) params.homog_method = HOMOG_METHOD_UNIF_STRAINS;
-
-  myio_comm_line_search_option(&command_line, "-homo_tp", &found);
-  if (found) params.homog_method = HOMOG_METHOD_TAYLOR_PARALLEL;
-
-  myio_comm_line_search_option(&command_line, "-homo_ts", &found);
-  if (found) params.homog_method = HOMOG_METHOD_TAYLOR_SERIAL;
-
-  myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
-  myio_comm_line_get_int(&command_line, "-nl_min_norm_tol", &params.non_linear_max_its, &found);
-
   PRINTF1(GREEN
       "--------------------------------------------------\n"
       "  MICRO: START\n"
