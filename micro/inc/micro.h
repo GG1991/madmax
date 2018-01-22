@@ -25,6 +25,7 @@
 #define HOMOG_METHOD_TAYLOR_SERIAL 1
 #define HOMOG_METHOD_TAYLOR_PARALLEL 2
 #define HOMOG_METHOD_UNIF_STRAINS 3
+#define HOMOG_METHOD_PERIODIC 4
 
 #define HOMOGENIZE_DELTA_STRAIN 0.005
 
@@ -146,6 +147,6 @@ int homogenize_calculate_c_tangent_around_zero(double *c_tangent);
 int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave);
 int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave);
 int homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave);
-int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *stress_ave);
+int homogenize_fe2(double *strain_mac, double *strain_ave, double *stress_ave);
 
 #endif

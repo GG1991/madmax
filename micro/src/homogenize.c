@@ -43,8 +43,10 @@ int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_a
   if (params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL || params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL)
     ierr = homogenize_taylor(strain_mac, strain_ave, stress_ave);
 
-  else if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS)
-    ierr = homogenize_uniform_strains(strain_mac, strain_ave, stress_ave);
+  else if (
+      params.homog_method == HOMOG_METHOD_UNIF_STRAINS ||
+      params.homog_method == HOMOG_METHOD_PERIODIC)
+    ierr = homogenize_fe2(strain_mac, strain_ave, stress_ave);
 
   return ierr;
 }
@@ -189,7 +191,7 @@ int homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave
   return 0;
 }
 
-int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *stress_ave)
+int homogenize_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   clock_t start, end;
   double time_ass_b = 0.0, time_ass_A = 0.0, time_sol = 0.0;
@@ -199,11 +201,17 @@ int homogenize_uniform_strains(double *strain_mac, double *strain_ave, double *s
 
   if (dim == 2) {
 
-    double displ[2];
-    for (int n = 0; n < mesh_struct.nnods_boundary ; n++ ) {
-      strain_x_coord(strain_mac, &mesh_struct.boundary_coord[n*dim], displ);
-      for (int d = 0; d < dim ; d++)
-	x_arr[mesh_struct.boundary_indeces[n*dim + d]] = displ[d];
+    if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
+      double displ[2];
+      for (int n = 0; n < mesh_struct.nnods_boundary ; n++ ) {
+	strain_x_coord(strain_mac, &mesh_struct.boundary_coord[n*dim], displ);
+	for (int d = 0; d < dim ; d++)
+	  x_arr[mesh_struct.boundary_indeces[n*dim + d]] = displ[d];
+      }
+    }
+    else if (params.homog_method == HOMOG_METHOD_PERIODIC) {
+      x_arr[mesh_struct.boundary_indeces[0*dim + 0]] = 0.0;
+      x_arr[mesh_struct.boundary_indeces[0*dim + 1]] = 0.0;
     }
   }
 
@@ -263,7 +271,6 @@ int strain_x_coord(double *strain, double *coord, double *u)
   }
   return 0;
 }
-
 
 int assembly_b_petsc(double *norm)
 {

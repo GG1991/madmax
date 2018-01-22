@@ -110,7 +110,6 @@ int main(int argc, char **argv)
   homogenize_init();
 
   double strain_mac[6], strain_ave[6], stress_ave[6];
-
   double *c_tangent_ave = malloc(36*sizeof(double));
 
   if (flags.coupled == true) {
@@ -152,8 +151,7 @@ int main(int argc, char **argv)
       if (message.action != ACTION_MICRO_END)
 	ierr = comm_micro_send(&message, &comm);
     }
-  }
-  else{
+  }else{
 
     myio_printf(MICRO_COMM,"\nConstitutive Average Tensor\n");
     for (int i = 0 ; i < nvoi ; i++) {
