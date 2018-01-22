@@ -195,10 +195,10 @@ int homogenize_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   clock_t start, end;
   double time_ass_b = 0.0, time_ass_A = 0.0, time_sol = 0.0;
+
   double *x_arr;
   VecZeroEntries(x);
   VecGetArray(x, &x_arr);
-
   if (dim == 2) {
 
     if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
@@ -214,7 +214,6 @@ int homogenize_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
       x_arr[mesh_struct.boundary_indeces[0*dim + 1]] = 0.0;
     }
   }
-
   VecRestoreArray(x, &x_arr);
 
   params.non_linear_its = 0;
@@ -350,7 +349,12 @@ int assembly_A_petsc(void)
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
-  MatZeroRowsColumns(A, mesh_struct.nnods_boundary * mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
+  if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
+    MatZeroRowsColumns(A, mesh_struct.nnods_boundary * mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
+  }
+  else if (params.homog_method == HOMOG_METHOD_PERIODIC) {
+
+  }
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 

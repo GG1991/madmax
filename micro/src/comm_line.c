@@ -25,6 +25,9 @@ int comm_line_set_flags(void)
   myio_comm_line_search_option(&command_line, "-homo_us", &found);
   if (found == true) params.homog_method = HOMOG_METHOD_UNIF_STRAINS;
 
+  myio_comm_line_search_option(&command_line, "-homo_periodic", &found);
+  if (found == true) params.homog_method = HOMOG_METHOD_PERIODIC;
+
   myio_comm_line_search_option(&command_line, "-homo_tp", &found);
   if (found == true) params.homog_method = HOMOG_METHOD_TAYLOR_PARALLEL;
 
