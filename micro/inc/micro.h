@@ -130,7 +130,8 @@ int get_elem_properties(void);
 int assembly_b_petsc(double *norm);
 int assembly_A_petsc(void);
 
-void init_variables(void);
+int init_variables_1(void);
+int init_variables_2(void);
 int finalize(void);
 
 int alloc_memory(void);

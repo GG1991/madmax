@@ -1,7 +1,7 @@
 #include "micro.h"
 
-void init_variables(void) {
-
+int init_variables_1(void)
+{
   params.homog_method = HOMOG_METHOD_NULL;
   params.non_linear_max_its = 2;
   params.non_linear_min_norm_tol = 1.0e-4;
@@ -29,5 +29,22 @@ void init_variables(void) {
   x = NULL;
   dx = NULL;
 
-  return;
+  return 0;
+}
+
+int init_variables_2(void)
+{
+  for (int gp = 0; gp < ngp ; gp++) {
+    for (int is = 0; is < mesh_struct.npe ; is++) {
+      if (dim == 2) {
+	struct_bmat[0][is*dim + 0][gp] = struct_dsh[is][0][gp];
+	struct_bmat[0][is*dim + 1][gp] = 0;
+	struct_bmat[1][is*dim + 0][gp] = 0;
+	struct_bmat[1][is*dim + 1][gp] = struct_dsh[is][1][gp];
+	struct_bmat[2][is*dim + 0][gp] = struct_dsh[is][1][gp];
+	struct_bmat[2][is*dim + 1][gp] = struct_dsh[is][0][gp];
+      }
+    }
+  }
+  return 0;
 }
