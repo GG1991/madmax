@@ -17,13 +17,8 @@ solver_t solver;
 comm_t comm;
 mesh_struct_t mesh_struct;
 
-#define CHECK_AND_GOTO(error) {\
-if (error) {\
-  myio_printf(MICRO_COMM, "error line %d at %s\n", __LINE__, __FILE__);\
-  goto end;}}
-
-#define CHECK_ERROR_GOTO(message) {\
-  if (ierr != 0) {\
+#define CHECK(error,message) {\
+  if (error != 0) {\
     myio_printf(MICRO_COMM, "%s\n", message);\
     goto end;}}
 
@@ -46,7 +41,8 @@ int main(int argc, char **argv)
 
   comm.color = COLOR_MICRO; /* color changes */
   if (flags.coupled == true) {
-    ierr = comm_coloring(WORLD_COMM, &comm, &MICRO_COMM); CHECK_AND_GOTO(ierr);
+    ierr = comm_coloring(WORLD_COMM, &comm, &MICRO_COMM);
+    CHECK(ierr, "error during coloring");
   }
 
   MPI_Comm_size(MICRO_COMM, &nproc_mic);
@@ -87,7 +83,8 @@ int main(int argc, char **argv)
 
   ngp = (dim == 2) ? 4 : 8;
 
-  ierr = material_fill_list_from_command_line(&command_line, &material_list); CHECK_AND_GOTO(ierr)
+  ierr = material_fill_list_from_command_line(&command_line, &material_list);
+  CHECK(ierr, "error parsing material from command line");
 
   PRINTF1(GREEN
       "--------------------------------------------------\n"
@@ -96,10 +93,11 @@ int main(int argc, char **argv)
 
   ierr = alloc_memory();
 
-  ierr = micro_struct_init_elem_type(&micro_struct, dim, mesh_struct.nelm, &get_elem_centroid, elem_type); CHECK_AND_GOTO(ierr)
+  ierr = micro_struct_init_elem_type(&micro_struct, dim, mesh_struct.nelm, &get_elem_centroid, elem_type);
+  CHECK(ierr, "error initializing elem_type array using micro_struct");
 
   ierr = micro_check_material_and_elem_type(&material_list, elem_type, mesh_struct.nelm);
-  CHECK_ERROR_GOTO("error checking elem_type and material_list");
+  CHECK(ierr, "error checking elem_type and material_list");
 
   double h[3]; h[0] = mesh_struct.hx; h[1] = mesh_struct.hy; h[2] = mesh_struct.hz;
   fem_init();
