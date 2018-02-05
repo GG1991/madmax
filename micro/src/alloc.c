@@ -6,6 +6,19 @@ int alloc_memory(void) {
 
   if (params.multis_method == MULTIS_FE2) {
 
+    int nrows = 0;
+    switch (params.fe2_bc)  {
+      case BC_USTRAIN:
+	nrows = mesh_struct.nn * mesh_struct.dim;
+	break;
+      case BC_PERIODIC:
+	nrows = (mesh_struct.nn + (mesh_struct.nx - 2) + (mesh_struct.ny - 2)) * mesh_struct.dim;
+	break;
+      case BC_USTRESS:
+	nrows = mesh_struct.nn*mesh_struct.dim + nvoi;
+	break;
+    }
+
     if (solver.type == SOLVER_PETSC) {
 
 #ifdef PETSC
@@ -15,14 +28,14 @@ int alloc_memory(void) {
       int nnz = (mesh_struct.dim == 2)? 18:81;
 
       MatCreate(MICRO_COMM,&A);
-      MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, mesh_struct.nn * mesh_struct.dim, mesh_struct.nn * mesh_struct.dim);
+      MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, nrows, nrows);
       MatSetFromOptions(A);
       MatSeqAIJSetPreallocation(A, nnz, NULL);
       MatMPIAIJSetPreallocation(A, nnz, NULL, nnz, NULL);
       MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
       VecCreate(MICRO_COMM, &x);
-      VecSetSizes(x, PETSC_DECIDE, mesh_struct.nn * mesh_struct.dim);
+      VecSetSizes(x, PETSC_DECIDE, nrows);
       VecSetFromOptions(x);
       VecDuplicate(x, &dx);
       VecDuplicate(x, &b);

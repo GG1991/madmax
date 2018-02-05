@@ -266,6 +266,7 @@ int assembly_b_petsc(double *norm, double *strain_mac)
   }
 
   double *x_arr;
+  int nn = mesh_struct.nn;
   VecGetArray(x, &x_arr);
   if (dim == 2) {
     if (params.fe2_bc == BC_USTRAIN) {
@@ -277,8 +278,27 @@ int assembly_b_petsc(double *norm, double *strain_mac)
       }
     }
     else if (params.fe2_bc == BC_PERIODIC) {
-      x_arr[mesh_struct.boundary_indeces[0*dim + 0]] = 0.0;
-      x_arr[mesh_struct.boundary_indeces[0*dim + 1]] = 0.0;
+
+      /*       | fi              |
+       *  r =  | fe - µ          |
+       *       | u+ - u- - e x dl|
+       */
+
+      double displ[2], delta_length[2];
+
+      delta_length[0] = mesh_struct.lx; delta_length[1] = 0.0; // set u+ - u- - e*dx en x0/x1
+      strain_x_coord(strain_mac, delta_length, displ);
+      for (int n = 0; n < mesh_struct.ny - 2 ; n++) {
+	for (int d = 0; d < dim ; d++)
+	  b_arr[nn*dim + n*dim + d] = x_arr[mesh_struct.nods_x1[n]*dim + d] - x_arr[mesh_struct.nods_x0[n]*dim + d] - displ[d];
+      }
+
+      delta_length[0] = 0.0; delta_length[1] = mesh_struct.ly; // set u+ - u- - e*dx en y0/y1
+      strain_x_coord(strain_mac, delta_length, displ);
+      for (int n = 0; n < mesh_struct.ny - 2 ; n++) {
+	for (int d = 0; d < dim ; d++)
+	  b_arr[(nn + mesh_struct.ny - 2)*dim + n*dim + d] = x_arr[mesh_struct.nods_y1[n]*dim + d] - x_arr[mesh_struct.nods_y0[n]*dim + d] - displ[d];
+      }
     }
   }
   VecRestoreArray(x, &x_arr);
