@@ -4,7 +4,7 @@ MPIEXEC="/home/guido/libs/openmpi-install/bin/mpiexec"
 
 #$MPIEXEC -np 1 xterm -e gdb -x file.gdb --args ../../micro/micro \
 $MPIEXEC -np 1  ../../micro/micro \
-    -struct_n 75,75 \
+    -struct_n 10,10 \
     -dim 2 \
     -material "MATRIX MAT_ELASTIC 1.0e7 1.0e6 0.3","FIBER MAT_ELASTIC 1.0e7 1.0e7 0.3" \
     -micro_struct "fiber_cilin 3.0 3.0 1 1 0.75 0.0 0.0" \
@@ -13,6 +13,7 @@ $MPIEXEC -np 1  ../../micro/micro \
     -ksp_atol 1.0e-9 \
     -ksp_rtol 1.0e-9 \
     -fe2 \
+    -nl_max_its 2 \
     -bc_periodic \
     -print_pvtu
 

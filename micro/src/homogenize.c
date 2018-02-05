@@ -189,7 +189,7 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
     assembly_b_petsc(&params.residual_norm, strain_mac);
     end = clock();
     time_ass_b = ((double) (end - start)) / CLOCKS_PER_SEC;
-    PRINTF2(GREEN "|b| = %lf" NORMAL "\n", params.residual_norm);
+    MIC_PRINTF_1(GREEN "|b| = %lf" NORMAL "\n", params.residual_norm);
 
     if (params.residual_norm < params.non_linear_min_norm_tol) break;
 
@@ -216,9 +216,9 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
   }
   save_event(MICRO_COMM, "ass_1");
 
-  PRINTF2(BLUE "time ass_b = %lf" NORMAL "\n", time_ass_b);
-  PRINTF2(BLUE "time ass_A = %lf" NORMAL "\n", time_ass_A);
-  PRINTF2(BLUE "time sol   = %lf" NORMAL "\n", time_sol);
+  MIC_PRINTF_1(BLUE "time ass_b = %lf" NORMAL "\n", time_ass_b);
+  MIC_PRINTF_1(BLUE "time ass_A = %lf" NORMAL "\n", time_ass_A);
+  MIC_PRINTF_1(BLUE "time sol   = %lf" NORMAL "\n", time_sol);
 
   get_averages(strain_ave, stress_ave);
 
