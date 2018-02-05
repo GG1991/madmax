@@ -13,7 +13,7 @@ $MPIEXEC -np 1  ../../micro/micro \
     -ksp_atol 1.0e-9 \
     -ksp_rtol 1.0e-9 \
     -fe2 \
-    -bc_ustrain \
+    -bc_periodic \
     -print_pvtu
 
 #xterm -e gdb --args 
