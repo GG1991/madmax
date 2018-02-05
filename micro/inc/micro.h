@@ -130,8 +130,7 @@ int get_averages(double * strain_ave, double *stress_ave);
 int get_elem_type(int e, int *type);
 int get_elem_properties(void);
 
-
-int assembly_b_petsc(double *norm);
+int assembly_b_petsc(double *norm, double *strain_mac);
 int assembly_A_petsc(void);
 
 int init_variables_1(void);

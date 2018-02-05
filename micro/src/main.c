@@ -151,7 +151,7 @@ int main(int argc, char **argv)
     }
   }else{
 
-    myio_printf(MICRO_COMM,"\nConstitutive Average Tensor\n");
+    myio_printf(MICRO_COMM,"\nctang_0 = \n");
     for (int i = 0 ; i < nvoi ; i++) {
       for (int j = 0 ; j < nvoi ; j++)
 	myio_printf(MICRO_COMM, "%e ", (fabs(params.c_tangent_linear[i*nvoi+j])>1.0) ? params.c_tangent_linear[i*nvoi+j] : 0.0);

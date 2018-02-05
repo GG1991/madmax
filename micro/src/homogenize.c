@@ -180,24 +180,7 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
   clock_t start, end;
   double time_ass_b = 0.0, time_ass_A = 0.0, time_sol = 0.0;
 
-  double *x_arr;
   VecZeroEntries(x);
-  VecGetArray(x, &x_arr);
-  if (dim == 2) {
-    if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
-      double displ[2];
-      for (int n = 0; n < mesh_struct.nnods_boundary ; n++ ) {
-	strain_x_coord(strain_mac, &mesh_struct.boundary_coord[n*dim], displ);
-	for (int d = 0; d < dim ; d++)
-	  x_arr[mesh_struct.boundary_indeces[n*dim + d]] = displ[d];
-      }
-    }
-    else if (params.homog_method == HOMOG_METHOD_PERIODIC) {
-      x_arr[mesh_struct.boundary_indeces[0*dim + 0]] = 0.0;
-      x_arr[mesh_struct.boundary_indeces[0*dim + 1]] = 0.0;
-    }
-  }
-  VecRestoreArray(x, &x_arr);
 
   params.non_linear_its = 0;
   params.residual_norm = params.non_linear_min_norm_tol * 10;
@@ -206,7 +189,7 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
     save_event(MICRO_COMM, "ass_0");
 
     start = clock();
-    assembly_b_petsc(&params.residual_norm);
+    assembly_b_petsc(&params.residual_norm, strain_mac);
     end = clock();
     time_ass_b = ((double) (end - start)) / CLOCKS_PER_SEC;
     PRINTF2(GREEN "|b| = %lf" NORMAL "\n", params.residual_norm);
@@ -254,7 +237,7 @@ int strain_x_coord(double *strain, double *coord, double *u)
   return 0;
 }
 
-int assembly_b_petsc(double *norm)
+int assembly_b_petsc(double *norm, double *strain_mac)
 {
   double *b_arr;
   VecZeroEntries(b);
@@ -285,8 +268,23 @@ int assembly_b_petsc(double *norm)
       b_arr[elem_index[i]] += res_elem[i];
   }
 
-  for (int i = 0; i < mesh_struct.nnods_boundary * dim; i++)
-    b_arr[mesh_struct.boundary_indeces[i]] = 0.0;
+  double *x_arr;
+  VecGetArray(x, &x_arr);
+  if (dim == 2) {
+    if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
+      double displ[2];
+      for (int n = 0; n < mesh_struct.nnods_boundary ; n++ ) {
+	strain_x_coord(strain_mac, &mesh_struct.boundary_coord[n*dim], displ);
+	for (int d = 0; d < dim ; d++)
+	  b_arr[mesh_struct.boundary_indeces[n*dim + d]] = x_arr[mesh_struct.boundary_indeces[n*dim + d]] - displ[d];
+      }
+    }
+    else if (params.homog_method == HOMOG_METHOD_PERIODIC) {
+      x_arr[mesh_struct.boundary_indeces[0*dim + 0]] = 0.0;
+      x_arr[mesh_struct.boundary_indeces[0*dim + 1]] = 0.0;
+    }
+  }
+  VecRestoreArray(x, &x_arr);
 
   VecRestoreArray(b, &b_arr);
   VecNorm(b, NORM_2, norm);
