@@ -21,20 +21,23 @@
 #include "mesh.h"
 #include "fem.h"
 
-#define HOMOG_METHOD_NULL 0
-#define HOMOG_METHOD_TAYLOR_SERIAL 1
+#define HOMOG_METHOD_NULL            0
+#define HOMOG_METHOD_TAYLOR_SERIAL   1
 #define HOMOG_METHOD_TAYLOR_PARALLEL 2
-#define HOMOG_METHOD_UNIF_STRAINS 3
-#define HOMOG_METHOD_PERIODIC 4
+#define HOMOG_METHOD_UNIF_STRAINS    3
+#define HOMOG_METHOD_PERIODIC        4
 
-#define HOMOGENIZE_DELTA_STRAIN 0.005
+#define HOMOGENIZE_DELTA_STRAIN      0.005
 
-#define GREEN "\x1B[32m"
-#define RED "\x1B[31m"
-#define BLUE "\x1B[34m"
+#define GREEN  "\x1B[32m"
+#define RED    "\x1B[31m"
+#define BLUE   "\x1B[34m"
 #define NORMAL "\x1B[0m"
 
 #define PRINT_ALWAYS 0
+#define MIC_PRINTF_0(message){if(flags.coupled == false || PRINT_ALWAYS) printf(message);}
+#define MIC_PRINTF_1(message, arg_1){if(flags.coupled == false || PRINT_ALWAYS) printf(message, arg_1);}
+
 #define PRINTF1(message){if(flags.coupled == false || PRINT_ALWAYS) myio_printf(MICRO_COMM, message);}
 #define PRINTF2(message, arg_1){if(flags.coupled == false || PRINT_ALWAYS) myio_printf(MICRO_COMM, message,arg_1);}
 #define PRINT_ARRAY(name_str, array, length){ PRINTF2("%s ",name_str); for(int i = 0 ; i < length ; i++) PRINTF2("%lf ", array[i]); PRINTF1("\n");}
@@ -139,14 +142,13 @@ int alloc_memory(void);
 
 int comm_line_set_flags(void);
 
-int homogenize_init(void);
-int homogenize_get_c_tangent(double *strain_mac, double **c_tangent);
-int homogenize_get_rho(double *rho);
-int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent);
-int homogenize_calculate_c_tangent_around_zero(double *c_tangent);
-int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave);
-int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave);
-int homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave);
-int homogenize_fe2(double *strain_mac, double *strain_ave, double *stress_ave);
+int homog_get_c_tangent(double *strain_mac, double **c_tangent);
+int homog_get_rho(double *rho);
+int homog_calculate_c_tangent(double *strain_mac, double *c_tangent);
+int homog_calculate_c_tangent_around_zero(double *c_tangent);
+int homog_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave);
+int homog_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave);
+int homog_taylor(double *strain_mac, double *strain_ave, double *stress_ave);
+int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave);
 
 #endif

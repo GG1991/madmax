@@ -34,6 +34,7 @@ int init_variables_1(void)
 
 int init_variables_2(void)
 {
+
   for (int gp = 0; gp < ngp ; gp++) {
     for (int is = 0; is < mesh_struct.npe ; is++) {
       if (dim == 2) {
@@ -46,5 +47,14 @@ int init_variables_2(void)
       }
     }
   }
-  return 0;
+
+  int ierr = 0;
+  if (material_are_all_linear(&material_list) == true){
+    MIC_PRINTF_0("calc ctan around for linear micro-structure...\n")
+    ierr = homog_calculate_c_tangent_around_zero(params.c_tangent_linear);
+    flags.linear_materials = true;
+    flags.c_linear_calculated = true;
+  }
+
+  return ierr;
 }

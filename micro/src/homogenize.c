@@ -1,22 +1,6 @@
 #include "micro.h"
 
-int homogenize_init(void)
-{
-  if (material_are_all_linear(&material_list) == true)
-    flags.linear_materials = true;
-
-  int ierr = 0;
-
-  if (flags.linear_materials == true) {
-
-    PRINTF1("calculating c tangent arround zero...\n")
-    ierr = homogenize_calculate_c_tangent_around_zero(params.c_tangent_linear);
-    flags.c_linear_calculated = true;
-  }
-  return ierr;
-}
-
-int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave)
+int homog_get_strain_stress(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   int ierr;
 
@@ -30,28 +14,28 @@ int homogenize_get_strain_stress(double *strain_mac, double *strain_ave, double 
     }
   }else{
 
-    ierr = homogenize_get_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
+    ierr = homog_get_strain_stress_non_linear(strain_mac, strain_ave, stress_ave);
     if (ierr) return 1;
   }
   return 0;
 }
 
-int homogenize_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave)
+int homog_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   int ierr = 0;
 
   if (params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL || params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL)
-    ierr = homogenize_taylor(strain_mac, strain_ave, stress_ave);
+    ierr = homog_taylor(strain_mac, strain_ave, stress_ave);
 
   else if (
       params.homog_method == HOMOG_METHOD_UNIF_STRAINS ||
       params.homog_method == HOMOG_METHOD_PERIODIC)
-    ierr = homogenize_fe2(strain_mac, strain_ave, stress_ave);
+    ierr = homog_fe2(strain_mac, strain_ave, stress_ave);
 
   return ierr;
 }
 
-int homogenize_get_c_tangent(double *strain_mac, double **c_tangent)
+int homog_get_c_tangent(double *strain_mac, double **c_tangent)
 {
   int ierr = 0;
 
@@ -60,22 +44,22 @@ int homogenize_get_c_tangent(double *strain_mac, double **c_tangent)
 
   else if (flags.linear_materials == false) {
 
-    ierr = homogenize_calculate_c_tangent(strain_mac, params.c_tangent);
+    ierr = homog_calculate_c_tangent(strain_mac, params.c_tangent);
     (*c_tangent) = params.c_tangent;
   }
 
   return ierr;
 }
 
-int homogenize_calculate_c_tangent_around_zero(double *c_tangent)
+int homog_calculate_c_tangent_around_zero(double *c_tangent)
 {
   double strain_zero[MAX_NVOIGT];
   ARRAY_SET_TO_ZERO(strain_zero, nvoi);
 
-  return homogenize_calculate_c_tangent(strain_zero, c_tangent);
+  return homog_calculate_c_tangent(strain_zero, c_tangent);
 }
 
-int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent)
+int homog_calculate_c_tangent(double *strain_mac, double *c_tangent)
 {
   double strain_1[MAX_NVOIGT], strain_2[MAX_NVOIGT];
   double stress_1[MAX_NVOIGT], stress_2[MAX_NVOIGT];
@@ -84,7 +68,7 @@ int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent)
   PRINTF1("calc stress in ") PRINT_ARRAY("strain", strain_1, nvoi)
   ARRAY_COPY(strain_1, strain_mac, nvoi);
 
-  int ierr = homogenize_get_strain_stress(strain_1, strain_aux, stress_1);
+  int ierr = homog_get_strain_stress(strain_1, strain_aux, stress_1);
 
   for (int i = 0 ; i < nvoi ; i++) {
 
@@ -93,7 +77,7 @@ int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent)
 
     strain_2[i] = strain_2[i] + HOMOGENIZE_DELTA_STRAIN;
 
-    ierr = homogenize_get_strain_stress(strain_2, strain_aux, stress_2);
+    ierr = homog_get_strain_stress(strain_2, strain_aux, stress_2);
 
     for (int j = 0 ; j < nvoi ; j++)
       c_tangent[j*nvoi + i] = (stress_2[j] - stress_1[j]) / (strain_2[i] - strain_1[i]);
@@ -112,7 +96,7 @@ int homogenize_calculate_c_tangent(double *strain_mac, double *c_tangent)
   return ierr;
 }
 
-int homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave)
+int homog_taylor(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   double *c_i = malloc(nvoi*nvoi * sizeof(double));
   double *c_m = malloc(nvoi*nvoi * sizeof(double));
@@ -191,7 +175,7 @@ int homogenize_taylor(double *strain_mac, double *strain_ave, double *stress_ave
   return 0;
 }
 
-int homogenize_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
+int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
 {
   clock_t start, end;
   double time_ass_b = 0.0, time_ass_A = 0.0, time_sol = 0.0;
@@ -200,7 +184,6 @@ int homogenize_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
   VecZeroEntries(x);
   VecGetArray(x, &x_arr);
   if (dim == 2) {
-
     if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
       double displ[2];
       for (int n = 0; n < mesh_struct.nnods_boundary ; n++ ) {
