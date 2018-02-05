@@ -24,12 +24,9 @@ int homog_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, d
 {
   int ierr = 0;
 
-  if (params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL || params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL)
+  if (params.multis_method == MULTIS_MIXP || params.multis_method == MULTIS_MIXS)
     ierr = homog_taylor(strain_mac, strain_ave, stress_ave);
-
-  else if (
-      params.homog_method == HOMOG_METHOD_UNIF_STRAINS ||
-      params.homog_method == HOMOG_METHOD_PERIODIC)
+  else if (params.multis_method == MULTIS_FE2)
     ierr = homog_fe2(strain_mac, strain_ave, stress_ave);
 
   return ierr;
@@ -122,14 +119,14 @@ int homog_taylor(double *strain_mac, double *strain_ave, double *stress_ave)
   get_c_tan("FIBER" , -1, -1, NULL, c_i);
   get_c_tan("MATRIX", -1, -1, NULL, c_m);
 
-  if (params.homog_method == HOMOG_METHOD_TAYLOR_PARALLEL) {
+  if (params.multis_method == MULTIS_MIXP) {
 
     for (int i = 0; i < nvoi; i++) {
       for (int j = 0; j < nvoi; j++)
 	c[i*nvoi + j] = vi * c_i[i*nvoi + j] + vm * c_m[i*nvoi + j];
     }
 
-  } else if (params.homog_method == HOMOG_METHOD_TAYLOR_SERIAL) {
+  } else if (params.multis_method == MULTIS_MIXS) {
 
     double *c_mi = malloc(nvoi*nvoi*sizeof(double));
     double *c_ii = malloc(nvoi*nvoi*sizeof(double));
@@ -271,7 +268,7 @@ int assembly_b_petsc(double *norm, double *strain_mac)
   double *x_arr;
   VecGetArray(x, &x_arr);
   if (dim == 2) {
-    if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
+    if (params.fe2_bc == BC_USTRAIN) {
       double displ[2];
       for (int n = 0; n < mesh_struct.nnods_boundary ; n++ ) {
 	strain_x_coord(strain_mac, &mesh_struct.boundary_coord[n*dim], displ);
@@ -279,7 +276,7 @@ int assembly_b_petsc(double *norm, double *strain_mac)
 	  b_arr[mesh_struct.boundary_indeces[n*dim + d]] = x_arr[mesh_struct.boundary_indeces[n*dim + d]] - displ[d];
       }
     }
-    else if (params.homog_method == HOMOG_METHOD_PERIODIC) {
+    else if (params.fe2_bc == BC_PERIODIC) {
       x_arr[mesh_struct.boundary_indeces[0*dim + 0]] = 0.0;
       x_arr[mesh_struct.boundary_indeces[0*dim + 1]] = 0.0;
     }
@@ -330,10 +327,10 @@ int assembly_A_petsc(void)
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
-  if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
+  if (params.fe2_bc == BC_USTRAIN) {
     MatZeroRowsColumns(A, mesh_struct.nnods_boundary * mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
   }
-  else if (params.homog_method == HOMOG_METHOD_PERIODIC) {
+  else if (params.fe2_bc == BC_PERIODIC) {
 
   }
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);

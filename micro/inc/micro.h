@@ -21,11 +21,8 @@
 #include "mesh.h"
 #include "fem.h"
 
-#define HOMOG_METHOD_NULL            0
-#define HOMOG_METHOD_TAYLOR_SERIAL   1
-#define HOMOG_METHOD_TAYLOR_PARALLEL 2
-#define HOMOG_METHOD_UNIF_STRAINS    3
-#define HOMOG_METHOD_PERIODIC        4
+enum {MULTIS_NULL, MULTIS_MIXS, MULTIS_MIXP, MULTIS_FE2};
+enum {BC_NULL, BC_USTRAIN, BC_USTRESS, BC_PERIODIC};
 
 #define HOMOGENIZE_DELTA_STRAIN      0.005
 
@@ -79,7 +76,8 @@ KSP ksp;
 
 typedef struct{
 
-  int homog_method;
+  int multis_method;
+  int fe2_bc;
   int non_linear_max_its;
   double c_tangent_linear[MAX_NVOIGT*MAX_NVOIGT];
   double c_tangent[MAX_NVOIGT*MAX_NVOIGT];

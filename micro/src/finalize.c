@@ -23,7 +23,7 @@ int finalize(void)
     }
     free(struct_bmat);
 
-    if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
+    if (params.multis_method == MULTIS_FE2) {
       if (solver.type == SOLVER_PETSC) {
 
 	ierr = PetscFinalize();

@@ -2,7 +2,8 @@
 
 int init_variables_1(void)
 {
-  params.homog_method = HOMOG_METHOD_NULL;
+  params.multis_method = MULTIS_NULL;
+  params.fe2_bc = BC_NULL;
   params.non_linear_max_its = 2;
   params.non_linear_min_norm_tol = 1.0e-4;
   params.rho = 1.0e7;

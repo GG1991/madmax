@@ -4,7 +4,7 @@ int alloc_memory(void) {
 
   int ierr = 0;
 
-  if (params.homog_method == HOMOG_METHOD_UNIF_STRAINS) {
+  if (params.multis_method == MULTIS_FE2) {
 
     if (solver.type == SOLVER_PETSC) {
 
