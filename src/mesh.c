@@ -787,6 +787,14 @@ int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_st
 
   if (dim == 2) {
     mesh_struct->nnods_boundary = 2*mesh_struct->nx + 2*(mesh_struct->ny - 2);
+    mesh_struct->nods_x0 = malloc((mesh_struct->ny - 2) * sizeof(int));
+    mesh_struct->nods_x1 = malloc((mesh_struct->ny - 2) * sizeof(int));
+    mesh_struct->nods_y0 = malloc((mesh_struct->nx - 2) * sizeof(int));
+    mesh_struct->nods_y1 = malloc((mesh_struct->nx - 2) * sizeof(int));
+    mesh_struct->coor_x0 = malloc((mesh_struct->ny - 2)*mesh_struct->dim*sizeof(double));
+    mesh_struct->coor_x1 = malloc((mesh_struct->ny - 2)*mesh_struct->dim*sizeof(double));
+    mesh_struct->coor_y0 = malloc((mesh_struct->nx - 2)*mesh_struct->dim*sizeof(double));
+    mesh_struct->coor_y1 = malloc((mesh_struct->nx - 2)*mesh_struct->dim*sizeof(double));
   }
   mesh_struct->boundary_nods = malloc(mesh_struct->nnods_boundary * sizeof(int));
   mesh_struct->boundary_coord = malloc(mesh_struct->nnods_boundary * mesh_struct->dim * sizeof(double));
@@ -799,6 +807,10 @@ int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_st
      *  |3     4|
      *  |___1___|
      */
+    mesh_struct->nod_x0y0 = 0;
+    mesh_struct->nod_x1y0 = mesh_struct->nx - 1;
+    mesh_struct->nod_x1y1 = mesh_struct->nx*mesh_struct->ny - 1;
+    mesh_struct->nod_x0y1 = mesh_struct->nx*(mesh_struct->ny - 1);
 
     int node_count = 0;
     for (int n = 0; n < mesh_struct->nx; n++) { // y = 0
@@ -827,6 +839,23 @@ int mesh_struct_init(int dim, int *sizes, double *length, mesh_struct_t *mesh_st
       mesh_struct->boundary_coord[node_count*dim + 0] = mesh_struct->lx;
       mesh_struct->boundary_coord[node_count*dim + 1] = (n + 1)*mesh_struct->hy;
       node_count++;
+    }
+
+    for (int n = 0; n < mesh_struct->nx - 2; n++) { // y = 0 & y = ly
+      mesh_struct->nods_y0[n] = n + 1;
+      mesh_struct->nods_y1[n] = (mesh_struct->ny - 1) * mesh_struct->nx + n + 1;
+      mesh_struct->coor_y0[n*dim + 0] = (n + 1)*mesh_struct->hx;
+      mesh_struct->coor_y0[n*dim + 1] = 0.0;
+      mesh_struct->coor_y1[n*dim + 0] = (n + 1)*mesh_struct->hx;
+      mesh_struct->coor_y1[n*dim + 1] = mesh_struct->ly;
+    }
+    for (int n = 0; n < mesh_struct->ny - 2; n++) { // x = 0 & x = lx
+      mesh_struct->nods_x0[n] = (n + 1) * mesh_struct->nx;
+      mesh_struct->nods_x1[n] = (n + 2) * mesh_struct->nx - 1;
+      mesh_struct->coor_x0[n*dim + 0] = 0.0;
+      mesh_struct->coor_x0[n*dim + 1] = (n + 1)*mesh_struct->hy;
+      mesh_struct->coor_x1[n*dim + 0] = mesh_struct->lx;
+      mesh_struct->coor_x1[n*dim + 1] = (n + 1)*mesh_struct->hy;
     }
   }
 

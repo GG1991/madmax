@@ -12,7 +12,8 @@ $MPIEXEC -np 1  ../../micro/micro \
     -pc_type  jacobi \
     -ksp_atol 1.0e-9 \
     -ksp_rtol 1.0e-9 \
-    -homo_us \
+    -fe2 \
+    -bc_ustrain \
     -print_pvtu
 
 #xterm -e gdb --args 

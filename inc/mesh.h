@@ -74,11 +74,23 @@ typedef struct{
   int nnods_boundary;
   int *boundary_nods;
   int *boundary_indeces;
+  int *nods_x0;
+  int *nods_x1;
+  int *nods_y0;
+  int *nods_y1;
+  int nod_x0y0;
+  int nod_x1y0;
+  int nod_x1y1;
+  int nod_x0y1;
   double *boundary_coord;
   double lx, ly, lz;
   double hx, hy, hz;
   double vol;
   double vol_elm;
+  double *coor_x0;
+  double *coor_x1;
+  double *coor_y0;
+  double *coor_y1;
 
 }mesh_struct_t;
 

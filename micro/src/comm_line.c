@@ -29,7 +29,7 @@ int comm_line_set_flags(void)
     myio_comm_line_search_option(&command_line, "-bc_ustrain", &found);
     if (found == true) params.fe2_bc = BC_USTRAIN;
 
-    myio_comm_line_search_option(&command_line, "-bc_ustress", &found);
+    myio_comm_line_search_option(&command_line, "-bc_periodic", &found);
     if (found == true) params.fe2_bc = BC_PERIODIC;
 
     myio_comm_line_search_option(&command_line, "-bc_ustress", &found);

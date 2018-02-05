@@ -17,7 +17,7 @@ solver_t solver;
 comm_t comm;
 mesh_struct_t mesh_struct;
 
-#define CHECK(error,message) {\
+#define CHECK(error, message) {\
   if (error != 0) {\
     myio_printf(MICRO_COMM, "%s\n", message);\
     goto end;}}
@@ -38,6 +38,7 @@ int main(int argc, char **argv)
   }
 
   ierr = comm_line_set_flags();
+  if(ierr != 0) CHECK(ierr, "error in reading command line");
 
   comm.color = COLOR_MICRO; /* color changes */
   if (flags.coupled == true) {
