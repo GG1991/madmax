@@ -113,8 +113,8 @@ int homog_taylor(double *strain_mac, double *strain_ave, double *stress_ave)
 
   vi = vol_i / mesh_struct.vol;
   vm = vol_m / mesh_struct.vol;
-  PRINTF2("vi = %lf \n", vi);
-  PRINTF2("vm = %lf \n", vm);
+  MIC_PRINTF_1("vi = %lf \n", vi);
+  MIC_PRINTF_1("vm = %lf \n", vm);
 
   get_c_tan("FIBER" , -1, -1, NULL, c_i);
   get_c_tan("MATRIX", -1, -1, NULL, c_m);
@@ -279,21 +279,21 @@ int assembly_b_petsc(double *norm, double *strain_mac)
     }
     else if (params.fe2_bc == BC_PERIODIC) {
 
-      /*       | fi              |
-       *  r =  | fe - µ          |
-       *       | u+ - u- - e x dl|
+      /*       | fi              |      |u      |
+       *  r =  | fe - µ          |  x = |µ en y0| 
+       *       | u+ - u- - e x dl|      |µ en x0|
        */
       
-      for (int n = 0; n < mesh_struct.ny - 2 ; n++) { // fe - µ en X0 y X1
-	for (int d = 0; d < dim ; d++) {
-	  b_arr[mesh_struct.nods_x0[n]*dim + d] -= x_arr[nn*dim + n*dim + d];
-	  b_arr[mesh_struct.nods_x1[n]*dim + d] += x_arr[nn*dim + n*dim + d];
-	}
-      }
       for (int n = 0; n < mesh_struct.nx - 2 ; n++) { // fe - µ en Y0 y Y1
 	for (int d = 0; d < dim ; d++) {
 	  b_arr[mesh_struct.nods_y0[n]*dim + d] -= x_arr[nn*dim + n*dim + d];
-	  b_arr[mesh_struct.nods_y1[n]*dim + d] += x_arr[(nn + mesh_struct.ny - 2)*dim + n*dim + d];
+	  b_arr[mesh_struct.nods_y1[n]*dim + d] += x_arr[nn*dim + n*dim + d];
+	}
+      }
+      for (int n = 0; n < mesh_struct.ny - 2 ; n++) { // fe - µ en X0 y X1
+	for (int d = 0; d < dim ; d++) {
+	  b_arr[mesh_struct.nods_x0[n]*dim + d] -= x_arr[(nn + mesh_struct.nx - 2)*dim + n*dim + d];
+	  b_arr[mesh_struct.nods_x1[n]*dim + d] += x_arr[(nn + mesh_struct.nx - 2)*dim + n*dim + d];
 	}
       }
 
@@ -322,18 +322,18 @@ int assembly_b_petsc(double *norm, double *strain_mac)
 
       double delta_length[2];
 
-      delta_length[0] = mesh_struct.lx; delta_length[1] = 0.0; // set u+ - u- - e*dx en x0/x1
-      strain_x_coord(strain_mac, delta_length, displ);
-      for (int n = 0; n < mesh_struct.ny - 2 ; n++) {
-	for (int d = 0; d < dim ; d++)
-	  b_arr[nn*dim + n*dim + d] = x_arr[mesh_struct.nods_x1[n]*dim + d] - x_arr[mesh_struct.nods_x0[n]*dim + d] - displ[d];
-      }
-
       delta_length[0] = 0.0; delta_length[1] = mesh_struct.ly; // set u+ - u- - e*dx en y0/y1
       strain_x_coord(strain_mac, delta_length, displ);
       for (int n = 0; n < mesh_struct.nx - 2 ; n++) {
 	for (int d = 0; d < dim ; d++)
-	  b_arr[(nn + mesh_struct.ny - 2)*dim + n*dim + d] = x_arr[mesh_struct.nods_y1[n]*dim + d] - x_arr[mesh_struct.nods_y0[n]*dim + d] - displ[d];
+	  b_arr[nn*dim + n*dim + d] = x_arr[mesh_struct.nods_y1[n]*dim + d] - x_arr[mesh_struct.nods_y0[n]*dim + d] - displ[d];
+      }
+
+      delta_length[0] = mesh_struct.lx; delta_length[1] = 0.0; // set u+ - u- - e*dx en x0/x1
+      strain_x_coord(strain_mac, delta_length, displ);
+      for (int n = 0; n < mesh_struct.ny - 2 ; n++) {
+	for (int d = 0; d < dim ; d++)
+	  b_arr[(nn + mesh_struct.nx - 2)*dim + n*dim + d] = x_arr[mesh_struct.nods_x1[n]*dim + d] - x_arr[mesh_struct.nods_x0[n]*dim + d] - displ[d];
       }
     }
   }
@@ -384,7 +384,7 @@ int assembly_A_petsc(void)
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
   if (params.fe2_bc == BC_USTRAIN) {
-    MatZeroRowsColumns(A, mesh_struct.nnods_boundary * mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
+    MatZeroRows(A, mesh_struct.nnods_boundary*mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
   }
   else if (params.fe2_bc == BC_PERIODIC) {
 
@@ -395,6 +395,8 @@ int assembly_A_petsc(void)
     int index[3], row_index;
     double values[3];
     if (dim == 2) {
+
+      // corners
       index[0] = mesh_struct.nod_x0y0 * dim + 0;
       index[1] = mesh_struct.nod_x0y0 * dim + 1;
       MatZeroRows(A, 2, index, 1.0, NULL, NULL);
@@ -413,49 +415,52 @@ int assembly_A_petsc(void)
 
       int col_index;
 
-      for (int n = 0; n < mesh_struct.ny - 2 ; n++) { // f + µ in x0
-	for (int d = 0; d < dim ; d++){
-	  row_index = mesh_struct.nods_x1[n]*dim + d;
-	  col_index = mesh_struct.nn*dim + n*dim + d;
-	  MatSetValues(A, 1, &row_index, 1, &col_index, &values[1], INSERT_VALUES);
-	}
-      }
-      for (int n = 0; n < mesh_struct.ny - 2 ; n++) { // f - µ in x0
-	for (int d = 0; d < dim ; d++){
-	  row_index = mesh_struct.nods_x0[n]*dim + d;
-	  col_index = mesh_struct.nn*dim + n*dim + d;
-	  MatSetValues(A, 1, &row_index, 1, &col_index, &values[0], INSERT_VALUES);
-	}
-      }
       for (int n = 0; n < mesh_struct.nx - 2 ; n++) { // f + µ in y1
 	for (int d = 0; d < dim ; d++){
 	  row_index = mesh_struct.nods_y1[n]*dim + d;
-	  col_index = (mesh_struct.nn + mesh_struct.ny - 2)*dim + n*dim + d;
+	  col_index = mesh_struct.nn*dim + n*dim + d;
 	  MatSetValues(A, 1, &row_index, 1, &col_index, &values[1], INSERT_VALUES);
 	}
       }
       for (int n = 0; n < mesh_struct.nx - 2 ; n++) { // f - µ in y0
 	for (int d = 0; d < dim ; d++){
 	  row_index = mesh_struct.nods_y0[n]*dim + d;
-	  col_index = (mesh_struct.nn + mesh_struct.ny - 2)*dim + n*dim + d;
+	  col_index = mesh_struct.nn*dim + n*dim + d;
+	  MatSetValues(A, 1, &row_index, 1, &col_index, &values[0], INSERT_VALUES);
+	}
+      }
+      for (int n = 0; n < mesh_struct.ny - 2 ; n++) { // f + µ in x0
+	for (int d = 0; d < dim ; d++){
+	  row_index = mesh_struct.nods_x1[n]*dim + d;
+	  col_index = (mesh_struct.nn + mesh_struct.nx - 2)*dim + n*dim + d;
+	  MatSetValues(A, 1, &row_index, 1, &col_index, &values[1], INSERT_VALUES);
+	}
+      }
+      for (int n = 0; n < mesh_struct.ny - 2 ; n++) { // f - µ in x0
+	for (int d = 0; d < dim ; d++){
+	  row_index = mesh_struct.nods_x0[n]*dim + d;
+	  col_index = (mesh_struct.nn + mesh_struct.nx - 2)*dim + n*dim + d;
 	  MatSetValues(A, 1, &row_index, 1, &col_index, &values[0], INSERT_VALUES);
 	}
       }
 
-      for (int n = 0; n < mesh_struct.ny - 2 ; n++) { // u+ - u- - e x dl en x0 x1
+      double zero = 0.0;
+      for (int n = 0; n < mesh_struct.nx - 2 ; n++) { // u+ - u- - e x dl en y0 y1
 	for (int d = 0; d < dim ; d++){
 	  row_index = mesh_struct.nn*dim + n*dim + d;
-	  index[0] = mesh_struct.nods_x0[n]*dim + d;
-	  index[1] = mesh_struct.nods_x1[n]*dim + d;
-	  MatSetValues(A, 1, &row_index, 2, index, values, INSERT_VALUES);
-	}
-      }
-      for (int n = 0; n < mesh_struct.nx - 2 ; n++) {
-	for (int d = 0; d < dim ; d++){
-	  row_index = (mesh_struct.nn + mesh_struct.ny - 2)*dim + n*dim + d;
 	  index[0] = mesh_struct.nods_y0[n]*dim + d;
 	  index[1] = mesh_struct.nods_y1[n]*dim + d;
 	  MatSetValues(A, 1, &row_index, 2, index, values, INSERT_VALUES);
+	  MatSetValues(A, 1, &row_index, 1, &row_index, &zero, INSERT_VALUES);
+	}
+      }
+      for (int n = 0; n < mesh_struct.ny - 2 ; n++) { // u+ - u- - e x dl en x0 x1
+	for (int d = 0; d < dim ; d++){
+	  row_index = (mesh_struct.nn + mesh_struct.nx - 2)*dim + n*dim + d;
+	  index[0] = mesh_struct.nods_x0[n]*dim + d;
+	  index[1] = mesh_struct.nods_x1[n]*dim + d;
+	  MatSetValues(A, 1, &row_index, 2, index, values, INSERT_VALUES);
+	  MatSetValues(A, 1, &row_index, 1, &row_index, &zero, INSERT_VALUES);
 	}
       }
     }
