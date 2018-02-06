@@ -214,6 +214,10 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
 
     params.non_linear_its ++;
   }
+  if(flags.coupled == false || PRINT_ALWAYS){
+    solvers_print_petsc_ksp_info(MICRO_COMM, ksp);
+    MIC_PRINTF_0("\n");
+  }
   save_event(MICRO_COMM, "ass_1");
 
   MIC_PRINTF_1(BLUE "time ass_b = %lf" NORMAL "\n", time_ass_b);
@@ -400,15 +404,19 @@ int assembly_A_petsc(void)
       index[0] = mesh_struct.nod_x0y0 * dim + 0;
       index[1] = mesh_struct.nod_x0y0 * dim + 1;
       MatZeroRows(A, 2, index, 1.0, NULL, NULL);
+//      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
       index[0] = mesh_struct.nod_x1y0 * dim + 0;
       index[1] = mesh_struct.nod_x1y0 * dim + 1;
       MatZeroRows(A, 2, index, 1.0, NULL, NULL);
+//      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
       index[0] = mesh_struct.nod_x1y1 * dim + 0;
       index[1] = mesh_struct.nod_x1y1 * dim + 1;
       MatZeroRows(A, 2, index, 1.0, NULL, NULL);
+//      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
       index[0] = mesh_struct.nod_x0y1 * dim + 0;
       index[1] = mesh_struct.nod_x0y1 * dim + 1;
       MatZeroRows(A, 2, index, 1.0, NULL, NULL);
+//      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
 
       values[0] = -1.0;
       values[1] = +1.0;
