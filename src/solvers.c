@@ -19,8 +19,12 @@ int solvers_print_petsc_ksp_info(MPI_Comm COMM, KSP ksp) {
     case KSP_CONVERGED_ATOL:
       reason_s = strdup("ATOL");
       break;
+    case KSP_DIVERGED_ITS:
+      reason_s = strdup("DIV ITS");
+      break;
     default :
-      reason_s = strdup("UNKNOW");
+      reason_s = strdup("DIV ITS");
+      sprintf(reason_s, "%d", reason);
       break;
   }
   PetscPrintf(COMM,"kspits %D kspnorm %e kspreason %s", kspits, kspnorm, reason_s);

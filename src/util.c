@@ -1,8 +1,7 @@
 #include "util.h"
 
-
-int strbin2dec(char *str) {
-
+int strbin2dec(char *str)
+{
   int dec = 0;
   for (int i = strlen(str)-1; i >= 0; i--) {
     if (str[i]=='0' || str[i]=='1') {
@@ -11,26 +10,22 @@ int strbin2dec(char *str) {
     }else
       return -1;
   }
-
   return dec;
 }
 
-
-int util_is_in_vector(int val, int *vector, int size) {
-
+int util_is_in_vector(int val, int *vector, int size)
+{
   int j = 0;
   while (j < size) {
     if (vector[j] == val) break;
     j++;
   }
   return (j == size) ? 0 : 1;
-
   return -1;
 }
 
-
-int util_clean_and_sort_vector(int *in_vector, int n_in, int **out_vector, int *n_out) {
-
+int util_clean_and_sort_vector(int *in_vector, int n_in, int **out_vector, int *n_out)
+{
   int swi, val_o;
 
   if (n_in == 0) return 0;
@@ -77,9 +72,8 @@ int util_clean_and_sort_vector(int *in_vector, int n_in, int **out_vector, int *
   return 0;
 }
 
-
-int util_sort_vector_intersec(int *array_1, int n1, int *array_2, int n2, int **inter_arr, int *n_inter) {
-
+int util_sort_vector_intersec(int *array_1, int n1, int *array_2, int n2, int **inter_arr, int *n_inter)
+{
   int index_1 = 0, index_2 = 0, n_inter_aux = 0;
 
   while (index_1 < n2 && index_2 < n1) {
@@ -114,8 +108,7 @@ int util_sort_vector_intersec(int *array_1, int n1, int *array_2, int n2, int **
   return 0;
 }
 
-
-int util_cmpfunc(const void * a, const void * b) {
-
+int util_cmpfunc(const void * a, const void * b)
+{
   return (*(int*)a - *(int*)b);
 }
