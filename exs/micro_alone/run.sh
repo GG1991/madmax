@@ -8,21 +8,20 @@ $MPIEXEC -np 1  ../../micro/micro \
     -dim 2 \
     -material "MATRIX MAT_ELASTIC 1.0e7 1.0e6 0.3","FIBER MAT_ELASTIC 1.0e7 1.0e7 0.3" \
     -micro_struct "fiber_cilin 3.0 3.0 1 1 0.75 0.0 0.0" \
-    -pc_type lu \
     -fe2 \
     -nl_max_its 2 \
-    -bc_ustrain \
+    -bc_periodic \
     -print_pvtu \
     -print_vectors \
+    -pc_type  lu \
+    -pc_factor_nonzeros_along_diagonal \
     -print_matrices
 
 #-bc_periodic \
 #-bc_ustrain \
 #-bc_ustress \
-    #-ksp_type cg \
-    #-ksp_atol 1.0e-9 \
-    #-ksp_rtol 1.0e-9 \
 
+#-pc_factor_nonzeros_along_diagonal \
 #xterm -e gdb --args 
 #xterm -e gdb -x file.gdb --args 
 #-pc_type lu \
@@ -30,6 +29,7 @@ $MPIEXEC -np 1  ../../micro/micro \
 #-ksp_type cg \
 #-ksp_atol 1.0e-12 \
 #-ksp_rtol 1.0e-12 \
+#-pc_type lu \
 #-ksp_view \
 #
 #-micro_struct  "size"[dim]     \
