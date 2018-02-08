@@ -11,6 +11,7 @@ int main(void)
 
   ell_matrix m;
   ell_init(&m, 4, 4, 4);
+  ell_print_full(&m);
 
   return 0;
 }
