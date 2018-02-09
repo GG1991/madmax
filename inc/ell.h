@@ -3,10 +3,14 @@
 
 #include <stdlib.h> 
 #include <stdio.h>
+#include <math.h>
 
 #define NRM  "\x1B[0m"
 #define RED  "\x1B[31m"
 #define GRN  "\x1B[32m"
+
+#define MAX_ITS 100;
+#define MIN_ERR 1.0e-10;
 
 typedef struct ell_matrix_ {
   int nrow;
@@ -16,11 +20,19 @@ typedef struct ell_matrix_ {
   double *vals;
 } ell_matrix;
 
-int ell_init (ell_matrix * m, int nrow, int ncol, int nnz);
-int ell_set_val (ell_matrix * m, int row, int col, double val);
-int ell_add_val (ell_matrix * m, int row, int col, double val);
-int ell_mvp (ell_matrix * m, double *x, double *y);
+typedef struct ell_solver_ {
+  int max_its;
+  int its;
+  double min_err;
+  double err;
+} ell_solver;
+
+int ell_init (ell_matrix *m, int nrow, int ncol, int nnz);
+int ell_set_val (ell_matrix *m, int row, int col, double val);
+int ell_add_val (ell_matrix *m, int row, int col, double val);
+int ell_mvp (ell_matrix *m, double *x, double *y);
+int ell_get_val (ell_matrix *m, int row, int col, double *val);
+int ell_solve_jacobi (ell_solver *solver, ell_matrix * m, double *b, double *x);
 int ell_print_full (ell_matrix * m);
-int ell_search_val (ell_matrix * m, int row, int col, double *val);
 
 #endif
