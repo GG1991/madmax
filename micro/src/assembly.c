@@ -24,9 +24,31 @@ int assembly_res(double *norm, double *strain_mac)
 
 int assembly_res_ell(double *norm, double *strain_mac)
 {
+  int npe = mesh_struct.npe;
+  int dim = mesh_struct.dim;
+  int nn = mesh_struct.nn;
+  double *res_e = malloc((dim*npe) * sizeof(double));
+
+  for (int i = 0 ; i < (nn*dim) ; i++) x_ell[i] = 0.0;
+
+  for (int e = 0 ; e < mesh_struct.nelm ; e++) {
+    for (int i = 0 ; i < (npe*dim) ; i++) res_e[i] = 0.0;
+    mesh_struct_get_elem_indeces(&mesh_struct, e, elem_index);
+    
+    for (int gp = 0; gp < ngp; gp++) { // integration
+      get_strain(e, gp, strain_gp);
+      get_stress(e, gp, strain_gp, stress_gp);
+      for (int i = 0; i < npe*dim; i++) {
+	for (int j = 0; j < nvoi; j++)
+	  res_e[i] += struct_bmat[j][i][gp] * stress_gp[j] * struct_wp[gp];
+      }
+    }
+    
+    for (int i = 0; i < (npe*dim); i++ ) b_ell[elem_index[i]] += res_e[i]; // assembly
+  }
+
   return 0;
 }
-
 
 int assembly_jac_ell(void)
 {

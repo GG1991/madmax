@@ -80,6 +80,7 @@ int ell_add_vals (ell_matrix *m, int *ix, int nx, int *iy, int ny, double *vals)
       ell_add_val (m, ix[i], iy[j], vals[i*nx + j]);
     }
   }
+  return 0;
 }
 
 int ell_set_zero_row (ell_matrix *m, int row, double diag_val)
@@ -107,6 +108,13 @@ int ell_set_zero_col (ell_matrix *m, int col, double diag_val)
   }
   return 0;
 }
+
+int ell_set_zero_mat (ell_matrix * m)
+{
+  for (int i = 0 ; i < m->nrow ; i++) ell_set_zero_row (m, i, 0.0);
+  return 0;
+}
+
 
 int ell_mvp (ell_matrix * m, double *x, double *y)
 {

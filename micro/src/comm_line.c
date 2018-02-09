@@ -5,8 +5,14 @@ int comm_line_set_flags(void)
   bool found;
   int ierr;
 
+  ierr = myio_comm_line_search_option(&command_line, "-solver_petsc", &found);
+  if (ierr != 0) return 1; else if (found == true) params.solver = SOL_PETSC;
+
+  ierr = myio_comm_line_search_option(&command_line, "-solver_ell", &found);
+  if (ierr != 0) return 2; else if (found == true) params.solver = SOL_ELL;
+
   ierr = myio_comm_line_search_option(&command_line, "-coupl", &found);
-  if (ierr != 0) return 1;
+  if (ierr != 0) return 3;
   else if (found == true) flags.coupled = true;
 
   myio_comm_line_search_option(&command_line, "-fe2", &found);
