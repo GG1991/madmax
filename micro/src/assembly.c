@@ -5,8 +5,12 @@ int assembly_jac(void)
   switch (params.solver) {
     case SOL_PETSC:
       assembly_jac_petsc();
+      break;
     case SOL_ELL:
       assembly_jac_ell();
+      break;
+    default:
+      return 1;
   }
   return 0;
 }
@@ -16,8 +20,12 @@ int assembly_res(double *norm, double *strain_mac)
   switch (params.solver) {
     case SOL_PETSC:
       assembly_res_petsc(norm, strain_mac);
+      break;
     case SOL_ELL:
       assembly_res_ell(norm, strain_mac);
+      break;
+    default:
+      return 1;
   }
   return 0;
 }

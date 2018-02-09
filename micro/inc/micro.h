@@ -155,6 +155,8 @@ int homog_get_strain_stress(double *strain_mac, double *strain_ave, double *stre
 int homog_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave);
 int homog_taylor(double *strain_mac, double *strain_ave, double *stress_ave);
 int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave);
+int negative_res(void);
+int add_x_dx(void);
 int solve(void);
 
 #endif

@@ -177,8 +177,6 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
   clock_t start, end;
   double time_ass_b = 0.0, time_ass_A = 0.0, time_sol = 0.0;
 
-  VecZeroEntries(x);
-
   int nl_its = 0;
   double res_norm = params.nl_min_norm * 10;
   while (nl_its < params.nl_max_its && res_norm > params.nl_min_norm) {
@@ -193,7 +191,7 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
 
     if (res_norm < params.nl_min_norm) break;
 
-    VecScale(b, -1.0);
+    negative_res();
 
     start = clock();
     assembly_jac();
@@ -208,14 +206,10 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
     end = clock();
     time_sol = ((double) (end - start)) / CLOCKS_PER_SEC;
     save_event(MICRO_COMM, "sol_1");
-
-    VecAXPY(x, 1.0, dx);
+ 
+    add_x_dx();
 
     nl_its ++;
-  }
-  if(flags.coupled == false || PRINT_ALWAYS){
-    solvers_print_petsc_ksp_info(MICRO_COMM, ksp);
-    MIC_PRINTF_0("\n");
   }
   save_event(MICRO_COMM, "ass_1");
 
@@ -228,7 +222,38 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
   return 0;
 }
 
-int solve(void)
+int negative_res(void)
+{
+  int nn = mesh_struct.nn;
+  int dim = mesh_struct.dim;
+  switch (params.solver) {
+    case SOL_PETSC:
+      VecScale(b, -1.0);
+      break;
+    case SOL_ELL:
+      for (int i = 0 ; i < (nn*dim) ; i++)
+	res_ell[i] *= -1.0;
+      break;
+  }
+  return 0;
+}
+
+int add_x_dx (void)
+{
+  int nn = mesh_struct.nn;
+  switch (params.solver) {
+    case SOL_PETSC:
+      VecAXPY(x, 1.0, dx);
+      break;
+    case SOL_ELL:
+      for (int i = 0 ; i < (nn*dim) ; i++)
+	x_ell[i] += dx_ell[i];
+      break;
+  }
+  return 0;
+}
+
+int solve (void)
 {
   ell_solver solver;
   switch (params.solver) {
@@ -243,7 +268,7 @@ int solve(void)
   return 0;
 }
 
-int strain_x_coord(double *strain, double *coord, double *u)
+int strain_x_coord (double *strain, double *coord, double *u)
 {
   if (dim == 2) {
     u[0] = strain[0]   * coord[0] + strain[2]/2 * coord[1];
@@ -305,22 +330,36 @@ int get_elem_properties(void)
   return 0;
 }
 
-int get_strain(int e, int gp, double *strain_gp)
+int get_elem_disp(int e, double *disp_e)
 {
-  double *x_arr;
-  VecGetArray(x, &x_arr);
+  int npe = mesh_struct.npe;
+  int dim = mesh_struct.dim;
 
   mesh_struct_get_elem_indeces(&mesh_struct, e, elem_index);
 
-  for (int i = 0; i < mesh_struct.npe * mesh_struct.dim; i++)
-    elem_disp[i] = x_arr[elem_index[i]];
+  if (params.solver == SOL_PETSC) {
+    double *x_arr;
+    VecGetArray(x, &x_arr);
+    for (int i = 0; i < (npe*dim); i++) elem_disp[i] = x_arr[elem_index[i]];
+  } else if (params.solver == SOL_ELL) {
+    for (int i = 0; i < (npe*dim); i++) disp_e[i] = x_ell[i];
+  } else {
+    return 1;
+  }
+  return 0;
+}
+
+int get_strain(int e, int gp, double *strain_gp)
+{
+  int npe = mesh_struct.npe;
+  int dim = mesh_struct.dim;
+  get_elem_disp(e, elem_disp);
 
   for (int v = 0; v < nvoi; v++) {
     strain_gp[v] = 0.0;
-    for (int i = 0; i < mesh_struct.npe*dim; i++)
+    for (int i = 0 ; i < (npe*dim) ; i++)
       strain_gp[v] += struct_bmat[v][i][gp] * elem_disp[i];
   }
-
   return 0;
 }
 
