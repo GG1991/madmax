@@ -56,6 +56,28 @@ int assembly_res_ell(double *norm, double *strain_mac)
     for (int i = 0; i < (npe*dim); i++ ) res_ell[elem_index[i]] += res_e[i]; // assembly
   }
 
+  if (params.fe2_bc == BC_USTRAIN) {
+    for (int d = 0; d < dim ; d++) {
+      for (int n = 0; n < mesh_struct.ny - 2 ; n++) {
+	res_ell[mesh_struct.nods_x0[n]*dim + d] = 0.0;
+	res_ell[mesh_struct.nods_x1[n]*dim + d] = 0.0;
+      }
+      for (int n = 0; n < mesh_struct.nx - 2 ; n++) {
+	res_ell[mesh_struct.nods_y0[n]*dim + d] = 0.0;
+	res_ell[mesh_struct.nods_y1[n]*dim + d] = 0.0;
+      }
+      res_ell[mesh_struct.nod_x0y0*dim + d] = 0.0;
+      res_ell[mesh_struct.nod_x1y0*dim + d] = 0.0;
+      res_ell[mesh_struct.nod_x1y1*dim + d] = 0.0;
+      res_ell[mesh_struct.nod_x0y1*dim + d] = 0.0;
+    }
+  }
+
+  *norm = 0;
+  for (int i = 0 ; i < (nn*dim) ; i++)
+    *norm += res_ell[i] * res_ell[i];
+  *norm = sqrt(*norm);
+
   return 0;
 }
 
@@ -86,6 +108,31 @@ int assembly_jac_ell(void)
     }
     ell_add_vals(&jac_ell, elem_index, npe*dim, elem_index, npe*dim, jac_e); // assembly
   }
+
+  if (params.fe2_bc == BC_USTRAIN) {
+    for (int d = 0; d < dim ; d++) {
+      for (int n = 0; n < mesh_struct.ny - 2 ; n++) {
+	ell_set_zero_row (&jac_ell, mesh_struct.nods_x0[n]*dim + d, 1.0);
+	ell_set_zero_col (&jac_ell, mesh_struct.nods_x0[n]*dim + d, 1.0);
+	ell_set_zero_row (&jac_ell, mesh_struct.nods_x1[n]*dim + d, 1.0);
+	ell_set_zero_col (&jac_ell, mesh_struct.nods_x1[n]*dim + d, 1.0);
+      }
+      for (int n = 0; n < mesh_struct.nx - 2 ; n++) {
+	ell_set_zero_row (&jac_ell, mesh_struct.nods_y0[n]*dim + d, 1.0);
+	ell_set_zero_col (&jac_ell, mesh_struct.nods_y0[n]*dim + d, 1.0);
+	ell_set_zero_row (&jac_ell, mesh_struct.nods_y1[n]*dim + d, 1.0);
+	ell_set_zero_col (&jac_ell, mesh_struct.nods_y1[n]*dim + d, 1.0);
+      }
+      ell_set_zero_row (&jac_ell, mesh_struct.nod_x0y0*dim + d, 1.0);
+      ell_set_zero_col (&jac_ell, mesh_struct.nod_x0y0*dim + d, 1.0);
+      ell_set_zero_row (&jac_ell, mesh_struct.nod_x1y0*dim + d, 1.0);
+      ell_set_zero_col (&jac_ell, mesh_struct.nod_x1y0*dim + d, 1.0);
+      ell_set_zero_row (&jac_ell, mesh_struct.nod_x1y1*dim + d, 1.0);
+      ell_set_zero_col (&jac_ell, mesh_struct.nod_x1y1*dim + d, 1.0);
+      ell_set_zero_row (&jac_ell, mesh_struct.nod_x0y1*dim + d, 1.0);
+      ell_set_zero_col (&jac_ell, mesh_struct.nod_x0y1*dim + d, 1.0);
+    }
+  }
   return 0;
 }
 
@@ -100,24 +147,17 @@ int assembly_res_petsc(double *norm, double *strain_mac)
   double *res_elem = malloc(dim*npe*sizeof(double));
 
   for (int e = 0 ; e < mesh_struct.nelm ; e++) {
-
     ARRAY_SET_TO_ZERO(res_elem, npe*dim);
     mesh_struct_get_elem_indeces(&mesh_struct, e, elem_index);
-
     for (int gp = 0; gp < ngp; gp++) {
-
       get_strain(e, gp, strain_gp);
       get_stress(e, gp, strain_gp, stress_gp);
-
       for (int i = 0; i < npe*dim; i++) {
 	for (int j = 0; j < nvoi; j++)
 	  res_elem[i] += struct_bmat[j][i][gp] * stress_gp[j] * struct_wp[gp];
       }
-
     }
-
-    for (int i = 0; i < npe*dim; i++ )
-      b_arr[elem_index[i]] += res_elem[i];
+    for (int i = 0; i < npe*dim; i++) b_arr[elem_index[i]] += res_elem[i];
   }
 
   double *x_arr;
@@ -240,7 +280,7 @@ int assembly_jac_petsc(void)
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
   if (params.fe2_bc == BC_USTRAIN) {
-    MatZeroRows(A, mesh_struct.nnods_boundary*mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
+    MatZeroRowsColumns(A, mesh_struct.nnods_boundary*mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
   }
   else if (params.fe2_bc == BC_PERIODIC) {
 

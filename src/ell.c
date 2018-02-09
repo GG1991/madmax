@@ -104,7 +104,15 @@ int ell_set_zero_col (ell_matrix *m, int col, double diag_val)
 {
   if (m == NULL) return 1;
   for (int i = 0 ; i < m->nrow ; i++) {
-    ell_set_val (m, i, col, (i == col) ? diag_val : 0.0);
+    int j = 0;
+    while (j < m->nnz) {
+      if (m->cols[(i*m->nnz) + j] == -1) {
+	return 0;
+      } else if (m->cols[(i*m->nnz) + j] == col) {
+	m->vals[(i*m->nnz) + j] = (i == col) ? diag_val : 0.0;
+      }
+      j++;
+    }
   }
   return 0;
 }

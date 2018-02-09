@@ -177,6 +177,8 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
   clock_t start, end;
   double time_ass_b = 0.0, time_ass_A = 0.0, time_sol = 0.0;
 
+  set_disp_0(strain_mac);
+
   int nl_its = 0;
   double res_norm = params.nl_min_norm * 10;
   while (nl_its < params.nl_max_its && res_norm > params.nl_min_norm) {
@@ -219,6 +221,24 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
 
   get_averages(strain_ave, stress_ave);
 
+  return 0;
+}
+
+int set_disp_0(double *strain_mac)
+{
+  double displ[2];
+  if (params.solver == SOL_PETSC) {
+    
+  }else if (params.solver == SOL_ELL) {
+
+    if (params.fe2_bc == BC_USTRAIN) {
+      for (int n = 0; n < mesh_struct.nx ; n++) {
+	strain_x_coord(strain_mac, &mesh_struct.boundary_coord[n*dim], displ);
+	for (int d = 0; d < dim ; d++)
+	  res_ell[mesh_struct.boundary_indeces[n*dim + d]] = displ[d];
+      }
+    }
+  }
   return 0;
 }
 
