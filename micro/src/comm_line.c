@@ -54,9 +54,9 @@ int comm_line_set_flags(void)
   myio_comm_line_search_option(&command_line, "-mixs", &found);
   if (found == true) params.multis_method = MULTIS_MIXS;
 
-  myio_comm_line_get_int(&command_line, "-nl_max_its", &params.non_linear_max_its, &found);
+  myio_comm_line_get_int(&command_line, "-nl_max_its", &params.nl_max_its, &found);
 
-  myio_comm_line_get_int(&command_line, "-nl_min_norm_tol", &params.non_linear_max_its, &found);
+  myio_comm_line_get_double(&command_line, "-nl_min_norm", &params.nl_min_norm, &found);
 
   return 0;
 }

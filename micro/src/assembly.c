@@ -27,11 +27,12 @@ int assembly_res_ell(double *norm, double *strain_mac)
   int npe = mesh_struct.npe;
   int dim = mesh_struct.dim;
   int nn = mesh_struct.nn;
+  int nelm = mesh_struct.nelm;
   double *res_e = malloc((dim*npe) * sizeof(double));
 
-  for (int i = 0 ; i < (nn*dim) ; i++) x_ell[i] = 0.0;
+  for (int i = 0 ; i < (nn*dim) ; i++) res_ell[i] = 0.0;
 
-  for (int e = 0 ; e < mesh_struct.nelm ; e++) {
+  for (int e = 0 ; e < nelm ; e++) {
     for (int i = 0 ; i < (npe*dim) ; i++) res_e[i] = 0.0;
     mesh_struct_get_elem_indeces(&mesh_struct, e, elem_index);
     
@@ -44,7 +45,7 @@ int assembly_res_ell(double *norm, double *strain_mac)
       }
     }
     
-    for (int i = 0; i < (npe*dim); i++ ) b_ell[elem_index[i]] += res_e[i]; // assembly
+    for (int i = 0; i < (npe*dim); i++ ) res_ell[elem_index[i]] += res_e[i]; // assembly
   }
 
   return 0;
@@ -52,6 +53,31 @@ int assembly_res_ell(double *norm, double *strain_mac)
 
 int assembly_jac_ell(void)
 {
+  int npe = mesh_struct.npe;
+  int dim = mesh_struct.dim;
+  int nelm = mesh_struct.nelm;
+  double *jac_e = malloc((npe*dim*npe*dim) * sizeof(double));
+  double *ctang = malloc(nvoi*nvoi*sizeof(double));
+
+  ell_set_zero_mat(&jac_ell);
+  for (int e = 0 ; e < nelm ; e++) {
+    for (int i = 0 ; i < (npe*dim*npe*dim) ; i++) jac_e[i] = 0.0;
+    mesh_struct_get_elem_indeces(&mesh_struct, e, elem_index);
+
+    for (int gp = 0; gp < ngp; gp++) { // integration
+
+      get_strain(e, gp, strain_gp);
+      get_c_tan(NULL, e, gp, strain_gp, ctang);
+
+      for (int i = 0 ; i < npe*dim; i++)
+	for (int j = 0 ; j < npe*dim; j++)
+	  for (int k = 0; k < nvoi ; k++)
+	    for (int h = 0; h < nvoi; h++)
+	      jac_e[ i*(npe*dim) + j] += struct_bmat[h][i][gp] * ctang[h*nvoi + k] * struct_bmat[k][j][gp] * struct_wp[gp];
+
+    }
+    ell_add_vals(&jac_ell, elem_index, npe*dim, elem_index, npe*dim, jac_e); // assembly
+  }
   return 0;
 }
 

@@ -50,7 +50,7 @@ int alloc_memory(void) {
 
       x_ell = malloc(nrows*sizeof(double));
       dx_ell = malloc(nrows*sizeof(double));
-      b_ell = malloc(nrows*sizeof(double));
+      res_ell = malloc(nrows*sizeof(double));
       ell_init(&jac_ell, nrows, nrows, nnz);
     }
   }

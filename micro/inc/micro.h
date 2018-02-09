@@ -72,7 +72,7 @@ int homo_type;
 int macro_gp;
 
 ell_matrix jac_ell;
-double *x_ell, *b_ell, *dx_ell;
+double *x_ell, *res_ell, *dx_ell;
 
 Mat A, J;
 Vec x, b;
@@ -83,15 +83,13 @@ typedef struct{
 
   int multis_method;
   int fe2_bc;
-  int non_linear_max_its;
+  int nl_max_its;
   int solver;
+
+  double nl_min_norm;
   double c_tangent_linear[MAX_NVOIGT*MAX_NVOIGT];
   double c_tangent[MAX_NVOIGT*MAX_NVOIGT];
   double rho;
-
-  int non_linear_its;
-  double residual_norm;
-  double non_linear_min_norm_tol;
 
 }params_t;
 
@@ -134,8 +132,10 @@ int get_averages(double * strain_ave, double *stress_ave);
 int get_elem_type(int e, int *type);
 int get_elem_properties(void);
 
+int assembly_res(double *norm, double *strain_mac);
 int assembly_res_petsc(double *norm, double *strain_mac);
 int assembly_jac_petsc(void);
+int assembly_jac(void);
 int assembly_jac_ell(void);
 int assembly_res_ell(double *norm, double *strain_mac);
 
@@ -155,5 +155,6 @@ int homog_get_strain_stress(double *strain_mac, double *strain_ave, double *stre
 int homog_get_strain_stress_non_linear(double *strain_mac, double *strain_ave, double *stress_ave);
 int homog_taylor(double *strain_mac, double *strain_ave, double *stress_ave);
 int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave);
+int solve(void);
 
 #endif

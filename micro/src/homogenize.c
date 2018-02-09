@@ -179,24 +179,24 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
 
   VecZeroEntries(x);
 
-  params.non_linear_its = 0;
-  params.residual_norm = params.non_linear_min_norm_tol * 10;
-  while (params.non_linear_its < params.non_linear_max_its && params.residual_norm > params.non_linear_min_norm_tol) {
+  int nl_its = 0;
+  double res_norm = params.nl_min_norm * 10;
+  while (nl_its < params.nl_max_its && res_norm > params.nl_min_norm) {
 
     save_event(MICRO_COMM, "ass_0");
 
     start = clock();
-    assembly_res_petsc(&params.residual_norm, strain_mac);
+    assembly_res(&res_norm, strain_mac);
     end = clock();
     time_ass_b = ((double) (end - start)) / CLOCKS_PER_SEC;
-    MIC_PRINTF_1(GREEN "|b| = %lf" NORMAL "\n", params.residual_norm);
+    MIC_PRINTF_1(GREEN "|b| = %lf" NORMAL "\n", res_norm);
 
-    if (params.residual_norm < params.non_linear_min_norm_tol) break;
+    if (res_norm < params.nl_min_norm) break;
 
     VecScale(b, -1.0);
 
     start = clock();
-    assembly_jac_petsc();
+    assembly_jac();
     end = clock();
     time_ass_A = ((double) (end - start)) / CLOCKS_PER_SEC;
 
@@ -204,15 +204,14 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
 
     save_event(MICRO_COMM, "sol_0");
     start = clock();
-    KSPSetOperators(ksp, A, A);
-    KSPSolve(ksp, b, dx);
+    solve();
     end = clock();
     time_sol = ((double) (end - start)) / CLOCKS_PER_SEC;
     save_event(MICRO_COMM, "sol_1");
 
     VecAXPY(x, 1.0, dx);
 
-    params.non_linear_its ++;
+    nl_its ++;
   }
   if(flags.coupled == false || PRINT_ALWAYS){
     solvers_print_petsc_ksp_info(MICRO_COMM, ksp);
@@ -226,6 +225,21 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
 
   get_averages(strain_ave, stress_ave);
 
+  return 0;
+}
+
+int solve(void)
+{
+  ell_solver solver;
+  switch (params.solver) {
+    case SOL_PETSC:
+      KSPSetOperators(ksp, A, A);
+      KSPSolve(ksp, b, dx);
+      break;
+    case SOL_ELL:
+      ell_solve_jacobi(&solver, &jac_ell, res_ell, dx_ell);
+      break;
+  }
   return 0;
 }
 
