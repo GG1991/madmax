@@ -20,6 +20,10 @@ int ell_set_val (ell_matrix * m, int row, int col, double val)
     printf(RED "ell error: row %d or col %d greater than the dimension of the matrix\n" NRM, row, col);
     return 1;
   }
+  if (row < 0 || col < 0) {
+    printf(RED "ell error: negative values in row %d or col %d\n" NRM, row, col);
+    return 2;
+  }
   int j = 0;
   while (j < m->nnz) {
     if (m->cols[(row*m->nnz) + j] == -1) {
@@ -34,9 +38,9 @@ int ell_set_val (ell_matrix * m, int row, int col, double val)
   }
   if (j == m->nnz) {
     printf(RED "ell error: not enought space to store value in row %d and col %d\n" NRM, row, col);
-    return 1;
+    return 3;
   }
-  return 1;
+  return 4;
 }
 
 int ell_add_val (ell_matrix * m, int row, int col, double val)
@@ -44,6 +48,10 @@ int ell_add_val (ell_matrix * m, int row, int col, double val)
   if (row >= m->nrow || col >= m->ncol) {
     printf(RED "ell error: row %d or col %d greater than the dimension of the matrix\n" NRM, row, col);
     return 1;
+  }
+  if (row < 0 || col < 0) {
+    printf(RED "ell error: negative values in row %d or col %d\n" NRM, row, col);
+    return 2;
   }
   int j = 0;
   while (j < m->nnz) {
@@ -59,9 +67,24 @@ int ell_add_val (ell_matrix * m, int row, int col, double val)
   }
   if (j == m->nnz) {
     printf(RED "ell error: not enought space to add value in row %d and col %d\n" NRM, row, col);
-    return 1;
+    return 3;
   }
-  return 1;
+  return 4;
+}
+
+int ell_mvp (ell_matrix * m, double *x, double *y)
+{
+  if (x == NULL || y == NULL) return 1;
+  for (int i = 0 ; i < m->nrow ; i++) {
+    y[i] = 0;
+    int j = 0;
+    while (j < m->nnz) {
+      if (m->cols[(i*m->nnz) + j] == -1) break;
+      y[i] += m->vals[(i*m->nnz) + j] * x[m->cols[(i*m->nnz) + j]];
+      j++;
+    }
+  }
+  return 0;
 }
 
 int ell_print_full (ell_matrix * m)
