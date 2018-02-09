@@ -100,8 +100,7 @@ int micro_pvtu(char *name)
   for (int n = 0; n < mesh_struct.nn; n++) {
     mesh_struct_get_node_coord(&mesh_struct, n, coord);
     for (int d = 0 ; d < 3 ; d++)
-      fprintf(fm,"%e ",(d < dim) ? coord[d] : 0.0);
-    fprintf(fm,"\n");
+      fprintf(fm,"%e%s",(d < dim) ? coord[d] : 0.0, (d == 2)?"\n":" ");
   }
   fprintf(fm,"</DataArray>\n</Points>\n<Cells>\n");
 
@@ -109,8 +108,7 @@ int micro_pvtu(char *name)
   for (int e = 0; e < mesh_struct.nelm; e++) {
     mesh_struct_get_elem_nods(&mesh_struct, e, elem_nods);
     for (int n = 0; n < npe; n++)
-      fprintf(fm,"%d ", elem_nods[n]);
-    fprintf(fm,"\n");
+      fprintf(fm,"%d%s", elem_nods[n], (n == (npe - 1))?"\n":" ");
   }
   fprintf(fm,"</DataArray>\n");
 
@@ -130,23 +128,31 @@ int micro_pvtu(char *name)
 
   fprintf(fm,"<PointData Vectors=\"displ\">\n"); // Vectors inside is a filter we should not use this here
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"displ\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
-  VecGetArray(x, &xvalues);
   for (int n = 0 ; n < mesh_struct.nn ; n++) {
-    for (int d = 0 ; d < 3 ; d++)
-      fprintf(fm,"%e ",(d < dim) ? xvalues[n*dim + d] : 0.0);
-    fprintf(fm,"\n");
+    for (int d = 0; d < 3; d++) {
+      if (params.solver == SOL_PETSC){
+	VecGetArray(b, &xvalues);
+	fprintf(fm,"%e%s",(d < dim) ? xvalues[n*dim + d] : 0.0, (d == 2) ? "\n":" ");
+	VecRestoreArray(x, &xvalues);
+      } else if (params.solver == SOL_ELL) {
+	fprintf(fm,"%e%s",(d < dim) ? x_ell[n*dim + d] : 0.0, (d == 2) ? "\n":" ");
+      }
+    }
   }
-  VecRestoreArray(x, &xvalues);
   fprintf(fm,"</DataArray>\n");
 
   fprintf(fm,"<DataArray type=\"Float64\" Name=\"residual\" NumberOfComponents=\"3\" format=\"ascii\" >\n");
-  VecGetArray(b, &xvalues);
   for (int n = 0; n < mesh_struct.nn; n++) {
-    for (int d = 0; d < 3; d++)
-      fprintf(fm,"%e ",(d < dim) ? xvalues[n*dim + d] : 0.0);
-    fprintf(fm,"\n");
+    for (int d = 0; d < 3; d++) {
+      if (params.solver == SOL_PETSC){
+	VecGetArray(b, &xvalues);
+	fprintf(fm,"%e%s",(d < dim) ? xvalues[n*dim + d] : 0.0, (d == 2) ? "\n":" ");
+	VecRestoreArray(x, &xvalues);
+      } else if (params.solver == SOL_ELL) {
+	fprintf(fm,"%e%s",(d < dim) ? res_ell[n*dim + d] : 0.0, (d == 2) ? "\n":" ");
+      }
+    }
   }
-  VecRestoreArray(x, &xvalues);
   fprintf(fm,"</DataArray>\n</PointData>\n<CellData>\n");
 
   fprintf(fm,"<DataArray type=\"Int32\" Name=\"part\" NumberOfComponents=\"1\" format=\"ascii\">\n");

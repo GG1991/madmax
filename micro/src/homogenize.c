@@ -232,10 +232,10 @@ int set_disp_0(double *strain_mac)
   }else if (params.solver == SOL_ELL) {
 
     if (params.fe2_bc == BC_USTRAIN) {
-      for (int n = 0; n < mesh_struct.nx ; n++) {
+      for (int n = 0; n < mesh_struct.nnods_boundary ; n++) {
 	strain_x_coord(strain_mac, &mesh_struct.boundary_coord[n*dim], displ);
 	for (int d = 0; d < dim ; d++)
-	  res_ell[mesh_struct.boundary_indeces[n*dim + d]] = displ[d];
+	  x_ell[mesh_struct.boundary_indeces[n*dim + d]] = displ[d];
       }
     }
   }
