@@ -5,36 +5,39 @@
 #define RED  "\x1B[31m"
 #define GRN  "\x1B[32m"
 
+#define N 100
+
 int main(void)
 {
   printf("ell.c / ell.h test\n");
 
-  double x[4] = {0.029412, 0.029412, 0.029412, 0.029412};
-  double y[4] = {1.0, 2.0, 3.0, 4.0};
-  double x1[4] = {0.0, 0.0, 0.0, 0.0};
-  double b[4] = {1.0, 1.0, 1.0, 1.0};
+  double *x = malloc(N*sizeof(double));
+  double *b = malloc(N*sizeof(double));
+  double m_e[4] = { 1, -1, -1, 1 };
+
   ell_matrix m;
   ell_solver solver;
-  ell_init(&m, 4, 4, 4);
-  ell_set_val(&m, 0, 0, 1); ell_set_val(&m, 0, 1, 0); ell_set_val(&m, 0, 2, 0); ell_set_val(&m, 0, 3, 0);
-  ell_set_val(&m, 1, 0,-1); ell_set_val(&m, 1, 1, 2); ell_set_val(&m, 1, 2,-1); ell_set_val(&m, 1, 3, 0);
-  ell_set_val(&m, 2, 0, 0); ell_set_val(&m, 2, 1,-1); ell_set_val(&m, 2, 2, 2); ell_set_val(&m, 2, 3,-1);
-  ell_set_val(&m, 3, 0, 0); ell_set_val(&m, 3, 1, 0); ell_set_val(&m, 3, 2, 0); ell_set_val(&m, 3, 3, 1);
-  printf("\nm=\n");
-  ell_print_full(&m);
-  ell_mvp(&m, x, y);
-  ell_solve_jacobi(&solver, &m, b, x1);
-
-  printf("\ny=\n");
-  for (int i = 0 ; i < 4 ; i++) {
-    printf("%lf\n", y[i]);
+  ell_init(&m, N, N, 3);
+  int ix[2], iy[2];
+  for (int i = 0 ; i < N-1 ; i++) {
+    b[i] = 1.0;
+    ix[0] = i; ix[1] = i+1;
+    iy[0] = i; iy[1] = i+1;
+    ell_add_vals(&m, ix, 2, iy, 2, m_e);
   }
+  ell_set_zero_row(&m, 0, 1);
+  ell_set_zero_row(&m, N-1, 1);
 
-  printf("\nx1=\n");
-  for (int i = 0 ; i < 4 ; i++) {
-    printf("%lf\n", x1[i]);
+//  printf("\nm=\n");
+//  ell_print_full(&m);
+  ell_solve_jacobi(&solver, &m, b, x);
+
+  FILE *fl = fopen("sol.dat","w");
+  for (int i = 0 ; i < N ; i++) {
+    fprintf(fl,"%lf\n", x[i]);
   }
-  printf("\nerror = %lf\n", solver.err);
+  fclose(fl);
+  printf("\nerr = %lf\n", solver.err);
   printf("its = %d\n", solver.its);
 
   return 0;

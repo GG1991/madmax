@@ -72,10 +72,37 @@ int ell_add_val (ell_matrix * m, int row, int col, double val)
   return 4;
 }
 
+int ell_add_vals (ell_matrix *m, int *ix, int nx, int *iy, int ny, double *vals)
+{
+  if (m == NULL || ix == NULL || iy == NULL || vals == NULL) return 1;
+  for (int i = 0 ; i < nx ; i++) {
+    for (int j = 0 ; j < ny ; j++) {
+      ell_add_val (m, ix[i], iy[j], vals[i*nx + j]);
+    }
+  }
+}
+
+int ell_set_zero_row (ell_matrix *m, int row, double diag_val)
+{
+  if (m == NULL) return 1;
+  int j = 0;
+  while (j < m->nnz) {
+    if (m->cols[(row*m->nnz) + j] == -1) {
+      return 0;
+    } else if (m->cols[(row*m->nnz) + j] == row) {
+      m->vals[(row*m->nnz) + j] = diag_val;
+    } else {
+      m->vals[(row*m->nnz) + j] = 0.0;
+    }
+    j++;
+  }
+  return 0;
+}
+
 int ell_mvp (ell_matrix * m, double *x, double *y)
 {
   //  y = m * x
-  if (x == NULL || y == NULL) return 1;
+  if (m == NULL || x == NULL || y == NULL) return 1;
   for (int i = 0 ; i < m->nrow ; i++) {
     y[i] = 0;
     int j = 0;
