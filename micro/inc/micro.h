@@ -20,9 +20,11 @@
 #include "solvers.h"
 #include "mesh.h"
 #include "fem.h"
+#include "ell.h"
 
 enum {MULTIS_NULL, MULTIS_MIXS, MULTIS_MIXP, MULTIS_FE2};
 enum {BC_NULL, BC_USTRAIN, BC_USTRESS, BC_PERIODIC};
+enum {SOL_PETSC, SOL_ELL};
 
 #define HOMOGENIZE_DELTA_STRAIN      0.005
 
@@ -69,6 +71,9 @@ double vm;
 int homo_type;
 int macro_gp;
 
+ell_matrix jac_ell;
+double *x_ell, *b_ell, *dx_ell;
+
 Mat A, J;
 Vec x, b;
 Vec dx;
@@ -79,6 +84,7 @@ typedef struct{
   int multis_method;
   int fe2_bc;
   int non_linear_max_its;
+  int solver;
   double c_tangent_linear[MAX_NVOIGT*MAX_NVOIGT];
   double c_tangent[MAX_NVOIGT*MAX_NVOIGT];
   double rho;
@@ -128,8 +134,10 @@ int get_averages(double * strain_ave, double *stress_ave);
 int get_elem_type(int e, int *type);
 int get_elem_properties(void);
 
-int assembly_b_petsc(double *norm, double *strain_mac);
-int assembly_A_petsc(void);
+int assembly_res_petsc(double *norm, double *strain_mac);
+int assembly_jac_petsc(void);
+int assembly_jac_ell(void);
+int assembly_res_ell(double *norm, double *strain_mac);
 
 int init_variables_1(void);
 int init_variables_2(void);

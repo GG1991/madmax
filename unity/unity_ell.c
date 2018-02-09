@@ -17,7 +17,7 @@ int main(void)
 
   ell_matrix m;
   ell_solver solver;
-  ell_init(&m, N, N, 5);
+  ell_init(&m, N, N, 4);
   int ix[2], iy[2];
   for (int i = 0 ; i < N-1 ; i++) {
     b[i] = 1.0;

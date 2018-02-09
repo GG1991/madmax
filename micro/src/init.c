@@ -7,6 +7,7 @@ int init_variables_1(void)
   params.non_linear_max_its = 2;
   params.non_linear_min_norm_tol = 1.0e-4;
   params.rho = 1.0e7;
+  params.solver = SOL_PETSC;
 
   solver.type = SOLVER_PETSC;
 

@@ -3,6 +3,7 @@
 int alloc_memory(void) {
 
   int ierr = 0;
+  int nnz = (mesh_struct.dim == 2)? 18:81;
 
   if (params.multis_method == MULTIS_FE2) {
 
@@ -19,13 +20,11 @@ int alloc_memory(void) {
 	break;
     }
 
-    if (solver.type == SOLVER_PETSC) {
+    if (params.solver == SOL_PETSC) {
 
 #ifdef PETSC
       PETSC_COMM_WORLD = MICRO_COMM;
       PetscInitialize(&command_line.argc, &command_line.argv, (char*)0, NULL);
-
-      int nnz = (mesh_struct.dim == 2)? 18:81;
 
       MatCreate(MICRO_COMM,&A);
       MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, nrows, nrows);
@@ -47,6 +46,12 @@ int alloc_memory(void) {
       return 1;
 #endif
 
+    } else if (params.solver == SOL_ELL) {
+
+      x_ell = malloc(nrows*sizeof(double));
+      dx_ell = malloc(nrows*sizeof(double));
+      b_ell = malloc(nrows*sizeof(double));
+      ell_init(&jac_ell, nrows, nrows, nnz);
     }
   }
 

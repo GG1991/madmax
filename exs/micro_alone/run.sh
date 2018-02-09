@@ -13,7 +13,7 @@ $MPIEXEC -np 1  ../../micro/micro \
     -bc_periodic \
     -print_pvtu \
     -print_vectors \
-    -pc_type  lu \
+    -pc_type lu \
     -pc_factor_nonzeros_along_diagonal \
     -print_matrices
 
