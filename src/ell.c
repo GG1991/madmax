@@ -99,6 +99,15 @@ int ell_set_zero_row (ell_matrix *m, int row, double diag_val)
   return 0;
 }
 
+int ell_set_zero_col (ell_matrix *m, int col, double diag_val)
+{
+  if (m == NULL) return 1;
+  for (int i = 0 ; i < m->nrow ; i++) {
+    ell_set_val (m, i, col, (i == col) ? diag_val : 0.0);
+  }
+  return 0;
+}
+
 int ell_mvp (ell_matrix * m, double *x, double *y)
 {
   //  y = m * x

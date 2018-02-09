@@ -5,7 +5,7 @@
 #define RED  "\x1B[31m"
 #define GRN  "\x1B[32m"
 
-#define N 100
+#define N 10
 
 int main(void)
 {
@@ -17,7 +17,7 @@ int main(void)
 
   ell_matrix m;
   ell_solver solver;
-  ell_init(&m, N, N, 3);
+  ell_init(&m, N, N, 5);
   int ix[2], iy[2];
   for (int i = 0 ; i < N-1 ; i++) {
     b[i] = 1.0;
@@ -27,9 +27,11 @@ int main(void)
   }
   ell_set_zero_row(&m, 0, 1);
   ell_set_zero_row(&m, N-1, 1);
+  ell_set_zero_col(&m, 0, 1);
+  ell_set_zero_col(&m, N-1, 1);
 
-//  printf("\nm=\n");
-//  ell_print_full(&m);
+  printf("\nm=\n");
+  ell_print_full(&m);
   ell_solve_jacobi(&solver, &m, b, x);
 
   FILE *fl = fopen("sol.dat","w");
