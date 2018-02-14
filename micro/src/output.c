@@ -131,7 +131,7 @@ int micro_pvtu(char *name)
   for (int n = 0 ; n < mesh_struct.nn ; n++) {
     for (int d = 0; d < 3; d++) {
       if (params.solver == SOL_PETSC){
-	VecGetArray(b, &xvalues);
+	VecGetArray(x, &xvalues);
 	fprintf(fm,"%e%s",(d < dim) ? xvalues[n*dim + d] : 0.0, (d == 2) ? "\n":" ");
 	VecRestoreArray(x, &xvalues);
       } else if (params.solver == SOL_ELL) {

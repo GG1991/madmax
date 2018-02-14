@@ -2,17 +2,19 @@
 
 MPIEXEC="/home/guido/libs/openmpi-install/bin/mpiexec" 
 
-#$MPIEXEC -np 1  ../../micro/micro \
-$MPIEXEC -np 1 xterm -e gdb -x file.gdb --args ../../micro/micro \
-    -struct_n 3,3 \
+#$MPIEXEC -np 1 xterm -e gdb -x file.gdb --args ../../micro/micro \
+$MPIEXEC -np 1  ../../micro/micro \
+    -struct_n 50,50 \
     -dim 2 \
     -material "MATRIX MAT_ELASTIC 1.0e7 1.0e6 0.3","FIBER MAT_ELASTIC 1.0e7 1.0e7 0.3" \
     -micro_struct "fiber_cilin 3.0 3.0 1 1 0.75 0.0 0.0" \
     -fe2 \
     -nl_max_its 2 \
-    -bc_ustrain \
+    -bc_periodic \
+    -pc_type lu \
+    -pc_factor_nonzeros_along_diagonal \
     -print_pvtu \
-    -solver_ell
+    -solver_petsc
 
 #-bc_periodic \
 #-bc_ustrain \
