@@ -224,20 +224,64 @@ int homog_fe2(double *strain_mac, double *strain_ave, double *stress_ave)
   return 0;
 }
 
-int set_disp_0(double *strain_mac)
+int set_disp_0(double *strain)
 {
-  double displ[2];
-  if (params.solver == SOL_PETSC) {
-    
-  }else if (params.solver == SOL_ELL) {
 
-    if (params.fe2_bc == BC_USTRAIN) {
+  if (params.fe2_bc == BC_USTRAIN) {
+
+    if (params.solver == SOL_PETSC) {
+
+    }else if (params.solver == SOL_ELL) {
+
       for (int n = 0; n < mesh_struct.nnods_boundary ; n++) {
-	strain_x_coord(strain_mac, &mesh_struct.boundary_coord[n*dim], displ);
+	double displ[2];
+	strain_x_coord(strain, &mesh_struct.boundary_coord[n*dim], displ);
 	for (int d = 0; d < dim ; d++)
 	  x_ell[mesh_struct.boundary_indeces[n*dim + d]] = displ[d];
       }
+
     }
+  } else if (params.fe2_bc == BC_PERIODIC) {
+
+    if (params.solver == SOL_PETSC) {
+
+      double *x_arr;
+      VecZeroEntries(x);
+      VecGetArray(x, &x_arr);
+    
+      // set displacements at the corners
+      double disp[2];
+      double coor[2];
+      coor[0] = 0.0;
+      coor[1] = 0.0;
+      strain_x_coord(strain, coor, disp);
+      for (int d = 0; d < dim ; d++) 
+	x_arr[mesh_struct.nod_x0y0*dim + d] = disp[d];
+
+      coor[0] = mesh_struct.lx;
+      coor[1] = 0.0;
+      strain_x_coord(strain, coor, disp);
+      for (int d = 0; d < dim ; d++) 
+	x_arr[mesh_struct.nod_x1y0*dim + d] = disp[d];
+
+      coor[0] = mesh_struct.lx;
+      coor[1] = mesh_struct.ly;
+      strain_x_coord(strain, coor, disp);
+      for (int d = 0; d < dim ; d++) 
+	x_arr[mesh_struct.nod_x1y1*dim + d] = disp[d];
+
+      coor[0] = 0.0;
+      coor[1] = mesh_struct.ly;
+      strain_x_coord(strain, coor, disp);
+      for (int d = 0; d < dim ; d++) 
+	x_arr[mesh_struct.nod_x0y1*dim + d] = disp[d];
+
+      VecRestoreArray(x, &x_arr);
+
+    }else if (params.solver == SOL_ELL) {
+
+    }
+
   }
   return 0;
 }

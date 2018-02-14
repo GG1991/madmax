@@ -192,30 +192,17 @@ int assembly_res_petsc(double *norm, double *strain_mac)
 	}
       }
 
-      double displ[2], coor[2];
+      // we set displacements u = e.x in corners
+      for (int d = 0; d < dim ; d++) // x0y0
+	b_arr[mesh_struct.nod_x0y0*dim + d] = 0.0;
+      for (int d = 0; d < dim ; d++) // x1y0
+	b_arr[mesh_struct.nod_x1y0*dim + d] = 0.0;
+      for (int d = 0; d < dim ; d++) // x1y1
+	b_arr[mesh_struct.nod_x1y1*dim + d] = 0.0;
+      for (int d = 0; d < dim ; d++) // x0y1
+	b_arr[mesh_struct.nod_x0y1*dim + d] = 0.0;
 
-      // we set displacements u - e.x in corners
-      coor[0] = 0.0; coor[1] = 0.0; // x0y0
-      strain_x_coord(strain_mac, coor, displ);
-      for (int d = 0; d < dim ; d++)
-	b_arr[mesh_struct.nod_x0y0*dim + d] = x_arr[mesh_struct.nod_x0y0*dim + d] - displ[d];
-
-      coor[0] = mesh_struct.lx; coor[1] = 0.0; // x1y0
-      strain_x_coord(strain_mac, coor, displ);
-      for (int d = 0; d < dim ; d++)
-	b_arr[mesh_struct.nod_x1y0*dim + d] = x_arr[mesh_struct.nod_x1y0*dim + d] - displ[d];
-
-      coor[0] = mesh_struct.lx; coor[1] = mesh_struct.ly; // x1y1
-      strain_x_coord(strain_mac, coor, displ);
-      for (int d = 0; d < dim ; d++)
-	b_arr[mesh_struct.nod_x1y1*dim + d] = x_arr[mesh_struct.nod_x1y1*dim + d] - displ[d];
-
-      coor[0] = 0.0; coor[1] = mesh_struct.ly; // x0y1
-      strain_x_coord(strain_mac, coor, displ);
-      for (int d = 0; d < dim ; d++)
-	b_arr[mesh_struct.nod_x0y1*dim + d] = x_arr[mesh_struct.nod_x0y1*dim + d] - displ[d];
-
-      double delta_length[2];
+      double delta_length[2], displ[2];
 
       delta_length[0] = 0.0; delta_length[1] = mesh_struct.ly; // set u+ - u- - e*dx en y0/y1
       strain_x_coord(strain_mac, delta_length, displ);
@@ -295,20 +282,20 @@ int assembly_jac_petsc(void)
       // corners
       index[0] = mesh_struct.nod_x0y0 * dim + 0;
       index[1] = mesh_struct.nod_x0y0 * dim + 1;
-      MatZeroRows(A, 2, index, 1.0, NULL, NULL);
-//      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
+//      MatZeroRows(A, 2, index, 1.0, NULL, NULL);
+      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
       index[0] = mesh_struct.nod_x1y0 * dim + 0;
       index[1] = mesh_struct.nod_x1y0 * dim + 1;
-      MatZeroRows(A, 2, index, 1.0, NULL, NULL);
-//      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
+//      MatZeroRows(A, 2, index, 1.0, NULL, NULL);
+      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
       index[0] = mesh_struct.nod_x1y1 * dim + 0;
       index[1] = mesh_struct.nod_x1y1 * dim + 1;
-      MatZeroRows(A, 2, index, 1.0, NULL, NULL);
-//      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
+//      MatZeroRows(A, 2, index, 1.0, NULL, NULL);
+      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
       index[0] = mesh_struct.nod_x0y1 * dim + 0;
       index[1] = mesh_struct.nod_x0y1 * dim + 1;
-      MatZeroRows(A, 2, index, 1.0, NULL, NULL);
-//      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
+//      MatZeroRows(A, 2, index, 1.0, NULL, NULL);
+      MatZeroRowsColumns(A, 2, index, 1.0, NULL, NULL);
 
       values[0] = -1.0;
       values[1] = +1.0;
