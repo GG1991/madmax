@@ -12,7 +12,7 @@ int alloc_memory(void) {
       case BC_USTRAIN:
 	nrows = mesh_struct.nn * mesh_struct.dim;
 	break;
-      case BC_PERIODIC:
+      case BC_PER_LM:
 	nrows = (mesh_struct.nn + (mesh_struct.nx - 2) + (mesh_struct.ny - 2)) * mesh_struct.dim;
 	break;
       case BC_USTRESS:

@@ -10,7 +10,7 @@ $MPIEXEC -np 1  ../../micro/micro \
     -micro_struct "fiber_cilin 3.0 3.0 1 1 0.75 0.0 0.0" \
     -fe2 \
     -nl_max_its 2 \
-    -bc_periodic \
+    -bc_per_lm \
     -pc_type lu \
     -pc_factor_nonzeros_along_diagonal \
     -print_pvtu \

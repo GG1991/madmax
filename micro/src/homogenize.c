@@ -241,7 +241,7 @@ int set_disp_0(double *strain)
       }
 
     }
-  } else if (params.fe2_bc == BC_PERIODIC) {
+  } else if (params.fe2_bc == BC_PER_LM) {
 
     if (params.solver == SOL_PETSC) {
 

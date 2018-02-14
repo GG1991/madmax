@@ -172,7 +172,7 @@ int assembly_res_petsc(double *norm, double *strain_mac)
 	  b_arr[mesh_struct.boundary_indeces[n*dim + d]] = x_arr[mesh_struct.boundary_indeces[n*dim + d]] - displ[d];
       }
     }
-    else if (params.fe2_bc == BC_PERIODIC) {
+    else if (params.fe2_bc == BC_PER_LM) {
 
       /*       | fi              |      |u      |
        *  r =  | fe - µ          |  x = |µ en y0| 
@@ -269,7 +269,7 @@ int assembly_jac_petsc(void)
   if (params.fe2_bc == BC_USTRAIN) {
     MatZeroRowsColumns(A, mesh_struct.nnods_boundary*mesh_struct.dim, mesh_struct.boundary_indeces, 1.0, NULL, NULL);
   }
-  else if (params.fe2_bc == BC_PERIODIC) {
+  else if (params.fe2_bc == BC_PER_LM) {
 
     /*       | K   1 |
      * jac = |       |
