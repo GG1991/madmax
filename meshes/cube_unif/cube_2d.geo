@@ -22,7 +22,7 @@ Physical Point("P000") = {1};
 Physical Point("P100") = {2};
 Physical Point("P010") = {4};
 
-Physical Surface("MATRIX") = {6};
+Physical Surface("MICRO") = {6};
 Physical Line("X0") = {3};
 Physical Line("X1") = {1};
 Physical Line("Y0") = {4};

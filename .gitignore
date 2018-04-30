@@ -17,6 +17,8 @@
 *.svg
 *.csv
 
+libs
+
 exs/*
 
 null
